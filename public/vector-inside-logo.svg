@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 60" fill="none">
+  <!-- Vector Inside Emblem Mark -->
+  <g transform="translate(10, 8)">
+    <rect width="44" height="44" rx="10" fill="#12151A" stroke="#1F242D" stroke-width="1.5"/>
+    <!-- Outer Neon Vector Hex/Chevron -->
+    <path d="M12 16L22 34L32 16" stroke="#D4FF00" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Inner Accent Vector Dart -->
+    <path d="M17 20L22 29L27 20" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+    <!-- Central Pulse Dot -->
+    <circle cx="22" cy="14" r="2.5" fill="#D4FF00"/>
+  </g>
+
+  <!-- Typography: VECTOR INSIDE -->
+  <text x="66" y="30" fill="#FFFFFF" font-family="Inter, system-ui, sans-serif" font-size="17" font-weight="900" letter-spacing="0.12em">VECTOR</text>
+  <text x="145" y="30" fill="#D4FF00" font-family="Inter, system-ui, sans-serif" font-size="17" font-weight="900" letter-spacing="0.12em">INSIDE</text>
+  <text x="67" y="44" fill="#71717A" font-family="Inter, system-ui, sans-serif" font-size="8.5" font-weight="700" letter-spacing="0.25em">COMMUNITY CONTROL PANEL</text>
+</svg>
