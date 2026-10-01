@@ -1,0 +1,81 @@
+export const USER_ROLES = {
+  ADMIN: 'admin',
+  CLIENT: 'client',
+  SUPER_ADMIN_AGENCY: 'admin',
+  COMMUNITY_MANAGER: 'admin',
+  CLIENT_READ_ONLY: 'client',
+};
+
+export const INITIAL_TENANTS_DATA = {
+  dental: {
+    id: 'dental',
+    name: 'Clínica Odontológica Integral',
+    shortName: 'Odontología Integral',
+    vertical: 'service_appointments',
+    giro: 'Salud / B2C',
+    mer: '3.4x',
+    citas: 12,
+    cac: '$185',
+    cacMax: '$210',
+    ltv: '$2,450',
+    ifv: '92%',
+    capiStatus: 'Sincronizado',
+    phone: '+52 55 1234 5678',
+    avatar: '🦷',
+  },
+  urban: {
+    id: 'urban',
+    name: 'E-commerce "Urban Sneaks"',
+    shortName: 'Urban Sneaks',
+    vertical: 'ecommerce',
+    giro: 'Retail / E-commerce',
+    mer: '2.1x',
+    citas: 28,
+    cac: '$240',
+    cacMax: '$210',
+    ltv: '$1,120',
+    ifv: '88%',
+    capiStatus: 'Sincronizado',
+    phone: '+52 55 9876 5432',
+    avatar: '👟',
+  },
+  inmo: {
+    id: 'inmo',
+    name: 'Inmobiliaria Vértice',
+    shortName: 'Inmobiliaria Vértice',
+    vertical: 'service_appointments',
+    giro: 'Bienes Raíces / B2B',
+    mer: '4.8x',
+    citas: 6,
+    cac: '$890',
+    cacMax: '$1200',
+    ltv: '$18,500',
+    ifv: '95%',
+    capiStatus: 'Sincronizado',
+    phone: '+52 55 4567 8901',
+    avatar: '🏢',
+  },
+};
+
+export const INITIAL_TENANTS = Object.values(INITIAL_TENANTS_DATA);
+
+export const DEMO_USERS = [
+  {
+    id: 'usr-admin-01',
+    email: 'admin@vectorinside.com',
+    name: 'Carlos Mendoza',
+    role: USER_ROLES.ADMIN,
+    roleTitle: 'Lobo Vectorial (Admin Agencia)',
+    badge: 'ADMIN AGENCIA',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+  },
+  {
+    id: 'usr-client-02',
+    email: 'contacto@odontointegral.com',
+    name: 'Dra. Patricia Morales',
+    role: USER_ROLES.CLIENT,
+    roleTitle: 'Dueño de Negocio (Cliente Final)',
+    badge: 'DUEÑO NEGOCIO',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+  },
+];
