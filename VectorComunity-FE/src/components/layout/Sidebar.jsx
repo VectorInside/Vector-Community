@@ -11,6 +11,7 @@ import {
   Database,
   PieChart,
   Calendar,
+  LayoutGrid,
   Sun,
   Moon,
 } from 'lucide-react';
@@ -143,6 +144,26 @@ export const Sidebar = () => {
             </Link>
           </>
         )}
+
+        {/* Sección: Operaciones de Contenido */}
+        <label className="text-[9px] font-mono text-[var(--text-muted)] uppercase tracking-wider mt-6 mb-2 block">
+          Operaciones de Contenido
+        </label>
+
+        <Link
+          href="/planner"
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-md transition-all ${
+            isLinkActive('/planner')
+              ? 'bg-neon text-black font-bold shadow-[0_0_15px_var(--neon-glow)]'
+              : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] font-medium'
+          }`}
+        >
+          <LayoutGrid className="w-4 h-4" />
+          <span className="text-sm">Parrilla de Contenido</span>
+          <span className="ml-auto bg-amber-500/20 text-amber-400 border border-amber-500/40 text-[9px] font-bold px-1.5 py-0.5 rounded">
+            2
+          </span>
+        </Link>
 
         {/* Sección: Analítica de Negocio */}
         <label className="text-[9px] font-mono text-[var(--text-muted)] uppercase tracking-wider mt-6 mb-2 block">

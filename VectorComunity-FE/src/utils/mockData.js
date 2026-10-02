@@ -106,6 +106,92 @@ export const INITIAL_HITL_ALERTS = [
     ],
     urgency: 'MEDIUM',
     source: 'Shopify Webhook'
+  },
+  {
+    id: 'alt-005',
+    tenantId: 'corp',
+    tenantName: 'Vector Corporate Solutions B2B',
+    type: 'B2B_DISCOVERY_CALL',
+    vertical: 'b2b_sales',
+    title: 'Lead Calificado BANT: Discovery Call ($45,000 USD Pipeline)',
+    clientName: 'Lic. Rodrigo Elizondo (VP Operaciones)',
+    clientPhone: '+52 55 4120 7890',
+    timestamp: new Date(Date.now() - 1000 * 60 * 8).toISOString(),
+    status: 'PENDING_AGENCY_APPROVAL',
+    confidenceScore: 97,
+    botSummary: 'Lead calificado mediante metodología BANT. Empresa de 180 empleados con presupuesto aprobado de $50k USD. Se solicita Discovery Call y sincronización con HubSpot CRM.',
+    proposedData: {
+      company: 'Logística Global Monterrey S.A.',
+      role: 'VP Operaciones & Tecnología',
+      bantScore: 'Aprobado (Presupuesto $50k USD / Decisión Inmediata)',
+      date: 'Próx. Miércoles, 10:00 hrs (Zoom)',
+      crmTarget: 'HubSpot CRM Enterprise (Pipeline B2B Q4)',
+      estimatedValue: 45000,
+    },
+    transcriptSnippet: [
+      { sender: 'user', text: 'Hola, buscamos implementar la infraestructura de IA de Vector para automatizar nuestras 4 sucursales.' },
+      { sender: 'bot', text: '¡Excelente Rodrigo! Para preparar la propuesta a tu medida: ¿cuentan con presupuesto asignado para este trimestre?' },
+      { sender: 'user', text: 'Sí, tenemos $50,000 USD presupuestados y buscamos iniciar el próximo mes.' },
+      { sender: 'bot', text: 'Perfecto. He reservado la Discovery Call con nuestro Director de Soluciones el próximo miércoles a las 10:00 hrs.' }
+    ],
+    urgency: 'HIGH',
+    source: 'LinkedIn B2B Campaign / WhatsApp'
+  },
+  {
+    id: 'alt-006',
+    tenantId: 'creator',
+    tenantName: 'Alex Rivera — Tech & Growth Creator',
+    type: 'BRAND_SPONSORSHIP_PROPOSAL',
+    vertical: 'creator_economy',
+    title: 'Propuesta Patrocinio de Marca: Sony Audio ($3,500 USD)',
+    clientName: 'Mariana Valenzuela (Agency PR Sony)',
+    clientPhone: '+52 55 9988 1122',
+    timestamp: new Date(Date.now() - 1000 * 60 * 6).toISOString(),
+    status: 'PENDING_AGENCY_APPROVAL',
+    confidenceScore: 99,
+    botSummary: 'La agencia PR de Sony solicita colaboración para el lanzamiento de los audífonos WH-1000XM6. Presupuesto ofrecido: $3,500 USD por 1 Reel dedicado + 3 Stories con link de afiliado.',
+    proposedData: {
+      brand: 'Sony Electronics México',
+      deliverables: '1 Reel Dedicado + 3 Stories con Sticker de Enlace',
+      campaignBudget: '$3,500 USD',
+      targetDate: '20 de Octubre 2026',
+      mediaKitSent: 'Media_Kit_AlexRivera_2026.pdf',
+      estimatedValue: 3500,
+    },
+    transcriptSnippet: [
+      { sender: 'user', text: 'Hola Alex! Somos de la agencia de PR de Sony. Nos encantó tu último Reel de productividad y queremos pautar una integración en tu canal.' },
+      { sender: 'bot', text: '¡Hola Mariana! Gracias por contactar al equipo de Alex Rivera. ¿Cuál es el presupuesto estimado y las entregas solicitadas?' },
+      { sender: 'user', text: 'Ofrecemos $3,500 USD para 1 Reel y 3 Stories para la última semana de este mes.' },
+      { sender: 'bot', text: 'Excelente. He enviado el Media Kit oficial y la propuesta está en revisión con el Manager de la Agencia para aprobación final.' }
+    ],
+    urgency: 'HIGH',
+    source: 'Instagram Direct API'
+  },
+  {
+    id: 'alt-007',
+    tenantId: 'creator',
+    tenantName: 'Alex Rivera — Tech & Growth Creator',
+    type: 'KEYWORD_DM_TRIGGER',
+    vertical: 'creator_economy',
+    title: 'Disparador Viral: 180 DMs Despachados (Keyword "PLANTILLA")',
+    clientName: 'Meta Graph Webhook Watcher',
+    clientPhone: 'N/A',
+    timestamp: new Date(Date.now() - 1000 * 60 * 18).toISOString(),
+    status: 'PENDING_AGENCY_APPROVAL',
+    confidenceScore: 96,
+    botSummary: 'El Reel "5 Herramientas de IA para Crear Contenido" alcanzó 85k views en 2 hrs. Se dispararon 180 DMs automáticos con la guía y el enlace a la Masterclass.',
+    proposedData: {
+      reelTitle: 'Reel: "5 Herramientas de IA para Crear Contenido"',
+      triggerKeyword: 'PLANTILLA',
+      dmsDispatched: 180,
+      checkoutClicks: 64,
+      estimatedValue: 4200,
+    },
+    transcriptSnippet: [
+      { sender: 'system', text: 'Meta Webhook: 180 comentarios detectados con la palabra clave PLANTILLA. 180 DMs despachados exitosamente.' }
+    ],
+    urgency: 'NORMAL',
+    source: 'Instagram Graph API Comments'
   }
 ];
 
@@ -340,6 +426,89 @@ export const INITIAL_VERTICAL_CONFIGS = {
       systemPrompt: 'Eres el asesor de membresías de Nexus Hub. Invita a los atletas a agendar su valoración inicial de rendimiento.',
       temperature: 0.3,
       activeModel: 'Claude 3.5 Sonnet / Vector RAG',
+    }
+  },
+  'corp': {
+    vertical: 'b2b_sales',
+    b2b_sales: {
+      crmProvider: 'HubSpot CRM Enterprise',
+      crmApiKey: 'pat-na1-901928301982-vector-b2b',
+      crmPipelineStage: 'Discovery Call Agendada (B2B Q4)',
+      bantMinBudget: 5000,
+      discoveryCallDurationMin: 30,
+      qualificationMethod: 'BANT (Budget, Authority, Need, Timeline)',
+      meetingLink: 'https://meet.google.com/vec-corp-demo',
+      salesDirectorEmail: 'carlos.mendoza@vectorinside.com',
+      ragKnowledgeDocs: ['Deck_Corporativo_Vector_2026.pdf', 'Propuesta_Enterprise_SaaS.pdf', 'Matriz_Calificacion_BANT.pdf', 'Casos_Exito_HighTicket.pdf'],
+      systemPrompt: 'Eres el Senior SDR / Solutions AI Consultant de Vector Corporate Solutions. Califica al prospecto con metodología BANT (Presupuesto > $5,000 USD, Tomador de Decisión C-Level o Director, Necesidad dentro del trimestre). Al cumplir con los criterios, agenda una Discovery Call de 30 minutos y sincroniza el deal automáticamente con el CRM.',
+      temperature: 0.25,
+      activeModel: 'Claude 3.5 Sonnet / Vector B2B High-Ticket Engine',
+    }
+  },
+  'dental': {
+    vertical: 'service_appointments',
+    service_appointments: {
+      googleCalendarId: 'c_98129031_odontovanguardia@group.calendar.google.com',
+      calendarSyncEnabled: true,
+      bufferBetweenAppointmentsMin: 15,
+      defaultAppointmentDurationMin: 45,
+      requirePrePayment: true,
+      prePaymentAmount: 800,
+      workingHours: 'Lun-Vie 09:00 - 19:30 | Sáb 09:00 - 14:00',
+      availableSpecialists: ['Dr. Roberto Peña (Maxilofacial)', 'Dra. Claudia Ortiz (Ortodoncia)', 'Dr. Iván Morales (Estética Dental)'],
+      ragKnowledgeDocs: ['Lista_Procedimientos_2026.pdf', 'Preguntas_Frecuentes_Implantes.pdf'],
+      systemPrompt: 'Eres el asistente médico de Odontología Integral. Califica la necesidad del paciente, orienta sobre especialidades y sugiere horarios libres.',
+      temperature: 0.2,
+      activeModel: 'GPT-4o / Vector Medical RAG',
+    }
+  },
+  'polanco': {
+    vertical: 'hospitality',
+    hospitality: {
+      digitalMenuUrl: 'https://cdn.vectorinside.com/menus/polanco-steak-2026.pdf',
+      menuLastUpdated: '2026-09-28',
+      maxTableCapacity: 12,
+      minDepositRequired: 1000,
+      autoCancelMinutes: 15,
+      zones: ['Terraza Principal (Fumadores)', 'Salón Comedor VIP', 'Cava Privada de Catas', 'Barra Mixología'],
+      ragKnowledgeDocs: ['Menu_Precios_2026.pdf', 'Protocolo_Alergenos.pdf', 'Carta_Vinos_Maridaje.pdf'],
+      systemPrompt: 'Eres el Co-Pilot Concierge de Polanco Steakhouse. Atiende solicitudes de reserva validando zona, comensales y consumo sugerido con tono sofisticado y cordial.',
+      temperature: 0.35,
+      activeModel: 'Claude 3.5 Sonnet / Vector RAG Engine',
+    }
+  },
+  'urban': {
+    vertical: 'ecommerce',
+    ecommerce: {
+      platform: 'Shopify Plus',
+      storeDomain: 'store.urbansneaks.mx',
+      metaPixelId: 'pix_99182390124',
+      capiConversionToken: 'EAAG9230198293019283019823019283019283019',
+      stripeWebhookConfigured: true,
+      abandonedCartDelayMinutes: 45,
+      dynamicDiscountPercent: 10,
+      catalogSyncActive: true,
+      ragKnowledgeDocs: ['Catalogo_Coleccion_2026.json', 'Politicas_Envios_Nacionales.pdf', 'Guia_Tallas_Sneakers.pdf'],
+      systemPrompt: 'Eres el Stylist & Sales Executive de Urban Sneaks. Ayuda a los compradores con tallas, modelos exclusivos y recupera carritos.',
+      temperature: 0.4,
+      activeModel: 'GPT-4o Mini / Vector E-Commerce Embeddings',
+    }
+  },
+  'creator': {
+    vertical: 'creator_economy',
+    creator_economy: {
+      instagramHandle: '@alexrivera_tech',
+      facebookPageId: 'page_98129031238',
+      metaGraphWebhookConnected: true,
+      keywordTriggers: ['PLANTILLA', 'MENTORIA', 'AUDITORIA', 'CURSO', 'PRECIO'],
+      minSponsorshipBudgetUSD: 1500,
+      mediaKitUrl: 'https://cdn.vectorinside.com/mediakits/alex-rivera-2026.pdf',
+      autoDmFollowUpMinutes: 10,
+      toxicityFilterLevel: 'Estricto (Ocultar insultos y bloquear spam)',
+      ragKnowledgeDocs: ['Media_Kit_Oficial_2026.pdf', 'Tarifario_Sponsorships_Reels.pdf', 'Guia_Mentorias_HighTicket.pdf', 'Brandbook_AlexRivera.pdf'],
+      systemPrompt: 'Eres el AI Growth & Brand Manager de Alex Rivera (@alexrivera_tech). En comentarios de Reels, detecta palabras clave y envía el enlace por DM con tono cercano y enérgico. En DMs, filtra ofertas de marcas solicitando su presupuesto y Media Kit; si ofrecen más de $1,500 USD, deriva el trato a la Agencia en la bandeja HITL.',
+      temperature: 0.4,
+      activeModel: 'DeepSeek R1 / Vector Creator Engine',
     }
   }
 };

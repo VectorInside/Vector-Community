@@ -42,6 +42,16 @@ export const HITLCard = ({
         return <Badge variant="danger" size="xs">Fatiga Creativa</Badge>;
       case 'HIGH_INTENT_LEAD':
         return <Badge variant="purple" size="xs">Lead Alto Valor</Badge>;
+      case 'B2B_DISCOVERY_CALL':
+        return <Badge variant="neon" size="xs">B2B Discovery Call (High-Ticket)</Badge>;
+      case 'B2B_HIGH_TICKET_LEAD':
+        return <Badge variant="purple" size="xs">B2B Lead Calificado</Badge>;
+      case 'BRAND_SPONSORSHIP_PROPOSAL':
+        return <Badge variant="neon" size="xs">🎬 Patrocinio de Marca (Creator)</Badge>;
+      case 'KEYWORD_DM_TRIGGER':
+        return <Badge variant="purple" size="xs">⚡ Comentario a DM Viral</Badge>;
+      case 'TOXICITY_CONTAINMENT':
+        return <Badge variant="danger" size="xs">🛡️ Blindaje Toxicidad</Badge>;
       default:
         return <Badge variant="default" size="xs">{type}</Badge>;
     }
@@ -139,6 +149,91 @@ export const HITLCard = ({
                 </span>
                 <span className="font-semibold text-white font-mono">
                   {alert.proposedData.date}
+                </span>
+              </div>
+            )}
+
+            {alert.proposedData?.brand && (
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-zinc-400">Marca / Anunciante:</span>
+                <span className="font-semibold text-white font-mono">
+                  {alert.proposedData.brand}
+                </span>
+              </div>
+            )}
+
+            {alert.proposedData?.deliverables && (
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-zinc-400">Entregables:</span>
+                <span className="text-brand-primary font-medium text-[11px]">
+                  {alert.proposedData.deliverables}
+                </span>
+              </div>
+            )}
+
+            {alert.proposedData?.campaignBudget && (
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-zinc-400">Oferta Patrocinio:</span>
+                <span className="font-bold text-emerald-400 font-mono">
+                  {alert.proposedData.campaignBudget}
+                </span>
+              </div>
+            )}
+
+            {alert.proposedData?.reelTitle && (
+              <div className="text-[11px] text-zinc-300 font-sans bg-dark-surface p-1.5 rounded border border-dark-border">
+                <span className="text-zinc-500 font-mono uppercase block text-[9px]">Reel Origen</span>
+                {alert.proposedData.reelTitle}
+              </div>
+            )}
+
+            {alert.proposedData?.triggerKeyword && (
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-zinc-400">Palabra Clave:</span>
+                <span className="px-2 py-0.5 rounded bg-brand-primary/10 text-brand-primary border border-brand-primary/30 font-mono text-[11px] font-bold">
+                  {alert.proposedData.triggerKeyword}
+                </span>
+              </div>
+            )}
+
+            {alert.proposedData?.dmsDispatched && (
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-zinc-400">DMs Despachados:</span>
+                <span className="font-bold text-white font-mono">
+                  {alert.proposedData.dmsDispatched} mensajes
+                </span>
+              </div>
+            )}
+
+            {alert.proposedData?.company && (
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-zinc-400">Empresa:</span>
+                <span className="font-semibold text-white font-mono">
+                  {alert.proposedData.company}
+                </span>
+              </div>
+            )}
+
+            {alert.proposedData?.role && (
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-zinc-400">Cargo:</span>
+                <span className="text-zinc-200 font-medium">
+                  {alert.proposedData.role}
+                </span>
+              </div>
+            )}
+
+            {alert.proposedData?.bantScore && (
+              <div className="text-[11px] text-emerald-400 font-mono bg-emerald-500/10 p-1.5 rounded border border-emerald-500/20">
+                <strong>BANT: </strong>{alert.proposedData.bantScore}
+              </div>
+            )}
+
+            {alert.proposedData?.crmTarget && (
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-zinc-400">Destino CRM:</span>
+                <span className="text-brand-primary font-mono text-[11px]">
+                  {alert.proposedData.crmTarget}
                 </span>
               </div>
             )}

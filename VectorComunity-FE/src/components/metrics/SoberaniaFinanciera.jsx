@@ -15,7 +15,10 @@ import {
   CheckCircle2,
   Sparkles,
   Facebook,
-  Instagram
+  Instagram,
+  Download,
+  Award,
+  Clock
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -61,6 +64,37 @@ export const SoberaniaFinanciera = () => {
     );
   };
 
+  const handleGenerateMonthlyReport = () => {
+    triggerModal(
+      `Reporte Ejecutivo Mensual (ROI & Operaciones) — ${activeTenant?.name}`,
+      `<b>Periodo:</b> Septiembre 2026<br>
+      <b>Cliente:</b> ${activeTenant?.name}<br>
+      <b>Agencia Responsable:</b> Vector Inside<br><br>
+      <div style="background:#0D0F12; padding:12px; border-radius:8px; border:1px solid #1F242D; font-family:monospace; font-size:12px; line-height:1.6;">
+        <span style="color:#D4FF00; font-weight:bold;">📊 RESUMEN DE RENDIMIENTO MENSUAL:</span><br>
+        • <b>DMs y Comentarios Atendidos por IA:</b> 1,480 mensajes<br>
+        • <b>Tiempo de Respuesta Promedio:</b> 4.2 segundos (24/7 sin descanso)<br>
+        • <b>Horas de Trabajo Humano Ahorradas:</b> 124 hrs estimadas<br>
+        • <b>Citas / Conversiones Concluidas:</b> ${activeTenant?.citas || 34} eventos confirmados<br>
+        • <b>Gasto Publicitario en Meta Ads:</b> $28,500 MXN<br>
+        • <b>Ingresos Reales Atribuidos (Backend):</b> $168,400 MXN<br>
+        • <b>ROAS Real / MER:</b> ${activeTenant?.mer || '5.6x'} (Retorno Real)<br>
+        • <b>Costo por Adquisición Real (CAC):</b> ${activeTenant?.cac || '$185'} MXN<br>
+      </div><br>
+      <b>Dictamen Ejecutivo:</b> Campaña altamente rentable. El bot resolvió el 94% de las dudas sin intervención humana, derivando a la agencia solo citas pre-calificadas y quejas de servicio.`,
+      () => {
+        try {
+          confetti({
+            particleCount: 50,
+            spread: 70,
+            colors: ['#D4FF00', '#10B981', '#FFFFFF'],
+          });
+        } catch (e) {}
+      },
+      'Descargar Reporte PDF'
+    );
+  };
+
   return (
     <div className="p-8 block animate-fade-in">
       {/* Header */}
@@ -73,8 +107,16 @@ export const SoberaniaFinanciera = () => {
             Auditoría Full Funnel y Métricas para: <strong className="text-[var(--text-main)]">{activeTenant?.name}</strong>
           </p>
         </div>
-        <div className="flex flex-col items-end">
-          <span className="text-[10px] font-mono bg-emerald-900/30 text-emerald-400 border border-emerald-500/50 px-3 py-1.5 rounded flex items-center gap-2 shadow-[0_0_10px_rgba(16,185,129,0.2)]">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handleGenerateMonthlyReport}
+            className="bg-neon text-black text-xs font-bold px-4 py-2 rounded-xl hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_12px_var(--neon-glow)] flex items-center gap-2 active:scale-95"
+          >
+            <FileText className="w-4 h-4" />
+            <span>Generar Reporte Ejecutivo Mensual</span>
+          </button>
+          <span className="text-[10px] font-mono bg-emerald-900/30 text-emerald-400 border border-emerald-500/50 px-3 py-2 rounded-xl flex items-center gap-2 shadow-[0_0_10px_rgba(16,185,129,0.2)]">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             Meta CAPI Sincronizado
           </span>

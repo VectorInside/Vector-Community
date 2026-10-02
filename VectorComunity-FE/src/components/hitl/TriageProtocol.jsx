@@ -74,6 +74,113 @@ export const TriageProtocol = () => {
         },
       ],
     },
+    rodrigo: {
+      name: 'Lic. Rodrigo Elizondo (B2B)',
+      phone: '+52 55 4120 7890',
+      channel: 'LinkedIn B2B Ads / WhatsApp',
+      status: 'Lead BANT Calificado ($50k USD)',
+      statusType: 'b2b',
+      dictamen: '<b>Empresa:</b> Logística Global Monterrey S.A. (180 colaboradores).<br><b>BANT Scoring:</b> 97/100 (Presupuesto $50k USD asignado, decisión inmediata).<br><b>Destino:</b> HubSpot CRM Enterprise.<br><b>Estatus:</b> Discovery Call confirmada vía Zoom para el próximo miércoles a las 10:00 hrs.',
+      messages: [
+        {
+          id: 1,
+          sender: 'Rodrigo Elizondo',
+          text: 'Buenas tardes, vimos su infraestructura de IA para gestión comunitaria y queremos integrarla en 4 subsidiarias.',
+          isUser: true,
+          time: '12:30 PM',
+        },
+        {
+          id: 2,
+          sender: 'Sub-Bot SDR B2B (IA)',
+          text: '¡Mucho gusto Lic. Rodrigo! Con gusto. Para asignar al especialista adecuado, ¿tienen un presupuesto estimado asignado para este despliegue?',
+          isBot: true,
+          time: '12:31 PM',
+        },
+        {
+          id: 3,
+          sender: 'Rodrigo Elizondo',
+          text: 'Sí, tenemos $50,000 USD aprobados para Q4 y buscamos arrancar de inmediato.',
+          isUser: true,
+          time: '12:32 PM',
+        },
+        {
+          id: 4,
+          sender: 'Sub-Bot Closer (IA)',
+          text: 'Excelente. Cuentan con calificación prioritaria BANT. He reservado la Discovery Call con el Director de Soluciones el próximo miércoles a las 10:00 hrs vía Zoom.',
+          isBot: true,
+          time: '12:33 PM',
+        }
+      ],
+    },
+    mariana: {
+      name: 'Mariana Valenzuela (Sony PR)',
+      phone: 'Instagram DM @sonymexico_pr',
+      channel: 'Instagram Direct Graph API',
+      status: 'Oferta Patrocinio ($3,500 USD)',
+      statusType: 'creator',
+      dictamen: '<b>Marca:</b> Sony Electronics México.<br><b>Entregables:</b> 1 Reel Dedicado + 3 Stories.<br><b>Presupuesto:</b> $3,500 USD (Aprobado).<br><b>Estatus:</b> Media Kit entregado por IA. Pendiente de aprobación 1-clic de la agencia para enviar contrato y fechas.',
+      messages: [
+        {
+          id: 1,
+          sender: 'Mariana Valenzuela',
+          text: 'Hola Alex! Somos de la agencia de PR de Sony. Nos encantó tu último Reel de tecnología y queremos pautar una integración para los nuevos audífonos.',
+          isUser: true,
+          time: '01:10 PM',
+        },
+        {
+          id: 2,
+          sender: 'Sub-Bot Deal Hunter (IA)',
+          text: '¡Hola Mariana! Gracias por contactar al equipo de Alex Rivera. ¿Cuál es el presupuesto asignado y los entregables requeridos?',
+          isBot: true,
+          time: '01:11 PM',
+        },
+        {
+          id: 3,
+          sender: 'Mariana Valenzuela',
+          text: 'Presupuestamos $3,500 USD para 1 Reel dedicado y 3 Stories con link de afiliado para finales de este mes.',
+          isUser: true,
+          time: '01:12 PM',
+        },
+        {
+          id: 4,
+          sender: 'Sub-Bot Deal Hunter (IA)',
+          text: 'Excelente. El presupuesto cumple con las tarifas oficiales. He transferido la propuesta a la Agencia Vector para confirmación y firma.',
+          isBot: true,
+          time: '01:13 PM',
+        }
+      ],
+    },
+    sofia_story: {
+      name: 'Sofía Valdés (@sofia.valdes)',
+      phone: 'Instagram Story Mention #419',
+      channel: 'Instagram Story Mention Engine',
+      status: 'Mención en Story Agradecida (Cupón 10%)',
+      statusType: 'success',
+      dictamen: '<b>Tipo de Interacción:</b> Mención en Story de Instagram (6.8k seguidores).<br><b>Acción Automática:</b> El bot detectó la etiqueta de la marca en la Story, respondió al DM en 8 segundos con un agradecimiento personalizado y entregó un cupón VIP de 10% de descuento.',
+      messages: [
+        {
+          id: 1,
+          sender: 'Instagram Story Engine',
+          text: '📸 @sofia.valdes te mencionó en su Story: "Amando mi tratamiento en @odontologiaintegral ✨🦷"',
+          isUser: true,
+          time: '02:15 PM',
+        },
+        {
+          id: 2,
+          sender: 'Sub-Bot Story Nurture (IA)',
+          text: '¡Hola Sofía! Muchísimas gracias por compartir tu experiencia en tus Stories. Nos alegra mucho verte feliz con tu sonrisa. 💖 Como agradecimiento, aquí tienes un cupón del 10% en tu próxima sesión: SOFIA-VIP10.',
+          isBot: true,
+          time: '02:15 PM',
+        },
+        {
+          id: 3,
+          sender: 'Sofía Valdés',
+          text: '¡Ay qué lindos! Muchísimas gracias, se lo voy a pasar a mi hermana que también necesita cita 😍',
+          isUser: true,
+          time: '02:18 PM',
+        }
+      ],
+    },
   });
 
   const currentChat = threads[activeContact];
@@ -145,11 +252,77 @@ export const TriageProtocol = () => {
           <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3 flex items-center justify-between">
             <span>Conversaciones Activas</span>
             <span className="text-[9px] font-mono bg-neon text-black px-1.5 py-0.5 rounded font-bold">
-              2 EN COLA
+              5 EN COLA
             </span>
           </h3>
 
           <div className="space-y-2 overflow-y-auto flex-1 pr-1">
+            {/* Contact: Sofia Story Mention */}
+            <div
+              onClick={() => setActiveContact('sofia_story')}
+              className={`p-3 rounded cursor-pointer transition-all ${
+                activeContact === 'sofia_story'
+                  ? 'bg-[var(--bg-panel)] border border-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
+                  : 'bg-[var(--bg-panel)] vector-border hover:border-[var(--text-muted)]'
+              }`}
+            >
+              <div className="flex justify-between items-center mb-1">
+                <span className="font-bold text-xs text-[var(--text-main)]">
+                  Sofía Valdés
+                </span>
+                <span className="text-[9px] font-mono text-emerald-400 font-bold flex items-center gap-1">
+                  📸 Story Mention
+                </span>
+              </div>
+              <p className="text-[11px] text-[var(--text-muted)] truncate">
+                📸 @sofia.valdes te mencionó en su Story...
+              </p>
+            </div>
+
+            {/* Contact: Mariana Creator */}
+            <div
+              onClick={() => setActiveContact('mariana')}
+              className={`p-3 rounded cursor-pointer transition-all ${
+                activeContact === 'mariana'
+                  ? 'bg-[var(--bg-panel)] border border-pink-500 shadow-[0_0_10px_rgba(236,72,153,0.3)]'
+                  : 'bg-[var(--bg-panel)] vector-border hover:border-[var(--text-muted)]'
+              }`}
+            >
+              <div className="flex justify-between items-center mb-1">
+                <span className="font-bold text-xs text-[var(--text-main)]">
+                  Mariana (Sony PR)
+                </span>
+                <span className="text-[9px] font-mono text-pink-400 font-bold flex items-center gap-1">
+                  🎬 Brand Deal $3.5k
+                </span>
+              </div>
+              <p className="text-[11px] text-[var(--text-muted)] truncate">
+                Hola Alex! Nos encantó tu último Reel de tecnología...
+              </p>
+            </div>
+
+            {/* Contact: Rodrigo B2B */}
+            <div
+              onClick={() => setActiveContact('rodrigo')}
+              className={`p-3 rounded cursor-pointer transition-all ${
+                activeContact === 'rodrigo'
+                  ? 'bg-[var(--bg-panel)] border border-neon shadow-[0_0_10px_var(--neon-glow)]'
+                  : 'bg-[var(--bg-panel)] vector-border hover:border-[var(--text-muted)]'
+              }`}
+            >
+              <div className="flex justify-between items-center mb-1">
+                <span className="font-bold text-xs text-[var(--text-main)]">
+                  Lic. Rodrigo Elizondo
+                </span>
+                <span className="text-[9px] font-mono text-neon font-bold flex items-center gap-1">
+                  💼 B2B High-Ticket
+                </span>
+              </div>
+              <p className="text-[11px] text-[var(--text-muted)] truncate">
+                Buenas tardes, vimos su infraestructura de IA para...
+              </p>
+            </div>
+
             {/* Contact: Ana */}
             <div
               onClick={() => setActiveContact('ana')}
