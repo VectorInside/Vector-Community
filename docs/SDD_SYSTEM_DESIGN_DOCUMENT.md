@@ -1,13 +1,14 @@
 # 📐 Documento de Diseño de Sistema (SDD) — Vector Community
 
 - **Sistema:** Vector Community OS ("La Puerta Trasera")
-- **Versión:** 2.5 (Multi-Tenant & Creator Engine Edition)
+- **Versión:** 3.0 (Universal Business Taxonomy & Meta Intelligence Edition)
 - **Organización:** Vector Inside Operations
+- **ADRs Asociados:** [ADR-001](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_001_MASTER_ARCHITECTURE_AND_BUSINESS_RULES.md), [ADR-002](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_002_UNIVERSAL_BUSINESS_TAXONOMY_AND_RAG_PILLARS.md), [ADR-003](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_003_META_GRAPH_INTELLIGENCE_AND_HITL_TRIAGE.md)
 
 ---
 
 ## 1. Introducción y Alcance
-Este documento especifica la arquitectura técnica, diagramas de secuencia, modelos de datos, protocolos de seguridad y diseño de interfaz para **Vector Community**, el motor de gestión de comunidad automatizada, performance marketing y gobernanza Human-in-the-Loop (HITL).
+Este documento especifica la arquitectura técnica, diagramas de flujo, modelos de datos, protocolos de seguridad, taxonomía de giros comerciales y diseño de interfaz para **Vector Community**, el motor de gestión de comunidad autónoma, performance marketing, análisis en Meta Graph y gobernanza Human-in-the-Loop (HITL).
 
 ---
 
@@ -16,11 +17,12 @@ Este documento especifica la arquitectura técnica, diagramas de secuencia, mode
 ```mermaid
 graph TD
     subgraph ClientTier["🌐 Capa de Interfaz (Frontend Next.js 14)"]
-        UI_ADM[Centro de Mando / Agencia Co-Pilot]
-        UI_HITL[Bandeja HITL & Protocolo Triaje]
-        UI_AGENDA[Master Agenda Google Sync]
+        UI_ADM[Centro de Mando / Auditoría Multi-Tenant]
+        UI_HITL[Bandeja HITL & Triage con Radiografía de Clientes]
+        UI_META[Meta Graph Hub: Posts, Reels & Comentarios en Vivo]
+        UI_AGENDA[Master Agenda Google Calendar Sync]
         UI_PERF[Soberanía Financiera & Atribución CAPI]
-        UI_SUBBOTS[Configurador RAG & 5 Verticales]
+        UI_RAG[Configurador RAG, Taxonomía de Giros & 1-Click Briefing]
     end
 
     subgraph ApiGateway["🛡️ Seguridad & Proxy Inverso"]
@@ -38,9 +40,9 @@ graph TD
 
     subgraph AIWorker["🧠 AI Engine (Python Microservice)"]
         SUPERVISOR[LangGraph Supervisor Agent]
-        SUB_MOD[CrewAI Moderador & Anti-Tox]
+        SUB_MOD[CrewAI Moderador & Anti-Hate]
         SUB_SDR[SDR & BANT Qualifier]
-        SUB_GROWTH[Creator Growth & Keyword Trigger]
+        SUB_GROWTH[Creator Growth & Keyword-to-DM Trigger]
         DEEPSEEK[DeepSeek R1 / V3 vía Groq Cloud]
     end
 
@@ -66,16 +68,41 @@ graph TD
 
 ---
 
-## 3. Modelo de Dominio & Esquema de Base de Datos (PostgreSQL RLS)
+## 3. Taxonomía de 8 Familias de Conversión y Comportamiento RAG
 
-### 3.1. Tabla `tenants` (Aislamiento de Clientes)
+```mermaid
+graph TD
+    Tax[Taxonomía Universal de Giros] --> F1[1. Fitness & Salud 🏋️]
+    Tax --> F2[2. Educación & Cursos 🎓]
+    Tax --> F3[3. Networking & Membresías 🤝]
+    Tax --> F4[4. Retail & E-Commerce 👟]
+    Tax --> F5[5. Hospitality & Eventos 🥩]
+    Tax --> F6[6. B2B & Servicios Pro 💼]
+    Tax --> F7[7. Bienes Raíces & Autos 🏙️]
+    Tax --> F8[8. Creadores & Marcas Meta 🎬]
+
+    F1 --> P_Fit[Pilar 1: Tarifas Membresías / Pilar 3: Congelación & Urgencias]
+    F2 --> P_Edu[Pilar 1: Colegiaturas / Pilar 3: Requisitos Becas & Exámenes]
+    F3 --> P_Net[Pilar 1: Cuota Anual / Pilar 3: Exclusividad de Giro]
+    F4 --> P_Ecom[Pilar 1: SKUs & CAC / Pilar 3: Envíos & Devoluciones]
+    F5 --> P_Hosp[Pilar 1: Menú & Banquetes / Pilar 3: Alergias & Tolerancia]
+    F6 --> P_B2B[Pilar 1: BANT Scoring / Pilar 4: Whitepapers & ROI]
+    F7 --> P_Prop[Pilar 1: m² & Enganches / Pilar 3: Créditos & Licencia]
+    F8 --> P_Crea[Pilar 2: Identidad Pura / Pilar 3: Filtro Hate / Pilar 1: Opcional]
+```
+
+---
+
+## 4. Modelo de Dominio & Esquema de Base de Datos (PostgreSQL RLS)
+
+### 4.1. Tabla `tenants` (Aislamiento de Clientes & Giro)
 ```sql
 CREATE TABLE tenants (
     id VARCHAR(64) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     short_name VARCHAR(100) NOT NULL,
-    vertical_tipo VARCHAR(50) NOT NULL CHECK (vertical_tipo IN ('hospitality', 'service_appointments', 'ecommerce', 'b2b_sales', 'creator_economy')),
-    giro_comercial VARCHAR(150),
+    vertical_categoria VARCHAR(50) NOT NULL, -- 'fitness_health', 'education', 'networking', 'retail_ecom', 'hospitality', 'b2b_services', 'realestate_auto', 'creators'
+    giro_especifico VARCHAR(150) NOT NULL, -- 'Gimnasios, CrossFit & Fitness Studios', 'Escuelas & Universidades', etc.
     meta_pixel_id VARCHAR(100),
     meta_capi_token TEXT,
     google_calendar_id VARCHAR(255),
@@ -83,22 +110,24 @@ CREATE TABLE tenants (
     crm_api_key TEXT,
     instagram_handle VARCHAR(100),
     cac_max_threshold NUMERIC(10, 2),
+    rag_health_score INT DEFAULT 85,
+    inviolable_rules JSONB DEFAULT '[]'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
-### 3.2. Tabla `hitl_alerts` (Gobernanza Human-in-the-Loop)
+### 4.2. Tabla `hitl_alerts` (Gobernanza Human-in-the-Loop)
 ```sql
 CREATE TABLE hitl_alerts (
     id VARCHAR(64) PRIMARY KEY,
     tenant_id VARCHAR(64) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    type VARCHAR(50) NOT NULL, -- 'APPOINTMENT_REQUEST', 'B2B_DISCOVERY_CALL', 'BRAND_SPONSORSHIP_PROPOSAL', 'CREATIVE_FATIGUE', 'TOXICITY_CONTAINMENT'
-    status VARCHAR(30) NOT NULL DEFAULT 'PENDING_AGENCY_APPROVAL', -- 'PENDING_AGENCY_APPROVAL', 'APPROVED', 'REJECTED'
+    type VARCHAR(50) NOT NULL, -- 'APPOINTMENT_REQUEST', 'B2B_DISCOVERY_CALL', 'BRAND_SPONSORSHIP_PROPOSAL', 'CRISIS_TOXICITY', 'INVIOLABLE_RULE_BREACH'
+    status VARCHAR(30) NOT NULL DEFAULT 'PENDING_AGENCY_APPROVAL',
     confidence_score INT NOT NULL,
     client_name VARCHAR(255),
     client_phone VARCHAR(50),
+    customer_needs_summary JSONB, -- intent, stage, potentialTicket, objection, suggestedAction
     bot_summary TEXT NOT NULL,
-    proposed_payload JSONB NOT NULL,
     transcript_snippet JSONB,
     urgency VARCHAR(20) DEFAULT 'NORMAL',
     approved_by VARCHAR(100),
@@ -113,51 +142,26 @@ CREATE POLICY tenant_isolation_policy ON hitl_alerts
     USING (tenant_id = current_setting('app.current_tenant_id', true));
 ```
 
-### 3.3. Tabla `capi_events` (Atribución y Telemetría Server-Side)
+### 4.3. Tabla `meta_comments_stream` (Telemetría de Redes Sociales)
 ```sql
-CREATE TABLE capi_events (
+CREATE TABLE meta_comments_stream (
     id VARCHAR(64) PRIMARY KEY,
     tenant_id VARCHAR(64) NOT NULL REFERENCES tenants(id),
-    event_name VARCHAR(100) NOT NULL,
-    event_time BIGINT NOT NULL,
-    event_value NUMERIC(12, 2),
-    currency VARCHAR(10) DEFAULT 'MXN',
-    user_data_hashed JSONB NOT NULL, -- email/phone SHA-256
-    status VARCHAR(50) NOT NULL, -- 'MATCHED_CAPI_98%', 'SENT_SUCCESS'
-    signal_source VARCHAR(100) NOT NULL,
+    post_id VARCHAR(100) NOT NULL,
+    post_type VARCHAR(30) NOT NULL, -- 'Reel', 'Carousel', 'Post', 'Story'
+    author_handle VARCHAR(100) NOT NULL,
+    comment_text TEXT NOT NULL,
+    sentiment VARCHAR(30) NOT NULL, -- 'POSITIVE', 'BUYING_INTENT', 'INQUIRY_FAQ', 'TOXIC_HATE'
+    auto_action_dispatched VARCHAR(100), -- 'AUTO_DM_COMMERCIAL_OFFER', 'COMMENT_HIDDEN', 'PUBLIC_REPLY'
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
 ---
 
-## 4. Especificación de las 5 Verticales Adaptativas
-
-### Vertical 1: Hospitality (Restaurantes & Bares)
-- **Tools RAG:** `menu_digital()`, `reservar_mesa()`, `consultar_zonas()`
-- **Regla Estricta:** Reservas ordinarias pre-autorizadas. Eventos con >8 comensales entran automáticamente a la bandeja HITL con urgencia ALTA.
-
-### Vertical 2: Service Appointments (Clínicas & Servicios)
-- **Tools RAG:** `google_calendar_api()`, `verificar_disponibilidad()`, `registrar_cita()`
-- **Regla Estricta:** La cita se almacena como tentativa (`PENDING_AGENCY_APPROVAL`); al aprobarse en 1 clic se inserta en Google Calendar del doctor y se despacha confirmación por WhatsApp.
-
-### Vertical 3: E-Commerce (Productos Físicos & Retail)
-- **Tools RAG:** `catalogo_rag()`, `link_checkout()`, `recuperar_carrito()`
-- **Regla Estricta:** Enlaces de checkout dinámicos con cupones de caducidad corta. Evento `Purchase` transmitido a Meta CAPI para aprendizaje de la campaña.
-
-### Vertical 4: B2B Sales (High-Ticket & SaaS Enterprise)
-- **Tools RAG:** `calificar_lead_bant()`, `agendar_discovery_call()`, `sync_crm()`
-- **Regla Estricta:** Calificación basada en Presupuesto (> $5k USD), Autoridad (C-Level/Director) y Tiempo (< 30 días). Sincronización nativa de deals con HubSpot / Salesforce.
-
-### Vertical 5: Creator Economy (Redes Sociales Meta & Creadores)
-- **Tools RAG:** `keyword_to_dm()`, `calificar_patrocinio()`, `moderar_toxicidad()`, `generar_guion_viral()`
-- **Regla Estricta:** Automatización de comentarios en Reels a DM; separación de propuestas de marcas patrocinadoras (Brand Deals) para aprobación de la agencia; supresión de toxicidad/spam.
-
----
-
 ## 5. Protocolo de Seguridad del Frontend (Axios Interceptor)
 
-Cada solicitud HTTP enviada desde el cliente Next.js inyecta obligatoriamente el identificador del tenant en los headers:
+Cada solicitud HTTP inyecta obligatoriamente el identificador del tenant en los encabezados para aplicar las políticas de Row-Level Security:
 
 ```javascript
 // src/services/api.js

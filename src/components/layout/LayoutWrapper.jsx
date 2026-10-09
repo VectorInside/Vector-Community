@@ -1,11 +1,24 @@
 'use client';
 
 import React from 'react';
+import { usePathname } from 'next/navigation';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { GeneralModal } from '@/components/common/GeneralModal';
 
 export const LayoutWrapper = ({ children }) => {
+  const pathname = usePathname();
+  const isStandalonePage = pathname === '/login' || pathname === '/landing';
+
+  if (isStandalonePage) {
+    return (
+      <div className="min-h-screen bg-[var(--bg-base)] text-[var(--text-main)] selection:bg-[#E5FF00] selection:text-black">
+        <GeneralModal />
+        {children}
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen overflow-hidden selection:bg-[#E5FF00] selection:text-black">
       <GeneralModal />
@@ -19,3 +32,4 @@ export const LayoutWrapper = ({ children }) => {
     </div>
   );
 };
+

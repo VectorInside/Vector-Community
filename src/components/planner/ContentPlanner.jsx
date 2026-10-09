@@ -88,6 +88,23 @@ export const ContentPlanner = () => {
     },
   ]);
 
+  const [commercialOffer, setCommercialOffer] = useState({
+    docName: 'Propuesta_Comercial_Octubre_2026.pdf',
+    hook: 'Diagnóstico 3D sin costo + 20% en tratamiento integral al agendar esta semana',
+    cta: 'Comenta "VALORACION" o envía un DM para apartar cupo',
+    validity: 'Campaña Octubre 2026 (Primeros 30 registros)',
+  });
+  const [showOfferModal, setShowOfferModal] = useState(false);
+
+  const handleUpdateCommercialOffer = (e) => {
+    e.preventDefault();
+    setShowOfferModal(false);
+    triggerModal(
+      'Propuesta Comercial Actualizada',
+      'La nueva oferta y gancho comercial han sido sincronizados. Las próximas ideas generadas por DeepSeek R1 incorporarán este CTA automáticamente.'
+    );
+  };
+
   const handleApprovePost = (postId) => {
     setPosts((prev) =>
       prev.map((p) => (p.id === postId ? { ...p, status: 'APROBADO_PROGRAMADO' } : p))
@@ -111,23 +128,24 @@ export const ContentPlanner = () => {
     triggerModal(
       'Generador de Contenido IA (DeepSeek R1)',
       `<b>Nuevo Reel Generado para ${activeTenant?.name}:</b><br><br>
-      <b>[Gancho 0-3s]:</b> "¿Comes hielo o masticas de un solo lado? Cuidado con esto."<br>
-      <b>[Desarrollo 4-15s]:</b> "El desgaste asimétrico de los dientes suele indicar fracturas microscópicas invisibles a simple vista."<br>
-      <b>[Solución 16-25s]:</b> "Una tomografía digital previene coronas costosas antes de que duela."<br>
-      <b>[CTA 26-30s]:</b> "Escribe 'DIAGNOSTICO' en los comentarios y recibe la guía preventiva en tu DM."`,
+      <b>[Alineado a Oferta]:</b> "${commercialOffer.hook}"<br><br>
+      <b>[Gancho 0-3s]:</b> "¿Sabías que un diagnóstico a tiempo te ahorra el 70% en tratamientos mayores?"<br>
+      <b>[Desarrollo 4-15s]:</b> "En ${activeTenant?.name} utilizamos tecnología digital guiada para evaluar tu caso sin dolor."<br>
+      <b>[Oferta 16-25s]:</b> "${commercialOffer.hook}"<br>
+      <b>[CTA 26-30s]:</b> "${commercialOffer.cta}"`,
       () => {
         const newPost = {
           id: `post-${Date.now()}`,
           type: 'REEL',
           channel: 'Instagram & Facebook Reels',
           publishDate: 'Próx. Miércoles • 19:00 hrs',
-          title: 'Alerta de Desgaste Asimétrico en Dientes',
-          hookText: '¿Comes hielo o masticas de un solo lado? Cuidado con esto.',
-          copy: 'El desgaste asimétrico suele indicar fracturas microscópicas. Comenta "DIAGNOSTICO" para recibir la guía.',
-          hashtags: '#SaludBucal #PrevencionDental #DeepSeekCreator',
+          title: 'Promoción de Temporada: Diagnóstico Preventivo',
+          hookText: '¿Sabías que un diagnóstico a tiempo te ahorra el 70%?',
+          copy: `${commercialOffer.hook}. ${commercialOffer.cta}.`,
+          hashtags: '#OfertaEspecial #Prevencion #Salud #DeepSeekCreator',
           status: 'PENDIENTE_CLIENTE',
           formatIcon: Video,
-          estimatedReach: '20k - 28k visualizaciones',
+          estimatedReach: '22k - 30k visualizaciones',
           aiConfidence: 99,
           previewBg: 'from-pink-900/40 via-zinc-900 to-black',
         };
@@ -180,6 +198,121 @@ export const ContentPlanner = () => {
           </button>
         </div>
       </header>
+
+      {/* BANNER: PROPUESTA COMERCIAL & OFERTA ACTIVA DEL MES */}
+      <div className="rounded-2xl bg-zinc-900/80 border-2 border-neon/50 p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-[0_0_20px_rgba(229,255,0,0.1)]">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded bg-neon text-black">
+              OFERTA COMERCIAL DEL MES
+            </span>
+            <span className="text-xs font-mono text-zinc-400">
+              Doc Activo: <strong className="text-white underline">{commercialOffer.docName}</strong>
+            </span>
+          </div>
+          <p className="text-xs text-white font-bold font-mono">
+            Gancho: <span className="text-neon">"{commercialOffer.hook}"</span>
+          </p>
+          <p className="text-[11px] text-zinc-400 font-mono">
+            CTA: <span className="text-cyan-400">{commercialOffer.cta}</span> • Vigencia: {commercialOffer.validity}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setShowOfferModal(true)}
+          className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-mono font-bold text-zinc-200 border border-white/10 transition-all shrink-0 flex items-center gap-1.5"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-neon" />
+          <span>Actualizar Oferta del Mes</span>
+        </button>
+      </div>
+
+      {/* MODAL PARA ACTUALIZAR OFERTA COMERCIAL */}
+      {showOfferModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="w-full max-w-lg rounded-3xl bg-zinc-950 border border-neon/40 shadow-2xl p-6 sm:p-8 relative space-y-4">
+            <div className="space-y-1">
+              <span className="text-[10px] font-mono font-bold uppercase text-neon">
+                Sincronización con DeepSeek R1
+              </span>
+              <h3 className="text-xl font-black text-white">
+                Editar Oferta Comercial del Mes
+              </h3>
+              <p className="text-xs text-zinc-400 font-mono">
+                Al guardar, todas las nuevas ideas de contenido y llamadas a la acción se alinearán a esta oferta.
+              </p>
+            </div>
+
+            <form onSubmit={handleUpdateCommercialOffer} className="space-y-3 font-mono text-xs">
+              <div>
+                <label className="block text-zinc-300 font-bold mb-1">
+                  Documento de Propuesta Comercial (.pdf, .docx, .md)
+                </label>
+                <input
+                  type="file"
+                  onChange={(e) =>
+                    setCommercialOffer({
+                      ...commercialOffer,
+                      docName: e.target.files[0]?.name || commercialOffer.docName,
+                    })
+                  }
+                  className="text-xs text-zinc-400 w-full file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-neon file:text-black cursor-pointer"
+                />
+              </div>
+
+              <div>
+                <label className="block text-zinc-300 font-bold mb-1">Gancho Principal / Lead Magnet</label>
+                <input
+                  type="text"
+                  required
+                  value={commercialOffer.hook}
+                  onChange={(e) => setCommercialOffer({ ...commercialOffer, hook: e.target.value })}
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-2.5 text-white focus:border-neon outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-zinc-300 font-bold mb-1">Llamado a la Acción (CTA)</label>
+                <input
+                  type="text"
+                  required
+                  value={commercialOffer.cta}
+                  onChange={(e) => setCommercialOffer({ ...commercialOffer, cta: e.target.value })}
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-2.5 text-white focus:border-neon outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-zinc-300 font-bold mb-1">Vigencia / Términos</label>
+                <input
+                  type="text"
+                  required
+                  value={commercialOffer.validity}
+                  onChange={(e) => setCommercialOffer({ ...commercialOffer, validity: e.target.value })}
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-2.5 text-white focus:border-neon outline-none"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => setShowOfferModal(false)}
+                  className="px-4 py-2 rounded-xl border border-zinc-700 text-zinc-400"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-neon text-black font-bold shadow-neon"
+                >
+                  Guardar & Sincronizar IA
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Filter Tabs */}
       <div className="flex items-center justify-between gap-4 border-b border-[var(--border-color)] pb-3">
