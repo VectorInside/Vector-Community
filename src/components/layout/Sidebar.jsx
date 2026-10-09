@@ -14,6 +14,7 @@ import {
   LayoutGrid,
   Sun,
   Moon,
+  Globe,
 } from 'lucide-react';
 
 export const Sidebar = () => {
@@ -192,6 +193,26 @@ export const Sidebar = () => {
         >
           <Calendar className="w-4 h-4" />
           <span className="text-sm">Master Agenda</span>
+        </Link>
+
+        {/* Sección: Comercial & Landing */}
+        <label className="text-[9px] font-mono text-[var(--text-muted)] uppercase tracking-wider mt-6 mb-2 block">
+          Comercial & Marketing
+        </label>
+
+        <Link
+          href="/landing"
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-md transition-all ${
+            isLinkActive('/landing')
+              ? 'bg-neon text-black font-bold shadow-[0_0_15px_var(--neon-glow)]'
+              : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] font-medium'
+          }`}
+        >
+          <Globe className="w-4 h-4 text-cyan-400" />
+          <span className="text-sm">Landing Page</span>
+          <span className="ml-auto bg-neon/15 text-neon border border-neon/30 text-[9px] font-bold px-1.5 py-0.5 rounded font-mono">
+            LIVE
+          </span>
         </Link>
       </nav>
 
