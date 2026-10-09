@@ -131,19 +131,6 @@ export const HeroSection = ({ onOpenTrial, lang = 'es' }) => {
 
   return (
     <section className="relative pt-32 pb-24 lg:pt-40 lg:pb-32 overflow-hidden">
-      {/* Signature Diagonal Cyber Slashes from Vector Inside Brand (Image 2) */}
-      <div className="absolute top-12 left-6 sm:left-12 flex items-center gap-1 opacity-70 pointer-events-none select-none">
-        <span className="h-6 w-1 bg-neon rotate-45 transform origin-bottom" />
-        <span className="h-10 w-1.5 bg-neon rotate-45 transform origin-bottom" />
-        <span className="text-[10px] font-mono font-black text-neon tracking-widest pl-2">// VECTOR INSIDE</span>
-      </div>
-
-      <div className="absolute bottom-12 right-6 sm:right-12 flex items-center gap-1 opacity-70 pointer-events-none select-none">
-        <span className="text-[10px] font-mono font-black text-neon tracking-widest pr-2">// COMMUNITY OS</span>
-        <span className="h-10 w-1.5 bg-neon rotate-45 transform origin-bottom" />
-        <span className="h-6 w-1 bg-neon rotate-45 transform origin-bottom" />
-      </div>
-
       {/* Background Decorative Mesh & Glows */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] bg-gradient-to-tr from-[#E5FF00]/12 via-cyan-500/10 to-purple-600/10 rounded-full blur-[140px] pointer-events-none" />
       <div className="absolute top-10 left-10 w-72 h-72 bg-neon/10 rounded-full blur-3xl pointer-events-none" />
