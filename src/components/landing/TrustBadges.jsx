@@ -32,17 +32,17 @@ export const TrustBadges = ({ lang = 'es' }) => {
   const badgeIcons = [ShieldCheck, Lock, Server, Award];
   const badgeColors = [
     'text-neon border-neon/30 bg-neon/5',
-    'text-emerald-400 border-emerald-500/30 bg-emerald-500/5',
-    'text-cyan-400 border-cyan-500/30 bg-cyan-500/5',
-    'text-purple-400 border-purple-500/30 bg-purple-500/5',
+    'text-white border-white/20 bg-white/5',
+    'text-cognitive border-cognitive/30 bg-cognitive/5',
+    'text-neon border-neon/30 bg-neon/5',
   ];
 
   return (
-    <section id="trust" className="py-20 lg:py-28 relative overflow-hidden border-y border-white/5 bg-zinc-950/60">
+    <section id="trust" className="py-10 sm:py-12 lg:py-16 relative overflow-hidden border-y border-white/5 bg-zinc-950/60">
       {/* Background glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-64 bg-neon/5 blur-[120px] pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-10 lg:space-y-12">
         {/* Quantitative Proof Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
           {t.stats.map((stat, idx) => (
@@ -53,7 +53,7 @@ export const TrustBadges = ({ lang = 'es' }) => {
               <div className="text-3xl sm:text-4xl lg:text-5xl font-black font-mono tracking-tight text-neon group-hover:scale-105 transition-transform duration-300">
                 {stat.value}
               </div>
-              <div className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
+              <div className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider font-heading">
                 {stat.label}
               </div>
               <div className="text-[11px] text-zinc-400 font-mono">
@@ -89,7 +89,7 @@ export const TrustBadges = ({ lang = 'es' }) => {
         {/* Security & Compliance Badges Grid */}
         <div className="space-y-6">
           <div className="text-center max-w-2xl mx-auto">
-            <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-wider">
+            <h2 className="text-xl sm:text-2xl font-heading font-black text-white uppercase tracking-wider">
               {t.securityTitle}
             </h2>
             <p className="text-xs sm:text-sm text-zinc-400 font-mono mt-1">

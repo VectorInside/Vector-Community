@@ -5,7 +5,14 @@ import { useAuth } from '@/context/AuthContext';
 import { CheckCircle2, ShieldCheck, Building2 } from 'lucide-react';
 
 export const Header = () => {
-  const { role, isAdmin, activeTenantKey, activeTenant, switchTenantContext, tenantsData } = useAuth();
+  const {
+    role,
+    isAdmin,
+    activeTenantKey,
+    activeTenant,
+    switchTenantContext,
+    tenantsData,
+  } = useAuth();
 
   return (
     <header className="w-full bg-[var(--bg-panel)] border-b border-[var(--border-color)] px-6 py-3 flex items-center justify-between z-10 shrink-0">

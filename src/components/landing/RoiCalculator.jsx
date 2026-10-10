@@ -28,18 +28,18 @@ export const RoiCalculator = ({ onOpenTrial, lang = 'es' }) => {
   const roiMultiplier = ((netRevenueGain / 149)).toFixed(1);
 
   return (
-    <section id="roi-calculator" className="py-24 lg:py-32 relative overflow-hidden bg-black/60 border-t border-white/5">
+    <section id="roi-calculator" className="py-12 sm:py-16 lg:py-20 relative overflow-hidden bg-black/60 border-t border-white/5">
       {/* Background glow */}
       <div className="absolute top-1/2 left-1/3 -translate-y-1/2 w-96 h-96 bg-neon/10 rounded-full blur-[140px] pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-10 sm:space-y-12">
         {/* Section Title */}
         <div className="text-center max-w-3xl mx-auto space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-white/10 text-[11px] font-mono font-bold text-neon uppercase tracking-wider">
             <Calculator className="w-3.5 h-3.5" />
             {t.tag}
           </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-black text-white tracking-tight">
             {t.title}
           </h2>
           <p className="text-zinc-400 text-sm sm:text-base leading-relaxed">
@@ -68,7 +68,7 @@ export const RoiCalculator = ({ onOpenTrial, lang = 'es' }) => {
                 step="1000"
                 value={adSpend}
                 onChange={(e) => setAdSpend(Number(e.target.value))}
-                className="w-full h-2.5 bg-zinc-900 rounded-lg appearance-none cursor-pointer accent-[#E5FF00]"
+                className="w-full h-2.5 bg-zinc-900 rounded-lg appearance-none cursor-pointer accent-[#E7F900]"
               />
               <div className="flex justify-between text-[10px] font-mono text-zinc-500">
                 <span>$1,000</span>
@@ -83,7 +83,7 @@ export const RoiCalculator = ({ onOpenTrial, lang = 'es' }) => {
                 <span className="text-zinc-300 font-bold uppercase tracking-wider">
                   {t.slider2}
                 </span>
-                <span className="text-lg font-black text-cyan-400">
+                <span className="text-lg font-black text-cognitive">
                   {monthlyInquiries.toLocaleString()} leads / mo
                 </span>
               </div>
@@ -94,7 +94,7 @@ export const RoiCalculator = ({ onOpenTrial, lang = 'es' }) => {
                 step="500"
                 value={monthlyInquiries}
                 onChange={(e) => setMonthlyInquiries(Number(e.target.value))}
-                className="w-full h-2.5 bg-zinc-900 rounded-lg appearance-none cursor-pointer accent-[#06B6D4]"
+                className="w-full h-2.5 bg-zinc-900 rounded-lg appearance-none cursor-pointer accent-[#8A95B6]"
               />
               <div className="flex justify-between text-[10px] font-mono text-zinc-500">
                 <span>500</span>
@@ -109,7 +109,7 @@ export const RoiCalculator = ({ onOpenTrial, lang = 'es' }) => {
                 <span className="text-zinc-300 font-bold uppercase tracking-wider">
                   {t.slider3}
                 </span>
-                <span className="text-lg font-black text-emerald-400">
+                <span className="text-lg font-black text-white">
                   {currentConversionRate.toFixed(1)}%
                 </span>
               </div>
@@ -120,7 +120,7 @@ export const RoiCalculator = ({ onOpenTrial, lang = 'es' }) => {
                 step="0.5"
                 value={currentConversionRate}
                 onChange={(e) => setCurrentConversionRate(Number(e.target.value))}
-                className="w-full h-2.5 bg-zinc-900 rounded-lg appearance-none cursor-pointer accent-[#10B981]"
+                className="w-full h-2.5 bg-zinc-900 rounded-lg appearance-none cursor-pointer accent-[#FFFFFF]"
               />
               <div className="flex justify-between text-[10px] font-mono text-zinc-500">
                 <span>0.5%</span>

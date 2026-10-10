@@ -27,6 +27,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from 'recharts';
+import { VectorLobo } from '@/components/common/VectorLobo';
 import { LANDING_TRANSLATIONS } from './landingTranslations';
 
 const INITIAL_LIVE_DATA = [
@@ -96,7 +97,7 @@ export const HeroSection = ({ onOpenTrial, lang = 'es' }) => {
     revenue: {
       label: m.mrr.label,
       dataKey: 'revenue',
-      color: '#E5FF00',
+      color: '#E7F900',
       gradientId: 'heroRevenueGrad',
       format: (val) => `$${val.toLocaleString()}`,
       badge: m.mrr.badge,
@@ -104,7 +105,7 @@ export const HeroSection = ({ onOpenTrial, lang = 'es' }) => {
     events: {
       label: m.throughput.label,
       dataKey: 'events',
-      color: '#06B6D4',
+      color: '#8A95B6',
       gradientId: 'heroEventsGrad',
       format: (val) => `${val.toLocaleString()} ev/s`,
       badge: m.throughput.badge,
@@ -112,7 +113,7 @@ export const HeroSection = ({ onOpenTrial, lang = 'es' }) => {
     aiConfidence: {
       label: m.aiAccuracy.label,
       dataKey: 'aiConfidence',
-      color: '#10B981',
+      color: '#FFFFFF',
       gradientId: 'heroAiGrad',
       format: (val) => `${val}%`,
       badge: m.aiAccuracy.badge,
@@ -120,7 +121,7 @@ export const HeroSection = ({ onOpenTrial, lang = 'es' }) => {
     latency: {
       label: m.latency.label,
       dataKey: 'latency',
-      color: '#A855F7',
+      color: '#8A95B6',
       gradientId: 'heroLatencyGrad',
       format: (val) => `${val}ms`,
       badge: m.latency.badge,
@@ -130,32 +131,19 @@ export const HeroSection = ({ onOpenTrial, lang = 'es' }) => {
   const currentConfig = metricConfigs[selectedMetric];
 
   return (
-    <section className="relative pt-32 pb-24 lg:pt-40 lg:pb-32 overflow-hidden">
-      {/* Signature Diagonal Cyber Slashes from Vector Inside Brand (Image 2) */}
-      <div className="absolute top-12 left-6 sm:left-12 flex items-center gap-1 opacity-70 pointer-events-none select-none">
-        <span className="h-6 w-1 bg-neon rotate-45 transform origin-bottom" />
-        <span className="h-10 w-1.5 bg-neon rotate-45 transform origin-bottom" />
-        <span className="text-[10px] font-mono font-black text-neon tracking-widest pl-2">// VECTOR INSIDE</span>
-      </div>
-
-      <div className="absolute bottom-12 right-6 sm:right-12 flex items-center gap-1 opacity-70 pointer-events-none select-none">
-        <span className="text-[10px] font-mono font-black text-neon tracking-widest pr-2">// COMMUNITY OS</span>
-        <span className="h-10 w-1.5 bg-neon rotate-45 transform origin-bottom" />
-        <span className="h-6 w-1 bg-neon rotate-45 transform origin-bottom" />
-      </div>
-
-      {/* Background Decorative Mesh & Glows */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] bg-gradient-to-tr from-[#E5FF00]/12 via-cyan-500/10 to-purple-600/10 rounded-full blur-[140px] pointer-events-none" />
+    <section className="relative pt-24 pb-8 sm:pt-28 sm:pb-10 lg:pt-32 lg:pb-12 overflow-hidden bg-black">
+      {/* Background Decorative Mesh & Glows - Palette Vector Inside */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] bg-gradient-to-tr from-[#E7F900]/12 via-[#8A95B6]/10 to-transparent rounded-full blur-[140px] pointer-events-none" />
       <div className="absolute top-10 left-10 w-72 h-72 bg-neon/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-10 right-10 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-10 right-10 w-96 h-96 bg-cognitive/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Grid Pattern Overlay */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Top Floating Badge */}
-        <div className="flex justify-center mb-6">
-          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-zinc-900/90 border border-white/10 backdrop-blur-xl shadow-[0_0_20px_rgba(229,255,0,0.15)] hover:border-neon/50 transition-all cursor-pointer">
+        <div className="flex justify-center mb-5">
+          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-zinc-900/90 border border-white/10 backdrop-blur-xl shadow-[0_0_20px_rgba(231,249,0,0.15)] hover:border-neon/50 transition-all cursor-pointer">
             <span className="flex h-2 w-2 relative">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-neon opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-neon" />
@@ -163,78 +151,78 @@ export const HeroSection = ({ onOpenTrial, lang = 'es' }) => {
             <span className="text-[11px] font-mono font-semibold text-zinc-300">
               {t.announcement}
             </span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neon/15 text-neon font-bold">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neon/15 text-neon font-bold whitespace-nowrap">
               {t.badge}
             </span>
           </div>
         </div>
 
         {/* Hero Title & Value Proposition */}
-        <div className="text-center max-w-4xl mx-auto space-y-6">
-          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black tracking-tight text-white leading-[1.08]">
-            {t.title1} <br className="hidden sm:inline" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon via-emerald-300 to-cyan-400">
+        <div className="text-center max-w-5xl mx-auto space-y-5">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-[66px] font-heading font-black tracking-tight text-white leading-[1.12]">
+            <span className="block">{t.title1}</span>
+            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-neon via-white to-cognitive drop-shadow-[0_0_35px_rgba(231,249,0,0.25)] mt-1 sm:mt-2">
               {t.title2}
             </span>
           </h1>
 
-          <p className="text-base sm:text-lg lg:text-xl text-zinc-400 font-normal max-w-3xl mx-auto leading-relaxed">
+          <p className="text-sm sm:text-base lg:text-lg text-zinc-400 font-normal max-w-3xl mx-auto leading-relaxed">
             {t.subtitle}
           </p>
 
-          {/* Primary Action Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+          {/* Primary Action Buttons (Single-line, no broken wrapping) */}
+          <div className="flex flex-wrap items-center justify-center gap-3.5 pt-2">
             <button
               type="button"
               onClick={onOpenTrial}
-              className="w-full sm:w-auto px-8 py-4 rounded-xl bg-neon text-black font-mono font-black text-sm uppercase tracking-wider hover:bg-[#d9f200] transition-all duration-200 shadow-[0_0_30px_rgba(229,255,0,0.4)] hover:shadow-[0_0_45px_rgba(229,255,0,0.6)] flex items-center justify-center gap-2 group active:scale-98"
+              className="px-7 py-3.5 rounded-xl bg-neon text-black font-mono font-black text-xs sm:text-sm uppercase tracking-wider hover:bg-[#d9ea00] transition-all duration-200 shadow-neon hover:shadow-[0_0_40px_rgba(231,249,0,0.5)] flex items-center justify-center gap-2 group active:scale-95 whitespace-nowrap shrink-0"
             >
-              <span>{t.ctaPrimary}</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              <span className="whitespace-nowrap">{t.ctaPrimary}</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform shrink-0" />
             </button>
 
             <a
               href="#realtime-demo"
-              className="w-full sm:w-auto px-7 py-4 rounded-xl bg-zinc-900/80 hover:bg-zinc-800/90 text-zinc-200 font-mono font-bold text-sm border border-white/10 hover:border-white/25 transition-all flex items-center justify-center gap-2 backdrop-blur-md"
+              className="px-6 py-3.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 font-mono font-bold text-xs sm:text-sm border border-white/10 hover:border-white/25 transition-all flex items-center justify-center gap-2 backdrop-blur-md whitespace-nowrap shrink-0 active:scale-95"
             >
-              <Play className="w-4 h-4 text-neon fill-neon" />
-              <span>{t.ctaSecondary}</span>
+              <Play className="w-3.5 h-3.5 text-neon fill-neon shrink-0" />
+              <span className="whitespace-nowrap">{t.ctaSecondary}</span>
             </a>
 
             <Link
               href="/dashboard"
-              className="w-full sm:w-auto px-6 py-4 rounded-xl bg-transparent hover:bg-white/5 text-zinc-400 hover:text-white font-mono text-xs font-semibold transition-colors flex items-center justify-center gap-1.5"
+              className="px-5 py-3.5 rounded-xl bg-zinc-900/40 hover:bg-white/10 text-zinc-400 hover:text-white font-mono text-xs sm:text-sm font-semibold border border-white/5 hover:border-white/15 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0"
             >
-              <span>{t.ctaApp}</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <span className="whitespace-nowrap">{t.ctaApp}</span>
+              <ArrowRight className="w-3.5 h-3.5 shrink-0" />
             </Link>
           </div>
 
           {/* Trust Highlights Checklist */}
-          <div className="pt-6 flex flex-wrap items-center justify-center gap-6 text-xs text-zinc-400 font-mono">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-neon" />
+          <div className="pt-3 flex flex-wrap items-center justify-center gap-2.5 sm:gap-4 text-xs text-zinc-400 font-mono">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900/80 border border-white/10 whitespace-nowrap">
+              <CheckCircle2 className="w-3.5 h-3.5 text-neon shrink-0" />
               <span>{t.trust1}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900/80 border border-white/10 whitespace-nowrap">
+              <CheckCircle2 className="w-3.5 h-3.5 text-white shrink-0" />
               <span>{t.trust2}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-cyan-400" />
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900/80 border border-white/10 whitespace-nowrap">
+              <CheckCircle2 className="w-3.5 h-3.5 text-cognitive shrink-0" />
               <span>{t.trust3}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-purple-400" />
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900/80 border border-white/10 whitespace-nowrap">
+              <CheckCircle2 className="w-3.5 h-3.5 text-neon shrink-0" />
               <span>{t.trust4}</span>
             </div>
           </div>
         </div>
 
         {/* HERO SHOWCASE: Interactive Glassmorphism Dashboard Preview */}
-        <div className="mt-14 lg:mt-20 relative">
+        <div className="mt-10 lg:mt-14 relative">
           {/* Ambient Glow Perimeter */}
-          <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-neon/30 via-cyan-500/20 to-purple-600/30 blur-xl opacity-75 group-hover:opacity-100 transition duration-1000 -z-10" />
+          <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-neon/20 via-cognitive/15 to-transparent blur-xl opacity-75 group-hover:opacity-100 transition duration-1000 -z-10" />
 
           {/* Master Glass Panel */}
           <div className="rounded-2xl lg:rounded-3xl bg-zinc-950/85 backdrop-blur-2xl border border-white/10 shadow-2xl p-4 sm:p-6 lg:p-8 space-y-6">
@@ -289,6 +277,34 @@ export const HeroSection = ({ onOpenTrial, lang = 'es' }) => {
               </div>
             </div>
 
+            {/* Lobo Vectorial Sentinel Banner (Bloque 13.9 Manual Maestro) */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 rounded-2xl bg-zinc-900/70 border border-white/10 backdrop-blur-md">
+              <div className="flex items-center gap-3">
+                <VectorLobo size={38} showStatus={true} status="active" />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-neon">
+                      Sentinela Inteligente • Lobo Vectorial
+                    </span>
+                    <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-cognitive/10 text-cognitive border border-cognitive/20 hidden sm:inline">
+                      Bloque 13.9 Símbolo Vivo
+                    </span>
+                  </div>
+                  <p className="text-xs text-zinc-300 font-sans italic">
+                    "Detecto fricción en tu sistema. Empecemos por el núcleo."
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 text-[11px] font-mono text-zinc-400 shrink-0">
+                <span className="flex items-center gap-1.5 text-zinc-300">
+                  <span className="w-2 h-2 rounded-full bg-neon animate-pulse" />
+                  IFV: <strong className="text-neon font-black">48/50</strong>
+                </span>
+                <span className="text-zinc-700">|</span>
+                <span className="text-cognitive font-semibold">Telemetría RLS Activa</span>
+              </div>
+            </div>
+
             {/* KPI Cards Row (Glassmorphic) */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               {/* Card 1: Gross MRR */}
@@ -296,7 +312,7 @@ export const HeroSection = ({ onOpenTrial, lang = 'es' }) => {
                 onClick={() => setSelectedMetric('revenue')}
                 className={`p-4 rounded-2xl border transition-all cursor-pointer ${
                   selectedMetric === 'revenue'
-                    ? 'bg-zinc-900/90 border-neon shadow-[0_0_20px_rgba(229,255,0,0.15)]'
+                    ? 'bg-zinc-900/90 border-neon shadow-[0_0_20px_rgba(231,249,0,0.15)]'
                     : 'bg-zinc-900/40 border-white/5 hover:border-white/20'
                 }`}
               >
@@ -318,18 +334,18 @@ export const HeroSection = ({ onOpenTrial, lang = 'es' }) => {
                 onClick={() => setSelectedMetric('events')}
                 className={`p-4 rounded-2xl border transition-all cursor-pointer ${
                   selectedMetric === 'events'
-                    ? 'bg-zinc-900/90 border-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.15)]'
+                    ? 'bg-zinc-900/90 border-cognitive shadow-[0_0_20px_rgba(138,149,182,0.2)]'
                     : 'bg-zinc-900/40 border-white/5 hover:border-white/20'
                 }`}
               >
                 <div className="flex items-center justify-between text-zinc-400 mb-1">
                   <span className="text-[11px] font-mono uppercase tracking-wider">{m.throughput.label}</span>
-                  <Zap className="w-4 h-4 text-cyan-400" />
+                  <Zap className="w-4 h-4 text-cognitive" />
                 </div>
                 <div className="text-xl sm:text-2xl lg:text-3xl font-black text-white font-mono tracking-tight">
                   {liveCounter.toLocaleString()}
                 </div>
-                <div className="flex items-center gap-1.5 text-[10px] font-mono text-cyan-400 mt-1">
+                <div className="flex items-center gap-1.5 text-[10px] font-mono text-cognitive mt-1">
                   <span>{m.throughput.badge}</span>
                   <span className="text-zinc-500">{m.throughput.sub}</span>
                 </div>
@@ -340,18 +356,18 @@ export const HeroSection = ({ onOpenTrial, lang = 'es' }) => {
                 onClick={() => setSelectedMetric('aiConfidence')}
                 className={`p-4 rounded-2xl border transition-all cursor-pointer ${
                   selectedMetric === 'aiConfidence'
-                    ? 'bg-zinc-900/90 border-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.15)]'
+                    ? 'bg-zinc-900/90 border-white shadow-[0_0_20px_rgba(255,255,255,0.15)]'
                     : 'bg-zinc-900/40 border-white/5 hover:border-white/20'
                 }`}
               >
                 <div className="flex items-center justify-between text-zinc-400 mb-1">
                   <span className="text-[11px] font-mono uppercase tracking-wider">{m.aiAccuracy.label}</span>
-                  <Cpu className="w-4 h-4 text-emerald-400" />
+                  <Cpu className="w-4 h-4 text-white" />
                 </div>
                 <div className="text-xl sm:text-2xl lg:text-3xl font-black text-white font-mono tracking-tight">
                   98.6%
                 </div>
-                <div className="flex items-center gap-1.5 text-[10px] font-mono text-emerald-400 mt-1">
+                <div className="flex items-center gap-1.5 text-[10px] font-mono text-white mt-1">
                   <span>{m.aiAccuracy.badge}</span>
                   <span className="text-zinc-500">{m.aiAccuracy.sub}</span>
                 </div>
@@ -362,18 +378,18 @@ export const HeroSection = ({ onOpenTrial, lang = 'es' }) => {
                 onClick={() => setSelectedMetric('latency')}
                 className={`p-4 rounded-2xl border transition-all cursor-pointer ${
                   selectedMetric === 'latency'
-                    ? 'bg-zinc-900/90 border-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.15)]'
+                    ? 'bg-zinc-900/90 border-cognitive shadow-[0_0_20px_rgba(138,149,182,0.2)]'
                     : 'bg-zinc-900/40 border-white/5 hover:border-white/20'
                 }`}
               >
                 <div className="flex items-center justify-between text-zinc-400 mb-1">
                   <span className="text-[11px] font-mono uppercase tracking-wider">{m.latency.label}</span>
-                  <Clock className="w-4 h-4 text-purple-400" />
+                  <Clock className="w-4 h-4 text-cognitive" />
                 </div>
                 <div className="text-xl sm:text-2xl lg:text-3xl font-black text-white font-mono tracking-tight">
                   11ms
                 </div>
-                <div className="flex items-center gap-1.5 text-[10px] font-mono text-purple-400 mt-1">
+                <div className="flex items-center gap-1.5 text-[10px] font-mono text-cognitive mt-1">
                   <span>{m.latency.badge}</span>
                   <span className="text-zinc-500">{m.latency.sub}</span>
                 </div>
@@ -497,12 +513,12 @@ export const HeroSection = ({ onOpenTrial, lang = 'es' }) => {
                           <span
                             className={`w-1.5 h-1.5 rounded-full ${
                               ev.type === 'CAPI'
-                                ? 'bg-emerald-400'
+                                ? 'bg-cognitive'
                                 : ev.type === 'AI'
-                                ? 'bg-cyan-400'
+                                ? 'bg-neon'
                                 : ev.type === 'STRIPE'
                                 ? 'bg-neon'
-                                : 'bg-purple-400'
+                                : 'bg-white'
                             }`}
                           />
                           [{ev.type}] {ev.channel}

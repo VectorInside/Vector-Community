@@ -26,6 +26,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from 'recharts';
+import { VectorLobo } from '@/components/common/VectorLobo';
 import { LANDING_TRANSLATIONS } from './landingTranslations';
 
 const INITIAL_TELEMETRY = [
@@ -40,10 +41,10 @@ const INITIAL_TELEMETRY = [
 ];
 
 const CHANNEL_DISTRIBUTION = [
-  { channel: 'Meta CAPI', volume: 4200, share: '38%', color: '#10B981' },
-  { channel: 'Instagram DM', volume: 3400, share: '31%', color: '#E5FF00' },
-  { channel: 'WhatsApp Cloud', volume: 2200, share: '20%', color: '#06B6D4' },
-  { channel: 'Stripe SaaS', volume: 1200, share: '11%', color: '#A855F7' },
+  { channel: 'Meta CAPI', volume: 4200, share: '38%', color: '#E7F900' },
+  { channel: 'Instagram DM', volume: 3400, share: '31%', color: '#8A95B6' },
+  { channel: 'WhatsApp Cloud', volume: 2200, share: '20%', color: '#FFFFFF' },
+  { channel: 'Stripe SaaS', volume: 1200, share: '11%', color: '#E7F900' },
 ];
 
 export const LiveTelemetryDemo = ({ lang = 'es' }) => {
@@ -150,18 +151,18 @@ export const LiveTelemetryDemo = ({ lang = 'es' }) => {
   };
 
   return (
-    <section id="realtime-demo" className="py-24 lg:py-32 relative overflow-hidden bg-zinc-950">
+    <section id="realtime-demo" className="py-12 sm:py-16 lg:py-20 relative overflow-hidden bg-zinc-950 border-t border-white/5">
       {/* Glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-gradient-to-r from-neon/10 via-emerald-500/10 to-cyan-500/10 rounded-full blur-[140px] pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-10 sm:space-y-12">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-white/10 text-[11px] font-mono font-bold text-neon uppercase tracking-wider">
             <Radio className="w-3.5 h-3.5 animate-pulse" />
             {t.tag}
           </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-black text-white tracking-tight">
             {t.title}
           </h2>
           <p className="text-zinc-400 text-sm sm:text-base leading-relaxed">
@@ -174,7 +175,7 @@ export const LiveTelemetryDemo = ({ lang = 'es' }) => {
           <button
             type="button"
             onClick={() => triggerEventSimulation('purchase')}
-            className="p-3.5 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800/90 border border-neon/40 hover:border-neon text-left transition-all group shadow-[0_0_15px_rgba(229,255,0,0.1)] active:scale-98"
+            className="p-3.5 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800/90 border border-neon/40 hover:border-neon text-left transition-all group shadow-[0_0_15px_rgba(231,249,0,0.1)] active:scale-98"
           >
             <div className="flex items-center justify-between mb-1">
               <span className="text-[10px] font-mono text-neon font-bold uppercase tracking-wider">
@@ -193,13 +194,13 @@ export const LiveTelemetryDemo = ({ lang = 'es' }) => {
           <button
             type="button"
             onClick={() => triggerEventSimulation('lead')}
-            className="p-3.5 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800/90 border border-cyan-500/40 hover:border-cyan-400 text-left transition-all group shadow-[0_0_15px_rgba(6,182,212,0.1)] active:scale-98"
+            className="p-3.5 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800/90 border border-cognitive/40 hover:border-cognitive text-left transition-all group shadow-[0_0_15px_rgba(138,149,182,0.1)] active:scale-98"
           >
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-mono text-cyan-400 font-bold uppercase tracking-wider">
+              <span className="text-[10px] font-mono text-cognitive font-bold uppercase tracking-wider">
                 {t.trigger2.tag}
               </span>
-              <PlusCircle className="w-4 h-4 text-cyan-400 group-hover:rotate-90 transition-transform" />
+              <PlusCircle className="w-4 h-4 text-cognitive group-hover:rotate-90 transition-transform" />
             </div>
             <div className="text-xs font-bold text-white">
               {t.trigger2.title}
@@ -231,13 +232,13 @@ export const LiveTelemetryDemo = ({ lang = 'es' }) => {
           <button
             type="button"
             onClick={() => triggerEventSimulation('surge')}
-            className="p-3.5 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800/90 border border-purple-500/40 hover:border-purple-400 text-left transition-all group shadow-[0_0_15px_rgba(168,85,247,0.1)] active:scale-98"
+            className="p-3.5 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800/90 border border-white/30 hover:border-white text-left transition-all group shadow-[0_0_15px_rgba(255,255,255,0.1)] active:scale-98"
           >
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-mono text-purple-400 font-bold uppercase tracking-wider">
+              <span className="text-[10px] font-mono text-white font-bold uppercase tracking-wider">
                 {t.trigger4.tag}
               </span>
-              <Zap className="w-4 h-4 text-purple-400 group-hover:scale-110 transition-transform" />
+              <Zap className="w-4 h-4 text-neon group-hover:scale-110 transition-transform" />
             </div>
             <div className="text-xs font-bold text-white">
               {t.trigger4.title}
@@ -303,12 +304,12 @@ export const LiveTelemetryDemo = ({ lang = 'es' }) => {
                   <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <defs>
                       <linearGradient id="telemetryGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#E5FF00" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="#E5FF00" stopOpacity={0.0} />
+                        <stop offset="5%" stopColor="#E7F900" stopOpacity={0.4} />
+                        <stop offset="95%" stopColor="#E7F900" stopOpacity={0.0} />
                       </linearGradient>
                       <linearGradient id="aiTriageGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#06B6D4" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="#06B6D4" stopOpacity={0.0} />
+                        <stop offset="5%" stopColor="#8A95B6" stopOpacity={0.4} />
+                        <stop offset="95%" stopColor="#8A95B6" stopOpacity={0.0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
@@ -327,7 +328,7 @@ export const LiveTelemetryDemo = ({ lang = 'es' }) => {
                     <Area
                       type="monotone"
                       dataKey="totalEvents"
-                      stroke="#E5FF00"
+                      stroke="#E7F900"
                       strokeWidth={2.5}
                       fill="url(#telemetryGrad)"
                       name="Total Ingested Events"
@@ -335,7 +336,7 @@ export const LiveTelemetryDemo = ({ lang = 'es' }) => {
                     <Area
                       type="monotone"
                       dataKey="aiTriage"
-                      stroke="#06B6D4"
+                      stroke="#8A95B6"
                       strokeWidth={2}
                       fill="url(#aiTriageGrad)"
                       name="AI Intent Resolutions"
@@ -347,13 +348,16 @@ export const LiveTelemetryDemo = ({ lang = 'es' }) => {
 
             {/* Ingestion Channels Breakdown (1 Col) */}
             <div className="p-4 sm:p-5 rounded-2xl bg-zinc-950/70 border border-white/5 flex flex-col justify-between space-y-4">
-              <div>
-                <span className="text-xs font-mono font-bold text-white uppercase tracking-wider block mb-1">
-                  {t.channelsTitle}
-                </span>
-                <p className="text-[11px] text-zinc-400">
-                  {t.channelsDesc}
-                </p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-mono font-bold text-white uppercase tracking-wider block mb-1">
+                    {t.channelsTitle}
+                  </span>
+                  <p className="text-[11px] text-zinc-400">
+                    {t.channelsDesc}
+                  </p>
+                </div>
+                <VectorLobo size={28} showStatus={true} status="active" />
               </div>
 
               <div className="space-y-3">

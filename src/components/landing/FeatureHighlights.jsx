@@ -19,38 +19,38 @@ export const FeatureHighlights = ({ lang = 'es' }) => {
 
   const featureIcons = [Activity, Cpu, TrendingUp, ShieldCheck, Users2, PieChart];
   const featureColors = [
-    'hover:border-neon/40 hover:shadow-[0_0_30px_rgba(229,255,0,0.15)]',
-    'hover:border-cyan-400/40 hover:shadow-[0_0_30px_rgba(6,182,212,0.15)]',
-    'hover:border-emerald-400/40 hover:shadow-[0_0_30px_rgba(16,185,129,0.15)]',
-    'hover:border-purple-400/40 hover:shadow-[0_0_30px_rgba(168,85,247,0.15)]',
-    'hover:border-amber-400/40 hover:shadow-[0_0_30px_rgba(245,158,11,0.15)]',
-    'hover:border-rose-400/40 hover:shadow-[0_0_30px_rgba(244,63,94,0.15)]',
+    'hover:border-neon/40 hover:shadow-[0_0_30px_rgba(231,249,0,0.15)]',
+    'hover:border-cognitive/40 hover:shadow-[0_0_30px_rgba(138,149,182,0.15)]',
+    'hover:border-neon/40 hover:shadow-[0_0_30px_rgba(231,249,0,0.15)]',
+    'hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)]',
+    'hover:border-cognitive/40 hover:shadow-[0_0_30px_rgba(138,149,182,0.15)]',
+    'hover:border-neon/40 hover:shadow-[0_0_30px_rgba(231,249,0,0.15)]',
   ];
   const badgeStyles = [
     'text-neon bg-neon/10 border-neon/30',
-    'text-cyan-400 bg-cyan-500/10 border-cyan-500/30',
-    'text-emerald-400 bg-emerald-500/10 border-emerald-500/30',
-    'text-purple-400 bg-purple-500/10 border-purple-500/30',
-    'text-amber-400 bg-amber-500/10 border-amber-500/30',
-    'text-rose-400 bg-rose-500/10 border-rose-500/30',
+    'text-cognitive bg-cognitive/10 border-cognitive/30',
+    'text-neon bg-neon/10 border-neon/30',
+    'text-white bg-white/10 border-white/20',
+    'text-cognitive bg-cognitive/10 border-cognitive/30',
+    'text-neon bg-neon/10 border-neon/30',
   ];
 
   return (
-    <section id="features" className="py-24 lg:py-32 relative overflow-hidden bg-black/40">
-      {/* Glow Orbs */}
+    <section id="features" className="py-12 sm:py-16 lg:py-20 relative overflow-hidden bg-black">
+      {/* Glow Orbs - Vector Inside palette */}
       <div className="absolute top-1/3 -left-40 w-96 h-96 bg-neon/10 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-1/4 -right-40 w-96 h-96 bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-1/4 -right-40 w-96 h-96 bg-cognitive/10 rounded-full blur-[120px] pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-12 sm:space-y-14 lg:space-y-16">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-white/10 text-[11px] font-mono font-bold text-neon uppercase tracking-wider">
             <Sparkles className="w-3.5 h-3.5" />
             {t.tag}
           </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-black text-white tracking-tight">
             {t.title1} <br className="hidden sm:inline" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon via-emerald-300 to-cyan-400">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon via-white to-cognitive">
               {t.title2}
             </span>
           </h2>
@@ -149,37 +149,37 @@ export const FeatureHighlights = ({ lang = 'es' }) => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center animate-fade-in">
               <div className="space-y-4">
                 <span className="text-xs font-mono text-neon font-bold uppercase tracking-wider">
-                  Sub-Second Ingestion
+                  {t.playground.pipeline.tag}
                 </span>
                 <h4 className="text-xl font-black text-white">
-                  Zero-Buffer WebSocket Streaming
+                  {t.playground.pipeline.title}
                 </h4>
                 <p className="text-xs text-zinc-400 leading-relaxed">
-                  Incoming payloads from Meta webhooks, Instagram Story mentions, and WhatsApp Cloud API are validated in Spring Boot and broadcasted in sub-15ms to your client telemetry interface.
+                  {t.playground.pipeline.desc}
                 </p>
                 <div className="space-y-2 text-xs font-mono text-zinc-300">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-neon" />
-                    <span>Non-blocking Java 21 Virtual Threads</span>
+                    <CheckCircle2 className="w-4 h-4 text-neon shrink-0" />
+                    <span>{t.playground.pipeline.b1}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-neon" />
-                    <span>Zero packet drop during 100k+ surges</span>
+                    <CheckCircle2 className="w-4 h-4 text-neon shrink-0" />
+                    <span>{t.playground.pipeline.b2}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-neon" />
-                    <span>Instant SSE / WebSocket broadcast</span>
+                    <CheckCircle2 className="w-4 h-4 text-neon shrink-0" />
+                    <span>{t.playground.pipeline.b3}</span>
                   </div>
                 </div>
               </div>
 
               <div className="lg:col-span-2 p-5 rounded-2xl bg-zinc-900/80 border border-white/10 font-mono text-xs space-y-3">
                 <div className="flex items-center justify-between text-[11px] text-zinc-400 border-b border-zinc-800 pb-2">
-                  <span>PAYLOAD TELEMETRY INSPECTOR</span>
-                  <span className="text-emerald-400">STATUS: 200 OK (8ms)</span>
+                  <span>{t.playground.pipeline.inspectorHeader}</span>
+                  <span className="text-emerald-400 font-bold">{t.playground.pipeline.inspectorStatus}</span>
                 </div>
                 <div className="bg-black/60 p-4 rounded-xl text-[11px] text-zinc-300 overflow-x-auto space-y-1">
-                  <p className="text-zinc-500">// Incoming Meta Webhook Verified</p>
+                  <p className="text-zinc-500">{t.playground.pipeline.codeComment}</p>
                   <p><span className="text-cyan-400">POST</span> <span className="text-white">/api/v1/webhooks/meta-capi</span></p>
                   <p className="text-zinc-400">{`{`}</p>
                   <p className="pl-4"><span className="text-purple-400">"tenant_id"</span>: <span className="text-neon">"ten-dental-polanco"</span>,</p>
@@ -197,41 +197,41 @@ export const FeatureHighlights = ({ lang = 'es' }) => {
           {activeTab === 'rag' && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center animate-fade-in">
               <div className="space-y-4">
-                <span className="text-xs font-mono text-cyan-400 font-bold uppercase tracking-wider">
-                  LangGraph Supervisor + R1
+                <span className="text-xs font-mono text-cognitive font-bold uppercase tracking-wider">
+                  {t.playground.rag.tag}
                 </span>
                 <h4 className="text-xl font-black text-white">
-                  Multi-Agent Reasoning & Guardrails
+                  {t.playground.rag.title}
                 </h4>
                 <p className="text-xs text-zinc-400 leading-relaxed">
-                  DeepSeek R1 breaks down complex inquiries with chain-of-thought verification. Before dispatching an automated answer, the toxicity shield and RAG knowledge base are cross-checked.
+                  {t.playground.rag.desc}
                 </p>
                 <div className="space-y-2 text-xs font-mono text-zinc-300">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-cyan-400" />
-                    <span>Dynamic vector similarity lookup</span>
+                    <CheckCircle2 className="w-4 h-4 text-cognitive shrink-0" />
+                    <span>{t.playground.rag.b1}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-cyan-400" />
-                    <span>Toxicity & prompt injection shield</span>
+                    <CheckCircle2 className="w-4 h-4 text-cognitive shrink-0" />
+                    <span>{t.playground.rag.b2}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-cyan-400" />
-                    <span>Automatic intent categorization</span>
+                    <CheckCircle2 className="w-4 h-4 text-cognitive shrink-0" />
+                    <span>{t.playground.rag.b3}</span>
                   </div>
                 </div>
               </div>
 
               <div className="lg:col-span-2 p-5 rounded-2xl bg-zinc-900/80 border border-white/10 font-mono text-xs space-y-3">
                 <div className="flex items-center justify-between text-[11px] text-zinc-400 border-b border-zinc-800 pb-2">
-                  <span>CHAIN OF THOUGHT TRACE (R1)</span>
-                  <span className="text-cyan-400">CONFIDENCE: 99.2%</span>
+                  <span>{t.playground.rag.traceHeader}</span>
+                  <span className="text-cognitive font-bold">{t.playground.rag.traceConfidence}</span>
                 </div>
                 <div className="bg-black/60 p-4 rounded-xl text-[11px] space-y-2 text-zinc-300">
-                  <p className="text-zinc-400">1. <span className="text-neon">[Supervisor]</span> Ingested query: "Cuanto cuesta el tratamiento completo y agendan hoy?"</p>
-                  <p className="text-zinc-400">2. <span className="text-cyan-400">[RAG Agent]</span> Retrieved context: 4 knowledge chunks matching "ortodoncia-precios-2026.pdf"</p>
-                  <p className="text-zinc-400">3. <span className="text-purple-400">[Toxicity Guard]</span> Score 0.01 (Clean / High Purchase Intent)</p>
-                  <p className="text-emerald-400 font-bold">4. [Action Dispatched] Formatted schedule link with doctor availability slot #24</p>
+                  <p className="text-zinc-400">{t.playground.rag.trace1}</p>
+                  <p className="text-zinc-400">{t.playground.rag.trace2}</p>
+                  <p className="text-zinc-400">{t.playground.rag.trace3}</p>
+                  <p className="text-emerald-400 font-bold">{t.playground.rag.trace4}</p>
                 </div>
               </div>
             </div>
@@ -242,46 +242,46 @@ export const FeatureHighlights = ({ lang = 'es' }) => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center animate-fade-in">
               <div className="space-y-4">
                 <span className="text-xs font-mono text-emerald-400 font-bold uppercase tracking-wider">
-                  Deterministic Attribution
+                  {t.playground.capi.tag}
                 </span>
                 <h4 className="text-xl font-black text-white">
-                  Meta CAPI Server Match Rate: 98.4%
+                  {t.playground.capi.title}
                 </h4>
                 <p className="text-xs text-zinc-400 leading-relaxed">
-                  No reliance on cookies or flaky browser pixels. Every interaction is tied to SHA-256 hashed emails, client IP, and fbc/fbp tokens for maximum ad optimization.
+                  {t.playground.capi.desc}
                 </p>
                 <div className="space-y-2 text-xs font-mono text-zinc-300">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    <span>Real-time Purchase event dispatch</span>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>{t.playground.capi.b1}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    <span>Full ROAS closed-loop feedback</span>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>{t.playground.capi.b2}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    <span>CPA reduction of up to 34%</span>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>{t.playground.capi.b3}</span>
                   </div>
                 </div>
               </div>
 
               <div className="lg:col-span-2 p-5 rounded-2xl bg-zinc-900/80 border border-white/10 font-mono text-xs space-y-3">
                 <div className="flex items-center justify-between text-[11px] text-zinc-400 border-b border-zinc-800 pb-2">
-                  <span>META CONVERSIONS API MATCH REPORT</span>
-                  <span className="text-emerald-400">HEALTH: EXCELLENT (9.8/10)</span>
+                  <span>{t.playground.capi.reportHeader}</span>
+                  <span className="text-emerald-400 font-bold">{t.playground.capi.reportHealth}</span>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   <div className="p-3 rounded-xl bg-black/60 border border-white/5 text-center">
-                    <span className="text-[10px] text-zinc-500 block">Event Quality</span>
+                    <span className="text-[10px] text-zinc-500 block">{t.playground.capi.metricQuality}</span>
                     <span className="text-base font-bold text-emerald-400">9.8 / 10</span>
                   </div>
                   <div className="p-3 rounded-xl bg-black/60 border border-white/5 text-center">
-                    <span className="text-[10px] text-zinc-500 block">Deduplication</span>
+                    <span className="text-[10px] text-zinc-500 block">{t.playground.capi.metricDeduplication}</span>
                     <span className="text-base font-bold text-cyan-400">100% Match</span>
                   </div>
                   <div className="p-3 rounded-xl bg-black/60 border border-white/5 text-center">
-                    <span className="text-[10px] text-zinc-500 block">Server Latency</span>
+                    <span className="text-[10px] text-zinc-500 block">{t.playground.capi.metricLatency}</span>
                     <span className="text-base font-bold text-neon">14ms</span>
                   </div>
                 </div>

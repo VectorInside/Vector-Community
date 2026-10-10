@@ -8,18 +8,18 @@ export const TestimonialsSection = ({ lang = 'es' }) => {
   const t = LANDING_TRANSLATIONS[lang].testimonials;
 
   return (
-    <section className="py-24 lg:py-32 relative overflow-hidden bg-black/50 border-t border-white/5">
+    <section className="py-12 sm:py-16 lg:py-20 relative overflow-hidden bg-black/50 border-t border-white/5">
       {/* Glow */}
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-3/4 h-80 bg-neon/5 blur-[140px] pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-10 sm:space-y-12">
         {/* Section Title */}
         <div className="text-center max-w-3xl mx-auto space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-white/10 text-[11px] font-mono font-bold text-neon uppercase tracking-wider">
             <Star className="w-3.5 h-3.5 fill-neon" />
             {t.tag}
           </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-black text-white tracking-tight">
             {t.title}
           </h2>
           <p className="text-zinc-400 text-sm sm:text-base leading-relaxed">
@@ -32,7 +32,7 @@ export const TestimonialsSection = ({ lang = 'es' }) => {
           {t.reviews.map((item, idx) => (
             <div
               key={idx}
-              className="p-6 sm:p-8 rounded-3xl bg-zinc-900/40 border border-white/10 backdrop-blur-xl hover:border-neon/40 transition-all duration-300 flex flex-col justify-between space-y-6 group hover:shadow-[0_0_30px_rgba(229,255,0,0.1)]"
+              className="p-6 sm:p-8 rounded-3xl bg-zinc-900/40 border border-white/10 backdrop-blur-xl hover:border-neon/40 transition-all duration-300 flex flex-col justify-between space-y-6 group hover:shadow-[0_0_30px_rgba(231,249,0,0.1)]"
             >
               <div className="space-y-4">
                 {/* Top Row: Stars + Tag */}
@@ -76,6 +76,22 @@ export const TestimonialsSection = ({ lang = 'es' }) => {
             </div>
           ))}
         </div>
+
+        {/* Production Proof Metrics Bar (Elimina vacíos) */}
+        {t.stats && (
+          <div className="p-6 rounded-3xl bg-zinc-950/80 border border-white/10 backdrop-blur-xl grid grid-cols-2 lg:grid-cols-4 gap-6 text-center shadow-xl">
+            {t.stats.map((s, sIdx) => (
+              <div key={sIdx} className="space-y-1">
+                <div className="text-2xl sm:text-3xl font-black font-mono text-neon">
+                  {s.value}
+                </div>
+                <div className="text-xs font-mono text-zinc-400 uppercase tracking-wider">
+                  {s.label}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

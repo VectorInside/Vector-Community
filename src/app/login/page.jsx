@@ -16,6 +16,7 @@ import {
   Check
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { VectorInsideLogo } from '@/components/common/VectorInsideLogo';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -41,7 +42,7 @@ export default function LoginPage() {
           particleCount: 40,
           spread: 50,
           origin: { y: 0.7 },
-          colors: ['#E5FF00', '#FFFFFF', '#10B981'],
+          colors: ['#E7F900', '#FFFFFF', '#8A95B6'],
         });
       } catch (e) {}
 
@@ -51,37 +52,18 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg-base)] flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+    <div className="min-h-screen bg-[var(--bg-base)] flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 relative overflow-hidden font-sans">
       {/* Background glow effects */}
       <div className="absolute top-1/4 -left-32 w-96 h-96 bg-[var(--neon-primary)]/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-cognitive/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="max-w-md w-full space-y-8 z-10 animate-fade-in">
         {/* Brand Header */}
-        <div className="text-center space-y-3">
-          <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-[var(--bg-panel)] border border-neon shadow-[0_0_15px_var(--neon-glow)]">
-            <svg
-              width="65"
-              height="35"
-              viewBox="0 0 150 80"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path d="M45 0 L75 75 L105 0 L125 0 L85 85 L45 85 Z" fill="#E5FF00" />
-              <rect x="62" y="22" width="12" height="4" fill="#050505" />
-              <rect x="85" y="40" width="15" height="6" fill="#050505" />
-            </svg>
-          </div>
-
-          <div>
-            <h1 className="text-2xl font-black text-[var(--text-main)] tracking-wider flex items-center justify-center gap-2">
-              <span>VECTOR</span>
-              <span className="text-neon">INSIDE</span>
-            </h1>
-            <p className="text-xs text-[var(--text-muted)] font-mono tracking-widest uppercase mt-1">
-              Vector Community OS — Master Control
-            </p>
-          </div>
+        <div className="text-center space-y-3 flex flex-col items-center">
+          <VectorInsideLogo variant="isologo" size="lg" showCommunity={true} />
+          <p className="text-xs text-[var(--text-muted)] font-mono tracking-widest uppercase mt-2">
+            Vector Community OS — Master Control
+          </p>
         </div>
 
         {/* Login Form Container */}

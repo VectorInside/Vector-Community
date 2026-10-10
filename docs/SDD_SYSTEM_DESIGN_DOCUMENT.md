@@ -3,7 +3,7 @@
 - **Sistema:** Vector Community OS ("La Puerta Trasera")
 - **Versión:** 3.0 (Universal Business Taxonomy & Meta Intelligence Edition)
 - **Organización:** Vector Inside Operations
-- **ADRs Asociados:** [ADR-001](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_001_MASTER_ARCHITECTURE_AND_BUSINESS_RULES.md), [ADR-002](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_002_UNIVERSAL_BUSINESS_TAXONOMY_AND_RAG_PILLARS.md), [ADR-003](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_003_META_GRAPH_INTELLIGENCE_AND_HITL_TRIAGE.md)
+- **ADRs Asociados:** [ADR-001](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_001_MASTER_ARCHITECTURE_AND_BUSINESS_RULES.md), [ADR-002](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_002_UNIVERSAL_BUSINESS_TAXONOMY_AND_RAG_PILLARS.md), [ADR-003](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_003_META_GRAPH_INTELLIGENCE_AND_HITL_TRIAGE.md), [ADR-008](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_008_PAY_PER_QUALIFIED_LEAD_STATE_MACHINE_AND_KANBAN_TRIAGE.md), [ADR-009](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_009_DUAL_THEME_DESIGN_SYSTEM_RULES.md)
 
 ---
 
@@ -178,3 +178,20 @@ api.interceptors.request.use((config) => {
   return config;
 });
 ```
+
+---
+
+## 6. Arquitectura del Sistema de Diseño Dual-Theme (Modo Oscuro & Modo Claro)
+
+La experiencia de usuario de **Vector Community** implementa un motor de diseño dual sincronizado mediante tokens CSS (`src/styles/globals.css`) y clases utilitarias de Tailwind (`darkMode: 'class'`), normado formalmente en [ADR-009](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_009_DUAL_THEME_DESIGN_SYSTEM_RULES.md):
+
+### 6.1. Principios de Contraste y Accesibilidad (WCAG AA/AAA)
+1. **Lienzo y Superficies:**
+   - **Modo Oscuro:** Lienzo `#000000` con superficies elevadas `#07080A` y `#0E0F13`.
+   - **Modo Claro:** Lienzo `#F8FAFC` (porcelana ejecutiva) con paneles `#FFFFFF` y bordes nítidos `#E2E8F0`.
+2. **Jerarquía Tipográfica Invertida:**
+   - Todo texto operativo utiliza emparejamiento semántico: `text-zinc-900 dark:text-white` para títulos primarios y `text-zinc-600 dark:text-zinc-400` para metadatos.
+3. **El Guardrail del Amarillo Vectorial (`#E7F900`):**
+   - **En Texto:** Queda prohibido el uso de `#E7F900` como texto plano sobre superficies claras (<1.4:1). El sistema mapea dinámicamente `.text-neon` a `--neon-text` (`#4D5600` en modo claro, superando 6.5:1 de contraste AAA).
+   - **En Botones y Badges:** Conserva el Amarillo Vectorial `#E7F900` con tipografía negra (`bg-neon text-black`), alcanzando un contraste supremo de **15.2:1** en ambos modos.
+

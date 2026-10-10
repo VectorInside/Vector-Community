@@ -43,20 +43,32 @@ export const GeneralModal = () => {
 
         {/* Footer */}
         <div className="p-4 border-t border-[var(--border-color)] bg-[var(--bg-card)] rounded-b-xl flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={closeModal}
-            className="text-xs font-bold bg-[var(--bg-base)] border border-[var(--border-color)] px-4 py-2 rounded hover:border-[var(--text-muted)] transition-colors text-[var(--text-main)]"
-          >
-            Cerrar
-          </button>
-          <button
-            type="button"
-            onClick={executeModalAction}
-            className="text-xs font-bold bg-neon text-black px-4 py-2 rounded hover:bg-[var(--neon-hover)] transition-colors shadow-[0_0_10px_var(--neon-glow)] active:scale-95"
-          >
-            {modal.actionText}
-          </button>
+          {modal.onAction ? (
+            <>
+              <button
+                type="button"
+                onClick={closeModal}
+                className="text-xs font-bold bg-[var(--bg-base)] border border-[var(--border-color)] px-4 py-2 rounded hover:border-[var(--text-muted)] transition-colors text-[var(--text-main)]"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={executeModalAction}
+                className="text-xs font-bold bg-neon text-black px-4 py-2 rounded hover:bg-[var(--neon-hover)] transition-colors shadow-[0_0_10px_var(--neon-glow)] active:scale-95"
+              >
+                {modal.actionText || 'Confirmar'}
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={closeModal}
+              className="text-xs font-bold bg-neon text-black px-5 py-2 rounded hover:bg-[var(--neon-hover)] transition-colors shadow-[0_0_10px_var(--neon-glow)] active:scale-95"
+            >
+              {modal.actionText || 'Entendido'}
+            </button>
+          )}
         </div>
       </div>
     </div>

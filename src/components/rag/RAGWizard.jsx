@@ -55,6 +55,7 @@ import {
   HeartPulse,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { VectorLobo } from '@/components/common/VectorLobo';
 
 // =========================================================================
 // TAXONOMÍA UNIVERSAL DE GIROS DE NEGOCIO Y MODELOS DE CONVERSIÓN
@@ -783,7 +784,7 @@ export const RAGWizard = () => {
         confetti({
           particleCount: 50,
           spread: 70,
-          colors: ['#E5FF00', '#06B6D4', '#10B981'],
+          colors: ['#E7F900', '#8A95B6', '#FFFFFF'],
         });
       } catch (e) {}
 
@@ -826,7 +827,7 @@ export const RAGWizard = () => {
       'Se ha incorporado la directriz a la memoria del bot. El Health Score de tu base de conocimiento aumentó.',
       () => {
         try {
-          confetti({ particleCount: 30, spread: 50, colors: ['#E5FF00', '#10B981'] });
+          confetti({ particleCount: 30, spread: 50, colors: ['#E7F900', '#8A95B6', '#FFFFFF'] });
         } catch (e) {}
       },
       'Excelente'
@@ -847,7 +848,7 @@ export const RAGWizard = () => {
             particleCount: 70,
             spread: 80,
             origin: { y: 0.6 },
-            colors: ['#E5FF00', '#06B6D4', '#10B981', '#FFFFFF'],
+            colors: ['#E7F900', '#8A95B6', '#FFFFFF'],
           });
         } catch (e) {}
         setAdminViewMode('list');
@@ -1659,7 +1660,19 @@ export const RAGWizard = () => {
                     </h3>
                   </div>
 
-                  <div className="p-5 rounded-2xl bg-zinc-950 border border-neon/30 space-y-3 font-mono text-xs">
+                  <div className="p-5 rounded-2xl bg-zinc-950 border border-neon/30 space-y-4 font-mono text-xs">
+                    <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+                      <div className="flex items-center gap-3">
+                        <VectorLobo size={32} showStatus={true} status="active" />
+                        <div>
+                          <span className="text-white font-bold block">Auditoría Previa Lobo Vectorial</span>
+                          <span className="text-[10px] text-zinc-400">Parámetros de memoria RAG y blindaje RLS</span>
+                        </div>
+                      </div>
+                      <span className="px-2.5 py-1 rounded bg-neon/15 text-neon font-bold border border-neon/30 text-[10px]">
+                        IFV Esperado: 48/50
+                      </span>
+                    </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <span className="text-zinc-500 block">Negocio:</span>
@@ -1729,24 +1742,30 @@ export const RAGWizard = () => {
             </button>
           </div>
 
-          {/* RAG Health Score Widget for Client */}
+          {/* RAG Health Score & IFV Widget for Client (Bloque 6 & 13.9 Manual Maestro) */}
           <div className="p-5 rounded-2xl bg-zinc-900/80 border border-neon/30 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-neon/10 border border-neon/30 flex items-center justify-center text-neon font-black font-mono text-lg shadow-[0_0_15px_var(--neon-glow)]">
-                92%
-              </div>
+            <div className="flex items-center gap-4">
+              <VectorLobo size={44} showStatus={true} status="active" />
               <div>
-                <h4 className="text-sm font-bold text-white font-mono">
-                  Base de Conocimiento Calibrada
-                </h4>
-                <p className="text-xs text-zinc-400">
-                  Tu bot cuenta con identidad, respuestas a dudas frecuentes y filtros de seguridad activos.
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-bold text-white font-mono">
+                    Base de Conocimiento Calibrada
+                  </h4>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neon/15 text-neon font-bold border border-neon/30">
+                    IFV: 48/50
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-400 mt-0.5">
+                  Lobo Vectorial supervisa identidad (Pilar 2), precios y filtros sin alucinaciones.
                 </p>
               </div>
             </div>
-            <span className="text-xs font-mono text-emerald-400 font-bold bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/30">
-              ✓ 0 Alertas Críticas
-            </span>
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <span className="text-xs font-mono text-neon font-black block">Calibración 94%</span>
+                <span className="text-[10px] text-emerald-400 font-mono">0 Alertas Críticas</span>
+              </div>
+            </div>
           </div>
 
           {/* 4 Pillars Client Status Cards */}

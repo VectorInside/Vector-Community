@@ -16,29 +16,42 @@ module.exports = {
           elevated: "var(--bg-card)",
           card: "var(--bg-card)",
           border: "var(--border-color)",
-          hover: "#252B36",
+          hover: "#1A1D24",
         },
         brand: {
-          primary: "var(--neon-primary)",
+          primary: "var(--neon-primary)", // #E7F900 Amarillo Vectorial
           hover: "var(--neon-hover)",
           subtle: "var(--neon-glow)",
+          glow: "var(--neon-glow)",
+          cognitive: "var(--azul-cognitivo)", // #8A95B6 Azul Cognitivo
+        },
+        cognitive: {
+          DEFAULT: "var(--azul-cognitivo)",
+          glow: "var(--azul-cognitivo-glow)",
+          border: "rgba(138, 149, 182, 0.3)",
+        },
+        neon: {
+          DEFAULT: "var(--neon-primary)",
+          hover: "var(--neon-hover)",
           glow: "var(--neon-glow)",
         },
         status: {
           success: "var(--success)",
           warning: "var(--warning)",
           danger: "var(--danger)",
-          info: "#3B82F6",
+          info: "#8A95B6",
         },
       },
       boxShadow: {
         'neon': '0 0 20px 0 var(--neon-glow)',
-        'neon-lg': '0 0 35px -5px rgba(229, 255, 0, 0.4)',
+        'neon-lg': '0 0 35px -5px rgba(231, 249, 0, 0.45)',
         'neon-sm': '0 0 10px var(--neon-glow)',
-        'surface': '0 10px 30px -10px rgba(0, 0, 0, 0.5)',
+        'cognitive': '0 0 20px 0 var(--azul-cognitivo-glow)',
+        'surface': '0 10px 30px -10px rgba(0, 0, 0, 0.8)',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        heading: ['Montserrat', 'Inter', 'sans-serif'],
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
       },
       animation: {

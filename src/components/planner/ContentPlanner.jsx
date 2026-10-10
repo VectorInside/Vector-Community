@@ -151,7 +151,7 @@ export const ContentPlanner = () => {
         };
         setPosts((prev) => [newPost, ...prev]);
         try {
-          confetti({ particleCount: 40, spread: 60, colors: ['#E5FF00', '#A855F7'] });
+          confetti({ particleCount: 40, spread: 60, colors: ['#E7F900', '#8A95B6', '#FFFFFF'] });
         } catch (e) {}
       },
       'Insertar en Parrilla'
@@ -313,6 +313,38 @@ export const ContentPlanner = () => {
           </div>
         </div>
       )}
+
+      {/* ALERTA ALGORÍTMICA DE FATIGA CREATIVA (CONDICIÓN MATEMÁTICA DEEPSEEK TRIGGER) */}
+      <div className="rounded-2xl bg-purple-950/25 border border-purple-500/40 p-4 sm:p-5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 font-mono text-xs shadow-[0_0_20px_rgba(168,85,247,0.15)]">
+        <div className="space-y-1.5 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-black uppercase flex items-center gap-1">
+              <Flame className="w-3.5 h-3.5 text-purple-400" />
+              Sub-Bot Analista • Circuit Breaker de Fatiga Creativa
+            </span>
+            <span className="text-[10px] text-zinc-400">
+              Meta Graph API Telemetría: <strong className="text-white">AdSet "Implantes_Promo_V3"</strong>
+            </span>
+          </div>
+
+          <p className="text-[11px] text-purple-200 font-sans leading-relaxed">
+            <strong>Condición Algorítmica Cumplida:</strong> Frecuencia acumulada en <strong className="text-white font-mono">3.82 (&gt; 3.5)</strong> con incremento de Costo por Clic <strong className="text-red-400 font-mono">ΔCPC +24.5% (&gt; +20%)</strong> y caída en <strong className="text-red-400 font-mono">ΔCTR -18.2% (&lt; -15%)</strong>.
+          </p>
+
+          <div className="p-2 rounded-xl bg-black/60 border border-purple-500/20 text-[10px] text-purple-300">
+            <code>IF (Frequency &gt; 3.5) AND (ΔCPC &gt; +20% OR ΔCTR &lt; -15%) ⟹ TRIGGER DeepSeek_Creative_Diversity_Prompt</code>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleGenerateAiPost}
+          className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shrink-0 flex items-center gap-2 shadow-[0_0_15px_rgba(168,85,247,0.4)] transition-all active:scale-95"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-neon" />
+          <span>Disparar Diversidad Creativa (DeepSeek)</span>
+        </button>
+      </div>
 
       {/* Filter Tabs */}
       <div className="flex items-center justify-between gap-4 border-b border-[var(--border-color)] pb-3">
