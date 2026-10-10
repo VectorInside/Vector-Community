@@ -46,7 +46,6 @@ export const Navbar = ({ onOpenTrial, lang = 'es', onToggleLang }) => {
     { name: t.features, href: '#features', hideOnLg: false },
     { name: t.liveDemo, href: '#realtime-demo', hideOnLg: false },
     { name: t.architecture, href: '#ai-engine', hideOnLg: true },
-    { name: t.roiCalculator, shortName: 'ROI', href: '#roi-calculator', hideOnLg: false },
     { name: t.pricing, href: '#pricing', hideOnLg: false },
     { name: t.trust, href: '#trust', hideOnLg: true },
     { name: t.faq, href: '#faq', hideOnLg: false },

@@ -9,6 +9,7 @@ export const AuthProvider = ({ children }) => {
   const [role, setRole] = useState('admin'); // 'admin' (Lobo Vectorial) | 'client' (Dueño Negocio)
   const [theme, setTheme] = useState('dark');
   const [activeTenantKey, setActiveTenantKey] = useState('dental');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [modal, setModal] = useState({
     isOpen: false,
     title: 'Notificación Vectorial',
@@ -16,6 +17,26 @@ export const AuthProvider = ({ children }) => {
     actionText: 'Confirmar Acción',
     onAction: null,
   });
+
+  // Sync sidebar state from localStorage on client mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedCollapsed = localStorage.getItem('vector_sidebar_collapsed');
+      if (savedCollapsed !== null) {
+        setIsSidebarCollapsed(savedCollapsed === 'true');
+      }
+    }
+  }, []);
+
+  const toggleSidebarCollapse = () => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('vector_sidebar_collapsed', String(next));
+      }
+      return next;
+    });
+  };
 
   // Sync theme with document class
   useEffect(() => {
@@ -92,6 +113,8 @@ export const AuthProvider = ({ children }) => {
         triggerModal,
         closeModal,
         executeModalAction,
+        isSidebarCollapsed,
+        toggleSidebarCollapse,
       }}
     >
       {children}

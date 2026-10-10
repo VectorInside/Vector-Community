@@ -6,6 +6,93 @@ export const USER_ROLES = {
   CLIENT_READ_ONLY: 'client',
 };
 
+// ============================================================================
+// MATRIZ DE TEMPERATURA Y ESTADOS DE LEAD (ENUMS DETERMINISTAS)
+// ============================================================================
+export const LEAD_STATUS_ENUM = {
+  LEAD_COLD_24H: 'LEAD_COLD_24H',
+  LEAD_WARM_24H: 'LEAD_WARM_24H',
+  LEAD_HOT_PREQUAL: 'LEAD_HOT_PREQUAL',
+  BILLABLE_LEAD: 'BILLABLE_LEAD',
+  HITL_INTERVENTION: 'HITL_INTERVENTION',
+};
+
+export const KANBAN_COLUMNS_CONFIG = [
+  {
+    id: LEAD_STATUS_ENUM.LEAD_COLD_24H,
+    title: 'Ingreso / Frío',
+    badge: 'LEAD_COLD_24H',
+    color: 'from-blue-500/20 to-blue-600/10 text-blue-400 border-blue-500/30',
+    dotColor: 'bg-blue-400',
+    description: 'Solicitó precio/info básica y pausó. Re-contactación automática a 24h.',
+    countdownLabel: 'Ventana 24h Activa',
+  },
+  {
+    id: LEAD_STATUS_ENUM.LEAD_WARM_24H,
+    title: 'En Seguimiento 24h',
+    badge: 'LEAD_WARM_24H',
+    color: 'from-amber-500/20 to-amber-600/10 text-amber-400 border-amber-500/30',
+    dotColor: 'bg-amber-400',
+    description: 'Respondió preguntas breves. Presentación de CTA explícito de aclaración.',
+    countdownLabel: 'Nurture 24h',
+  },
+  {
+    id: LEAD_STATUS_ENUM.LEAD_HOT_PREQUAL,
+    title: 'Cálido',
+    badge: 'LEAD_HOT_PREQUAL',
+    color: 'from-orange-500/20 to-orange-600/10 text-orange-400 border-orange-500/30',
+    dotColor: 'bg-orange-400',
+    description: 'Indagó opciones de financiamiento/pago. En espera de confirmación de cita.',
+    countdownLabel: 'Alta Intención',
+  },
+  {
+    id: LEAD_STATUS_ENUM.BILLABLE_LEAD,
+    title: 'Calificado',
+    badge: 'CALIFICADO',
+    color: 'from-neon/20 to-lime-500/10 text-neon border-neon/40 shadow-[0_0_15px_rgba(229,255,0,0.15)]',
+    dotColor: 'bg-neon',
+    description: '4 criterios completados. Prospecto de alto valor listo para venta o cita.',
+    countdownLabel: 'Listo para Cierre',
+  },
+  {
+    id: LEAD_STATUS_ENUM.HITL_INTERVENTION,
+    title: 'Intervención Humana (HITL)',
+    badge: 'SUTURA ARCÁNGEL',
+    color: 'from-red-500/25 to-rose-600/10 text-red-400 border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.2)]',
+    dotColor: 'bg-red-500 animate-pulse',
+    description: 'IA congelada por bandera de riesgo o lenguaje agresivo. Control humano.',
+    countdownLabel: 'Riesgo Crítico',
+  },
+];
+
+export const QUALIFIED_LEAD_CRITERIA = [
+  {
+    id: 'identity',
+    key: 'identityValidated',
+    label: 'Criterio 1: Identidad & Datos de Contacto Validados',
+    description: 'Nombre completo AND Email estructurado AND WhatsApp verificado.',
+  },
+  {
+    id: 'catalog',
+    key: 'catalogIdentified',
+    label: 'Criterio 2: Interés Específico en Catálogo',
+    description: 'Identificación unívoca del producto/servicio en la matriz del tenant.',
+  },
+  {
+    id: 'financial',
+    key: 'financialClarified',
+    label: 'Criterio 3: Aclaración Financiera Completa',
+    description: 'Precios, métodos de pago, costos de envío o MSI resueltos por la IA.',
+  },
+  {
+    id: 'consent',
+    key: 'consentOrBooked',
+    label: 'Criterio 4: Aceptación Explícita o Cita Confirmada',
+    description: 'Autorización inambigua de contacto por ejecutivo o franja agendada.',
+  },
+];
+
+
 export const INITIAL_TENANTS_DATA = {
   dental: {
     id: 'dental',

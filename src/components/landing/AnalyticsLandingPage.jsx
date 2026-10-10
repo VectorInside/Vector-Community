@@ -6,7 +6,6 @@ import { LiveTicker } from './LiveTicker';
 import { TrustBadges } from './TrustBadges';
 import { FeatureHighlights } from './FeatureHighlights';
 import { LiveTelemetryDemo } from './LiveTelemetryDemo';
-import { RoiCalculator } from './RoiCalculator';
 import { PricingSection } from './PricingSection';
 import { TestimonialsSection } from './TestimonialsSection';
 import { FaqSection } from './FaqSection';
@@ -66,7 +65,6 @@ export const AnalyticsLandingPage = () => {
         <TrustBadges lang={lang} />
         <FeatureHighlights lang={lang} />
         <LiveTelemetryDemo lang={lang} />
-        <RoiCalculator onOpenTrial={handleOpenTrial} lang={lang} />
         <PricingSection onOpenTrial={handleOpenTrial} lang={lang} />
         <TestimonialsSection lang={lang} />
         <FaqSection onOpenTrial={handleOpenTrial} lang={lang} />

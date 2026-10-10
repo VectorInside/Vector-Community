@@ -62,13 +62,8 @@ export const Footer = ({ lang = 'es' }) => {
                 </a>
               </li>
               <li>
-                <a href="#roi-calculator" className="hover:text-neon transition-colors">
-                  ROI Calculator
-                </a>
-              </li>
-              <li>
                 <a href="#pricing" className="hover:text-neon transition-colors">
-                  Pricing Matrix
+                  Vector Deal Pricing
                 </a>
               </li>
             </ul>
