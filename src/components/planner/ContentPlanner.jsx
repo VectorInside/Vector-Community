@@ -151,7 +151,7 @@ export const ContentPlanner = () => {
         };
         setPosts((prev) => [newPost, ...prev]);
         try {
-          confetti({ particleCount: 40, spread: 60, colors: ['#E5FF00', '#A855F7'] });
+          confetti({ particleCount: 40, spread: 60, colors: ['#E7F900', '#8A95B6', '#FFFFFF'] });
         } catch (e) {}
       },
       'Insertar en Parrilla'

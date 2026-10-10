@@ -365,7 +365,7 @@ export const TriageProtocol = () => {
       'Has tomado el control manual de este chat. El Lobo Vectorial pausó el bot automático para que intervengas directamente.',
       () => {
         try {
-          confetti({ particleCount: 30, spread: 50, colors: ['#E5FF00', '#10B981'] });
+          confetti({ particleCount: 30, spread: 50, colors: ['#E7F900', '#FFFFFF', '#8A95B6'] });
         } catch (e) {}
       },
       'Entendido'
@@ -387,7 +387,7 @@ export const TriageProtocol = () => {
       `La duda recurrente: "<strong>${commentText}</strong>" fue categorizada y agregada al Pilar 3 (FAQs) del negocio para que el bot responda de forma automática en el futuro.`,
       () => {
         try {
-          confetti({ particleCount: 25, spread: 45, colors: ['#E5FF00', '#06B6D4'] });
+          confetti({ particleCount: 25, spread: 45, colors: ['#E7F900', '#8A95B6', '#FFFFFF'] });
         } catch (e) {}
       },
       'Aceptar'

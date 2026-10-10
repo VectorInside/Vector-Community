@@ -36,7 +36,7 @@ export const TrialModal = ({ isOpen, onClose, lang = 'es' }) => {
           particleCount: 60,
           spread: 70,
           origin: { y: 0.6 },
-          colors: ['#E5FF00', '#06B6D4', '#10B981'],
+          colors: ['#E7F900', '#8A95B6', '#FFFFFF'],
         });
       } catch (err) {}
 
@@ -52,7 +52,7 @@ export const TrialModal = ({ isOpen, onClose, lang = 'es' }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-      <div className="w-full max-w-lg rounded-3xl bg-zinc-950 border border-neon/40 shadow-[0_0_50px_rgba(229,255,0,0.2)] p-6 sm:p-8 relative space-y-6 overflow-hidden">
+      <div className="w-full max-w-lg rounded-3xl bg-zinc-950 border border-neon/40 shadow-[0_0_50px_rgba(231,249,0,0.2)] p-6 sm:p-8 relative space-y-6 overflow-hidden">
         {/* Close Button */}
         <button
           type="button"
@@ -70,7 +70,7 @@ export const TrialModal = ({ isOpen, onClose, lang = 'es' }) => {
                 <Sparkles className="w-3.5 h-3.5" />
                 {t.tag}
               </div>
-              <h3 className="text-2xl font-black text-white">
+              <h3 className="text-2xl font-heading font-black text-white">
                 {t.title}
               </h3>
               <p className="text-xs text-zinc-400 font-mono">

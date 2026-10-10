@@ -16,6 +16,7 @@ import {
   Moon,
   Globe,
 } from 'lucide-react';
+import { VectorInsideLogo } from '@/components/common/VectorInsideLogo';
 
 export const Sidebar = () => {
   const pathname = usePathname();
@@ -41,28 +42,10 @@ export const Sidebar = () => {
   return (
     <aside className="w-64 vector-bg-panel vector-border border-r flex flex-col h-screen z-20 shrink-0 select-none">
       {/* Brand Header */}
-      <div className="p-6 border-b border-[var(--border-color)] flex flex-col items-center justify-center">
-        <div className="mb-2 text-center">
-          {/* Logo Vector Inside Oficial */}
-          <svg
-            width="85"
-            height="45"
-            viewBox="0 0 150 80"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            className="mx-auto mb-1"
-          >
-            <path d="M45 0 L75 75 L105 0 L125 0 L85 85 L45 85 Z" fill="#E5FF00" />
-            <rect x="62" y="22" width="12" height="4" fill="#050505" />
-            <rect x="85" y="40" width="15" height="6" fill="#050505" />
-          </svg>
-          <span className="font-black tracking-[0.15em] text-xs uppercase block text-[var(--text-main)]">
-            VECTOR INSIDE
-          </span>
-        </div>
-        <h1 className="text-sm font-black tracking-tight uppercase text-neon">
-          Vector Community
-        </h1>
+      <div className="p-5 border-b border-[var(--border-color)] flex flex-col items-center justify-center">
+        <Link href="/dashboard" className="transition-transform hover:scale-105">
+          <VectorInsideLogo variant="imagotype" size="sm" showCommunity={true} />
+        </Link>
       </div>
 
       {/* Role Selector */}

@@ -1,8 +1,8 @@
 'use client';
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navbar } from './Navbar';
 import { HeroSection } from './HeroSection';
+import { LiveTicker } from './LiveTicker';
 import { TrustBadges } from './TrustBadges';
 import { FeatureHighlights } from './FeatureHighlights';
 import { LiveTelemetryDemo } from './LiveTelemetryDemo';
@@ -18,8 +18,25 @@ export const AnalyticsLandingPage = () => {
   const [lang, setLang] = useState('es'); // Default is Español ('es')
   const [trialModalOpen, setTrialModalOpen] = useState(false);
 
+  useEffect(() => {
+    try {
+      const savedLang = localStorage.getItem('vector_community_lang');
+      if (savedLang === 'es' || savedLang === 'en') {
+        setLang(savedLang);
+      }
+    } catch (e) {
+      // safe fallback if storage unavailable
+    }
+  }, []);
+
   const handleToggleLang = () => {
-    setLang((prev) => (prev === 'es' ? 'en' : 'es'));
+    setLang((prev) => {
+      const nextLang = prev === 'es' ? 'en' : 'es';
+      try {
+        localStorage.setItem('vector_community_lang', nextLang);
+      } catch (e) {}
+      return nextLang;
+    });
   };
 
   const handleOpenTrial = () => {
@@ -31,7 +48,7 @@ export const AnalyticsLandingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg-base)] text-white selection:bg-[#E5FF00] selection:text-black relative font-sans">
+    <div className="min-h-screen bg-[var(--bg-base)] text-white selection:bg-[#E7F900] selection:text-black relative font-sans overflow-x-hidden">
       {/* Floating Free Trial Modal */}
       <TrialModal isOpen={trialModalOpen} onClose={handleCloseTrial} lang={lang} />
 
@@ -45,13 +62,14 @@ export const AnalyticsLandingPage = () => {
       {/* Main Sections with Vector Inside Aesthetic */}
       <main className="relative">
         <HeroSection onOpenTrial={handleOpenTrial} lang={lang} />
+        <LiveTicker lang={lang} />
         <TrustBadges lang={lang} />
         <FeatureHighlights lang={lang} />
         <LiveTelemetryDemo lang={lang} />
         <RoiCalculator onOpenTrial={handleOpenTrial} lang={lang} />
         <PricingSection onOpenTrial={handleOpenTrial} lang={lang} />
         <TestimonialsSection lang={lang} />
-        <FaqSection lang={lang} />
+        <FaqSection onOpenTrial={handleOpenTrial} lang={lang} />
         <CtaBanner onOpenTrial={handleOpenTrial} lang={lang} />
       </main>
 

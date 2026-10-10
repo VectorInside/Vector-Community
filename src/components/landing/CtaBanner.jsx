@@ -9,12 +9,12 @@ export const CtaBanner = ({ onOpenTrial, lang = 'es' }) => {
   const t = LANDING_TRANSLATIONS[lang].ctaBanner;
 
   return (
-    <section className="py-20 lg:py-28 relative overflow-hidden bg-black">
+    <section className="py-10 sm:py-12 lg:py-16 relative overflow-hidden bg-black border-t border-white/5">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="rounded-3xl bg-gradient-to-r from-zinc-950 via-zinc-900 to-zinc-950 border-2 border-neon/50 p-8 sm:p-12 lg:p-16 relative overflow-hidden shadow-[0_0_60px_rgba(229,255,0,0.2)] text-center space-y-8">
+        <div className="rounded-3xl bg-gradient-to-r from-zinc-950 via-zinc-900 to-zinc-950 border-2 border-neon/50 p-6 sm:p-10 lg:p-12 relative overflow-hidden shadow-[0_0_60px_rgba(231,249,0,0.2)] text-center space-y-6 sm:space-y-8">
           {/* Decorative glow circles */}
           <div className="absolute top-0 left-1/4 w-72 h-72 bg-neon/15 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 right-1/4 w-72 h-72 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 right-1/4 w-72 h-72 bg-cognitive/15 rounded-full blur-3xl pointer-events-none" />
 
           {/* Tag */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-neon/10 border border-neon/30 text-neon text-xs font-mono font-bold uppercase tracking-wider">
@@ -24,7 +24,7 @@ export const CtaBanner = ({ onOpenTrial, lang = 'es' }) => {
 
           {/* Heading */}
           <div className="max-w-3xl mx-auto space-y-4">
-            <h2 className="text-3xl sm:text-4xl lg:text-6xl font-black text-white tracking-tight leading-tight">
+            <h2 className="text-3xl sm:text-4xl lg:text-6xl font-heading font-black text-white tracking-tight leading-tight">
               {t.title}
             </h2>
             <p className="text-zinc-400 text-sm sm:text-lg max-w-2xl mx-auto leading-relaxed">
@@ -37,18 +37,18 @@ export const CtaBanner = ({ onOpenTrial, lang = 'es' }) => {
             <button
               type="button"
               onClick={onOpenTrial}
-              className="w-full sm:w-auto px-8 py-4 rounded-xl bg-neon text-black font-mono font-black text-sm uppercase tracking-wider hover:bg-[#d9f200] transition-all duration-200 shadow-neon flex items-center justify-center gap-2 group active:scale-98"
+              className="w-full sm:w-auto px-8 py-4 rounded-xl bg-neon text-black font-mono font-black text-sm uppercase tracking-wider hover:bg-[#d9ea00] transition-all duration-200 shadow-neon flex items-center justify-center gap-2 group active:scale-98 whitespace-nowrap shrink-0"
             >
-              <span>{t.ctaTrial}</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              <span className="whitespace-nowrap">{t.ctaTrial}</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform shrink-0" />
             </button>
 
             <Link
               href="/dashboard"
-              className="w-full sm:w-auto px-7 py-4 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 font-mono font-bold text-sm border border-white/10 hover:border-white/25 transition-all flex items-center justify-center gap-2 backdrop-blur-md"
+              className="w-full sm:w-auto px-7 py-4 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 font-mono font-bold text-sm border border-white/10 hover:border-white/25 transition-all flex items-center justify-center gap-2 backdrop-blur-md whitespace-nowrap shrink-0"
             >
-              <BarChart3 className="w-4 h-4 text-cyan-400" />
-              <span>{t.ctaDashboard}</span>
+              <BarChart3 className="w-4 h-4 text-cognitive shrink-0" />
+              <span className="whitespace-nowrap">{t.ctaDashboard}</span>
             </Link>
           </div>
 

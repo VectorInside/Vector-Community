@@ -24,7 +24,7 @@ export const OrchestrationView = () => {
       '<b>Estado:</b> ACTIVO (12ms latencia)<br><b>Ruta:</b> Webhook Meta Ads -> Classifier -> Delegación a Sub-Bot Analista y Sub-Bot Closer.',
       () => {
         try {
-          confetti({ particleCount: 35, spread: 60, colors: ['#E5FF00', '#FFFFFF'] });
+          confetti({ particleCount: 35, spread: 60, colors: ['#E7F900', '#8A95B6', '#FFFFFF'] });
         } catch (e) {}
       },
       'Verificar Grafo'

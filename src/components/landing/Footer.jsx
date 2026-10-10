@@ -19,12 +19,12 @@ export const Footer = ({ lang = 'es' }) => {
 
   return (
     <footer className="bg-zinc-950 border-t border-white/10 text-zinc-400 font-sans relative overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-12 space-y-12 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-12 pb-8 sm:pb-10 space-y-8 sm:space-y-10 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-12">
           {/* Col 1: Brand Info (2 cols wide) */}
           <div className="lg:col-span-2 space-y-5">
             <Link href="/landing" className="flex items-center gap-3">
-              <VectorInsideLogo size="md" showCommunity={true} />
+              <VectorInsideLogo size="md" showCommunity={false} showClaim={true} />
             </Link>
 
             <p className="text-xs text-zinc-400 leading-relaxed max-w-sm">

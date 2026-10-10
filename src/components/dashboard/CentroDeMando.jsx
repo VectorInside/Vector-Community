@@ -4,6 +4,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Building2, Sparkles, Activity, ShieldCheck, ArrowRight, Plus } from 'lucide-react';
+import { VectorLobo } from '@/components/common/VectorLobo';
 
 export const CentroDeMando = () => {
   const router = useRouter();
@@ -17,13 +18,13 @@ export const CentroDeMando = () => {
   return (
     <div className="p-8 block animate-fade-in">
       {/* Header */}
-      <header className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border-color)] pb-4 gap-4">
+      <header className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border-color)] pb-4 gap-4">
         <div>
-          <h2 className="text-3xl font-black uppercase tracking-tighter text-[var(--text-main)]">
+          <h2 className="text-3xl font-heading font-black uppercase tracking-tight text-[var(--text-main)]">
             Centro de <span className="text-neon">Mando</span>
           </h2>
           <p className="text-xs font-mono text-[var(--text-muted)] mt-1">
-            Supervisión multi-negocio y auditoría analítica de la agencia Vector Inside.
+            Supervisión multi-negocio, telemetría y auditoría del ecosistema Vector Inside.
           </p>
         </div>
 
@@ -45,6 +46,35 @@ export const CentroDeMando = () => {
           </select>
         </div>
       </header>
+
+      {/* Lobo Vectorial Sentinel Diagnostic Banner (Bloques 13.9 & 6 Manual Maestro) */}
+      <div className="mb-8 p-4 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+        <div className="flex items-center gap-3.5">
+          <VectorLobo size={42} showStatus={true} status="active" />
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-neon">
+                Lobo Vectorial • Centinela de Gobernanza
+              </span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cognitive/10 text-cognitive border border-cognitive/20">
+                IFV 46/50 Óptimo
+              </span>
+            </div>
+            <p className="text-xs text-[var(--text-main)] italic mt-0.5 font-sans">
+              "Auditoría activa en 4 tenants. Fricción sistémica 0% • Aislamiento RLS 100% verificado."
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => router.push('/config')}
+            className="text-xs font-mono font-bold px-3 py-1.5 rounded bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon text-[var(--text-main)] transition-colors"
+          >
+            Configurar RAG
+          </button>
+        </div>
+      </div>
 
       {/* KPI Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">

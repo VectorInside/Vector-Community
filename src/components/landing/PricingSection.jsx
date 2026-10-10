@@ -15,18 +15,18 @@ export const PricingSection = ({ onOpenTrial, lang = 'es' }) => {
   const t = LANDING_TRANSLATIONS[lang].pricing;
 
   return (
-    <section id="pricing" className="py-24 lg:py-32 relative overflow-hidden bg-zinc-950">
+    <section id="pricing" className="py-12 sm:py-16 lg:py-20 relative overflow-hidden bg-zinc-950 border-t border-white/5">
       {/* Background glow */}
       <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-96 h-96 bg-neon/5 rounded-full blur-[140px] pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-10 sm:space-y-12">
         {/* Section Title */}
         <div className="text-center max-w-3xl mx-auto space-y-4">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-white/10 text-[11px] font-mono font-bold text-neon uppercase tracking-wider">
             <Sparkles className="w-3.5 h-3.5" />
             {t.tag}
           </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-black text-white tracking-tight">
             {t.title}
           </h2>
           <p className="text-zinc-400 text-sm sm:text-base leading-relaxed">
@@ -71,7 +71,7 @@ export const PricingSection = ({ onOpenTrial, lang = 'es' }) => {
                 key={idx}
                 className={`rounded-3xl p-6 sm:p-8 backdrop-blur-2xl transition-all duration-300 flex flex-col justify-between relative ${
                   isPopular
-                    ? 'bg-zinc-900/90 border-2 border-neon shadow-[0_0_40px_rgba(229,255,0,0.2)] lg:-translate-y-2'
+                    ? 'bg-zinc-900/90 border-2 border-neon shadow-[0_0_40px_rgba(231,249,0,0.2)] lg:-translate-y-2'
                     : 'bg-zinc-900/40 border border-white/10 hover:border-white/20'
                 }`}
               >
@@ -133,14 +133,14 @@ export const PricingSection = ({ onOpenTrial, lang = 'es' }) => {
                   <button
                     type="button"
                     onClick={onOpenTrial}
-                    className={`w-full py-3.5 rounded-xl font-mono text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 active:scale-98 ${
+                    className={`w-full py-3.5 rounded-xl font-mono text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 whitespace-nowrap ${
                       isPopular
                         ? 'bg-neon hover:bg-[#d9f200] text-black shadow-neon font-black'
                         : 'bg-zinc-800 hover:bg-zinc-700 text-white border border-white/10'
                     }`}
                   >
-                    <span>{plan.priceMonthly > 300 ? t.ctaEnterprise : t.ctaTrial}</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    <span className="whitespace-nowrap">{plan.priceMonthly > 300 ? t.ctaEnterprise : t.ctaTrial}</span>
+                    <ArrowRight className="w-3.5 h-3.5 shrink-0" />
                   </button>
                 </div>
               </div>

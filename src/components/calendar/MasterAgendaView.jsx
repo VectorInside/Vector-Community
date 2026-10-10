@@ -18,7 +18,7 @@ export const MasterAgendaView = () => {
         'Se han sincronizado 12 eventos bidireccionales con la API de Google Calendar en tiempo real.',
         () => {
           try {
-            confetti({ particleCount: 30, spread: 50, colors: ['#E5FF00', '#10B981'] });
+            confetti({ particleCount: 30, spread: 50, colors: ['#E7F900', '#8A95B6', '#FFFFFF'] });
           } catch (e) {}
         },
         'Entendido'

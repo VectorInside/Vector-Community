@@ -56,7 +56,7 @@ export const SoberaniaFinanciera = () => {
           confetti({
             particleCount: 40,
             spread: 60,
-            colors: ['#A855F7', '#E5FF00', '#FFFFFF'],
+            colors: ['#8A95B6', '#E7F900', '#FFFFFF'],
           });
         } catch (e) {}
       },
