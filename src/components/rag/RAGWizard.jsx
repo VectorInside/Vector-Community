@@ -17,6 +17,10 @@ import {
   AlertTriangle,
   History,
   Building2,
+  Calendar,
+  Clock,
+  Sun,
+  Sunset,
   Layers,
   Cpu,
   RefreshCw,
@@ -53,9 +57,15 @@ import {
   Scale,
   Car,
   HeartPulse,
+  Copy,
+  Code,
+  Globe,
+  Smartphone,
+  ExternalLink,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { VectorLobo } from '@/components/common/VectorLobo';
+import { SAMPLE_ONBOARDING_PAYLOAD } from '@/utils/constants';
 
 // =========================================================================
 // TAXONOMÍA UNIVERSAL DE GIROS DE NEGOCIO Y MODELOS DE CONVERSIÓN
@@ -637,10 +647,39 @@ export const RAGWizard = () => {
   // Form State for Onboarding Wizard
   const [wizardData, setWizardData] = useState({
     businessName: '',
+    legalNameTaxId: '',
     vertical: 'gym_fitness',
+    verticalTipo: 'service_appointments',
     businessGoal: 'appointments',
     primaryContact: '',
     contactEmail: '',
+    ownerPhone: '+52 55 9876 5432',
+
+    // Estrategia Dual has_website & Canales Meta
+    hasWebsite: true,
+    websiteUrl: 'https://clinicasonrisas.com',
+    ga4MeasurementId: 'G-ABC123XYZ',
+    metaPixelId: '123456789012345',
+    metaCapiToken: 'EAAX_CAPI_TOKEN_SAMPLE...',
+    whatsappPhoneId: '109283746592019',
+    wabaId: '987654321098765',
+    instagramAccountId: '1784140000000',
+
+    // Google Calendar & Performance
+    googleCalendarId: 'c_dental_sonrisas@group.calendar.google.com',
+    appointmentDuration: 45,
+    calendarScheduleType: 'split', // 'split' (2 turnos) | 'single' (corrido) | 'hospitality' (mesas) | 'calls' (b2b)
+    shiftMorningStart: '09:00',
+    shiftMorningEnd: '14:00',
+    shiftAfternoonStart: '15:00',
+    shiftAfternoonEnd: '19:00',
+    breakStart: '14:00',
+    breakEnd: '15:00',
+    breakLabel: 'Receso / Cambio de Turno',
+    concurrencyLimit: 1,
+    costPerQualifiedLead: 350.0,
+    monthlyAdBudget: 1500.0,
+    showOnboardingPayloadModal: false,
     
     // Toggles for Optional Pillars (Only Pillar 2 is strictly required!)
     enablePricingPillar: true,
@@ -696,6 +735,74 @@ export const RAGWizard = () => {
     stripeWebhookSecret: '',
   });
 
+  // Modal and JSON payload states for 6-block onboarding
+  const [showPayloadModal, setShowPayloadModal] = useState(false);
+  const [copiedPayload, setCopiedPayload] = useState(false);
+
+  const getDynamicOnboardingPayload = () => {
+    return {
+      tenant_id: `tenant_${(wizardData.businessName || 'nuevo_negocio').toLowerCase().replace(/[^a-z0-9]/g, '_')}_001`,
+      business_name: wizardData.businessName || 'Nuevo Negocio',
+      legal_name_tax_id: wizardData.legalNameTaxId || 'Pendiente / En Validación',
+      vertical_tipo: wizardData.vertical,
+      owner_name: wizardData.ownerName || 'Director General',
+      owner_phone: wizardData.ownerPhone || '+525500000000',
+      meta_credentials: {
+        whatsapp_phone_number_id: wizardData.whatsappPhoneId || '10987654321',
+        waba_id: wizardData.wabaId || '98765432109',
+        whatsapp_access_token: wizardData.metaCapiToken ? '••••••••' : 'EAAX_TOKEN_VERIFIED',
+        instagram_account_id: wizardData.instagramAccountId || '1784140000000',
+        facebook_page_id: '100555444333',
+      },
+      web_tracking: {
+        has_website: wizardData.hasWebsite,
+        website_url: wizardData.hasWebsite ? wizardData.websiteUrl || 'https://negocio.com' : null,
+        ga4_measurement_id: wizardData.hasWebsite ? wizardData.ga4MeasurementId || 'G-ABC123XYZ' : null,
+        meta_pixel_id: wizardData.metaPixelId || '123456789012345',
+        meta_capi_token: wizardData.metaCapiToken || 'EAAX_CAPI_TOKEN_SECURE',
+        auto_generated_micro_landing: !wizardData.hasWebsite ? `https://app.vectorinside.com/m/${(wizardData.businessName || 'demo').toLowerCase().replace(/[^a-z0-9]/g, '-')}` : null,
+      },
+      google_calendar_integration: {
+        google_calendar_id: wizardData.googleCalendarId || 'c_agenda@group.calendar.google.com',
+        appointment_duration_minutes: wizardData.appointmentDuration || 45,
+        service_hours: {
+          timezone: 'America/Mexico_City',
+          days: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+          start: '09:00',
+          end: '19:00',
+        },
+      },
+      catalog_or_services: [
+        {
+          id: 'srv-01',
+          name: wizardData.offerHook || 'Servicio / Oferta Principal',
+          price_mxn: wizardData.costPerQualifiedLead * 3 || 1050.0,
+          requires_calendar_slot: true,
+        },
+      ],
+      inviolable_rules: wizardData.inviolableRules,
+    };
+  };
+
+  const handleCopyPayload = () => {
+    try {
+      const payloadObj = getDynamicOnboardingPayload();
+      navigator.clipboard.writeText(JSON.stringify(payloadObj, null, 2));
+      setCopiedPayload(true);
+      setTimeout(() => setCopiedPayload(false), 2500);
+      try {
+        confetti({
+          particleCount: 30,
+          spread: 50,
+          origin: { y: 0.6 },
+          colors: ['#E7F900', '#10B981'],
+        });
+      } catch (e) {}
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   // Active suggestions state for interactive 1-click apply
   const [suggestions, setSuggestions] = useState(BUSINESS_VERTICALS_CONFIG.gym_fitness.proactiveSuggestions);
 
@@ -723,11 +830,79 @@ export const RAGWizard = () => {
 
   const healthScore = calculateHealthScore();
 
-  // Switch vertical & update pillar defaults + suggestions
+  // Switch vertical & update pillar defaults + suggestions + auto-suggest schedule
   const handleSelectVertical = (verticalId) => {
     const verticalConfig = BUSINESS_VERTICALS_CONFIG[verticalId] || BUSINESS_VERTICALS_CONFIG.gym_fitness;
     const isSalesFocused = verticalConfig.category === 'retail_ecom' || verticalConfig.category === 'realestate_auto';
     
+    // Configuración sugerida de horarios según el giro comercial
+    let suggestedSchedule = {
+      calendarScheduleType: 'split',
+      appointmentDuration: 45,
+      shiftMorningStart: '09:00',
+      shiftMorningEnd: '14:00',
+      shiftAfternoonStart: '15:00',
+      shiftAfternoonEnd: '19:00',
+      breakStart: '14:00',
+      breakEnd: '15:00',
+      breakLabel: 'Receso de Turno',
+      concurrencyLimit: 1,
+    };
+
+    if (verticalId === 'hospitality') {
+      suggestedSchedule = {
+        calendarScheduleType: 'hospitality',
+        appointmentDuration: 90,
+        shiftMorningStart: '13:00',
+        shiftMorningEnd: '17:00',
+        shiftAfternoonStart: '19:00',
+        shiftAfternoonEnd: '23:00',
+        breakStart: '17:00',
+        breakEnd: '19:00',
+        breakLabel: 'Mise en place / Preparación Salón',
+        concurrencyLimit: 8,
+      };
+    } else if (verticalId === 'creator') {
+      suggestedSchedule = {
+        calendarScheduleType: 'calls',
+        appointmentDuration: 45,
+        shiftMorningStart: '15:00',
+        shiftMorningEnd: '18:00',
+        shiftAfternoonStart: '15:00',
+        shiftAfternoonEnd: '18:00',
+        breakStart: '18:00',
+        breakEnd: '19:00',
+        breakLabel: 'Revisión de Contratos & Media Kit',
+        concurrencyLimit: 1,
+      };
+    } else if (verticalId === 'b2b' || verticalId === 'legal_accounting') {
+      suggestedSchedule = {
+        calendarScheduleType: 'calls',
+        appointmentDuration: 30,
+        shiftMorningStart: '10:00',
+        shiftMorningEnd: '13:30',
+        shiftAfternoonStart: '15:00',
+        shiftAfternoonEnd: '18:00',
+        breakStart: '13:30',
+        breakEnd: '15:00',
+        breakLabel: 'Almuerzo Ejecutivo & Pipeline',
+        concurrencyLimit: 1,
+      };
+    } else if (verticalId === 'gym_fitness' || verticalId === 'spa_beauty') {
+      suggestedSchedule = {
+        calendarScheduleType: 'single',
+        appointmentDuration: 60,
+        shiftMorningStart: '07:00',
+        shiftMorningEnd: '14:00',
+        shiftAfternoonStart: '14:00',
+        shiftAfternoonEnd: '22:00',
+        breakStart: '14:00',
+        breakEnd: '14:00',
+        breakLabel: 'Horario Corrido',
+        concurrencyLimit: 3,
+      };
+    }
+
     setWizardData((prev) => ({
       ...prev,
       vertical: verticalId,
@@ -735,6 +910,7 @@ export const RAGWizard = () => {
       enablePricingPillar: verticalId !== 'creator',
       enableCrisisPillar: true,
       inviolableRules: verticalConfig.defaultRules || prev.inviolableRules,
+      ...suggestedSchedule,
     }));
 
     setSuggestions(verticalConfig.proactiveSuggestions || []);
@@ -1413,9 +1589,22 @@ export const RAGWizard = () => {
                       <input
                         type="text"
                         required
-                        placeholder="ej. Iron Gym & CrossFit / Academia de Idiomas Nova"
+                        placeholder="ej. Clínica Dental Sonrisas / Urban Sneaks"
                         value={wizardData.businessName}
                         onChange={(e) => setWizardData({ ...wizardData, businessName: e.target.value })}
+                        className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs rounded-xl p-3 text-white focus:border-neon outline-none font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-mono font-bold text-zinc-300 mb-1">
+                        Razón Social & RFC (Tax ID)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="ej. Sonrisas Dentales S.A. de C.V. / SDS120304XYZ"
+                        value={wizardData.legalNameTaxId}
+                        onChange={(e) => setWizardData({ ...wizardData, legalNameTaxId: e.target.value })}
                         className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs rounded-xl p-3 text-white focus:border-neon outline-none font-mono"
                       />
                     </div>
@@ -1426,11 +1615,301 @@ export const RAGWizard = () => {
                       </label>
                       <input
                         type="text"
-                        placeholder="ej. Coach Carlos Mendoza"
+                        placeholder="ej. Dr. Alejandro Silva"
                         value={wizardData.primaryContact}
                         onChange={(e) => setWizardData({ ...wizardData, primaryContact: e.target.value })}
                         className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs rounded-xl p-3 text-white focus:border-neon outline-none font-mono"
                       />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-mono font-bold text-zinc-300 mb-1">
+                        Teléfono / WhatsApp de Contacto
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="ej. +52 55 9876 5432"
+                        value={wizardData.ownerPhone}
+                        onChange={(e) => setWizardData({ ...wizardData, ownerPhone: e.target.value })}
+                        className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs rounded-xl p-3 text-white focus:border-neon outline-none font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  {/* ESTRATEGIA DUAL: CON WEB vs SIN WEB */}
+                  <div className="p-5 rounded-2xl bg-zinc-900/80 border border-white/10 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-mono font-bold uppercase text-white flex items-center gap-2">
+                        <Zap className="w-4 h-4 text-neon" />
+                        Estrategia de Adquisición Digital: ¿El Negocio Cuenta con Página Web?
+                      </span>
+                      <span className="text-[10px] font-mono text-zinc-400">
+                        Afecta CAPI, Analytics y Telemetría
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setWizardData({ ...wizardData, hasWebsite: true })}
+                        className={`p-4 rounded-xl border text-left transition-all ${
+                          wizardData.hasWebsite
+                            ? 'bg-neon/10 border-neon text-white shadow-neon-sm'
+                            : 'bg-zinc-950/60 border-zinc-800 text-zinc-400 hover:border-zinc-700'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-mono text-xs font-bold text-white flex items-center gap-2">
+                            <span>🌐 CON Página Web</span>
+                          </span>
+                          {wizardData.hasWebsite && <span className="w-2 h-2 rounded-full bg-neon animate-pulse" />}
+                        </div>
+                        <p className="text-[11px] text-zinc-400 font-mono">
+                          Mide GA4 API ($0 USD), Pixel Web y diagnóstico algorítmico de fricción web.
+                        </p>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setWizardData({ ...wizardData, hasWebsite: false })}
+                        className={`p-4 rounded-xl border text-left transition-all ${
+                          !wizardData.hasWebsite
+                            ? 'bg-neon/10 border-neon text-white shadow-neon-sm'
+                            : 'bg-zinc-950/60 border-zinc-800 text-zinc-400 hover:border-zinc-700'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-mono text-xs font-bold text-white flex items-center gap-2">
+                            <span>💬 SIN Página Web (Direct-to-Messaging)</span>
+                          </span>
+                          {!wizardData.hasWebsite && <span className="w-2 h-2 rounded-full bg-neon animate-pulse" />}
+                        </div>
+                        <p className="text-[11px] text-zinc-400 font-mono">
+                          Pauta a Click-to-WhatsApp. CAPI for Messaging directo y Micro-Landing autogenerada.
+                        </p>
+                      </button>
+                    </div>
+
+                    {/* Inputs según hasWebsite */}
+                    {wizardData.hasWebsite ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-xl bg-zinc-950/80 border border-zinc-800 animate-fadeIn text-xs font-mono">
+                        <div>
+                          <label className="text-[10px] text-zinc-400 block mb-1">URL del Sitio Web</label>
+                          <input
+                            type="url"
+                            placeholder="https://..."
+                            value={wizardData.websiteUrl}
+                            onChange={(e) => setWizardData({ ...wizardData, websiteUrl: e.target.value })}
+                            className="w-full bg-zinc-900 border border-zinc-800 rounded p-2 text-white focus:border-neon outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-zinc-400 block mb-1">GA4 Measurement ID ($0 USD)</label>
+                          <input
+                            type="text"
+                            placeholder="G-XXXXXXXXXX"
+                            value={wizardData.ga4MeasurementId}
+                            onChange={(e) => setWizardData({ ...wizardData, ga4MeasurementId: e.target.value })}
+                            className="w-full bg-zinc-900 border border-zinc-800 rounded p-2 text-white focus:border-neon outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-zinc-400 block mb-1">Meta Pixel ID</label>
+                          <input
+                            type="text"
+                            placeholder="123456789012345"
+                            value={wizardData.metaPixelId}
+                            onChange={(e) => setWizardData({ ...wizardData, metaPixelId: e.target.value })}
+                            className="w-full bg-zinc-900 border border-zinc-800 rounded p-2 text-white focus:border-neon outline-none"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-3 animate-fadeIn text-xs font-mono">
+                        <div className="p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-300 space-y-1">
+                          <div className="flex items-center gap-2 font-bold text-white">
+                            <CheckCircle2 className="w-4 h-4 text-neon" />
+                            <span>Estrategia Direct-to-Messaging & Micro-Landing Activada</span>
+                          </div>
+                          <p className="text-[11px] text-zinc-400">
+                            Se autogenera la micro-landing de catálogo/agenda en:{' '}
+                            <code className="text-neon">
+                              https://app.vectorinside.com/m/
+                              {wizardData.businessName ? wizardData.businessName.toLowerCase().replace(/[^a-z0-9]/g, '-') : 'nuevo-tenant'}
+                            </code>
+                          </p>
+                        </div>
+
+                        {/* Telemetría y Píxeles para la Micro-Landing */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-xl bg-zinc-950/80 border border-zinc-800">
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="text-[10px] text-zinc-400 font-bold block">
+                                GA4 Measurement ID (Para la Micro-Landing)
+                              </label>
+                              <span className="text-[9px] text-zinc-500 font-bold">$0 USD</span>
+                            </div>
+                            <input
+                              type="text"
+                              placeholder="G-XXXXXXXXXX"
+                              value={wizardData.ga4MeasurementId || ''}
+                              onChange={(e) => setWizardData({ ...wizardData, ga4MeasurementId: e.target.value })}
+                              className="w-full bg-zinc-900 border border-zinc-800 rounded p-2 text-white focus:border-neon outline-none"
+                            />
+                            <span className="text-[10px] text-zinc-500 mt-1 block">
+                              Mide visitas a tu micro-landing sin costo en Google Analytics 4.
+                            </span>
+                          </div>
+
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="text-[10px] text-zinc-400 font-bold block">
+                                Meta Pixel ID (Para Meta Ads en la Micro-Landing)
+                              </label>
+                              <span className="text-[9px] text-neon font-bold">Recomendado</span>
+                            </div>
+                            <input
+                              type="text"
+                              placeholder="123456789012345"
+                              value={wizardData.metaPixelId || ''}
+                              onChange={(e) => setWizardData({ ...wizardData, metaPixelId: e.target.value })}
+                              className="w-full bg-zinc-900 border border-zinc-800 rounded p-2 text-white focus:border-neon outline-none"
+                            />
+                            <span className="text-[10px] text-zinc-500 mt-1 block">
+                              Rastrea visitas y clics de tus anuncios de Instagram/Facebook.
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Integración Google Calendar & Pricing */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-mono font-bold text-zinc-300 mb-1">
+                        Google Calendar ID (Master Agenda)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="c_tenant@group.calendar.google.com"
+                        value={wizardData.googleCalendarId}
+                        onChange={(e) => setWizardData({ ...wizardData, googleCalendarId: e.target.value })}
+                        className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs rounded-xl p-3 text-white focus:border-neon outline-none font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-mono font-bold text-zinc-300 mb-1">
+                        Modelo de Cobro por Lead Calificado (Pay-Per-Qualified-Lead)
+                      </label>
+                      <div className="p-2.5 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-between text-xs font-mono">
+                        <span className="text-zinc-400 font-bold">$350.00 MXN / Lead Calificado</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-neon/15 text-neon font-black">
+                          4/4 Criterios AND
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Configuración Inteligente de Turnos y Agenda según el Giro */}
+                  <div className="p-4 rounded-2xl bg-zinc-900/80 border border-brand-primary/30 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-800 pb-3">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-brand-primary" />
+                        <h4 className="text-xs font-bold font-mono text-white uppercase">
+                          Reglas de Turnos y Horarios Sugeridos para {currentVerticalObj.name}
+                        </h4>
+                      </div>
+                      <span className="px-2 py-0.5 rounded bg-brand-primary/10 text-brand-primary border border-brand-primary/30 text-[10px] font-mono font-bold">
+                        Sugerido por IA según Giro
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono">
+                      <div>
+                        <label className="text-[10px] text-zinc-400 block mb-1">Modelo de Agenda</label>
+                        <select
+                          value={wizardData.calendarScheduleType}
+                          onChange={(e) => setWizardData({ ...wizardData, calendarScheduleType: e.target.value })}
+                          className="w-full bg-zinc-950 border border-zinc-800 text-xs rounded-xl p-2.5 text-white focus:border-brand-primary outline-none"
+                        >
+                          <option value="split">2 Turnos Divididos (con receso)</option>
+                          <option value="single">Horario Corrido (Turno continuo)</option>
+                          <option value="hospitality">Comida & Cena (Capacidad por mesas)</option>
+                          <option value="calls">Sesiones / Calls 1-on-1 (B2B o Marcas)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] text-zinc-400 block mb-1">Duración por Bloque</label>
+                        <select
+                          value={wizardData.appointmentDuration}
+                          onChange={(e) => setWizardData({ ...wizardData, appointmentDuration: Number(e.target.value) })}
+                          className="w-full bg-zinc-950 border border-zinc-800 text-xs rounded-xl p-2.5 text-white focus:border-brand-primary outline-none"
+                        >
+                          <option value={15}>15 minutos (Quick check)</option>
+                          <option value={30}>30 minutos (Discovery / B2B)</option>
+                          <option value={45}>45 minutos (Consulta / PR)</option>
+                          <option value={60}>60 minutos (Estándar / Médica)</option>
+                          <option value={90}>90 minutos (Restaurante / Menú)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] text-zinc-400 block mb-1">Capacidad Concurrente</label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={50}
+                          value={wizardData.concurrencyLimit}
+                          onChange={(e) => setWizardData({ ...wizardData, concurrencyLimit: Number(e.target.value) })}
+                          className="w-full bg-zinc-950 border border-zinc-800 text-xs rounded-xl p-2 text-white focus:border-brand-primary outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs font-mono">
+                      <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800 space-y-2">
+                        <span className="text-[10px] text-amber-400 font-bold flex items-center gap-1.5">
+                          <Sun className="w-3.5 h-3.5" /> Turno 1 (Matutino / Comida)
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={wizardData.shiftMorningStart}
+                            onChange={(e) => setWizardData({ ...wizardData, shiftMorningStart: e.target.value })}
+                            className="w-1/2 bg-zinc-900 border border-zinc-700 rounded p-1.5 text-center text-white"
+                          />
+                          <span className="text-zinc-500">a</span>
+                          <input
+                            type="text"
+                            value={wizardData.shiftMorningEnd}
+                            onChange={(e) => setWizardData({ ...wizardData, shiftMorningEnd: e.target.value })}
+                            className="w-1/2 bg-zinc-900 border border-zinc-700 rounded p-1.5 text-center text-white"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800 space-y-2">
+                        <span className="text-[10px] text-indigo-400 font-bold flex items-center gap-1.5">
+                          <Sunset className="w-3.5 h-3.5" /> Turno 2 (Vespertino / Cena)
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={wizardData.shiftAfternoonStart}
+                            onChange={(e) => setWizardData({ ...wizardData, shiftAfternoonStart: e.target.value })}
+                            className="w-1/2 bg-zinc-900 border border-zinc-700 rounded p-1.5 text-center text-white"
+                          />
+                          <span className="text-zinc-500">a</span>
+                          <input
+                            type="text"
+                            value={wizardData.shiftAfternoonEnd}
+                            onChange={(e) => setWizardData({ ...wizardData, shiftAfternoonEnd: e.target.value })}
+                            className="w-1/2 bg-zinc-900 border border-zinc-700 rounded p-1.5 text-center text-white"
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -1614,18 +2093,108 @@ export const RAGWizard = () => {
                     </h3>
                   </div>
 
-                  <div className="space-y-4 font-mono text-xs">
-                    <div>
-                      <label className="block text-zinc-300 font-bold mb-1">
-                        WhatsApp Cloud API Phone Number ID
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="ej. 109283746592019"
-                        value={wizardData.whatsappPhoneId}
-                        onChange={(e) => setWizardData({ ...wizardData, whatsappPhoneId: e.target.value })}
-                        className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-neon outline-none"
-                      />
+                  <div className="space-y-5 font-mono text-xs">
+                    {/* Explicación de conexión */}
+                    <div className="p-3.5 rounded-xl bg-neon/5 border border-neon/20 text-zinc-300 text-xs font-sans flex items-start gap-2.5">
+                      <Sparkles className="w-4 h-4 text-neon shrink-0 mt-0.5" />
+                      <p className="leading-relaxed text-[11px]">
+                        Configura las credenciales de <strong>WhatsApp Cloud API</strong> y la <strong>ApiKey / Token de Meta (CAPI)</strong> para que las conversaciones califiquen prospectos automáticamente y sincronicen conversiones con Meta Ads.
+                      </p>
+                    </div>
+
+                    {/* Bloque 1: Canales de WhatsApp */}
+                    <div className="p-4 rounded-2xl bg-zinc-950/70 border border-zinc-800 space-y-3">
+                      <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block flex items-center gap-1.5">
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        <span>Canales de WhatsApp Cloud API</span>
+                      </span>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-zinc-300 font-bold mb-1">
+                            WhatsApp Cloud API Phone Number ID *
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="ej. 109283746592019"
+                            value={wizardData.whatsappPhoneId || ''}
+                            onChange={(e) => setWizardData({ ...wizardData, whatsappPhoneId: e.target.value })}
+                            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-2.5 text-white focus:border-neon outline-none font-mono text-xs"
+                          />
+                          <span className="text-[10px] text-zinc-500 mt-1 block">ID numérico del número telefónico en Meta Cloud API</span>
+                        </div>
+
+                        <div>
+                          <label className="block text-zinc-300 font-bold mb-1">
+                            WhatsApp Business Account ID (WABA ID)
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="ej. 987654321098765"
+                            value={wizardData.wabaId || ''}
+                            onChange={(e) => setWizardData({ ...wizardData, wabaId: e.target.value })}
+                            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-2.5 text-white focus:border-neon outline-none font-mono text-xs"
+                          />
+                          <span className="text-[10px] text-zinc-500 mt-1 block">ID de la cuenta de WhatsApp Business para templates</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Bloque 2: Meta Conversions API (CAPI) & Pixel Tracking */}
+                    <div className="p-4 rounded-2xl bg-zinc-950/70 border border-zinc-800 space-y-3">
+                      <span className="text-[10px] text-neon font-bold uppercase tracking-wider block flex items-center gap-1.5">
+                        <Key className="w-3.5 h-3.5" />
+                        <span>Meta Conversions API (CAPI) & Pixel Dataset</span>
+                      </span>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-zinc-300 font-bold">
+                            Meta CAPI Permanent Access Token (ApiKey / Token Permanente) *
+                          </label>
+                          <span className="text-[10px] text-neon font-bold">System User Token</span>
+                        </div>
+                        <input
+                          type="password"
+                          placeholder="EAAX... (Token de acceso de sistema generado en Business Manager)"
+                          value={wizardData.metaCapiToken || ''}
+                          onChange={(e) => setWizardData({ ...wizardData, metaCapiToken: e.target.value })}
+                          className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-2.5 text-white focus:border-neon outline-none font-mono text-xs"
+                        />
+                        <span className="text-[10px] text-zinc-500 mt-1 block">
+                          Permite enviar eventos de conversión 'Lead' y 'Purchase' directamente al servidor de Meta sin depender de cookies.
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                        <div>
+                          <label className="block text-zinc-300 font-bold mb-1">
+                            Meta Pixel ID / Dataset ID *
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="ej. 123456789012345"
+                            value={wizardData.metaPixelId || ''}
+                            onChange={(e) => setWizardData({ ...wizardData, metaPixelId: e.target.value })}
+                            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-2.5 text-white focus:border-neon outline-none font-mono text-xs"
+                          />
+                          <span className="text-[10px] text-zinc-500 mt-1 block">ID del Pixel/Dataset para atribución de anuncios</span>
+                        </div>
+
+                        <div>
+                          <label className="block text-zinc-300 font-bold mb-1">
+                            Instagram Business Account ID (Opcional)
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="ej. 1784140000000"
+                            value={wizardData.instagramAccountId || ''}
+                            onChange={(e) => setWizardData({ ...wizardData, instagramAccountId: e.target.value })}
+                            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-2.5 text-white focus:border-neon outline-none font-mono text-xs"
+                          />
+                          <span className="text-[10px] text-zinc-500 mt-1 block">ID para automatización de DMs y comentarios</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -1666,21 +2235,130 @@ export const RAGWizard = () => {
                         <VectorLobo size={32} showStatus={true} status="active" />
                         <div>
                           <span className="text-white font-bold block">Auditoría Previa Lobo Vectorial</span>
-                          <span className="text-[10px] text-zinc-400">Parámetros de memoria RAG y blindaje RLS</span>
+                          <span className="text-[10px] text-zinc-400">Parámetros de memoria RAG y blindaje RLS (ADR-001)</span>
                         </div>
                       </div>
                       <span className="px-2.5 py-1 rounded bg-neon/15 text-neon font-bold border border-neon/30 text-[10px]">
                         IFV Esperado: 48/50
                       </span>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <span className="text-zinc-500 block">Negocio:</span>
-                        <span className="text-white font-bold">{wizardData.businessName || 'Nuevo Negocio'}</span>
+                        <span className="text-zinc-500 block text-[10px] uppercase">Negocio & Razón Social</span>
+                        <span className="text-white font-bold text-sm">{wizardData.businessName || 'Nuevo Negocio'}</span>
+                        <span className="text-[10px] text-zinc-400 block mt-0.5">{wizardData.legalNameTaxId || 'RFC / Tax ID por verificar'}</span>
                       </div>
                       <div>
-                        <span className="text-zinc-500 block">Giro:</span>
-                        <span className="text-neon font-bold">{currentVerticalObj.name}</span>
+                        <span className="text-zinc-500 block text-[10px] uppercase">Giro Comercial</span>
+                        <span className="text-neon font-bold text-sm">{currentVerticalObj.name}</span>
+                        <span className="text-[10px] text-zinc-400 block mt-0.5">Meta: {currentVerticalObj.conversionGoal?.split('/')[0]}</span>
+                      </div>
+                      <div>
+                        <span className="text-zinc-500 block text-[10px] uppercase">Estrategia Digital</span>
+                        {wizardData.hasWebsite ? (
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[10px] font-bold flex items-center gap-1">
+                              <Globe className="w-3 h-3" />
+                              CON Sitio Web
+                            </span>
+                            <span className="text-[10px] text-zinc-400 truncate">
+                              {wizardData.websiteUrl || 'https://negocio.com'}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold flex items-center gap-1">
+                              <Smartphone className="w-3 h-3" />
+                              SIN Sitio Web (Directo a WhatsApp)
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <span className="text-zinc-500 block text-[10px] uppercase">Agenda & Conversión</span>
+                        <span className="text-white font-bold block mt-1">
+                          Google Calendar: {wizardData.appointmentDuration || 45} min / cita
+                        </span>
+                        <span className="text-[10px] text-zinc-400 block">
+                          Costo Unitario Lead Calificado: ${wizardData.costPerQualifiedLead || 350} MXN
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 6-Block JSON Onboarding Payload Inspector */}
+                  <div className="p-5 rounded-2xl bg-zinc-950/80 border border-white/10 space-y-4 font-mono text-xs">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-800">
+                      <div className="flex items-center gap-2">
+                        <FileCode className="w-4 h-4 text-neon" />
+                        <div>
+                          <span className="text-white font-bold block">Payload Onboarding 6-Bloques</span>
+                          <span className="text-[10px] text-zinc-400">Endpoint: POST /api/v1/tenants/onboard (ADR-001 §2.7)</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={handleCopyPayload}
+                          className="px-3.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-neon border border-neon/40 flex items-center gap-1.5 transition-all text-xs font-bold active:scale-95 shadow-[0_0_10px_rgba(231,249,0,0.1)]"
+                        >
+                          {copiedPayload ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-emerald-400" />
+                              <span className="text-emerald-400">¡Payload Copiado!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5" />
+                              <span>Copiar JSON</span>
+                            </>
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowPayloadModal(!showPayloadModal)}
+                          className="px-3.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-white/10 flex items-center gap-1.5 transition-all text-xs"
+                        >
+                          <Code className="w-3.5 h-3.5" />
+                          <span>{showPayloadModal ? 'Ocultar JSON' : 'Inspeccionar JSON'}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {showPayloadModal && (
+                      <div className="p-4 rounded-xl bg-black/90 border border-neon/30 overflow-x-auto max-h-80 text-[11px] text-zinc-300 font-mono leading-relaxed select-all animate-fade-in shadow-inner">
+                        <pre className="text-emerald-400/95 whitespace-pre">
+                          {JSON.stringify(getDynamicOnboardingPayload(), null, 2)}
+                        </pre>
+                      </div>
+                    )}
+
+                    {/* 6 Verification Checkpoints */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-[10px] text-zinc-400 pt-1">
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-neon shrink-0" />
+                        <span>1. Tenant Core & RLS</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-neon shrink-0" />
+                        <span>2. Owner Legal E.164</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-neon shrink-0" />
+                        <span>3. Meta Credentials (WABA/IG)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-neon shrink-0" />
+                        <span>4. Web / GA4 / CAPI</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-neon shrink-0" />
+                        <span>5. Google Calendar Sync</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-neon shrink-0" />
+                        <span>6. Matriz de Oferta & Reglas</span>
                       </div>
                     </div>
                   </div>

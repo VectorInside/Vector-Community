@@ -295,6 +295,23 @@ export const Sidebar = () => {
         </Link>
 
         <Link
+          href="/performance"
+          title="Telemetría Web & CAPI"
+          className={`w-full flex items-center rounded-xl transition-all ${
+            isSidebarCollapsed
+              ? 'justify-center p-3'
+              : 'gap-3 px-3.5 py-2.5'
+          } ${
+            isLinkActive('/performance')
+              ? 'bg-neon text-black font-bold shadow-[0_0_15px_var(--neon-glow)]'
+              : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] font-medium'
+          }`}
+        >
+          <Globe className="w-4 h-4 shrink-0" />
+          {!isSidebarCollapsed && <span className="text-sm font-sans">Telemetría Web & CAPI</span>}
+        </Link>
+
+        <Link
           href="/agenda"
           title="Master Agenda (Google Calendar)"
           className={`w-full flex items-center rounded-xl transition-all ${

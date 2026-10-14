@@ -8,6 +8,7 @@
 ---
 
 ## 1. Introducción y Alcance
+
 Este documento especifica la arquitectura técnica, diagramas de flujo, modelos de datos, protocolos de seguridad, taxonomía de giros comerciales y diseño de interfaz para **Vector Community**, el motor de gestión de comunidad autónoma, performance marketing, análisis en Meta Graph y gobernanza Human-in-the-Loop (HITL).
 
 ---
@@ -96,20 +97,33 @@ graph TD
 ## 4. Modelo de Dominio & Esquema de Base de Datos (PostgreSQL RLS)
 
 ### 4.1. Tabla `tenants` (Aislamiento de Clientes & Giro)
+
 ```sql
 CREATE TABLE tenants (
     id VARCHAR(64) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     short_name VARCHAR(100) NOT NULL,
+    legal_name_tax_id VARCHAR(150),
     vertical_categoria VARCHAR(50) NOT NULL, -- 'fitness_health', 'education', 'networking', 'retail_ecom', 'hospitality', 'b2b_services', 'realestate_auto', 'creators'
+    vertical_tipo VARCHAR(50) NOT NULL, -- 'hospitality', 'service_appointments', 'ecommerce', 'b2b_sales'
     giro_especifico VARCHAR(150) NOT NULL, -- 'Gimnasios, CrossFit & Fitness Studios', 'Escuelas & Universidades', etc.
+    owner_name VARCHAR(150),
+    owner_phone VARCHAR(50),
+    has_website BOOLEAN DEFAULT true,
+    website_url TEXT,
+    ga4_measurement_id VARCHAR(50),
     meta_pixel_id VARCHAR(100),
     meta_capi_token TEXT,
     google_calendar_id VARCHAR(255),
+    google_credentials_json TEXT,
+    business_hours JSONB DEFAULT '{"monday_friday": "09:00-18:00", "saturday": "09:00-14:00"}'::jsonb,
+    appointment_duration_minutes INT DEFAULT 45,
     crm_provider VARCHAR(50),
     crm_api_key TEXT,
     instagram_handle VARCHAR(100),
-    cac_max_threshold NUMERIC(10, 2),
+    target_cac_limit NUMERIC(10, 2),
+    cost_per_qualified_lead NUMERIC(10, 2) DEFAULT 350.00,
+    monthly_ad_budget NUMERIC(10, 2),
     rag_health_score INT DEFAULT 85,
     inviolable_rules JSONB DEFAULT '[]'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -117,6 +131,7 @@ CREATE TABLE tenants (
 ```
 
 ### 4.2. Tabla `hitl_alerts` (Gobernanza Human-in-the-Loop)
+
 ```sql
 CREATE TABLE hitl_alerts (
     id VARCHAR(64) PRIMARY KEY,
@@ -143,6 +158,7 @@ CREATE POLICY tenant_isolation_policy ON hitl_alerts
 ```
 
 ### 4.3. Tabla `meta_comments_stream` (Telemetría de Redes Sociales)
+
 ```sql
 CREATE TABLE meta_comments_stream (
     id VARCHAR(64) PRIMARY KEY,
@@ -186,6 +202,7 @@ api.interceptors.request.use((config) => {
 La experiencia de usuario de **Vector Community** implementa un motor de diseño dual sincronizado mediante tokens CSS (`src/styles/globals.css`) y clases utilitarias de Tailwind (`darkMode: 'class'`), normado formalmente en [ADR-009](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_009_DUAL_THEME_DESIGN_SYSTEM_RULES.md):
 
 ### 6.1. Principios de Contraste y Accesibilidad (WCAG AA/AAA)
+
 1. **Lienzo y Superficies:**
    - **Modo Oscuro:** Lienzo `#000000` con superficies elevadas `#07080A` y `#0E0F13`.
    - **Modo Claro:** Lienzo `#F8FAFC` (porcelana ejecutiva) con paneles `#FFFFFF` y bordes nítidos `#E2E8F0`.
@@ -194,4 +211,28 @@ La experiencia de usuario de **Vector Community** implementa un motor de diseño
 3. **El Guardrail del Amarillo Vectorial (`#E7F900`):**
    - **En Texto:** Queda prohibido el uso de `#E7F900` como texto plano sobre superficies claras (<1.4:1). El sistema mapea dinámicamente `.text-neon` a `--neon-text` (`#4D5600` en modo claro, superando 6.5:1 de contraste AAA).
    - **En Botones y Badges:** Conserva el Amarillo Vectorial `#E7F900` con tipografía negra (`bg-neon text-black`), alcanzando un contraste supremo de **15.2:1** en ambos modos.
+
+---
+
+## 7. Historias de Usuario & Criterios de Aceptación (User Stories)
+
+### Story 7.1: Aislamiento Multi-Tenant Estricto (Supabase PostgreSQL RLS)
+- **GIVEN:** Un usuario o cliente autenticado perteneciente al `tenant_001`.
+- **WHEN:** Consulta la base de datos transaccional o el índice vectorial `pgvector`.
+- **THEN:** El motor aplica automáticamente la política `WHERE tenant_id = 'tenant_001'` vía RLS en Supabase, bloqueando matemáticamente cualquier acceso o fuga de datos cruzados entre competidores.
+
+### Story 7.2: Seguimiento Asíncrono a las 24 Horas (Nurture de Evasivas)
+- **GIVEN:** Un prospecto en chat que responde con una evasiva (*"Lo voy a pensar"* o pausó tras consultar precio).
+- **WHEN:** El sub-bot clasifica el estado en `FOLLOWUP_PENDING_24H` (`LEAD_WARM_24H`).
+- **THEN:** Encola una tarea asíncrona en **Upstash Redis**. Al cumplirse exactamente las 24 horas, el worker de LangGraph genera y despacha un mensaje personalizado con gancho RAG para revivir la conversación sin intervención humana.
+
+### Story 7.3: Registro y Atribución Financiera `BILLABLE_LEAD` ($350 MXN)
+- **GIVEN:** Un prospecto que cumple acumulativamente con los 4 criterios (Identidad, Interés en Catálogo, Dudas/Pagos Resueltos y Aceptación de Cita).
+- **WHEN:** El backend o la mesa de control valida la transacción.
+- **THEN:** Muta el estado a `BILLABLE_LEAD`, registra la partida de $350.00 MXN en `billing_ledger` y transmite el evento `Lead` / `Schedule` con hash SHA-256 a Meta Conversions API (CAPI) para alimentar el ROAS Real.
+
+### Story 7.4: Diagnóstico Algorítmico de Fricción Web (`has_website`)
+- **GIVEN:** Un tenant configurado con sitio web activo (`has_website = true`).
+- **WHEN:** El sub-bot analista detecta un costo por clic bajo (adquisición eficiente), volumen alto de visitas y una tasa de clic a WhatsApp menor al 3%.
+- **THEN:** Dispara una alerta de consultoría en el panel del Lobo Vectorial: *"Fricción en Página Web detectada: Alto tráfico con baja conversión hacia mensajería"*, recomendando optimización de velocidad y botón flotante.
 
