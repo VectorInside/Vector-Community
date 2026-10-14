@@ -11,6 +11,7 @@
 ## 1. Contexto & Planteamiento del Problema
 
 En un ecosistema multi-agente como **Vector Community OS**, utilizar un único modelo para todas las operaciones genera dos problemas críticos:
+
 1. **Inconsistencia de Costos y Latencia:** Enviar conversaciones rutinarias de WhatsApp a modelos de razonamiento denso (*Reasoning / CoT*) dispara la latencia a más de 5 segundos y multiplica el consumo de tokens de salida innecesariamente.
 2. **Riesgo de Alucinación en Procesos Críticos:** Usar modelos conversacionales ligeros para auditar contratos o ingerir políticas comerciales complejas puede derivar en inventos de precios o cláusulas inexistentes.
 
@@ -55,9 +56,24 @@ El Supervisor de LangGraph y el interceptor de la aplicación aplican las siguie
 
 ---
 
+### 2.4. Pipeline de Escucha en Redes & Deconstrucción Viral de Reels (DeepSeek R1)
+
+Para transformar la actividad social en ventas predecibles, se establece el pipeline de inteligencia de contenido:
+
+1. **Escucha Continua en Redes (Meta Graph Webhooks):** El sistema ingesta comentarios recurrentes y dudas frecuentes en publicaciones de Instagram y Facebook, clasificándolos automáticamente en temas de alto dolor o interés.
+2. **Detección de Anomalías Virales:** Monitoreo periódico de reels y videos que superan el benchmark de desempeño de la vertical (`Visualizaciones > 15,000`, `Hook Rate > 40%`, `Retention Rate > 35%`).
+3. **Deconstrucción Algorítmica con DeepSeek R1:** El motor cognitivo descompone el video analizando:
+   * *Tipo de Gancho:* Provocación, revelación de secreto, miedo a perder dinero/salud o demostración inmediata.
+   * *Ritmo de Retención:* Estímulo visual en los primeros 3 segundos.
+   * *Mecanismo de Conversión:* Palabra clave requerida en comentarios para detonar el flujo por DM.
+4. **Generación de Variantes Replicadas:** R1 redacta 3 nuevos guiones de 30 segundos en 4 actos estructurados (`[0-3s Gancho]`, `[4-15s Prueba/Valor]`, `[16-25s Oferta Gancho]`, `[26-30s CTA]`), aplicando la misma fórmula psicológica pero con los productos y promociones del tenant.
+
+---
+
 ## 3. Consecuencias & Beneficios
 
-### Positivas:
+### Positivas
+
 - **Rentabilidad Máxima:** El costo de computación de IA para un cliente promedio se mantiene por debajo de $1 a $3 USD mensuales.
 - **Experiencia de Usuario Inmediata:** Los prospectos en Meta y WhatsApp reciben atención en sub-segundos, maximizando la tasa de conversión y el ROAS.
 - **Seguridad Inviolable:** Las reglas comerciales de las marcas nunca son modificadas por alucinaciones, gracias a la verificación de cadena de pensamiento (*Chain of Thought*) de DeepSeek R1.
@@ -67,5 +83,7 @@ El Supervisor de LangGraph y el interceptor de la aplicación aplican las siguie
 ## 4. Implementación Técnica en Configuración
 
 Las credenciales y asignaciones se organizan en dos niveles:
+
 1. **Global IDE / Developer Assistant:** Conectado mediante [`mcp_config.json`](file:///c:/Users/EdgarGs/.gemini/config/mcp_config.json) con `"DOTENV_CONFIG_QUIET": "true"`.
 2. **App Core (`Vector-Community`):** Variables de entorno `.env.local` con `DEEPSEEK_API_KEY`, orquestadas dinámicamente según el identificador de tenant (`tenant_id`).
+

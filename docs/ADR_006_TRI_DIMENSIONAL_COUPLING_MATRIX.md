@@ -11,6 +11,7 @@
 ## 1. Contexto & Planteamiento del Problema
 
 Para que la automatización de la agencia sea verdaderamente industrial y escalable, las reglas no pueden existir de forma aislada. Deben responder con precisión matemática a tres preguntas simultáneas en cada interacción:
+
 1. **¿Qué tipo de negocio es?** (Giro Comercial de los 8 oficiales).
 2. **¿Qué información se está consultando o modificando?** (Cuál de los 4 Pilares RAG).
 3. **¿Qué nivel de cómputo y modelo debe responder?** (Tier 1 Operativo vs. Tier 2 Cognitivo).
@@ -62,8 +63,10 @@ A continuación se detalla cómo cada uno de los **8 giros comerciales** acopla 
 ---
 
 ### 🏋️ 1. Fitness & Centros Deportivos (Gimnasios, CrossFit, Estudios de Yoga)
+
 - **Modelo de Conversión:** Pase de cortesía de 1 día → Visita física → Membresía recurrente.
 - **Regla Inviolable:** NUNCA inventar promociones que no estén en la base y NUNCA asegurar cupo en clases sin verificar agenda.
+- **Tools Nativas:** `consultar_disponibilidad_google_calendar()`, `agendar_pase_cortesia()`.
 - **Acoplamiento por Pilares:**
   - **Pilar 1 (Precios):** Consultas de aranceles y planes mensuales atendidas por **Tier 1 (Operativo)**.
   - **Pilar 2 (Identidad):** Tono enérgico, motivador y cercano vía **Tier 1 (Operativo)**. Ingestión del reglamento interno con **Tier 2 (Cognitivo)**.
@@ -73,8 +76,10 @@ A continuación se detalla cómo cada uno de los **8 giros comerciales** acopla 
 ---
 
 ### 🎓 2. Escuelas, Academias & Cursos Online (Educación)
+
 - **Modelo de Conversión:** Descarga de Plan de Estudios / Temario → Clase muestra → Inscripción por ciclo.
 - **Regla Inviolable:** NUNCA prometer certificaciones oficiales si el RAG indica que no cuentan con RVOE/aval oficial.
+- **Tools Nativas:** `enviar_plan_estudios_pdf()`, `agendar_clase_muestra()`.
 - **Acoplamiento por Pilares:**
   - **Pilar 1 (Precios):** Desglose de colegiaturas y becas regulares por **Tier 1**. Negociación de financiamiento o convenios empresariales analizados por **Tier 2**.
   - **Pilar 2 (Identidad):** Tono académico, inspirador y formal por **Tier 1**.
@@ -84,8 +89,10 @@ A continuación se detalla cómo cada uno de los **8 giros comerciales** acopla 
 ---
 
 ### 🤝 3. Redes de Networking & Membresías Exclusivas (B2B Masterminds)
+
 - **Modelo de Conversión:** Formulario de postulación → Filtro de giro exclusivo → Invitación a sesión de mesa.
 - **Regla Inviolable:** SIEMPRE verificar si el giro del prospecto ya está ocupado antes de invitarlo.
+- **Tools Nativas:** `validar_exclusividad_giro()`, `postular_a_sesion()`.
 - **Acoplamiento por Pilares:**
   - **Pilar 1 (Precios):** Cuotas anuales o de sesión por **Tier 1**.
   - **Pilar 2 (Identidad):** Tono ejecutivo de alto estatus por **Tier 1**.
@@ -95,8 +102,10 @@ A continuación se detalla cómo cada uno de los **8 giros comerciales** acopla 
 ---
 
 ### 👟 4. E-Commerce & Retail (Marcas D2C / Tiendas Online)
+
 - **Modelo de Conversión:** Catálogo de productos → Cupón de bienvenida → Compra y tracking de envío.
 - **Regla Inviolable:** NUNCA modificar el costo de envío ni prometer entregas antes de los tiempos del courier.
+- **Tools Nativas:** `consultar_catalogo_rag()`, `generar_link_checkout()`, `rastrear_envio()`.
 - **Acoplamiento por Pilares:**
   - **Pilar 1 (Precios):** SKUs, existencias y códigos de descuento por **Tier 1**.
   - **Pilar 2 (Identidad):** Tono fresco y dinámico alineado a la marca por **Tier 1**.
@@ -106,8 +115,10 @@ A continuación se detalla cómo cada uno de los **8 giros comerciales** acopla 
 ---
 
 ### 🥩 5. Hospitality, Restaurantes & Eventos
+
 - **Modelo de Conversión:** Menú digital → Reserva de mesa / Evento privado → Asistencia.
 - **Regla Inviolable:** NUNCA confirmar eventos privados para más de 10 personas sin depósito verificado.
+- **Tools Nativas:** `mostrar_menu_digital()`, `obtener_ubicacion()`, `reservar_mesa()`.
 - **Acoplamiento por Pilares:**
   - **Pilar 1 (Precios):** Costo de platillos y paquetes por persona por **Tier 1**. Cotización de salones para bodas o corporativos por **Tier 2**.
   - **Pilar 2 (Identidad):** Tono hospitalario, gourmet y acogedor por **Tier 1**.
@@ -117,8 +128,10 @@ A continuación se detalla cómo cada uno de los **8 giros comerciales** acopla 
 ---
 
 ### 💼 6. B2B High-Ticket & Consultoría Estratégica
+
 - **Modelo de Conversión:** Auditoría de diagnóstico gratuita → Cita de estrategia con el CRO / Founder → Cierre de contrato.
 - **Regla Inviolable:** NUNCA firmar o pactar SLAs sin aprobación expresa del Director.
+- **Tools Nativas:** `evaluar_criterios_bant()`, `agendar_discovery_call()`.
 - **Acoplamiento por Pilares:**
   - **Pilar 1 (Precios):** Rangos base (BANT) por **Tier 1**. Propuestas personalizadas (> $15,000 USD) estructuradas por **Tier 2**.
   - **Pilar 2 (Identidad):** Tono de autoridad experta y consultiva por **Tier 1**.
@@ -128,8 +141,10 @@ A continuación se detalla cómo cada uno de los **8 giros comerciales** acopla 
 ---
 
 ### 🏙️ 7. Bienes Raíces & Automotriz (Inversiones de Alto Valor)
+
 - **Modelo de Conversión:** Ficha técnica / Tour virtual → Pre-calificación crediticia → Cita en desarrollo / Showroom.
 - **Regla Inviolable:** NUNCA asegurar tasas de interés bancarias sin dictamen formal de la institución financiera.
+- **Tools Nativas:** `descargar_ficha_tecnica()`, `simular_corrida_financiera()`.
 - **Acoplamiento por Pilares:**
   - **Pilar 1 (Precios):** Precios de lista y enganche mínimo por **Tier 1**. Simulación de corridas financieras y amortizaciones calculadas por **Tier 2**.
   - **Pilar 2 (Identidad):** Tono patrimonial, seguro y sofisticado por **Tier 1**.
@@ -139,13 +154,27 @@ A continuación se detalla cómo cada uno de los **8 giros comerciales** acopla 
 ---
 
 ### 🎬 8. Creadores de Contenido, Marcas Personales & Meta Creators
+
 - **Modelo de Conversión:** Interacción en Reels/Stories → Comunidad privada / Lead Magnet → Patrocinios y Merch.
 - **Regla Inviolable:** NUNCA pactar tarifas de colaboración publicitaria sin el Media Kit oficial.
+- **Tools Nativas:** `despachar_lead_magnet()`, `filtrar_hate_meta_graph()`.
 - **Acoplamiento por Pilares:**
   - **Pilar 1 (Precios):** *Opcional/Inactivo* para seguidores; tarifas de marcas procesadas por **Tier 2** en base al Media Kit.
   - **Pilar 2 (Identidad):** Mimic total de la voz, modismos y emojis del creador por **Tier 1**.
   - **Pilar 3 (Crisis/FAQs):** Respuestas de bienvenida y agradecimiento por **Tier 1**. Filtro de **Hate masivo, acoso o difamación** clasificado por **Tier 2** para ocultamiento automático en Meta Graph API.
   - **Pilar 4 (Histórico):** Métricas de alcance (Engagement Rate, Views) compartidas por **Tier 1**.
+
+
+---
+
+### 🛠️ 3.9. Herramientas Universales de Integración & Content Intelligence
+
+Las siguientes herramientas nativas complementan la ejecución tridimensional del sistema:
+
+1. `despachar_correo_confirmacion_gmail(tenant_id, lead_data, appointment_slot)`: Envío de correo transaccional de alta fidelidad vía Gmail API con el desglose de los 4 criterios AND y preparación previa.
+2. `analizar_desempeno_reels(tenant_id, post_metrics)`: Auditoría heurística de retención, hook rate y viralidad en publicaciones de Meta Graph API.
+3. `generar_guion_viral_replicado(winning_reel_id, current_offer)`: Invocación de DeepSeek R1 para deconstruir un Reel exitoso y emitir 3 nuevos guiones de 30s.
+4. `auditar_perfil_social(profile_handle, network)`: Evaluación de Biografía, CTAs, historias destacadas y micro-landing.
 
 ---
 
@@ -166,6 +195,8 @@ Cualquiera que sea el proveedor configurado por el cliente, este mapa garantiza 
 ## 5. Conclusión & Garantía Operativa
 
 Gracias a esta arquitectura tridimensional:
+
 1. **La agencia nunca pierde el control:** Cada mensaje sabe a qué giro pertenece, qué pilar consulta y qué modelo debe ejecutarlo.
 2. **Cero fugas de margen:** El 90% de las operaciones corren en el Tier 1 (ultrabarato y sub-segundo), blindando la rentabilidad.
 3. **Cero alucinaciones:** Ninguna regla inviolable es interpretada por un modelo ligero; siempre pasa por el motor cognitivo de razonamiento.
+

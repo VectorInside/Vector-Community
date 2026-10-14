@@ -8,7 +8,9 @@
 ---
 
 ## 1. Contexto & Planteamiento del Problema
+
 En plataformas SaaS tradicionales de Community Management, los sistemas de IA suelen forzar a todos los clientes a llenar la misma estructura rígida (e.g. listas masivas de precios, catálogos de SKUs y manuales de crisis extensos). Esto genera fricción insostenible:
+
 - Un **Gimnasio o Centro de CrossFit** vende membresías mensuales y busca agendar pases de cortesía de 1 día, no maneja SKUs individuales.
 - Una **Escuela o Academia de Idiomas** opera por ciclos de inscripción y planes de estudio en PDF, no por carritos de compra.
 - Una **Red de Networking o Mastermind B2B** necesita validar la exclusividad de giro de los prospectos antes de invitar a una sesión presencial.
@@ -21,6 +23,7 @@ Se requiere una **Taxonomía Universal de Negocios** que clasifique a las empres
 ## 2. Decisiones de Arquitectura (Decisions)
 
 ### 2.1. Taxonomía de 8 Familias de Conversión
+
 Se establece una matriz de 8 categorías maestras que abarcan todos los modelos comerciales:
 
 ```mermaid
@@ -48,6 +51,7 @@ graph LR
 ---
 
 ### 2.3. Modo Dual de Entrada: 1-Click Master Briefing vs 5 Etapas Guiadas
+
 1. **Modo 1-Click Master Briefing (DeepSeek R1 Semantic Parser):**
    - El usuario o la agencia sube un solo archivo integral (`.pdf`, `.docx`, `.md`) o pega el texto del brief.
    - La IA realiza una partición semántica en streaming:
@@ -58,6 +62,7 @@ graph LR
 ---
 
 ### 2.4. Score de Calidad RAG (`Health Score / 100`) y Sugerencias Proactivas
+
 - El panel audita en tiempo real la completitud del conocimiento contra los requisitos mínimos de su giro:
   $$\text{Health Score} = 50\text{ (Base Pilar 2)} + 20\text{ (Brandbook Doc)} + 15\text{ (Oferta Activa)} + 10\text{ (Crisis)} + 5\text{ (Reglas Inviolables)}$$
 - **Sugerencias con 1-Click Fix:** Si la IA detecta ausencias críticas (e.g. falta política de cancelación en gimnasios/clínicas o falta tiempo de envío en e-commerce), despliega tarjetas con botón de acción inmediata que inyectan plantillas pre-aprobadas en la memoria RAG.
@@ -65,20 +70,36 @@ graph LR
 ---
 
 ### 2.5. Reglas Inviolables del Negocio (Guardrails de Seguridad)
+
 Límites no negociables que el agente jamás romperá, garantizando que el humano solo intervenga en excepciones reales:
+
 1. *NUNCA* emitir diagnósticos médicos definitivos por chat (Salud).
 2. *NUNCA* autorizar descuentos mayores al límite pactado sin cupón verificado en sistema.
 3. *NUNCA* prometer entregas o visitas sin confirmación de inventario/agenda.
 4. *SIEMPRE* verificar disponibilidad de giro antes de invitar a sesiones de networking exclusivo.
 
+### 2.7. Plantilla Universal de ADN de Marca (Brand DNA Canvas)
+
+Para garantizar consistencia absoluta en el tono de voz entre el Bot de Triage, el Generador de Guiones de Reels y las respuestas en DMs, se define la **Plantilla de ADN de Negocio** como la *Single Source of Truth* de identidad de cada tenant:
+
+1. **Arquetipo de Marca:** Selección obligatoria entre los 5 arquetipos aprobados (El Experto Confiable, El Mentor Enérgico, El Amigo Cercano, El Transformador de Vidas, La Autoridad Médica/Técnica).
+2. **Tono de Voz & Política de Emojis:** Especificación de adjetivos de personalidad y directrices de emojis (ej. máximo 2 emojis por mensaje, solo del giro).
+3. **Jerga Prohibida (Glosario de Palabras Tabú):** Lista de términos y expresiones que el bot y los creadores tienen **estrictamente prohibido** utilizar (ej. "barato", "precio bajo", "remedio casero", "garantizado al 100%").
+4. **Perfil del Cliente Ideal (ICP & Dolores Agudos):** Síntesis de los 3 dolores principales que motivan la compra y las 2 objeciones más frecuentes (precio, tiempo, dolor físico o desconfianza).
+5. **Oferta Gancho Irresistible (Lead Magnet Activo):** Gancho promocional vigente, vigencia y call-to-action con palabra clave para detonar la conversación.
+6. **Exportación & Sincronización RAG:** El canvas se persiste en PostgreSQL (`tenants.brand_dna_canvas`) y se inyecta como contexto primario en el `system_prompt` de DeepSeek R1.
+
 ---
 
 ## 3. Consecuencias & Beneficios
 
-### Positivas:
+### Positivas
+
 - **Onboarding Reducido a < 60 Segundos:** Subir un único PDF configura el bot completo de forma inteligente.
 - **Cero Fricción para Clientes No-Transaccionales:** Creadores, consultores y marcas personales no son forzados a cargar listas de precios.
 - **Autonomía Blindada:** El bot resuelve el 95%+ de dudas y objeciones sin intervención humana, operando 24/7.
 
-### Mitigaciones:
+### Mitigaciones
+
 - Las reglas inviolables se inyectan como *System Prompt Imprimible* al inicio del contexto LLM con máxima prioridad sobre los fragmentos RAG.
+

@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
-import { MasterAgendaView } from '@/components/calendar/MasterAgendaView';
+import { MasterAgenda } from '@/components/calendar/MasterAgenda';
 
 export default function AgendaPage() {
-  return <MasterAgendaView />;
+  return <MasterAgenda />;
 }
+

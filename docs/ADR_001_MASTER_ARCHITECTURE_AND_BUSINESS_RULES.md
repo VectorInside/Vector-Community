@@ -9,9 +9,11 @@
 ---
 
 ## 1. Contexto & Planteamiento del Problema
+
 El Community Management tradicional presenta deficiencias críticas: alta dependencia de personal manual, riesgo de respuestas erróneas que comprometen la reputación de marcas, falta de atribución financiera real (ROAS real vs métricas vanidosas del Pixel) y nula escalabilidad multi-cliente.
 
 **Vector Community** requiere una arquitectura desacoplada que combine:
+
 1. Automatización extrema con agentes de Inteligencia Artificial (LangGraph / DeepSeek / Groq).
 2. Seguridad estricta multi-empresa con aislamiento de datos (PostgreSQL Row-Level Security).
 3. Gobernanza de agencia con filtro humano obligatorio únicamente para excepciones críticas (**Human-in-the-Loop - HITL**).
@@ -23,6 +25,7 @@ El Community Management tradicional presenta deficiencias críticas: alta depend
 ## 2. Decisiones de Arquitectura (Decisions)
 
 ### 2.1. Gobernanza "Agencia Primero" & HITL Selectivo
+
 - **Decisión:** La IA opera de forma 100% autónoma en el 95%+ de interacciones rutinarias. Únicamente se escala al operador humano (Lobo Vectorial) en:
   1. *Riesgo reputacional / Insultos / Crisis legal.*
   2. *Deals VIP de alto valor que requieren toque humano.*
@@ -30,32 +33,100 @@ El Community Management tradicional presenta deficiencias críticas: alta depend
   4. *Consultas sin respuesta en la base RAG.*
 
 ### 2.2. Aislamiento Multi-Tenant Estricto (Supabase PostgreSQL RLS)
+
 - **Decisión:** Todo registro en base de datos e índice vectorial `pgvector` incluye la clave foránea obligatoria `tenant_id`.
 - **Implementación:** Políticas de PostgreSQL **Row Level Security (RLS)** activadas para que sea matemáticamente imposible la fuga o cruce de datos entre marcas competidoras. En el frontend, el interceptor inyecta automáticamente el encabezado HTTP `X-Tenant-ID`.
 
 ### 2.3. Desacople de Microservicios: Spring Boot (Core) + Python AI Worker
-- **Decisión:** 
+
+- **Decisión:**
   - **Backend Core (Spring Boot / Java 21):** Responsable de la seguridad JWT, gestión de Webhooks entrantes, persistencia transaccional, sincronización con Google Calendar API v3 y despacho server-to-server a Meta Conversions API (CAPI).
   - **AI Worker (Python LangGraph / CrewAI):** Microservicio dedicado al procesamiento denso de grafos de agentes, embeddings vectoriales y orquestación LLM (DeepSeek R1/V3 vía Groq Cloud).
   - **Cola Asíncrona (Redis / Upstash):** Desacopla las llamadas masivas concurrentes de WhatsApp Cloud API e Instagram Graph API.
 
 ### 2.4. Atribución Backend Real & Sincronización Meta CAPI
+
 - **Decisión:** Los cálculos de **ROAS Real**, **MER** y **CAC** no dependen de las estimaciones del navegador (Pixel), sino del cruce exacto de ventas registradas en base de datos contra el gasto real de Meta Graph API.
 - **Transmisión:** Los eventos confirmados se transmiten vía Meta Conversions API con datos de contacto hasheados en **SHA-256**.
 
 ### 2.5. Ecosistema Adaptativo por Giros Comerciales & 4 Pilares RAG
+
 - **Decisión:** Solo el **Pilar 2 (Identidad & Brandbook)** es estrictamente obligatorio.
 - Los Pilares 1 (Precios), 3 (Crisis/FAQs) y 4 (Histórico) se adaptan dinámicamente según la familia comercial (Gimnasios, Escuelas, Redes de Networking, E-Commerce, Clínicas, B2B, Bienes Raíces, Creadores).
 - Se incorpora el motor de **Auto-Ingestión 1-Click** para analizar briefings maestros sin carga manual.
+
+### 2.6. Estrategia Dual de Adquisición: Negocios CON Web vs. SIN Web (`has_website`)
+
+- **Decisión:** La plataforma incorpora un *Feature Toggle* (`has_website: true / false`) para gobernar la telemetría según la madurez digital del cliente:
+  - **Negocios CON Web (`has_website = true`):** Integración de Google Analytics 4 (GA4 API - Plan $0 USD), Meta Pixel Web y medición de Bounce Rate contra Tasa de Clic a WhatsApp. Aplica la regla de diagnóstico:
+    $$\text{IF } (\text{CPC Anuncio es Bajo}) \land (\text{Tráfico Web es Alto}) \land (\text{Tasa Clic a WhatsApp} < 3\%) \implies \text{Alerta: Fricción en Página Web}$$
+  - **Negocios SIN Web (`has_website = false`):** Enrutamiento directo a mensajería (*Direct-to-Messaging* con pauta Click-to-WhatsApp y Click-to-DM). Los eventos de conversión se transmiten vía **Meta CAPI for Messaging** directamente desde los webhooks del chat sin requerir pixel web. Opcionalmente genera una Micro-Landing ultraligera en `app.vectorinside.com/m/{tenant_slug}`.
+
+### 2.7. Contrato de Onboarding Multi-Tenant (`POST /api/v1/tenants/onboard`)
+
+- **Decisión:** El proceso de alta de un nuevo tenant consolida 6 bloques atómicos de configuración:
+  ```json
+  {
+    "tenant_id": "tenant_sonrisas_001",
+    "business_name": "Clínica Dental Sonrisas",
+    "legal_name_tax_id": "Sonrisas Dentales S.A. de C.V. / SDS120304XYZ",
+    "vertical_tipo": "service_appointments",
+    "owner_name": "Dr. Alejandro Silva",
+    "owner_phone": "+525598765432",
+    "meta_credentials": {
+      "whatsapp_phone_number_id": "10987654321",
+      "waba_id": "98765432109",
+      "whatsapp_access_token": "EAAX...",
+      "instagram_account_id": "1784140000000",
+      "facebook_page_id": "100555444333"
+    },
+    "web_tracking": {
+      "has_website": true,
+      "website_url": "https://clinicasonrisas.com",
+      "ga4_measurement_id": "G-ABC123XYZ",
+      "meta_pixel_id": "123456789012345",
+      "meta_capi_token": "EAAX_CAPI..."
+    },
+    "google_workspace_integration": {
+      "google_calendar_id": "c_dental_sonrisas@group.calendar.google.com",
+      "google_credentials_json": "{\"type\": \"service_account\", ...}",
+      "gmail_sender_address": "citas@clinicasonrisas.com",
+      "enable_gmail_transactional_dispatch": true,
+      "email_templates": {
+        "pre_cita_confirmation": "tpl_precita_dental_01",
+        "monthly_roi_report": "tpl_executive_monthly_report_01"
+      },
+      "business_hours": {
+        "monday_friday": "09:00-18:00",
+        "saturday": "09:00-14:00"
+      },
+      "appointment_duration_minutes": 45
+    },
+    "financial_performance_rules": {
+      "target_cac_limit": 20.00,
+      "cost_per_qualified_lead": 15.00,
+      "monthly_ad_budget": 1500.00
+    },
+    "ai_rag_configuration": {
+      "brand_voice_tone": "Profesional, empático y orientativo",
+      "custom_system_prompt": "Siempre ofrecer la cita de valoración gratuita antes de dar presupuesto definitivo.",
+      "vector_collection_id": "vec_sonrisas_knowledge_01"
+    }
+  }
+  ```
 
 ---
 
 ## 3. Consecuencias & Beneficios (Consequences)
 
-### Positivas:
+
+### Positivas
+
 - **Cero Riesgo de Alucinación Pública:** El blindaje RAG y las Reglas Inviolables impiden comprometer precios o políticas inexistentes.
 - **Escalabilidad Horizontal Multi-Cliente:** Una sola agencia puede gestionar decenas de cuentas con supervisión centralizada.
 - **Soberanía Financiera Demostrable:** Transparencia total de métricas reales ante los dueños de negocio.
 
-### Mitigaciones:
+### Mitigaciones
+
 - **Latencia de Webhooks:** Se mitiga con Upstash Redis para responder con HTTP 200 a Meta en <200ms mientras el worker procesa en segundo plano.
+

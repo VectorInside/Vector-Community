@@ -1,6 +1,6 @@
 'use client';
-
-import React from 'react';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import {
   PieChart,
@@ -18,12 +18,18 @@ import {
   Instagram,
   Download,
   Award,
-  Clock
+  Clock,
+  Smartphone,
+  Globe,
+  ExternalLink,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { MicroLandingPreviewModal } from '@/components/common/MicroLandingPreviewModal';
 
 export const SoberaniaFinanciera = () => {
+  const router = useRouter();
   const { activeTenant, triggerModal } = useAuth();
+  const [showLandingModal, setShowLandingModal] = useState(false);
 
   const handleShowDictamenAna = () => {
     triggerModal(
@@ -122,6 +128,55 @@ export const SoberaniaFinanciera = () => {
           </span>
         </div>
       </header>
+
+      {/* Digital Presence & Micro-Landing Bar */}
+      <div className="mb-6 p-4 rounded-2xl bg-zinc-900/80 border border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-xs">
+        <div className="flex items-center gap-3">
+          <span className="p-2.5 rounded-xl bg-neon/10 text-neon border border-neon/20">
+            {activeTenant?.hasWebsite ? <Globe className="w-5 h-5" /> : <Smartphone className="w-5 h-5" />}
+          </span>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-white font-bold text-sm">
+                {activeTenant?.hasWebsite ? 'Presencia: Sitio Web Oficial Sincronizado' : 'Presencia: Ecosistema Puro en WhatsApp (SIN Web)'}
+              </span>
+              <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
+                {activeTenant?.hasWebsite ? 'GA4 Measurement ID ($0 USD)' : 'Micro-Landing Activa'}
+              </span>
+            </div>
+            <p className="text-zinc-400 text-xs mt-0.5 font-sans">
+              Micro-Landing Oficial:{' '}
+              <a
+                href={`/m/${activeTenant?.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-neon underline"
+              >
+                app.vectorinside.com/m/{activeTenant?.id}
+              </a>
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowLandingModal(true)}
+            className="px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs border border-zinc-700 hover:border-neon flex items-center gap-1.5 transition-all"
+          >
+            <Smartphone className="w-3.5 h-3.5 text-neon" />
+            <span>Previsualización Móvil</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => router.push('/performance')}
+            className="px-3.5 py-2 rounded-xl bg-neon text-black font-bold text-xs shadow-neon-sm hover:scale-[1.02] active:scale-[0.98] flex items-center gap-1.5 transition-all"
+          >
+            <Globe className="w-3.5 h-3.5" />
+            <span>Ver Telemetría Web & CAPI</span>
+          </button>
+        </div>
+      </div>
 
       {/* KPI Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -316,6 +371,15 @@ export const SoberaniaFinanciera = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal Interactivo de Micro-Landing Preview */}
+      {showLandingModal && (
+        <MicroLandingPreviewModal
+          isOpen={showLandingModal}
+          onClose={() => setShowLandingModal(false)}
+          tenant={activeTenant}
+        />
+      )}
     </div>
   );
 };

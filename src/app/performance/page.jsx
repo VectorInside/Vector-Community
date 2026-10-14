@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { SoberaniaFinanciera } from '@/components/metrics/SoberaniaFinanciera';
+import { PerformanceDashboard } from '@/components/metrics/PerformanceDashboard';
 
 export default function PerformancePage() {
-  return <SoberaniaFinanciera />;
+  return <PerformanceDashboard />;
 }

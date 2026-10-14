@@ -111,7 +111,19 @@ $$\text{IF } (\text{Frequency} > 3.5) \land \left( \Delta\text{CPC} > +20\% \lor
 
 ---
 
+### 2.6. Diagnóstico Algorítmico de Fricción Web & Meta CAPI for Messaging
+
+Para los tenants que operan con portal digital (`has_website = true`), el sistema cruza los eventos de adquisición publicitaria contra la conversión hacia WhatsApp:
+
+$$\text{IF } (\text{CPC} \le \text{CPC\_Target}) \land (\text{Sessions} > 500) \land (\text{ClickToWhatsAppRate} < 3\%) \implies \text{TRIGGER Web\_Friction\_Alert}$$
+
+- **Alerta de Consultoría Automática:** *"Fricción en Página Web detectada: Alto tráfico con bajo contacto. Revisar velocidad de carga, propuesta de valor superior o contraste del botón flotante de WhatsApp."*
+- **Flujo Direct-to-Messaging (`has_website = false`):** Para marcas sin sitio web, se suprime la dependencia del Pixel web y se activa el protocolo **Meta CAPI for Messaging**, transmitiendo los hitos de calificación (`Lead`, `Schedule`, `Purchase`) directamente desde los webhooks de WhatsApp e Instagram Graph API con hash SHA-256.
+
+---
+
 ## 3. Estado de Alineación e Impacto
+
 
 | Requisito del Plan Maestro | Estado en el SaaS | Ajuste Ejecutado |
 | :--- | :--- | :--- |

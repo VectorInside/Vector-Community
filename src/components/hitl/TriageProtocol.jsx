@@ -50,6 +50,7 @@ import {
   KANBAN_COLUMNS_CONFIG,
   QUALIFIED_LEAD_CRITERIA,
 } from '@/utils/constants';
+import { PreCitaDrawer } from './PreCitaDrawer';
 
 export const TriageProtocol = () => {
   const { triggerModal, activeTenant } = useAuth();
@@ -61,6 +62,7 @@ export const TriageProtocol = () => {
   const [inputMessage, setInputMessage] = useState('');
   const [isBotPaused, setIsBotPaused] = useState(false);
   const [selectedCapiLead, setSelectedCapiLead] = useState(null);
+  const [drawerLead, setDrawerLead] = useState(null);
 
   // Chat threads state with AI Customer Feedback, Boolean AND Criteria & Unified ENUMs
   const [threads, setThreads] = useState({
@@ -578,11 +580,42 @@ export const TriageProtocol = () => {
 
   const handleShowDictamen = (lead) => {
     const target = lead || currentChat;
+    setDrawerLead(target);
+  };
+
+  const handleApproveDrawerAppointment = (targetLead) => {
+    const leadKey = Object.keys(threads).find((k) => threads[k].id === targetLead.id) || activeContact;
+    setThreads((prev) => ({
+      ...prev,
+      [leadKey]: {
+        ...prev[leadKey],
+        leadState: LEAD_STATUS_ENUM.BILLABLE_LEAD,
+        status: 'Calificado / BILLABLE_LEAD',
+        statusType: 'success',
+        billingAmount: 350.0,
+        billingStatus: 'PENDING_INVOICE',
+        criteriaAudit: {
+          identityValidated: true,
+          catalogIdentified: true,
+          financialClarified: true,
+          consentOrBooked: true,
+        },
+        capiEventId: prev[leadKey].capiEventId || `lead_${Date.now()}_sha256`,
+        messages: [
+          ...prev[leadKey].messages,
+          {
+            id: Date.now(),
+            sender: 'Google Calendar API & Meta CAPI',
+            text: '✅ Cita formal aprobada y sincronizada en Google Calendar. Evento Schedule transmitido vía Meta CAPI (SHA-256). Confirmación enviada al WhatsApp del cliente.',
+            isWarning: true,
+            time: 'Justo ahora',
+          },
+        ],
+      },
+    }));
     triggerModal(
-      `Dictamen Pre-Cita: ${target.name}`,
-      target.dictamen,
-      null,
-      'Cerrar Dictamen'
+      'Cita Confirmada & Atribuida en Google Calendar',
+      `La cita con <strong>${targetLead.name}</strong> ha sido agendada con éxito en Google Calendar. Se emitió el evento a Meta CAPI y se registró la partida en <code>billing_ledger</code> ($350 MXN).`
     );
   };
 
@@ -1699,6 +1732,21 @@ VALUES (
           </div>
         </div>
       )}
+
+      {/* Ficha Dictamen Pre-Cita (Drawer Lateral de Alta Fidelidad) */}
+      <PreCitaDrawer
+        isOpen={!!drawerLead}
+        lead={drawerLead}
+        onClose={() => setDrawerLead(null)}
+        onApproveAppointment={handleApproveDrawerAppointment}
+        onOpenChat={(l) => {
+          const k = Object.keys(threads).find((x) => threads[x].id === l.id);
+          if (k) {
+            setActiveContact(k);
+            setViewMode('chat');
+          }
+        }}
+      />
     </div>
   );
 };

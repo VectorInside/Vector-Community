@@ -128,3 +128,86 @@ Accede a [http://localhost:3000](http://localhost:3000) e interactúa con cualqu
 npm run build
 ```
 
+---
+
+## 🏊 7. Diagrama de Carriles del Comportamiento del Sistema (Swimlane Diagram)
+
+El siguiente diagrama de carriles ilustra el ciclo de vida completo de un prospecto, desde el impacto publicitario en Meta Ads hasta la monetización del lead calificado ($350 MXN), la sincronización con Google Workspace y la atribución server-to-server en Meta CAPI:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as Prospecto / Usuario
+    participant M as Meta Ads & Graph API
+    participant VC as Vector Core & RAG Swarm
+    participant HITL as Operador Humano (HITL)
+    participant GW as Google Workspace (Calendar & Gmail)
+    participant CAPI as Meta Conversions API
+
+    Note over U,M: Fase 1: Ingestión & Captura
+    U->>M: Clic en Anuncio o Comentario en Reel ("VALORACION")
+    M->>VC: Webhook Event (Mensaje / Comentario entrante)
+    VC->>VC: Routing Tier 1 (DeepSeek V3 <800ms) + Blindaje RLS
+
+    Note over U,VC: Fase 2: Cualificación Determinista (4 Criterios AND)
+    VC->>U: Despacho de oferta comercial y gancho del mes
+    U->>VC: Proporciona teléfono E.164, interés y resuelve dudas de precio
+    VC->>VC: Valida 4/4 Criterios AND (Identidad, Catálogo, Finanzas, Agenda)
+    VC->>HITL: Escalamiento a Kanban Triage (LEAD_HOT_PREQUAL)
+
+    Note over HITL,GW: Fase 3: Dictamen Pre-Cita & Aprobación en 1 Clic
+    HITL->>HITL: Abre Drawer Lateral "Dictamen Pre-Cita" (3 Tarjetas)
+    HITL->>GW: Clic en [Aprobar Cita, Agendar Google & Enviar Gmail]
+    GW-->>HITL: Cita creada en Calendar v3 + ICS adjunto despachado por Gmail
+    
+    Note over HITL,CAPI: Fase 4: Monetización & Atribución CAPI Server-to-Server
+    HITL->>VC: Transición atómica a BILLABLE_LEAD ($350 MXN facturados)
+    VC->>CAPI: Telemetría SHA-256 (Lead_Prequalified / Purchase_Attributed)
+    CAPI-->>M: Optimización del algoritmo publicitario sin fuga de píxel
+```
+
+---
+
+## 🏛️ 8. Diagrama de Arquitectura de Software & Telemetría Backend
+
+Arquitectura modular desacoplada del sistema operativo multi-tenant:
+
+```mermaid
+graph TB
+    subgraph Frontend ["CAPA FRONTEND (Next.js 14 App Router)"]
+        UI_Triage["Bandeja Triage HITL (PreCitaDrawer.jsx)"]
+        UI_Agenda["Master Agenda Interactiva (MasterAgenda.jsx)"]
+        UI_Planner["Estudio de Contenido & ADN (ContentPlanner.jsx)"]
+        UI_Metrics["Performance Dashboard & Fricción Web (PerformanceDashboard.jsx)"]
+        UI_RAG["RAG Wizard Multi-Giro (RAGWizard.jsx)"]
+    end
+
+    subgraph Core ["CAPA MOTOR COGNITIVO & SUPERVISOR"]
+        Router["LangGraph Model Router"]
+        D_V3["DeepSeek V3 (Operativo <800ms)"]
+        D_R1["DeepSeek R1 (Cognitivo & Reversión Viral)"]
+        RLS_Engine["Aislamiento Multi-Tenant (PostgreSQL RLS)"]
+    end
+
+    subgraph Integrations ["CAPA DE INTEGRACIONES EXTERNAS"]
+        Meta_Graph["Meta Graph API (Instagram / Facebook Webhooks)"]
+        Meta_CAPI["Meta CAPI Server-to-Server (SHA-256)"]
+        Google_WS["Google Workspace (Calendar v3 + Gmail API)"]
+        GA4_API["Google Analytics 4 Measurement API"]
+    end
+
+    UI_Triage --> Router
+    UI_Agenda --> Google_WS
+    UI_Planner --> D_R1
+    UI_Metrics --> Meta_CAPI
+    UI_Metrics --> GA4_API
+    UI_RAG --> RLS_Engine
+
+    Router --> D_V3
+    Router --> D_R1
+    D_V3 --> Meta_Graph
+    D_R1 --> RLS_Engine
+    RLS_Engine --> Meta_CAPI
+```
+
+

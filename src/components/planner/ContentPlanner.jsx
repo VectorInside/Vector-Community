@@ -18,13 +18,33 @@ import {
   ThumbsUp,
   Eye,
   TrendingUp,
-  Bot
+  Bot,
+  Dna,
+  Search,
+  Copy,
+  Check,
+  ExternalLink,
+  AlertTriangle,
+  Lightbulb,
+  Play,
+  Smartphone,
+  BarChart2,
+  ShieldCheck,
+  X,
+  FileText,
+  ArrowRight,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { Badge } from '@/components/common/Badge';
 
 export const ContentPlanner = () => {
   const { activeTenant, isAdmin, isClient, triggerModal } = useAuth();
+  const [activeTab, setActiveTab] = useState('grid'); // 'grid' | 'dna' | 'viral_lab' | 'audit'
   const [selectedFilter, setSelectedFilter] = useState('ALL');
+  const [copiedCanvas, setCopiedCanvas] = useState(false);
+  const [selectedViralReel, setSelectedViralReel] = useState(null);
+
+  // Posts State
   const [posts, setPosts] = useState([
     {
       id: 'post-01',
@@ -35,7 +55,7 @@ export const ContentPlanner = () => {
       hookText: '¿Sabías que un dolor leve puede convertirse en un tratamiento 3x más costoso en 6 meses?',
       copy: 'En Odontología Integral usamos escaneo 3D sin dolor para diagnosticarte en 15 minutos. 🦷✨ Comenta "VALORACION" y el bot te agendará con 20% de descuento.',
       hashtags: '#SaludDental #ImplantesDentales #OdontologiaCDMX #DientesSanos',
-      status: 'PENDIENTE_CLIENTE', // PENDIENTE_CLIENTE | APROBADO_PROGRAMADO | PUBLICADO
+      status: 'PENDIENTE_CLIENTE',
       formatIcon: Video,
       estimatedReach: '18.5k - 25k visualizaciones',
       aiConfidence: 96,
@@ -88,11 +108,89 @@ export const ContentPlanner = () => {
     },
   ]);
 
+  // Brand DNA Canvas State (Idea 7)
+  const [brandDna, setBrandDna] = useState({
+    archetype: 'El Asesor Experto & Autoridad de Confianza',
+    tone: 'Profesional, Empático, Científico y Cálido',
+    tabooWords: 'barato, regalado, remedio casero, garantizado 100%, doloroso, sin compromiso',
+    icpPains: 'Miedo al dolor del taladro, vergüenza estética al sonreír, desconfianza por presupuestos sorpresa',
+    icpObjections: 'Costo de implantes, falta de tiempo, incertidumbre sobre meses sin intereses (MSI)',
+    leadMagnetHook: 'Diagnóstico Computarizado 3D Sin Costo + 20% en Tratamiento Integral',
+    leadMagnetCta: 'Comenta "VALORACION" o envía un DM con la palabra "DIAGNOSTICO"',
+  });
+
+  // Viral Reels Intelligence State (Idea 3 & Idea 6)
+  const [viralReels, setViralReels] = useState([
+    {
+      id: 'vr-01',
+      title: '¿Por qué postergar tu implante te costará el triple en 6 meses?',
+      views: '48,200',
+      hookRate: '46.8%',
+      retentionRate: '38.2%',
+      dmsGenerated: 312,
+      platform: 'Instagram Reels',
+      psychologicalTrigger: 'Aversión a la Pérdida (Loss Aversion) + Urgencia Financiera',
+      visualHook: 'Primer plano a radiografía 3D con acercamiento rápido en el segundo 0:01.',
+      ctaKeyword: 'PREVENCION',
+      whyItWorked: 'Tocó el dolor financiero antes que el dolor médico. La gente pospone por miedo al gasto, y este video demostró que posponer es lo que realmente cuesta dinero.',
+    },
+    {
+      id: 'vr-02',
+      title: '3 Mitos que ningún dentista tradicional te dice sobre anestesia',
+      views: '64,100',
+      hookRate: '52.4%',
+      retentionRate: '41.5%',
+      dmsGenerated: 485,
+      platform: 'TikTok & Reels',
+      psychologicalTrigger: 'Revelación de Secreto de la Industria + Curiosidad',
+      visualHook: 'Texto en pantalla: "No te dejes engañar" + sonido ASMR de instrumental estéril.',
+      ctaKeyword: 'INFO',
+      whyItWorked: 'Generó polarización positiva atacando el dolor universal del miedo al dentista, ofreciendo solución con anestesia computarizada indolora.',
+    },
+  ]);
+
+  // Social Profile Audit State (Idea 4)
+  const [profileAudit, setProfileAudit] = useState({
+    handle: `@${activeTenant?.id || 'odontologiaintegral'}`,
+    network: 'Instagram Business & TikTok',
+    score: 88,
+    checks: [
+      {
+        id: 'c1',
+        title: 'Biografía con Gancho de Valor',
+        status: 'WARNING',
+        diagnosis: 'Comunica el servicio pero el llamado a la acción no especifica beneficio inmediato.',
+        recommendation: 'Cambiar "Agenda tu cita" por "👇 Diagnóstico 3D Gratis en el enlace directo".',
+      },
+      {
+        id: 'c2',
+        title: 'Enlace de Conversión (Micro-Landing Vector)',
+        status: 'PASSED',
+        diagnosis: 'Enlace configurado correctamente hacia https://app.vectorinside.com/m/dental con UTMs limpias.',
+        recommendation: '100% Sincronizado sin fugas de rebote web.',
+      },
+      {
+        id: 'c3',
+        title: 'Historias Destacadas (Highlights)',
+        status: 'WARNING',
+        diagnosis: 'Cuenta con 3 álbumes destacados pero falta uno exclusivo para "Precios / MSI" y "Casos Clínicos".',
+        recommendation: 'Añadir Highlights con portadas en color de marca (#0D0F12 + Neón).',
+      },
+      {
+        id: 'c4',
+        title: 'Publicaciones Ancladas (Pinned Posts)',
+        status: 'PASSED',
+        diagnosis: '3 posts anclados con el reel más viral, presentación del doctor y oferta del mes.',
+        recommendation: 'Mantener actualizados mensualmente.',
+      },
+    ],
+  });
+
   const [commercialOffer, setCommercialOffer] = useState({
     docName: 'Propuesta_Comercial_Octubre_2026.pdf',
-    hook: 'Diagnóstico 3D sin costo + 20% en tratamiento integral al agendar esta semana',
-    cta: 'Comenta "VALORACION" o envía un DM para apartar cupo',
-    validity: 'Campaña Octubre 2026 (Primeros 30 registros)',
+    hook: brandDna.leadMagnetHook,
+    cta: brandDna.leadMagnetCta,
+    validity: 'Campaña Activa de Temporada (Primeros 30 registros)',
   });
   const [showOfferModal, setShowOfferModal] = useState(false);
 
@@ -128,11 +226,11 @@ export const ContentPlanner = () => {
     triggerModal(
       'Generador de Contenido IA (DeepSeek R1)',
       `<b>Nuevo Reel Generado para ${activeTenant?.name}:</b><br><br>
-      <b>[Alineado a Oferta]:</b> "${commercialOffer.hook}"<br><br>
+      <b>[Alineado a Oferta]:</b> "${brandDna.leadMagnetHook}"<br><br>
       <b>[Gancho 0-3s]:</b> "¿Sabías que un diagnóstico a tiempo te ahorra el 70% en tratamientos mayores?"<br>
       <b>[Desarrollo 4-15s]:</b> "En ${activeTenant?.name} utilizamos tecnología digital guiada para evaluar tu caso sin dolor."<br>
-      <b>[Oferta 16-25s]:</b> "${commercialOffer.hook}"<br>
-      <b>[CTA 26-30s]:</b> "${commercialOffer.cta}"`,
+      <b>[Oferta 16-25s]:</b> "${brandDna.leadMagnetHook}"<br>
+      <b>[CTA 26-30s]:</b> "${brandDna.leadMagnetCta}"`,
       () => {
         const newPost = {
           id: `post-${Date.now()}`,
@@ -141,7 +239,7 @@ export const ContentPlanner = () => {
           publishDate: 'Próx. Miércoles • 19:00 hrs',
           title: 'Promoción de Temporada: Diagnóstico Preventivo',
           hookText: '¿Sabías que un diagnóstico a tiempo te ahorra el 70%?',
-          copy: `${commercialOffer.hook}. ${commercialOffer.cta}.`,
+          copy: `${brandDna.leadMagnetHook}. ${brandDna.leadMagnetCta}.`,
           hashtags: '#OfertaEspecial #Prevencion #Salud #DeepSeekCreator',
           status: 'PENDIENTE_CLIENTE',
           formatIcon: Video,
@@ -158,15 +256,60 @@ export const ContentPlanner = () => {
     );
   };
 
+  const handleSaveBrandDna = () => {
+    try {
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { y: 0.6 },
+        colors: ['#E7F900', '#10B981', '#38BDF8'],
+      });
+    } catch (e) {}
+    triggerModal(
+      'ADN de Negocio Sincronizado con Éxito',
+      `Los parámetros de Arquetipo, Glosario Prohibido y Dolores del ICP han sido indexados en la memoria RAG de DeepSeek R1. Todas las respuestas de WhatsApp, DMs y guiones generados utilizarán este estándar.`,
+      null,
+      'Entendido'
+    );
+  };
+
+  const handleCopyBrandDna = () => {
+    navigator.clipboard.writeText(JSON.stringify(brandDna, null, 2));
+    setCopiedCanvas(true);
+    setTimeout(() => setCopiedCanvas(false), 2000);
+  };
+
+  const handleReplicateViralReel = (reel) => {
+    triggerModal(
+      `Ingeniería Inversa Viral: ${reel.title}`,
+      `<b>Fórmula Psicológica Detectada (DeepSeek R1):</b><br>
+      • <b>Disparador:</b> ${reel.psychologicalTrigger}<br>
+      • <b>Hook Rate Excepcional:</b> ${reel.hookRate} (Benchmark: 25%)<br>
+      • <b>Estímulo Visual:</b> ${reel.visualHook}<br><br>
+      <div style="background:#0D0F12; padding:12px; border-radius:12px; border:1px solid #1F242D; font-family:monospace; font-size:11px;">
+        <span style="color:#D4FF00; font-weight:bold;">🎬 3 VARIANTES GENERADAS CON LA MISMA FÓRMULA:</span><br><br>
+        1. <b>Variante Blanqueamiento:</b> "¿Por qué hacerte un blanqueamiento casero puede arruinar tu esmalte para siempre?"<br>
+        2. <b>Variante Ortodoncia Invisible:</b> "La verdad oculta sobre por qué los brackets metálicos ya no son la opción más rápida."<br>
+        3. <b>Variante Limpieza 3D:</b> "¿Crees que lavarte 3 veces al día es suficiente? Mira lo que encontramos con cámara intraoral."
+      </div>`,
+      () => {
+        try {
+          confetti({ particleCount: 40, spread: 60, colors: ['#D4FF00', '#10B981'] });
+        } catch (e) {}
+      },
+      'Insertar Variantes en la Parrilla'
+    );
+  };
+
   const filteredPosts = posts.filter((p) => {
     if (selectedFilter === 'ALL') return true;
-    if (selectedFilter === 'PENDING') return p.status === 'PENDING_CLIENTE';
+    if (selectedFilter === 'PENDING') return p.status === 'PENDIENTE_CLIENTE';
     if (selectedFilter === 'APPROVED') return p.status === 'APROBADO_PROGRAMADO';
     return true;
   });
 
   return (
-    <div className="p-8 block animate-fade-in space-y-6">
+    <div className="p-6 lg:p-8 block animate-fade-in space-y-6">
       {/* Header */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border-color)] pb-4 gap-4">
         <div>
@@ -175,14 +318,14 @@ export const ContentPlanner = () => {
               <Calendar className="w-4 h-4" />
             </span>
             <span className="text-xs font-mono text-[var(--text-muted)] uppercase tracking-wider">
-              Parrilla Editorial & Content Ops
+              Content Ops & Creative Intelligence
             </span>
           </div>
           <h2 className="text-3xl font-black uppercase tracking-tighter text-[var(--text-main)]">
-            Parrilla de <span className="text-neon">Contenidos</span>
+            Estudio de <span className="text-neon">Contenidos & Crecimiento</span>
           </h2>
           <p className="text-xs font-mono text-[var(--text-muted)] mt-1">
-            Planificación, previsualización de copys y flujo de aprobación cliente-agencia para:{' '}
+            Parrilla editorial, ADN de negocio, deconstrucción viral de reels y auditoría de perfiles para:{' '}
             <strong className="text-[var(--text-main)]">{activeTenant?.name}</strong>
           </p>
         </div>
@@ -194,39 +337,513 @@ export const ContentPlanner = () => {
             className="bg-neon text-black text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_15px_var(--neon-glow)] flex items-center gap-2 active:scale-95"
           >
             <Sparkles className="w-4 h-4" />
-            <span>Generar Post con IA (DeepSeek)</span>
+            <span>Generar Guion IA (DeepSeek R1)</span>
           </button>
         </div>
       </header>
 
-      {/* BANNER: PROPUESTA COMERCIAL & OFERTA ACTIVA DEL MES */}
-      <div className="rounded-2xl bg-zinc-900/80 border-2 border-neon/50 p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-[0_0_20px_rgba(229,255,0,0.1)]">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded bg-neon text-black">
-              OFERTA COMERCIAL DEL MES
-            </span>
-            <span className="text-xs font-mono text-zinc-400">
-              Doc Activo: <strong className="text-white underline">{commercialOffer.docName}</strong>
-            </span>
-          </div>
-          <p className="text-xs text-white font-bold font-mono">
-            Gancho: <span className="text-neon">"{commercialOffer.hook}"</span>
-          </p>
-          <p className="text-[11px] text-zinc-400 font-mono">
-            CTA: <span className="text-cyan-400">{commercialOffer.cta}</span> • Vigencia: {commercialOffer.validity}
-          </p>
-        </div>
+      {/* Navigation Tabs (4 Core Pillars of Content Strategy) */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-dark-border">
+        <button
+          type="button"
+          onClick={() => setActiveTab('grid')}
+          className={`px-4 py-2.5 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all ${
+            activeTab === 'grid'
+              ? 'bg-brand-primary text-black shadow-neon-sm'
+              : 'bg-dark-base text-zinc-400 hover:text-white border border-dark-border'
+          }`}
+        >
+          <LayoutGrid className="w-4 h-4" />
+          <span>Parrilla Multiplataforma</span>
+        </button>
 
         <button
           type="button"
-          onClick={() => setShowOfferModal(true)}
-          className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-mono font-bold text-zinc-200 border border-white/10 transition-all shrink-0 flex items-center gap-1.5"
+          onClick={() => setActiveTab('dna')}
+          className={`px-4 py-2.5 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all ${
+            activeTab === 'dna'
+              ? 'bg-brand-primary text-black shadow-neon-sm'
+              : 'bg-dark-base text-zinc-400 hover:text-white border border-dark-border'
+          }`}
         >
-          <Sparkles className="w-3.5 h-3.5 text-neon" />
-          <span>Actualizar Oferta del Mes</span>
+          <Dna className="w-4 h-4" />
+          <span>Plantilla de ADN de Negocio</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('viral_lab')}
+          className={`px-4 py-2.5 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all ${
+            activeTab === 'viral_lab'
+              ? 'bg-brand-primary text-black shadow-neon-sm'
+              : 'bg-dark-base text-zinc-400 hover:text-white border border-dark-border'
+          }`}
+        >
+          <Flame className="w-4 h-4" />
+          <span>Laboratorio de Reels Virales</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('audit')}
+          className={`px-4 py-2.5 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all ${
+            activeTab === 'audit'
+              ? 'bg-brand-primary text-black shadow-neon-sm'
+              : 'bg-dark-base text-zinc-400 hover:text-white border border-dark-border'
+          }`}
+        >
+          <Search className="w-4 h-4" />
+          <span>Auditoría de Perfiles</span>
         </button>
       </div>
+
+      {/* ========================================================================= */}
+      {/* TAB 1: PARRILLA DE CONTENIDO MULTIPLATAFORMA (IDEA 5)                     */}
+      {/* ========================================================================= */}
+      {activeTab === 'grid' && (
+        <div className="space-y-6 animate-fade-in">
+          {/* BANNER: OFERTA COMERCIAL VIGENTE */}
+          <div className="rounded-2xl bg-zinc-900/80 border-2 border-neon/50 p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-[0_0_20px_rgba(229,255,0,0.1)]">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded bg-neon text-black">
+                  OFERTA COMERCIAL DEL MES
+                </span>
+                <span className="text-xs font-mono text-zinc-400">
+                  Doc Activo: <strong className="text-white underline">{commercialOffer.docName}</strong>
+                </span>
+              </div>
+              <p className="text-xs text-white font-bold font-mono">
+                Gancho: <span className="text-neon">"{brandDna.leadMagnetHook}"</span>
+              </p>
+              <p className="text-[11px] text-zinc-400 font-mono">
+                CTA: <span className="text-cyan-400">{brandDna.leadMagnetCta}</span> • Vigencia: {commercialOffer.validity}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowOfferModal(true)}
+              className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-mono font-bold text-zinc-200 border border-white/10 transition-all shrink-0 flex items-center gap-1.5"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-neon" />
+              <span>Actualizar Oferta del Mes</span>
+            </button>
+          </div>
+
+          {/* Filters Bar */}
+          <div className="flex items-center justify-between pb-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-zinc-400 font-mono">Filtrar estado:</span>
+              {['ALL', 'PENDING', 'APPROVED'].map((fil) => (
+                <button
+                  key={fil}
+                  onClick={() => setSelectedFilter(fil)}
+                  className={`text-xs font-mono px-3 py-1.5 rounded-lg transition-all ${
+                    selectedFilter === fil
+                      ? 'bg-zinc-800 text-white font-bold border border-zinc-700'
+                      : 'text-zinc-500 hover:text-zinc-300'
+                  }`}
+                >
+                  {fil === 'ALL' ? 'Todos los Posts' : fil === 'PENDING' ? 'Pendientes de Aprobación' : 'Aprobados y Programados'}
+                </button>
+              ))}
+            </div>
+            <span className="text-xs font-mono text-zinc-400 hidden sm:inline">
+              {filteredPosts.length} publicaciones programadas
+            </span>
+          </div>
+
+          {/* Posts Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {filteredPosts.map((post) => {
+              const IconFormat = post.formatIcon;
+              const isPending = post.status === 'PENDIENTE_CLIENTE';
+
+              return (
+                <div
+                  key={post.id}
+                  className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] overflow-hidden shadow-lg flex flex-col justify-between hover:border-white/20 transition-all"
+                >
+                  <div className="p-5 space-y-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="p-2 rounded-xl bg-zinc-800 text-neon border border-white/5">
+                          <IconFormat className="w-4 h-4" />
+                        </span>
+                        <div>
+                          <span className="text-[10px] font-mono uppercase text-zinc-400 block font-bold">
+                            {post.channel}
+                          </span>
+                          <span className="text-xs font-mono font-bold text-white">
+                            {post.publishDate}
+                          </span>
+                        </div>
+                      </div>
+
+                      <span
+                        className={`text-[10px] font-mono px-2.5 py-1 rounded-full font-bold uppercase tracking-wider ${
+                          isPending
+                            ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                            : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                        }`}
+                      >
+                        {isPending ? 'Pendiente Cliente' : 'Aprobado'}
+                      </span>
+                    </div>
+
+                    <h4 className="text-base font-bold text-white font-sans">
+                      {post.title}
+                    </h4>
+
+                    {/* Hook Text Card */}
+                    <div className="p-3.5 rounded-xl bg-zinc-950 border border-neon/30 text-xs font-mono space-y-1">
+                      <span className="text-[10px] text-neon uppercase font-bold flex items-center gap-1">
+                        <Flame className="w-3 h-3 text-neon" />
+                        Gancho Viral (0-3s Hook)
+                      </span>
+                      <p className="text-zinc-200 font-bold italic">
+                        "{post.hookText}"
+                      </p>
+                    </div>
+
+                    {/* Full Copy */}
+                    <div className="space-y-1.5 text-xs font-sans">
+                      <span className="text-[10px] font-mono uppercase text-zinc-400 block font-bold">
+                        Copy & CTA
+                      </span>
+                      <p className="text-zinc-300 leading-relaxed bg-zinc-950/70 p-3 rounded-xl border border-white/5 font-mono text-[11px]">
+                        {post.copy}
+                      </p>
+                      <p className="text-[11px] font-mono text-blue-400">
+                        {post.hashtags}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-4 border-t border-[var(--border-color)] bg-zinc-900/60 flex items-center justify-between">
+                    <span className="text-[11px] font-mono text-zinc-400 flex items-center gap-1.5">
+                      <Eye className="w-3.5 h-3.5 text-zinc-500" />
+                      <span>{post.estimatedReach}</span>
+                    </span>
+
+                    {isPending ? (
+                      <button
+                        type="button"
+                        onClick={() => handleApprovePost(post.id)}
+                        className="bg-neon text-black text-xs font-bold px-4 py-2 rounded-xl hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_12px_var(--neon-glow)] flex items-center gap-1.5 active:scale-95"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Aprobar Publicación</span>
+                      </button>
+                    ) : (
+                      <span className="text-xs font-mono text-emerald-400 flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Programado
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 2: PLANTILLA DE ADN DE NEGOCIO (IDEA 7)                               */}
+      {/* ========================================================================= */}
+      {activeTab === 'dna' && (
+        <div className="rounded-3xl bg-dark-surface border border-dark-border p-6 sm:p-8 space-y-6 animate-fade-in">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-dark-border">
+            <div className="flex items-center gap-3">
+              <span className="p-3 rounded-2xl bg-brand-primary/10 text-brand-primary border border-brand-primary/30">
+                <Dna className="w-6 h-6" />
+              </span>
+              <div>
+                <h3 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                  Plantilla de ADN de Negocio (Brand DNA Canvas)
+                </h3>
+                <p className="text-xs text-zinc-400 font-mono">
+                  Single Source of Truth para la identidad, tono de voz y blindaje de la IA (ADR-002 §2.7)
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleCopyBrandDna}
+                className="px-3.5 py-2 rounded-xl bg-dark-base hover:bg-zinc-800 text-zinc-300 text-xs font-mono border border-dark-border flex items-center gap-1.5 transition-colors"
+              >
+                {copiedCanvas ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedCanvas ? '¡Copiado!' : 'Copiar JSON'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveBrandDna}
+                className="px-4 py-2 rounded-xl bg-brand-primary text-black font-bold text-xs font-mono shadow-neon-sm hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-1.5"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                <span>Sincronizar con Memoria RAG</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Form Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-mono text-xs">
+            {/* Arquetipo */}
+            <div className="p-5 rounded-2xl bg-dark-base border border-dark-border space-y-2">
+              <span className="text-[10px] text-brand-primary font-bold uppercase tracking-wider block">
+                1. Arquetipo de Marca
+              </span>
+              <input
+                type="text"
+                value={brandDna.archetype}
+                onChange={(e) => setBrandDna({ ...brandDna, archetype: e.target.value })}
+                className="w-full bg-dark-elevated border border-dark-border rounded-xl p-3 text-white focus:border-brand-primary outline-none"
+              />
+              <p className="text-[10px] text-zinc-500 font-sans">
+                Define la postura psicológica: La Autoridad Confiable, El Mentor Enérgico, El Amigo Rebelde.
+              </p>
+            </div>
+
+            {/* Tono de Voz */}
+            <div className="p-5 rounded-2xl bg-dark-base border border-dark-border space-y-2">
+              <span className="text-[10px] text-brand-primary font-bold uppercase tracking-wider block">
+                2. Tono de Voz & Adjetivos Clave
+              </span>
+              <input
+                type="text"
+                value={brandDna.tone}
+                onChange={(e) => setBrandDna({ ...brandDna, tone: e.target.value })}
+                className="w-full bg-dark-elevated border border-dark-border rounded-xl p-3 text-white focus:border-brand-primary outline-none"
+              />
+              <p className="text-[10px] text-zinc-500 font-sans">
+                Estilo de redacción en DMs, WhatsApp y guiones de Reels.
+              </p>
+            </div>
+
+            {/* Palabras Tabú / Glosario Prohibido */}
+            <div className="p-5 rounded-2xl bg-dark-base border border-red-500/30 space-y-2 bg-red-950/5">
+              <span className="text-[10px] text-red-400 font-bold uppercase tracking-wider block flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5" />
+                3. Glosario Prohibido (Palabras Tabú)
+              </span>
+              <textarea
+                rows={3}
+                value={brandDna.tabooWords}
+                onChange={(e) => setBrandDna({ ...brandDna, tabooWords: e.target.value })}
+                className="w-full bg-dark-elevated border border-dark-border rounded-xl p-3 text-zinc-200 focus:border-red-400 outline-none resize-none"
+              />
+              <p className="text-[10px] text-zinc-500 font-sans">
+                Palabras que el bot o los guiones tienen ESTRICTAMENTE prohibido pronunciar.
+              </p>
+            </div>
+
+            {/* Dolores Primarios del ICP */}
+            <div className="p-5 rounded-2xl bg-dark-base border border-dark-border space-y-2">
+              <span className="text-[10px] text-brand-primary font-bold uppercase tracking-wider block">
+                4. Dolores Agudos del Cliente Ideal (ICP)
+              </span>
+              <textarea
+                rows={3}
+                value={brandDna.icpPains}
+                onChange={(e) => setBrandDna({ ...brandDna, icpPains: e.target.value })}
+                className="w-full bg-dark-elevated border border-dark-border rounded-xl p-3 text-zinc-200 focus:border-brand-primary outline-none resize-none"
+              />
+              <p className="text-[10px] text-zinc-500 font-sans">
+                Las motivaciones emocionales profundas que impulsan la decisión de agendar.
+              </p>
+            </div>
+
+            {/* Oferta Gancho Irresistible */}
+            <div className="p-5 rounded-2xl bg-dark-base border border-brand-primary/40 space-y-2 md:col-span-2 bg-brand-primary/5">
+              <span className="text-[10px] text-brand-primary font-bold uppercase tracking-wider block flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5" />
+                5. Oferta Gancho Irresistible (Lead Magnet Activo)
+              </span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <input
+                  type="text"
+                  value={brandDna.leadMagnetHook}
+                  onChange={(e) => setBrandDna({ ...brandDna, leadMagnetHook: e.target.value })}
+                  placeholder="Gancho de la oferta..."
+                  className="w-full bg-dark-elevated border border-dark-border rounded-xl p-3 text-white focus:border-brand-primary outline-none"
+                />
+                <input
+                  type="text"
+                  value={brandDna.leadMagnetCta}
+                  onChange={(e) => setBrandDna({ ...brandDna, leadMagnetCta: e.target.value })}
+                  placeholder="Call to Action con palabra clave..."
+                  className="w-full bg-dark-elevated border border-dark-border rounded-xl p-3 text-white focus:border-brand-primary outline-none"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 3: LABORATORIO DE REELS VIRALES (IDEAS 3 Y 6)                         */}
+      {/* ========================================================================= */}
+      {activeTab === 'viral_lab' && (
+        <div className="space-y-6 animate-fade-in">
+          <div className="p-6 rounded-3xl bg-dark-surface border border-dark-border flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="p-2 rounded-xl bg-brand-primary/10 text-brand-primary border border-brand-primary/30">
+                  <Flame className="w-5 h-5" />
+                </span>
+                <div>
+                  <h3 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                    Laboratorio de Deconstrucción & Replicación Viral (DeepSeek R1)
+                  </h3>
+                  <p className="text-xs text-zinc-400 font-mono">
+                    Análisis algorítmico de los reels que despegaron y generación de fórmulas replicables (ADR-004 §2.4)
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <Badge variant="neon" size="sm">
+              Escucha Activa Meta Graph
+            </Badge>
+          </div>
+
+          {/* Viral Reels Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {viralReels.map((reel) => (
+              <div
+                key={reel.id}
+                className="rounded-2xl bg-dark-surface border border-dark-border p-6 space-y-5 shadow-lg hover:border-brand-primary/40 transition-all flex flex-col justify-between"
+              >
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-bold uppercase">
+                      Viral Outlier Confirmado
+                    </span>
+                    <span className="text-xs font-mono text-zinc-400">{reel.platform}</span>
+                  </div>
+
+                  <h4 className="text-base font-bold text-white font-sans">
+                    "{reel.title}"
+                  </h4>
+
+                  {/* Telemetry Metrics */}
+                  <div className="grid grid-cols-3 gap-2 font-mono text-xs">
+                    <div className="p-3 rounded-xl bg-dark-base border border-dark-border">
+                      <span className="text-[10px] text-zinc-500 block">Vistas</span>
+                      <span className="text-sm font-bold text-white">{reel.views}</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-dark-base border border-dark-border">
+                      <span className="text-[10px] text-zinc-500 block">Hook Rate</span>
+                      <span className="text-sm font-bold text-brand-primary">{reel.hookRate}</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-dark-base border border-dark-border">
+                      <span className="text-[10px] text-zinc-500 block">DMs CAPI</span>
+                      <span className="text-sm font-bold text-emerald-400">{reel.dmsGenerated}</span>
+                    </div>
+                  </div>
+
+                  {/* DeepSeek R1 Reverse Engineering Card */}
+                  <div className="p-4 rounded-2xl bg-dark-elevated border border-brand-primary/30 space-y-2 text-xs font-mono">
+                    <span className="text-[10px] text-brand-primary font-bold uppercase flex items-center gap-1.5">
+                      <Bot className="w-3.5 h-3.5" />
+                      Deconstrucción Algorítmica (Por qué funcionó):
+                    </span>
+                    <p className="text-zinc-300 font-sans text-xs leading-relaxed">
+                      {reel.whyItWorked}
+                    </p>
+                    <div className="pt-2 border-t border-dark-border text-[11px] text-zinc-400">
+                      <span>Disparador: <strong>{reel.psychologicalTrigger}</strong></span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-dark-border">
+                  <button
+                    type="button"
+                    onClick={() => handleReplicateViralReel(reel)}
+                    className="w-full py-3 px-4 rounded-xl bg-brand-primary text-black font-bold text-xs font-mono shadow-neon-sm hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span>🧬 Replicar Fórmula en 3 Nuevos Guiones</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 4: AUDITORÍA DE PERFILES SOCIALES (IDEA 4)                             */}
+      {/* ========================================================================= */}
+      {activeTab === 'audit' && (
+        <div className="space-y-6 animate-fade-in">
+          <div className="p-6 rounded-3xl bg-dark-surface border border-dark-border flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className="p-2.5 rounded-2xl bg-brand-primary/10 text-brand-primary border border-brand-primary/30">
+                <Search className="w-6 h-6" />
+              </span>
+              <div>
+                <h3 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                  Auditoría de Perfil Social: {profileAudit.handle}
+                </h3>
+                <p className="text-xs text-zinc-400 font-mono">
+                  Optimización de Biografía, Enlace en Bio y Conversión a WhatsApp (ADR-006 §3.9)
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="text-right font-mono">
+                <span className="text-xs text-zinc-400 block">Health Score de Perfil:</span>
+                <span className="text-lg font-bold text-brand-primary">{profileAudit.score} / 100</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Audit Checks Checklist */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {profileAudit.checks.map((chk) => (
+              <div
+                key={chk.id}
+                className="p-5 rounded-2xl bg-dark-surface border border-dark-border space-y-3 font-mono text-xs"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-white text-sm flex items-center gap-2 font-sans">
+                    {chk.status === 'PASSED' ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    ) : (
+                      <AlertTriangle className="w-4 h-4 text-amber-400" />
+                    )}
+                    {chk.title}
+                  </span>
+                  <span
+                    className={`text-[10px] px-2 py-0.5 rounded font-bold ${
+                      chk.status === 'PASSED'
+                        ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                        : 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                    }`}
+                  >
+                    {chk.status === 'PASSED' ? 'Optimizado' : 'Requiere Ajuste'}
+                  </span>
+                </div>
+
+                <p className="text-zinc-300 font-sans text-xs">
+                  {chk.diagnosis}
+                </p>
+
+                <div className="p-3 rounded-xl bg-dark-base border border-dark-border text-[11px] text-zinc-400 space-y-1">
+                  <span className="text-brand-primary font-bold block">Recomendación IA:</span>
+                  <p>{chk.recommendation}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* MODAL PARA ACTUALIZAR OFERTA COMERCIAL */}
       {showOfferModal && (
@@ -250,255 +867,56 @@ export const ContentPlanner = () => {
                   Documento de Propuesta Comercial (.pdf, .docx, .md)
                 </label>
                 <input
-                  type="file"
-                  onChange={(e) =>
-                    setCommercialOffer({
-                      ...commercialOffer,
-                      docName: e.target.files[0]?.name || commercialOffer.docName,
-                    })
-                  }
-                  className="text-xs text-zinc-400 w-full file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-neon file:text-black cursor-pointer"
+                  type="text"
+                  value={commercialOffer.docName}
+                  onChange={(e) => setCommercialOffer({ ...commercialOffer, docName: e.target.value })}
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white focus:border-neon outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-zinc-300 font-bold mb-1">Gancho Principal / Lead Magnet</label>
-                <input
-                  type="text"
-                  required
-                  value={commercialOffer.hook}
-                  onChange={(e) => setCommercialOffer({ ...commercialOffer, hook: e.target.value })}
-                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-2.5 text-white focus:border-neon outline-none"
+                <label className="block text-zinc-300 font-bold mb-1">
+                  Gancho Comercial del Mes (Hook)
+                </label>
+                <textarea
+                  rows={2}
+                  value={brandDna.leadMagnetHook}
+                  onChange={(e) => setBrandDna({ ...brandDna, leadMagnetHook: e.target.value })}
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white focus:border-neon outline-none resize-none"
                 />
               </div>
 
               <div>
-                <label className="block text-zinc-300 font-bold mb-1">Llamado a la Acción (CTA)</label>
+                <label className="block text-zinc-300 font-bold mb-1">
+                  Llamado a la Acción (CTA) & Palabra Clave
+                </label>
                 <input
                   type="text"
-                  required
-                  value={commercialOffer.cta}
-                  onChange={(e) => setCommercialOffer({ ...commercialOffer, cta: e.target.value })}
-                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-2.5 text-white focus:border-neon outline-none"
+                  value={brandDna.leadMagnetCta}
+                  onChange={(e) => setBrandDna({ ...brandDna, leadMagnetCta: e.target.value })}
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white focus:border-neon outline-none"
                 />
               </div>
 
-              <div>
-                <label className="block text-zinc-300 font-bold mb-1">Vigencia / Términos</label>
-                <input
-                  type="text"
-                  required
-                  value={commercialOffer.validity}
-                  onChange={(e) => setCommercialOffer({ ...commercialOffer, validity: e.target.value })}
-                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-2.5 text-white focus:border-neon outline-none"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3 border-t border-zinc-800">
+              <div className="flex justify-end gap-3 pt-3">
                 <button
                   type="button"
                   onClick={() => setShowOfferModal(false)}
-                  className="px-4 py-2 rounded-xl border border-zinc-700 text-zinc-400"
+                  className="px-4 py-2 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-neon text-black font-bold shadow-neon"
+                  className="px-5 py-2 rounded-xl bg-neon text-black font-bold hover:bg-[var(--neon-hover)] shadow-neon"
                 >
-                  Guardar & Sincronizar IA
+                  Guardar y Sincronizar
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-
-      {/* ALERTA ALGORÍTMICA DE FATIGA CREATIVA (CONDICIÓN MATEMÁTICA DEEPSEEK TRIGGER) */}
-      <div className="rounded-2xl bg-purple-950/25 border border-purple-500/40 p-4 sm:p-5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 font-mono text-xs shadow-[0_0_20px_rgba(168,85,247,0.15)]">
-        <div className="space-y-1.5 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-black uppercase flex items-center gap-1">
-              <Flame className="w-3.5 h-3.5 text-purple-400" />
-              Sub-Bot Analista • Circuit Breaker de Fatiga Creativa
-            </span>
-            <span className="text-[10px] text-zinc-400">
-              Meta Graph API Telemetría: <strong className="text-white">AdSet "Implantes_Promo_V3"</strong>
-            </span>
-          </div>
-
-          <p className="text-[11px] text-purple-200 font-sans leading-relaxed">
-            <strong>Condición Algorítmica Cumplida:</strong> Frecuencia acumulada en <strong className="text-white font-mono">3.82 (&gt; 3.5)</strong> con incremento de Costo por Clic <strong className="text-red-400 font-mono">ΔCPC +24.5% (&gt; +20%)</strong> y caída en <strong className="text-red-400 font-mono">ΔCTR -18.2% (&lt; -15%)</strong>.
-          </p>
-
-          <div className="p-2 rounded-xl bg-black/60 border border-purple-500/20 text-[10px] text-purple-300">
-            <code>IF (Frequency &gt; 3.5) AND (ΔCPC &gt; +20% OR ΔCTR &lt; -15%) ⟹ TRIGGER DeepSeek_Creative_Diversity_Prompt</code>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleGenerateAiPost}
-          className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shrink-0 flex items-center gap-2 shadow-[0_0_15px_rgba(168,85,247,0.4)] transition-all active:scale-95"
-        >
-          <Sparkles className="w-3.5 h-3.5 text-neon" />
-          <span>Disparar Diversidad Creativa (DeepSeek)</span>
-        </button>
-      </div>
-
-      {/* Filter Tabs */}
-      <div className="flex items-center justify-between gap-4 border-b border-[var(--border-color)] pb-3">
-        <div className="flex items-center gap-2 font-mono text-xs">
-          <button
-            type="button"
-            onClick={() => setSelectedFilter('ALL')}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              selectedFilter === 'ALL'
-                ? 'bg-neon text-black font-bold'
-                : 'text-[var(--text-muted)] hover:text-white bg-[var(--bg-card)]'
-            }`}
-          >
-            Todos ({posts.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedFilter('PENDING')}
-            className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
-              selectedFilter === 'PENDING'
-                ? 'bg-amber-400 text-black font-bold'
-                : 'text-[var(--text-muted)] hover:text-white bg-[var(--bg-card)]'
-            }`}
-          >
-            <Clock className="w-3.5 h-3.5" />
-            <span>Pendientes Aprobación ({posts.filter((p) => p.status === 'PENDING_CLIENTE').length})</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedFilter('APPROVED')}
-            className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
-              selectedFilter === 'APPROVED'
-                ? 'bg-emerald-400 text-black font-bold'
-                : 'text-[var(--text-muted)] hover:text-white bg-[var(--bg-card)]'
-            }`}
-          >
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Aprobados / Programados ({posts.filter((p) => p.status === 'APROBADO_PROGRAMADO').length})</span>
-          </button>
-        </div>
-
-        <div className="text-[11px] font-mono text-[var(--text-muted)] hidden sm:block">
-          Auto-Despacho Meta Graph API • 🟢 Conectado
-        </div>
-      </div>
-
-      {/* Post Grid Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {filteredPosts.map((post) => {
-          const isPending = post.status === 'PENDING_CLIENTE';
-          const FormatIcon = post.formatIcon;
-
-          return (
-            <div
-              key={post.id}
-              className={`rounded-2xl vector-bg-card vector-border overflow-hidden flex flex-col justify-between transition-all duration-300 hover:border-neon/50 ${
-                isPending ? 'border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.1)]' : ''
-              }`}
-            >
-              {/* Card Header */}
-              <div className="p-5 border-b border-[var(--border-color)] bg-[var(--bg-panel)] flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-neon/10 text-neon border border-neon/20">
-                    <FormatIcon className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-mono font-bold uppercase text-[var(--text-muted)] block">
-                      {post.channel}
-                    </span>
-                    <span className="text-xs font-semibold text-white font-mono flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-zinc-500" />
-                      {post.publishDate}
-                    </span>
-                  </div>
-                </div>
-
-                <div>
-                  {isPending ? (
-                    <span className="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[10px] font-mono font-bold flex items-center gap-1">
-                      <Clock className="w-3 h-3" /> PENDIENTE APROBACIÓN
-                    </span>
-                  ) : (
-                    <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3" /> PROGRAMADO EN META
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Card Content & Preview */}
-              <div className="p-5 space-y-4 flex-1">
-                {/* Visual Banner Preview */}
-                <div className={`p-4 rounded-xl bg-gradient-to-br ${post.previewBg} border border-zinc-800 space-y-2`}>
-                  <div className="flex items-center justify-between text-[10px] font-mono text-zinc-400">
-                    <span className="flex items-center gap-1 text-neon">
-                      <Sparkles className="w-3 h-3" /> Guion & Gancho IA
-                    </span>
-                    <span>Score IA: {post.aiConfidence}%</span>
-                  </div>
-                  <h4 className="text-sm font-bold text-white leading-snug">
-                    "{post.hookText}"
-                  </h4>
-                </div>
-
-                {/* Full Copy & Hashtags */}
-                <div className="space-y-2">
-                  <span className="text-[10px] font-mono uppercase text-[var(--text-muted)] block font-bold">
-                    Copy Oficial & Llamado a la Acción (CTA)
-                  </span>
-                  <p className="text-xs text-zinc-300 leading-relaxed font-sans bg-[var(--bg-base)] p-3 rounded-xl border border-[var(--border-color)]">
-                    {post.copy}
-                  </p>
-                  <p className="text-[11px] font-mono text-blue-400">
-                    {post.hashtags}
-                  </p>
-                </div>
-
-                {/* Estimated Impact */}
-                <div className="flex items-center justify-between pt-2 text-xs font-mono text-[var(--text-muted)] border-t border-[var(--border-color)]">
-                  <span className="flex items-center gap-1">
-                    <Eye className="w-3.5 h-3.5 text-zinc-500" />
-                    <span>Alcance Estimado:</span>
-                  </span>
-                  <span className="font-bold text-white">{post.estimatedReach}</span>
-                </div>
-              </div>
-
-              {/* Card Action Footer */}
-              <div className="p-4 border-t border-[var(--border-color)] bg-[var(--bg-panel)] flex items-center justify-between gap-3">
-                <span className="text-[10px] font-mono text-zinc-500">
-                  ID: {post.id}
-                </span>
-
-                <div className="flex items-center gap-2">
-                  {isPending ? (
-                    <button
-                      type="button"
-                      onClick={() => handleApprovePost(post.id)}
-                      className="bg-neon text-black text-xs font-bold px-4 py-2 rounded-xl hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_12px_var(--neon-glow)] flex items-center gap-1.5 active:scale-95"
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>{isClient ? 'Aprobar como Dueño' : 'Aprobar & Programar (1 Clic)'}</span>
-                    </button>
-                  ) : (
-                    <span className="text-xs font-mono text-emerald-400 flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Listo para emisión
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 };
