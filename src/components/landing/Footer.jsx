@@ -147,10 +147,7 @@ export const Footer = ({ lang = 'es' }) => {
           </div>
           <div className="flex items-center gap-6">
             <Link href="/login" className="hover:text-zinc-300 transition-colors">
-              App Login
-            </Link>
-            <Link href="/dashboard" className="hover:text-zinc-300 transition-colors">
-              Centro de Mando
+              Iniciar Sesión
             </Link>
             <a href="#trust" className="hover:text-zinc-300 transition-colors">
               Security (SOC2/GDPR)

@@ -61,13 +61,45 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const [tenantsData, setTenantsData] = useState(INITIAL_TENANTS_DATA);
+
   const switchTenantContext = (tenantKey) => {
-    if (INITIAL_TENANTS_DATA[tenantKey]) {
+    if (tenantsData[tenantKey]) {
       setActiveTenantKey(tenantKey);
       if (typeof window !== 'undefined') {
         localStorage.setItem('vector_active_tenant_key', tenantKey);
       }
     }
+  };
+
+  const toggleTenantAi = (tenantKey) => {
+    setTenantsData((prev) => {
+      const target = prev[tenantKey];
+      if (!target) return prev;
+      const willBeActive = !target.isAiActive;
+      return {
+        ...prev,
+        [tenantKey]: {
+          ...target,
+          isAiActive: willBeActive,
+          crisisMode: !willBeActive, // If paused, enters crisis/takeover mode
+        },
+      };
+    });
+  };
+
+  const updateTenantPolicy = (tenantKey, updates) => {
+    setTenantsData((prev) => {
+      const target = prev[tenantKey];
+      if (!target) return prev;
+      return {
+        ...prev,
+        [tenantKey]: {
+          ...target,
+          ...updates,
+        },
+      };
+    });
   };
 
   const triggerModal = (title, bodyHtml, onAction = null, actionText = 'Confirmar Acción') => {
@@ -91,7 +123,7 @@ export const AuthProvider = ({ children }) => {
     closeModal();
   };
 
-  const activeTenant = INITIAL_TENANTS_DATA[activeTenantKey] || INITIAL_TENANTS_DATA.dental;
+  const activeTenant = tenantsData[activeTenantKey] || tenantsData.dental;
 
   const isAdmin = role === 'admin';
   const isClient = role === 'client';
@@ -107,8 +139,10 @@ export const AuthProvider = ({ children }) => {
         toggleTheme,
         activeTenantKey,
         activeTenant,
-        tenantsData: INITIAL_TENANTS_DATA,
+        tenantsData,
         switchTenantContext,
+        toggleTenantAi,
+        updateTenantPolicy,
         modal,
         triggerModal,
         closeModal,

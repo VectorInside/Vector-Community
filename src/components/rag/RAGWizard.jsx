@@ -62,6 +62,9 @@ import {
   Globe,
   Smartphone,
   ExternalLink,
+  MessageSquare,
+  Linkedin,
+  Share2,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { VectorLobo } from '@/components/common/VectorLobo';
@@ -2193,6 +2196,49 @@ export const RAGWizard = () => {
                             className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-2.5 text-white focus:border-neon outline-none font-mono text-xs"
                           />
                           <span className="text-[10px] text-zinc-500 mt-1 block">ID para automatización de DMs y comentarios</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Bloque 3: LinkedIn Conversions API & B2B Social Ingestion (Opcional por Cliente) */}
+                    <div className="p-4 rounded-2xl bg-zinc-950/70 border border-sky-900/40 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-sky-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                          <Linkedin className="w-3.5 h-3.5" />
+                          <span>LinkedIn Conversions API & OAuth 2.0 (B2B / Corporativo)</span>
+                        </span>
+                        <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-sky-950 text-sky-300 border border-sky-800/50">
+                          Personalizable por Cliente
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-zinc-300 font-bold mb-1">
+                            LinkedIn Organization ID / Ad Account
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="ej. urn:li:organization:12345678"
+                            value={wizardData.linkedinOrgId || ''}
+                            onChange={(e) => setWizardData({ ...wizardData, linkedinOrgId: e.target.value })}
+                            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-2.5 text-white focus:border-sky-400 outline-none font-mono text-xs"
+                          />
+                          <span className="text-[10px] text-zinc-500 mt-1 block">Para sincronizar formularios Lead Gen y publicaciones B2B</span>
+                        </div>
+
+                        <div>
+                          <label className="block text-zinc-300 font-bold mb-1">
+                            LinkedIn Conversions CAPI Token (OAuth)
+                          </label>
+                          <input
+                            type="password"
+                            placeholder="AQU... (OAuth 2.0 Token de Decisores)"
+                            value={wizardData.linkedinCapiToken || ''}
+                            onChange={(e) => setWizardData({ ...wizardData, linkedinCapiToken: e.target.value })}
+                            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-2.5 text-white focus:border-sky-400 outline-none font-mono text-xs"
+                          />
+                          <span className="text-[10px] text-zinc-500 mt-1 block">Atribución Server-to-Server de Discovery Calls en LinkedIn</span>
                         </div>
                       </div>
                     </div>

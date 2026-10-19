@@ -62,7 +62,7 @@ export const Navbar = ({ onOpenTrial, lang = 'es', onToggleLang }) => {
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-6 xl:px-8">
         <div className="flex items-center justify-between gap-2 sm:gap-4">
           {/* Official Vector Inside Brand + Community OS Tag */}
-          <Link href="/landing" className="group flex items-center gap-2.5 shrink-0">
+          <Link href="/" className="group flex items-center gap-2.5 shrink-0">
             <VectorInsideLogo size="md" showCommunity={false} />
             {/* Badge visible only on very wide screens (2xl) to preserve navigation space on laptops */}
             <span className="hidden 2xl:inline-flex items-center px-2.5 py-0.5 rounded-full bg-zinc-900/90 border border-white/10 text-[10px] font-mono font-bold text-zinc-300 uppercase tracking-widest group-hover:border-neon/40 group-hover:text-neon transition-all">
@@ -111,19 +111,9 @@ export const Navbar = ({ onOpenTrial, lang = 'es', onToggleLang }) => {
             {/* Iniciar Sesión */}
             <Link
               href="/login"
-              className="text-[11px] xl:text-xs font-mono font-semibold text-zinc-300 hover:text-white px-2 xl:px-2.5 py-1.5 rounded-xl transition-colors whitespace-nowrap"
+              className="text-[11px] xl:text-xs font-mono font-bold text-zinc-200 hover:text-white px-3 xl:px-4 py-1.5 xl:py-2 rounded-xl border border-white/10 bg-zinc-900/80 hover:bg-zinc-800/90 hover:border-cyan-500/40 transition-all flex items-center gap-1.5 shadow-sm whitespace-nowrap active:scale-95"
             >
-              {t.signIn}
-            </Link>
-
-            {/* Centro de Mando / Dashboard Link (Icon button on lg, full text on xl+) */}
-            <Link
-              href="/dashboard"
-              className="text-[11px] xl:text-xs font-mono font-bold text-white px-2.5 xl:px-3.5 py-1.5 xl:py-2 rounded-xl border border-white/15 bg-zinc-900/90 hover:bg-zinc-800 hover:border-cyan-500/40 transition-all flex items-center gap-1.5 shadow-sm whitespace-nowrap active:scale-95 group"
-              title={t.liveApp}
-            >
-              <BarChart3 className="w-3.5 h-3.5 text-cyan-400 shrink-0 group-hover:scale-110 transition-transform" />
-              <span className="hidden xl:inline">{t.liveApp}</span>
+              <span>{t.signIn}</span>
             </Link>
 
             {/* Primary Conversion CTA: Siempre visible y destacado */}
@@ -189,21 +179,13 @@ export const Navbar = ({ onOpenTrial, lang = 'es', onToggleLang }) => {
                 </a>
               ))}
             </div>
-            <div className="pt-3 border-t border-zinc-800 grid grid-cols-2 gap-2 font-mono text-xs">
+            <div className="pt-3 border-t border-zinc-800 font-mono text-xs">
               <Link
                 href="/login"
                 onClick={() => setMobileMenuOpen(false)}
-                className="w-full text-center font-bold py-2.5 rounded-xl border border-white/10 bg-zinc-900 text-zinc-200 hover:text-white hover:bg-zinc-800 transition-colors"
+                className="w-full text-center font-bold py-2.5 rounded-xl border border-white/10 bg-zinc-900 text-zinc-200 hover:text-white hover:bg-zinc-800 transition-colors block"
               >
                 {t.signIn}
-              </Link>
-              <Link
-                href="/dashboard"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full text-center font-bold py-2.5 rounded-xl border border-white/10 bg-zinc-900 text-cyan-400 hover:bg-zinc-800 transition-colors flex items-center justify-center gap-1.5"
-              >
-                <BarChart3 className="w-3.5 h-3.5 shrink-0" />
-                <span>{t.liveApp}</span>
               </Link>
             </div>
             <button

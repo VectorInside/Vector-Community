@@ -512,3 +512,110 @@ export const INITIAL_VERTICAL_CONFIGS = {
     }
   }
 };
+
+// ============================================================================
+// TELEMETRÍA Y LOGS EN VIVO DE SUB-AGENTES (EN BUFFER DE MEMORIA)
+// ============================================================================
+export const SUB_AGENTS_METRICS_MOCK = {
+  supervisor: {
+    status: 'ONLINE',
+    latencyMs: 12,
+    todayEventsRouted: 1480,
+    confidenceAvg: '98.5%',
+    costEstUSD: '$0.00 USD (Prompt Caching 94%)',
+    lastEvent: 'Enrutado a SubAgente_Moderador_Closer para +52 55 1234 5678',
+    activeRule: 'Aislamiento RLS por tenant_id garantizado en cada transacción',
+  },
+  closer: {
+    status: 'ONLINE',
+    latencyMs: 340,
+    todayEvaluations: 412,
+    billableLeadsGenerated: 14,
+    freebusyCallsDirect: 28, // Sin tokens LLM
+    costEstUSD: '$0.08 USD (DeepSeek V3 Delta)',
+    lastEvaluation: 'Ana Martínez: 4/4 Criterios validados -> Cita Martes 14:00',
+    activeRule: 'JTBD: Validación de struggling moment antes de revelar arancel',
+  },
+  reengagement: {
+    status: 'ONLINE_SCHEDULED',
+    latencyMs: 450,
+    active24hQueueCount: 23,
+    revivedLeadsThisWeek: 9,
+    revivalRate: '39.1%',
+    costEstUSD: '$0.00 USD (Batching Llama 3 Groq)',
+    lastDispatchedMessage: 'Mensaje Vaca Púrpura despachado a Carlos Mendoza Jr. (38 palabras)',
+    activeRule: 'Regla 95/5: Máximo 40 palabras, nada agresivo, micro-CTA',
+  },
+  analyst: {
+    status: 'ONLINE_STANDBY',
+    latencyMs: 820,
+    adsAuditedCount: 18,
+    creativeFatiguesFlagged: 2,
+    webFrictionAlerts: 1,
+    costEstUSD: '$0.02 USD (Batch semanal)',
+    lastDiagnostic: 'Fricción en Landing Page detectada en Odontología Integral (Click-to-WA: 1.4% < 3.0%)',
+    activeRule: 'CAPI Server-to-Server vs Meta Ads API: ROAS Real calculado en 4.82x',
+  },
+};
+
+export const REENGAGEMENT_QUEUE_MOCK = [
+  {
+    id: 're-001',
+    leadId: 'lead-006',
+    clientName: 'Carlos Mendoza Jr.',
+    phone: '+52 55 6677 8899',
+    productInterest: 'Limpieza Dental Ultrasónica ($850 MXN)',
+    lastObjection: 'Lo voy a pensar (Evasiva)',
+    timeRemaining: '14h 22m',
+    targetScheduledAt: 'Hoy, 16:12 hrs',
+    status: 'QUEUED_REDIS_24H',
+    vacaPurpuraMessage: 'Hola Carlos! Estuve pensando en tu consulta. Sabías que el 90% de las caries invisibles se previenen con profilaxis ultrasónica anual? Te gustaría que te aparte un espacio con diagnóstico 3D sin costo este jueves?',
+    wordCount: 36,
+    framework: 'Vaca Púrpura + Regla 95/5',
+  },
+  {
+    id: 're-002',
+    leadId: 'lead-005',
+    clientName: 'Valeria Cordero',
+    phone: '+52 55 9821 4433',
+    productInterest: 'Carillas de Resina de Alta Estética',
+    lastObjection: 'Viendo opciones sin profundizar en MSI',
+    timeRemaining: '08h 45m',
+    targetScheduledAt: 'Hoy, 20:25 hrs',
+    status: 'QUEUED_REDIS_24H',
+    vacaPurpuraMessage: 'Hola Valeria! Para tu diseño de sonrisa: contamos con una simulación digital previa para que veas el resultado antes de tocar tus dientes. Quieres que te envíe un video de cómo se realiza en 1 sola sesión?',
+    wordCount: 38,
+    framework: 'JTBD + Ecuación de Valor',
+  },
+  {
+    id: 're-003',
+    leadId: 'lead-008',
+    clientName: 'Eduardo Garza',
+    phone: '+52 55 3322 1100',
+    productInterest: 'Mesa Terraza 6 Personas (Polanco Steakhouse)',
+    lastObjection: 'Checando con la familia el horario',
+    timeRemaining: '02h 15m',
+    targetScheduledAt: 'Hoy, 17:00 hrs',
+    status: 'TRIGGER_IMMIMENT',
+    vacaPurpuraMessage: 'Hola Eduardo! Nos quedan únicamente 2 mesas en Terraza Principal para este fin de semana. Deseas que te guarde una con la cortesía de bienvenida del Sommelier?',
+    wordCount: 29,
+    framework: 'Vaca Púrpura (Escasez Real)',
+  },
+];
+
+export const FULL_FUNNEL_METRICS_MOCK = {
+  impressions: 124800,
+  adClicks: 4210,
+  cpcAvg: '$3.80 MXN',
+  webSessions: 3420,
+  whatsappClicks: 48,
+  clickToWhatsAppRate: '1.4%', // < 3.0% -> Dispara Fricción Web
+  chatsInitiated: 48,
+  qualifiedHotLeads: 22,
+  billableLeadsCount: 12,
+  costPerBillableLead: '$287.50 MXN', // < $350 MXN (Margen de ganancia $62.50 por lead)
+  realBackendRevenue: '$168,400 MXN',
+  realRoas: 5.9,
+  metaReportedRoas: 3.4,
+};
+

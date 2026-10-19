@@ -9,7 +9,7 @@ export const CtaBanner = ({ onOpenTrial, lang = 'es' }) => {
   const t = LANDING_TRANSLATIONS[lang].ctaBanner;
 
   return (
-    <section className="py-10 sm:py-12 lg:py-16 relative overflow-hidden bg-black border-t border-white/5">
+    <section className="py-8 sm:py-10 lg:py-12 relative overflow-hidden bg-black border-t border-white/5">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="rounded-3xl bg-gradient-to-r from-zinc-950 via-zinc-900 to-zinc-950 border-2 border-neon/50 p-6 sm:p-10 lg:p-12 relative overflow-hidden shadow-[0_0_60px_rgba(231,249,0,0.2)] text-center space-y-6 sm:space-y-8">
           {/* Decorative glow circles */}
@@ -44,11 +44,11 @@ export const CtaBanner = ({ onOpenTrial, lang = 'es' }) => {
             </button>
 
             <Link
-              href="/dashboard"
-              className="w-full sm:w-auto px-7 py-4 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 font-mono font-bold text-sm border border-white/10 hover:border-white/25 transition-all flex items-center justify-center gap-2 backdrop-blur-md whitespace-nowrap shrink-0"
+              href="/login"
+              className="w-full sm:w-auto px-7 py-4 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 font-mono font-bold text-sm border border-white/10 hover:border-cyan-500/40 transition-all flex items-center justify-center gap-2 backdrop-blur-md whitespace-nowrap shrink-0"
             >
-              <BarChart3 className="w-4 h-4 text-cognitive shrink-0" />
-              <span className="whitespace-nowrap">{t.ctaDashboard}</span>
+              <span className="whitespace-nowrap">Iniciar Sesión</span>
+              <ArrowRight className="w-4 h-4 shrink-0" />
             </Link>
           </div>
 

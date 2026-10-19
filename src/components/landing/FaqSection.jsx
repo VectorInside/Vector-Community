@@ -9,7 +9,7 @@ export const FaqSection = ({ lang = 'es', onOpenTrial }) => {
   const t = LANDING_TRANSLATIONS[lang].faq;
 
   return (
-    <section id="faq" className="py-12 sm:py-16 lg:py-20 relative overflow-hidden bg-zinc-950 border-t border-white/5">
+    <section id="faq" className="py-8 sm:py-12 lg:py-14 relative overflow-hidden bg-zinc-950 border-t border-white/5">
       {/* Background glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-cognitive/5 blur-[140px] pointer-events-none" />
 
