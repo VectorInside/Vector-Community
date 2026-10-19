@@ -33,23 +33,32 @@ import {
   X,
   FileText,
   ArrowRight,
+  Linkedin,
+  Share2,
+  MessageSquare,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Badge } from '@/components/common/Badge';
+import { SOCIAL_NETWORKS_CATALOG } from '@/utils/constants';
 
 export const ContentPlanner = () => {
   const { activeTenant, isAdmin, isClient, triggerModal } = useAuth();
   const [activeTab, setActiveTab] = useState('grid'); // 'grid' | 'dna' | 'viral_lab' | 'audit'
   const [selectedFilter, setSelectedFilter] = useState('ALL');
+  const [selectedNetworkFilter, setSelectedNetworkFilter] = useState('ALL');
   const [copiedCanvas, setCopiedCanvas] = useState(false);
   const [selectedViralReel, setSelectedViralReel] = useState(null);
 
-  // Posts State
+  // Tenant connected social networks (fallback to defaults if undefined)
+  const connectedNetworks = activeTenant?.connectedSocialNetworks || ['INSTAGRAM', 'FACEBOOK', 'WHATSAPP'];
+
+  // Posts State (with multi-network support including LinkedIn)
   const [posts, setPosts] = useState([
     {
       id: 'post-01',
+      network: 'INSTAGRAM',
       type: 'REEL',
-      channel: 'Instagram & Facebook Reels',
+      channel: 'Instagram Reels',
       publishDate: 'Mañana • 19:30 hrs (Hora Pico)',
       title: '3 Señales de que necesitas atender tu salud dental hoy mismo',
       hookText: '¿Sabías que un dolor leve puede convertirse en un tratamiento 3x más costoso en 6 meses?',
@@ -63,8 +72,9 @@ export const ContentPlanner = () => {
     },
     {
       id: 'post-02',
+      network: 'FACEBOOK',
       type: 'CARROUSEL',
-      channel: 'Instagram Feed & Facebook',
+      channel: 'Facebook & Instagram Feed',
       publishDate: 'Viernes • 13:00 hrs',
       title: 'Mitos vs Realidades de los Implantes Dentales',
       hookText: 'Mito: "Los implantes duelen mucho". Realidad: Se colocan con anestesia computarizada.',
@@ -78,6 +88,7 @@ export const ContentPlanner = () => {
     },
     {
       id: 'post-03',
+      network: 'INSTAGRAM',
       type: 'STORY',
       channel: 'Instagram Stories (Interactivo)',
       publishDate: 'Sábado • 11:00 hrs',
@@ -93,8 +104,9 @@ export const ContentPlanner = () => {
     },
     {
       id: 'post-04',
+      network: 'TIKTOK',
       type: 'REEL',
-      channel: 'Instagram & TikTok',
+      channel: 'TikTok & Reels',
       publishDate: 'Lunes Próximo • 20:00 hrs',
       title: 'Transformación de Sonrisa: Caso Real Paciente Implante Molar',
       hookText: 'De no poder masticar a comer sin dolor en solo 2 citas.',
@@ -105,6 +117,22 @@ export const ContentPlanner = () => {
       estimatedReach: '30k - 45k visualizaciones',
       aiConfidence: 97,
       previewBg: 'from-emerald-900/40 via-zinc-900 to-black',
+    },
+    {
+      id: 'post-05',
+      network: 'LINKEDIN',
+      type: 'CAROUSEL_PDF',
+      channel: 'LinkedIn Corporativo (Decisores B2B)',
+      publishDate: 'Miércoles • 09:00 hrs (Hora Ejecutiva)',
+      title: 'El Impacto del Bienestar y Salud Dental en el Rendimiento Ejecutivo',
+      hookText: 'El 68% de las ausencias no programadas en puestos de liderazgo derivan de problemas dentales desatendidos.',
+      copy: 'Desliza este documento ejecutivo para descubrir cómo estructuramos convenios corporativos de salud preventiva para directivos y equipos clave sin costo administrativo para RH. ¿Te interesa el programa para tu empresa?',
+      hashtags: '#Liderazgo #RecursosHumanos #SaludCorporativa #ExecutiveWellness',
+      status: 'PENDIENTE_CLIENTE',
+      formatIcon: Linkedin,
+      estimatedReach: '5.2k directores y líderes de RH',
+      aiConfidence: 99,
+      previewBg: 'from-sky-900/40 via-zinc-900 to-black',
     },
   ]);
 
@@ -302,6 +330,16 @@ export const ContentPlanner = () => {
   };
 
   const filteredPosts = posts.filter((p) => {
+    // Only display posts belonging to the tenant's connected social networks
+    const isNetworkConnected = !p.network || connectedNetworks.includes(p.network);
+    if (!isNetworkConnected) return false;
+
+    // Filter by network selector
+    if (selectedNetworkFilter !== 'ALL' && p.network !== selectedNetworkFilter) {
+      return false;
+    }
+
+    // Filter by approval status
     if (selectedFilter === 'ALL') return true;
     if (selectedFilter === 'PENDING') return p.status === 'PENDIENTE_CLIENTE';
     if (selectedFilter === 'APPROVED') return p.status === 'APROBADO_PROGRAMADO';
@@ -431,27 +469,71 @@ export const ContentPlanner = () => {
             </button>
           </div>
 
-          {/* Filters Bar */}
-          <div className="flex items-center justify-between pb-2">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-zinc-400 font-mono">Filtrar estado:</span>
-              {['ALL', 'PENDING', 'APPROVED'].map((fil) => (
-                <button
-                  key={fil}
-                  onClick={() => setSelectedFilter(fil)}
-                  className={`text-xs font-mono px-3 py-1.5 rounded-lg transition-all ${
-                    selectedFilter === fil
-                      ? 'bg-zinc-800 text-white font-bold border border-zinc-700'
-                      : 'text-zinc-500 hover:text-zinc-300'
-                  }`}
-                >
-                  {fil === 'ALL' ? 'Todos los Posts' : fil === 'PENDING' ? 'Pendientes de Aprobación' : 'Aprobados y Programados'}
-                </button>
-              ))}
+          {/* Social Networks Filter Bar & Status Bar */}
+          <div className="space-y-3 pb-2">
+            {/* Active Social Networks Selector (Customized per Client/Tenant) */}
+            <div className="flex flex-wrap items-center gap-2 p-2.5 rounded-xl bg-zinc-950/80 border border-white/10">
+              <span className="text-[11px] font-mono font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5 mr-1">
+                <Share2 className="w-3.5 h-3.5 text-neon" />
+                <span>Canal Activo:</span>
+              </span>
+
+              <button
+                type="button"
+                onClick={() => setSelectedNetworkFilter('ALL')}
+                className={`text-xs font-mono px-3 py-1.5 rounded-lg transition-all font-bold ${
+                  selectedNetworkFilter === 'ALL'
+                    ? 'bg-neon text-black shadow-neon-sm'
+                    : 'bg-zinc-900 text-zinc-400 hover:text-white border border-white/5'
+                }`}
+              >
+                Todas las Redes ({connectedNetworks.length})
+              </button>
+
+              {connectedNetworks.map((netKey) => {
+                const netMeta = SOCIAL_NETWORKS_CATALOG[netKey];
+                if (!netMeta) return null;
+                const isSelected = selectedNetworkFilter === netKey;
+
+                return (
+                  <button
+                    key={netKey}
+                    type="button"
+                    onClick={() => setSelectedNetworkFilter(netKey)}
+                    className={`text-xs font-mono px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 font-bold border ${
+                      isSelected
+                        ? 'bg-white text-black border-white shadow-md'
+                        : `${netMeta.badgeColor} hover:brightness-125`
+                    }`}
+                  >
+                    <span>{netMeta.name}</span>
+                  </button>
+                );
+              })}
             </div>
-            <span className="text-xs font-mono text-zinc-400 hidden sm:inline">
-              {filteredPosts.length} publicaciones programadas
-            </span>
+
+            {/* Approval Status Filter */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-zinc-400 font-mono">Estado:</span>
+                {['ALL', 'PENDING', 'APPROVED'].map((fil) => (
+                  <button
+                    key={fil}
+                    onClick={() => setSelectedFilter(fil)}
+                    className={`text-xs font-mono px-3 py-1 rounded-lg transition-all ${
+                      selectedFilter === fil
+                        ? 'bg-zinc-800 text-white font-bold border border-zinc-700'
+                        : 'text-zinc-500 hover:text-zinc-300'
+                    }`}
+                  >
+                    {fil === 'ALL' ? 'Todos' : fil === 'PENDING' ? 'Pendientes de Aprobación' : 'Aprobados y Programados'}
+                  </button>
+                ))}
+              </div>
+              <span className="text-xs font-mono text-zinc-400">
+                {filteredPosts.length} publicaciones mostradas
+              </span>
+            </div>
           </div>
 
           {/* Posts Cards Grid */}
@@ -459,6 +541,10 @@ export const ContentPlanner = () => {
             {filteredPosts.map((post) => {
               const IconFormat = post.formatIcon;
               const isPending = post.status === 'PENDIENTE_CLIENTE';
+              const networkCatalog = SOCIAL_NETWORKS_CATALOG[post.network] || {
+                name: post.network || 'Red Social',
+                badgeColor: 'border-zinc-700 text-zinc-300 bg-zinc-800',
+              };
 
               return (
                 <div
@@ -472,9 +558,14 @@ export const ContentPlanner = () => {
                           <IconFormat className="w-4 h-4" />
                         </span>
                         <div>
-                          <span className="text-[10px] font-mono uppercase text-zinc-400 block font-bold">
-                            {post.channel}
-                          </span>
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <span className={`text-[9px] font-mono uppercase px-2 py-0.5 rounded font-black border ${networkCatalog.badgeColor}`}>
+                              {networkCatalog.name}
+                            </span>
+                            <span className="text-[10px] font-mono uppercase text-zinc-400 font-bold">
+                              {post.channel}
+                            </span>
+                          </div>
                           <span className="text-xs font-mono font-bold text-white">
                             {post.publishDate}
                           </span>
@@ -482,7 +573,7 @@ export const ContentPlanner = () => {
                       </div>
 
                       <span
-                        className={`text-[10px] font-mono px-2.5 py-1 rounded-full font-bold uppercase tracking-wider ${
+                        className={`text-[10px] font-mono px-2.5 py-1 rounded-full font-bold uppercase tracking-wider shrink-0 ${
                           isPending
                             ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
                             : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'

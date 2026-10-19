@@ -9,7 +9,7 @@ import { GeneralModal } from '@/components/common/GeneralModal';
 export const LayoutWrapper = ({ children }) => {
   const pathname = usePathname();
   const isMicroLanding = pathname?.startsWith('/m/') || pathname === '/m';
-  const isStandalonePage = pathname === '/login' || pathname === '/landing';
+  const isStandalonePage = pathname === '/' || pathname === '/login' || pathname === '/landing';
 
   if (isMicroLanding) {
     return <>{children}</>;

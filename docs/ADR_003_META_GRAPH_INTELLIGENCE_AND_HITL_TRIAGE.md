@@ -61,35 +61,76 @@ En la bandeja de Triage (`/triage`), cada conversación activa presenta una tarj
 
 ---
 
-### 2.3. Criterios Estrictos de Escalamiento Humano (HITL Triggers)
+### 2.3. Criterios Estrictos de Escalamiento Humano (HITL Triggers) & Protocolo de Crisis
 
 El bot opera de forma 100% autónoma en el 95% de los casos. Solo se cede el control al humano bajo las siguientes **4 excepciones críticas**:
 
-1. **Alerta Roja de Crisis / Lenguaje Agresivo / Riesgo Legal:** Detección de insultos, quejas severas o mención de organismos regulatorios (PROFECO, COFEPRIS, demanda judicial). El bot se pausa automáticamente para evitar respuestas no deseadas.
+1. **Alerta Roja de Crisis / Lenguaje Agresivo / Riesgo Legal (`PAUSED_HUMAN_TAKEOVER`):** Detección de insultos, quejas severas o mención de organismos regulatorios (PROFECO, COFEPRIS, demanda judicial). La automatización se detiene al instante, el estado de la conversación muta a `PAUSED_HUMAN_TAKEOVER` (resaltado con borde rojo neón en Triage) y se notifica al Agency Copilot vía WebSocket STOMP.
 2. **Deals VIP High-Ticket:** Cuando el prospecto cumple con el umbral calificado de alto valor que amerita el toque humano del cerrador (e.g. presupuestos B2B > $15,000 USD o patrocinios de marca).
 3. **Petición Fuera de las Reglas Inviolables:** Cuando el cliente solicita una excepción que viola los límites configurados (e.g. descuento mayor al autorizado o diagnóstico clínico por chat).
 4. **Fallo de Confianza RAG ($\text{Score} < 0.70$):** Si la consulta no tiene respuesta en ninguno de los 4 pilares, la IA no alucina; pausa y transfiere a la mesa de control de la agencia.
 
 ---
 
-### 2.4. Retroalimentación Continua (RAG Feedback Loop)
+### 2.4. Guion Estricto del Sub-Agente 1: Supervisor Central ("Lobo Vectorial")
+
+El Agente Supervisor opera en tiempo real (0ms / Event-Driven) clasificando intenciones y enrutando sub-agentes bajo el siguiente contrato XML:
+
+```xml
+<system_prompt>
+<identity>
+Eres el Agente Supervisor Central ("Lobo Vectorial") de Vector Comunity OS. Tu único objetivo es analizar los mensajes entrantes de Meta (WhatsApp/Instagram), clasificar la intencionalidad del usuario y enrutar la petición al Sub-Agente especializado correcto, protegiendo el aislamiento del <tenant_id>.
+</identity>
+
+<context_variables>
+- TENANT_ID: {tenant_id}
+- VERTICAL_TIPO: {vertical_tipo}
+- HAS_WEBSITE: {has_website}
+- BRAND_PURPOSE: {brand_purpose}
+</context_variables>
+
+<routing_rules>
+1. Si el mensaje es un saludo inicial, pregunta de precio, ubicación o catálogo -> ENRUTAR A: SubAgente_Moderador_Closer.
+2. Si el mensaje expresa molestia, queja de servicio, reclamo o solicitud de hablar con un humano -> EJECUTAR PROTOCOLO TRIAGE_HUMANO -> PAUSAR BOT (PAUSED_HUMAN_TAKEOVER) -> NOTIFICAR AGENCY_COPILOT.
+3. Si el mensaje es una respuesta a un seguimiento de 24 horas -> ENRUTAR A: SubAgente_Reengagement.
+4. Si el mensaje contiene confirmación explícita de cita ("Sí, quiero agendar") -> ENRUTAR A: SubAgente_Agendamiento_Calendar.
+</routing_rules>
+
+<output_format>
+Debes responder ÚNICAMENTE en formato JSON estrictamente válido:
+{
+  "tenant_id": "{tenant_id}",
+  "target_agent": "SubAgente_Moderador_Closer | Triage_Humano | SubAgente_Reengagement | SubAgente_Agendamiento_Calendar",
+  "intent_category": "SALUDO | PRECIO | OBJECION_FINANCIAMIENTO | RECLAMO | AGENDAMIENTO",
+  "confidence_score": 0.95
+}
+</output_format>
+</system_prompt>
+```
+
+---
+
+### 2.5. Retroalimentación Continua (RAG Feedback Loop)
 
 - Los comentarios frecuentes en publicaciones de Instagram y Facebook son analizados semanalmente.
 - Si una duda se repite más de 3 veces (e.g. "¿Tienen estacionamiento?", "¿Dan factura con IVA?"), el sistema genera una sugerencia con un botón: **`[+ Guardar en FAQ RAG]`** para alimentar el **Pilar 3** sin intervención técnica.
 
 ---
 
-### 2.5. Ficha "Dictamen Pre-Cita" & Protocolo de Aprobación en 1 Clic (Google Calendar Sync)
+### 2.6. Ficha "Dictamen Pre-Cita" & Protocolo de Aprobación en 1 Clic (Google Calendar Sync)
 
 - **Decisión:** Para garantizar la soberanía de la agencia y eliminar la fricción humana, las citas solicitadas por leads no se insertan directamente en el calendario del cliente en frío; se consolidan en la Ficha de **Dictamen Pre-Cita** dentro del Drawer Lateral de `/triage`.
 - **Estructura de las 3 Viñetas de Resumen:**
   1. **Datos de Contacto Verificados:** Nombre, WhatsApp E.164, Correo y Red Social de origen.
   2. **Interés Específico / Producto:** Tratamiento, SKU o servicio solicitado con rango de presupuesto.
-  3. **Objeciones & Dudas Resueltas:** Confirmación de precios, ubicación o planes de financiamiento acordados por el bot.
+  3. **Objeciones & Dudas Resueltas:** Confirmación de precios, ubicación o planes de financiamiento acordados por el bot RAG.
+- **Validación Booleana AND (4/4 Criterios BILLABLE_LEAD):**
+  Identidad validada AND Catálogo identificado AND Aclaración financiera completa AND Aceptación explícita / Agendamiento.
 - **Acción Transaccional en 1 Clic:** Al pulsar `[✅ Aprobar & Sincronizar Google Calendar]`:
-  - Se valida la franja horaria mediante `freebusy.query` contra la Google Calendar API v3 del tenant.
+  - Se valida la franja horaria mediante llamada REST directa a `freebusy.query` contra Google Calendar API v3 (sin consumo de tokens LLM).
   - Se inserta el evento formal en la agenda del cliente con Service Account.
-  - Se despacha un mensaje de confirmación automático vía WhatsApp Cloud API al usuario y se muta el estado a `BILLABLE_LEAD`.
+  - Se despacha notificación transaccional Gmail con archivo adjunto `cita.ics` y confirmación por WhatsApp Cloud API.
+  - Se muta el estado a `BILLABLE_LEAD` y se emite el evento server-to-server a Meta CAPI con hash SHA-256.
 
 ---
 

@@ -265,7 +265,7 @@ export const PerformanceDashboard = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
               title="Sesiones Web Totales"
-              value={webMetrics.sessions ? webMetrics.sessions.toLocaleString() : '3,420'}
+              value={webMetrics.sessions ? String(webMetrics.sessions).replace(/\B(?=(\d{3})+(?!\d))/g, ',') : '3,420'}
               subvalue="Tráfico calificado de pago"
               change="+18.4%"
               isPositive={true}

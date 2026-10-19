@@ -38,11 +38,11 @@ export const TrustBadges = ({ lang = 'es' }) => {
   ];
 
   return (
-    <section id="trust" className="py-10 sm:py-12 lg:py-16 relative overflow-hidden border-y border-white/5 bg-zinc-950/60">
+    <section id="trust" className="py-6 sm:py-8 lg:py-10 relative overflow-hidden border-y border-white/5 bg-zinc-950/60">
       {/* Background glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-64 bg-neon/5 blur-[120px] pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-10 lg:space-y-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-6 sm:space-y-8">
         {/* Quantitative Proof Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
           {t.stats.map((stat, idx) => (

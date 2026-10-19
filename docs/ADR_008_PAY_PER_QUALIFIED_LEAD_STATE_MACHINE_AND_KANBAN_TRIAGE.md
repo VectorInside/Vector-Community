@@ -22,13 +22,13 @@ Para alinear el cobro con la rentabilidad real del cliente (eliminando cobros po
 
 Para prevenir condiciones de carrera (race conditions) e inconsistencias en la base de datos multi-tenant, todas las transiciones de estado conversacional se mapean estrictamente a los siguientes constantes ENUM:
 
-| Estado (ENUM) | Comportamiento / Indicador Conversacional | Acción del Bot / CTA | Tratamiento de Facturación |
-| :--- | :--- | :--- | :--- |
-| `LEAD_COLD_24H` | Preguntó precio o info básica, evasiva ("lo voy a pensar") sin datos adicionales. | Programación de re-contactación automática a 24 horas en Redis Queue. | **No facturable ($0.00)** |
-| `LEAD_WARM_24H` | Solicitó info detallada y respondió preguntas breves, sin profundizar en pagos o MSI. | Presentación de CTA explícito de aclaración antes de ingresar a espera de 24h. | **No facturable ($0.00)** |
-| `LEAD_HOT_PREQUAL` | Conversación fluida con interés activo en financiamiento, métodos de pago o requisitos. | CTA de conexión con ejecutivo o cita. Pasa a ciclo 24h si no confirma de inmediato. | **No facturable ($0.00)** |
-| `BILLABLE_LEAD` | Cumplió al 100% los 4 criterios booleanos AND; aceptó contacto o confirmó cita en agenda. | Notificación push/WhatsApp, Dictamen Pre-Cita, congelamiento conversacional. | **Facturable ($350.00 MXN)** |
-| `HITL_INTERVENTION` | Lenguaje agresivo, insultos, solicitud de atención humana o fricción de marca. | Congelamiento de IA (borde rojo neón), alerta push WebSocket STOMP. | **Depende de resolución** |
+| Estado (ENUM) | Embudo AIDA & Regla 95/5 | Comportamiento / Indicador Conversacional | Acción del Bot / CTA | Tratamiento de Facturación |
+| :--- | :--- | :--- | :--- | :--- |
+| `LEAD_COLD_24H` (`COLD_DROP`) | Out-of-Market (Atención) | Preguntó precio o info básica, evasiva ("lo voy a pensar") sin datos adicionales. | Programación de re-contactación automática a 24 horas en Upstash Redis Queue (`FOLLOWUP_PENDING_24H`). | **No facturable ($0.00)** |
+| `LEAD_WARM_24H` (`FOLLOWUP_SENT`) | Out-of-Market (Interés) | Despacho del mensaje Vaca Púrpura tras 24h exactas. Respondió preguntas breves. | Presentación de CTA explícito de aclaración antes de ingresar a espera de 24h. | **No facturable ($0.00)** |
+| `LEAD_HOT_PREQUAL` (`WARM_FINANCING`) | In-Market (Deseo) | Conversación fluida con interés activo en financiamiento, métodos de pago o requisitos. | Algoritmo JTBD: comunica beneficio antes de precio. CTA de cita o conexión con ejecutivo. | **No facturable ($0.00)** |
+| `BILLABLE_LEAD` (`QUALIFIED_TRANSFER`) | In-Market (Acción) | Cumplió al 100% los 4 criterios booleanos AND; aceptó contacto o confirmó cita en agenda. | Notificación push/WhatsApp, Dictamen Pre-Cita en Drawer, transmisión server-to-server CAPI. | **Facturable ($350.00 MXN)** |
+| `HITL_INTERVENTION` (`PAUSED_HUMAN_TAKEOVER`) | Crisis / Excepción | Lenguaje agresivo, insultos, solicitud de atención humana o fricción de marca. | Congelamiento inmediato de IA (borde rojo neón), alerta push WebSocket STOMP a la mesa de agencia. | **Depende de resolución** |
 
 ---
 
@@ -103,11 +103,13 @@ El frontend en `/triage` provee una vista dual (Kanban y Bandeja Detallada):
 
 ---
 
-### 2.5. Condición Algorítmica de Fatiga Creativa (DeepSeek Trigger)
+### 2.5. Condición Algorítmica de Fatiga Creativa (DeepSeek Trigger & Vaca Púrpura)
 
 El Sub-Bot Analista evalúa periódicamente las métricas consumidas desde Meta Graph API. La regeneración creativa con DeepSeek V3/R1 se activa cuando:
 
-$$\text{IF } (\text{Frequency} > 3.5) \land \left( \Delta\text{CPC} > +20\% \lor \Delta\text{CTR} < -15\% \right) \implies \text{TRIGGER DeepSeek\_Creative\_Diversity\_Prompt}$$
+$$\text{IF } \left( \text{HookRate}_{3s} < 20\% \text{ durante 3 días} \right) \lor \left( \text{Frequency} > 3.5 \land (\Delta\text{CPC} > +20\% \lor \Delta\text{CTR} < -15\%) \right) \implies \text{TRIGGER DeepSeek\_Creative\_Diversity\_Prompt}$$
+
+El Sub-Agente Creador genera variantes disruptivas aplicando el concepto de la **Vaca Púrpura** para romper el patrón de scroll y revitalizar el Hook Rate.
 
 ---
 

@@ -50,11 +50,12 @@ import {
   KANBAN_COLUMNS_CONFIG,
   QUALIFIED_LEAD_CRITERIA,
 } from '@/utils/constants';
+import { REENGAGEMENT_QUEUE_MOCK } from '@/utils/mockData';
 import { PreCitaDrawer } from './PreCitaDrawer';
 
 export const TriageProtocol = () => {
   const { triggerModal, activeTenant } = useAuth();
-  const [activeTab, setActiveTab] = useState('chats'); // 'chats' or 'meta_comments'
+  const [activeTab, setActiveTab] = useState('chats'); // 'chats' | 'meta_comments' | 'redis_queue'
   const [viewMode, setViewMode] = useState('kanban'); // 'kanban' or 'chat'
   const [kanbanDensity, setKanbanDensity] = useState('compact'); // 'compact' (ultra-visión) | 'standard'
   const [selectedColumnFilter, setSelectedColumnFilter] = useState('ALL');
@@ -63,6 +64,8 @@ export const TriageProtocol = () => {
   const [isBotPaused, setIsBotPaused] = useState(false);
   const [selectedCapiLead, setSelectedCapiLead] = useState(null);
   const [drawerLead, setDrawerLead] = useState(null);
+  const [reengagementList, setReengagementList] = useState(REENGAGEMENT_QUEUE_MOCK);
+
 
   // Chat threads state with AI Customer Feedback, Boolean AND Criteria & Unified ENUMs
   const [threads, setThreads] = useState({
@@ -888,25 +891,25 @@ export const TriageProtocol = () => {
           </p>
         </div>
 
-        {/* Tab Switcher: Chats vs Meta Graph */}
-        <div className="flex items-center gap-1.5 bg-zinc-100 dark:bg-zinc-950/90 p-1.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 font-mono text-xs shrink-0 shadow-sm dark:shadow-lg">
+        {/* Tab Switcher: Chats vs Meta Graph vs Cola Redis 24h */}
+        <div className="flex flex-wrap items-center gap-1.5 bg-zinc-100 dark:bg-zinc-950/90 p-1.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 font-mono text-xs shrink-0 shadow-sm dark:shadow-lg">
           <button
             type="button"
             onClick={() => setActiveTab('chats')}
-            className={`px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-2 ${
+            className={`px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 ${
               activeTab === 'chats'
                 ? 'bg-neon text-black shadow-neon-sm'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
             <MessageCircle className="w-4 h-4" />
-            <span>Triage Conversacional ({Object.keys(threads).length})</span>
+            <span>Triage ({Object.keys(threads).length})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('meta_comments')}
-            className={`px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-2 ${
+            className={`px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 ${
               activeTab === 'meta_comments'
                 ? 'bg-neon text-black shadow-neon-sm'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
@@ -914,6 +917,19 @@ export const TriageProtocol = () => {
           >
             <Instagram className="w-4 h-4 text-pink-500 dark:text-pink-400" />
             <span>Meta Graph Stream</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('redis_queue')}
+            className={`px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 ${
+              activeTab === 'redis_queue'
+                ? 'bg-neon text-black shadow-neon-sm'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+            }`}
+          >
+            <Clock className="w-4 h-4 text-purple-400" />
+            <span>Cola Redis 24h (Regla 95/5)</span>
           </button>
         </div>
       </header>
@@ -1612,6 +1628,171 @@ export const TriageProtocol = () => {
                         </button>
                       )}
                     </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 5.5. PESTAÑA COLA REDIS 24H & VACA PÚRPURA (REGLA 95/5 EHRENBERG-BASS)    */}
+      {/* ========================================================================= */}
+      {activeTab === 'redis_queue' && (
+        <div className="space-y-6 animate-fade-in font-mono text-xs">
+          {/* Top Banner de Fundamentación de Negocio */}
+          <div className="p-6 rounded-3xl bg-gradient-to-r from-purple-950/40 via-zinc-950 to-zinc-950 border border-purple-500/30 space-y-3">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <span className="p-3 rounded-2xl bg-purple-500/20 text-purple-400 border border-purple-500/40 text-xl">
+                  ⏱️
+                </span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xl font-heading font-black text-white">
+                      Motor Asíncrono de Re-Engagement 24h & Vaca Púrpura
+                    </h3>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 font-bold uppercase">
+                      Regla 95/5 Activa
+                    </span>
+                  </div>
+                  <p className="text-xs text-zinc-400 font-sans mt-0.5">
+                    Sub-Bot Re-Engagement (DeepSeek V3 / Groq Llama 3) sobre Upstash Redis Queue • Costo $0 USD en tokens.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] px-3 py-1 rounded-xl bg-zinc-900 border border-purple-500/30 text-purple-300 font-mono">
+                  Cola Activa: <strong>{reengagementList.length} Prospectos</strong>
+                </span>
+              </div>
+            </div>
+
+            <p className="text-xs text-zinc-300 font-sans leading-relaxed pt-2 border-t border-zinc-800/80">
+              <strong>Doctrina Comercial Vector Inside:</strong> Según la <em>Regla 95/5 de Ehrenberg-Bass</em>, solo el 5% de tu audiencia está lista para comprar hoy (In-Market). El 95% restante (Out-of-Market) queda en espera tras responder "lo voy a pensar". A las 24 horas exactas de inactividad, el motor asíncrono despacha un micro-mensaje disruptivo bajo el marco de la <strong>Vaca Púrpura (Seth Godin)</strong>: aporta un dato curioso, supera la objeción previa en menos de 40 palabras y cierra con un micro-CTA sin presión agresiva.
+            </p>
+          </div>
+
+          {/* KPI Summary Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-1">
+              <span className="text-[10px] text-zinc-500 uppercase">Leads Out-of-Market en Espera</span>
+              <p className="text-2xl font-black text-purple-400">{reengagementList.length}</p>
+              <span className="text-[10px] text-zinc-400 font-sans">Encolados en Upstash Redis</span>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-1">
+              <span className="text-[10px] text-zinc-500 uppercase">Tasa de Reactivación a Cita</span>
+              <p className="text-2xl font-black text-neon">39.1%</p>
+              <span className="text-[10px] text-emerald-400 font-sans">+4x vs seguimiento manual</span>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-1">
+              <span className="text-[10px] text-zinc-500 uppercase">Costo de Tokens por Mensaje</span>
+              <p className="text-2xl font-black text-emerald-400">$0.00 USD</p>
+              <span className="text-[10px] text-zinc-400 font-sans">Batching Groq / Llama 3 Nocturno</span>
+            </div>
+          </div>
+
+          {/* List of Re-Engagement Queue Items */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                <Clock className="w-4 h-4 text-purple-400" />
+                <span>Prospectos Encolados para Disparo a las 24 Horas Exactas</span>
+              </h4>
+              <span className="text-[10px] text-zinc-400">
+                Trigger programado por Worker Redis
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {reengagementList.map((item) => (
+                <div
+                  key={item.id}
+                  className="p-5 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/90 space-y-4 hover:border-purple-500/50 transition-all flex flex-col justify-between shadow-sm"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-bold text-zinc-900 dark:text-white font-sans">
+                        {item.clientName}
+                      </span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-400 border border-purple-500/30 font-bold">
+                        ⏳ {item.timeRemaining}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1 text-[11px] text-zinc-500 dark:text-zinc-400">
+                      <div>
+                        <span>Interés: </span>
+                        <strong className="text-zinc-800 dark:text-zinc-200">{item.productInterest}</strong>
+                      </div>
+                      <div>
+                        <span>Objeción: </span>
+                        <span className="text-amber-500 italic">"{item.lastObjection}"</span>
+                      </div>
+                      <div className="text-[10px] text-zinc-400">
+                        Disparo programado: <strong>{item.targetScheduledAt}</strong>
+                      </div>
+                    </div>
+
+                    {/* Vaca Púrpura Copy Box */}
+                    <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 text-xs font-sans space-y-2">
+                      <div className="flex items-center justify-between font-mono text-[10px]">
+                        <span className="text-purple-400 font-bold flex items-center gap-1">
+                          <Sparkles className="w-3 h-3" />
+                          Mensaje Vaca Púrpura Generado:
+                        </span>
+                        <span className="text-zinc-400">
+                          {item.wordCount} palabras (&lt; 40)
+                        </span>
+                      </div>
+                      <p className="text-zinc-700 dark:text-zinc-200 italic leading-relaxed text-[11px]">
+                        "{item.vacaPurpuraMessage}"
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800/80 flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(item.vacaPurpuraMessage);
+                        triggerModal(
+                          'Copiado al Portapapeles',
+                          `El guion de la Vaca Púrpura para <strong>${item.clientName}</strong> ha sido copiado.`
+                        );
+                      }}
+                      className="px-3 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:text-white transition-colors text-[10px] font-bold"
+                    >
+                      Copiar
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setReengagementList((prev) =>
+                          prev.map((x) =>
+                            x.id === item.id
+                              ? { ...x, timeRemaining: 'DESPACHADO', status: 'FOLLOWUP_SENT' }
+                              : x
+                          )
+                        );
+                        try {
+                          confetti({ particleCount: 35, spread: 60, colors: ['#A855F7', '#E7F900'] });
+                        } catch (e) {}
+                        triggerModal(
+                          'Disparo de Prueba 24h Ejecutado (0ms)',
+                          `<b>Destinatario:</b> ${item.clientName} (${item.phone})<br><b>Mensaje:</b> "${item.vacaPurpuraMessage}"<br><b>Estado:</b> Mutado a FOLLOWUP_SENT en Upstash Redis. Transición a embudo de consideración exitosa.`
+                        );
+                      }}
+                      className="flex-1 px-3 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px] flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95"
+                    >
+                      <Zap className="w-3 h-3" />
+                      <span>{item.status === 'FOLLOWUP_SENT' ? 'Enviado ✅' : 'Simular Disparo (0ms)'}</span>
+                    </button>
                   </div>
                 </div>
               ))}

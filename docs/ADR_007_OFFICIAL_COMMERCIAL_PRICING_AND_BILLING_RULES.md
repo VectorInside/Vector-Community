@@ -82,6 +82,22 @@ Para evitar disputas comerciales y garantizar la soberanía de datos, un prospec
 
 ---
 
+### 2.5. Sustento Estratégico del Modelo de Negocio (Hormozi & Ehrenberg-Bass)
+
+El modelo comercial **Vector Deal** se sustenta en dos marcos económicos clave:
+
+1. **Ecuación de Valor de Alex Hormozi:**
+   $$\text{Valor Percibido} = \frac{\text{Dream Outcome (Resultado Soñado)} \times \text{Perceived Likelihood of Achievement}}{\text{Time Delay (Retraso Temporal)} \times \text{Effort \& Sacrifice (Esfuerzo y Sacrificio)}}$$
+   - **Time Delay $\to 0$:** La respuesta inmediata (<10s) y el agendamiento instantáneo con Google Calendar API maximizan la probabilidad de conversión.
+   - **Effort \& Sacrifice $\to 0$:** La agencia y el cliente no tienen que perseguir prospectos manualmente; el sistema califica y entrega el prospecto pre-cerrado en bandeja de Triage.
+   - Por ello, el cliente percibe que pagar **$350 MXN** por un lead listo para cierre es exponencialmente más rentable que contratar community managers manuales.
+
+2. **Monetización Dual bajo la Regla 95/5 (Ehrenberg-Bass):**
+   - **5% En Mercado Hoy (In-Market):** Prospectos con urgencia alta que compran o agendan en la primera sesión $\to$ Mutan de inmediato a `BILLABLE_LEAD` ($350 MXN).
+   - **95% Fuera de Mercado Hoy (Out-of-Market):** Prospectos que responden "lo voy a pensar" o pausaron $\to$ No se descartan ni se cobran en falso. Se encolan en **Upstash Redis Queue** para re-engagement a las 24h con el Sub-Agente Creador (Vaca Púrpura). Cuando reactivan y confirman cita, se monetizan en el segundo ciclo a costo publicitario $0 adicional.
+
+---
+
 ## 3. Consecuencias & Beneficios
 
 ### Para la Agencia:

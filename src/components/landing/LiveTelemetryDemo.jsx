@@ -16,6 +16,7 @@ import {
   PlusCircle,
   AlertTriangle,
   CheckCircle2,
+  X,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -144,40 +145,37 @@ export const LiveTelemetryDemo = ({ lang = 'es' }) => {
         },
       ]);
     }
-
-    setTimeout(() => {
-      setActiveAlert(null);
-    }, 5000);
   };
 
   return (
-    <section id="realtime-demo" className="py-12 sm:py-16 lg:py-20 relative overflow-hidden bg-zinc-950 border-t border-white/5">
-      {/* Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-gradient-to-r from-neon/10 via-emerald-500/10 to-cyan-500/10 rounded-full blur-[140px] pointer-events-none" />
+    <section id="realtime-demo" className="py-8 sm:py-12 lg:py-14 relative overflow-hidden bg-[#07080A]">
+      {/* Radiant Cybernetic Cones & Mesh Glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[850px] h-[450px] bg-gradient-to-r from-cyan-500/15 via-neon/15 to-purple-600/15 rounded-full blur-[160px] pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-10 sm:space-y-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-8 sm:space-y-10">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-white/10 text-[11px] font-mono font-bold text-neon uppercase tracking-wider">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-900/90 border border-neon/30 text-[11px] font-mono font-bold text-neon uppercase tracking-wider shadow-[0_0_20px_rgba(231,249,0,0.15)]">
             <Radio className="w-3.5 h-3.5 animate-pulse" />
             {t.tag}
           </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-black text-white tracking-tight">
             {t.title}
           </h2>
-          <p className="text-zinc-400 text-sm sm:text-base leading-relaxed">
+          <p className="text-zinc-300 text-sm sm:text-base leading-relaxed">
             {t.subtitle}
           </p>
         </div>
 
-        {/* Simulation Triggers Bar */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {/* Simulation Triggers Bar (Chromatic Glass Cards) */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           <button
             type="button"
             onClick={() => triggerEventSimulation('purchase')}
-            className="p-3.5 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800/90 border border-neon/40 hover:border-neon text-left transition-all group shadow-[0_0_15px_rgba(231,249,0,0.1)] active:scale-98"
+            className="p-4 rounded-2xl bg-zinc-950/80 hover:bg-zinc-900/90 border border-neon/40 hover:border-neon text-left transition-all group shadow-[0_0_20px_rgba(231,249,0,0.15)] active:scale-98 backdrop-blur-xl relative overflow-hidden"
           >
-            <div className="flex items-center justify-between mb-1">
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-neon via-white to-neon" />
+            <div className="flex items-center justify-between mb-1.5">
               <span className="text-[10px] font-mono text-neon font-bold uppercase tracking-wider">
                 {t.trigger1.tag}
               </span>
@@ -194,13 +192,14 @@ export const LiveTelemetryDemo = ({ lang = 'es' }) => {
           <button
             type="button"
             onClick={() => triggerEventSimulation('lead')}
-            className="p-3.5 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800/90 border border-cognitive/40 hover:border-cognitive text-left transition-all group shadow-[0_0_15px_rgba(138,149,182,0.1)] active:scale-98"
+            className="p-4 rounded-2xl bg-zinc-950/80 hover:bg-zinc-900/90 border border-cyan-500/40 hover:border-cyan-400 text-left transition-all group shadow-[0_0_20px_rgba(0,240,255,0.15)] active:scale-98 backdrop-blur-xl relative overflow-hidden"
           >
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-mono text-cognitive font-bold uppercase tracking-wider">
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-cyan-400 via-white to-cyan-400" />
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] font-mono text-cyan-400 font-bold uppercase tracking-wider">
                 {t.trigger2.tag}
               </span>
-              <PlusCircle className="w-4 h-4 text-cognitive group-hover:rotate-90 transition-transform" />
+              <PlusCircle className="w-4 h-4 text-cyan-400 group-hover:rotate-90 transition-transform" />
             </div>
             <div className="text-xs font-bold text-white">
               {t.trigger2.title}
@@ -213,13 +212,14 @@ export const LiveTelemetryDemo = ({ lang = 'es' }) => {
           <button
             type="button"
             onClick={() => triggerEventSimulation('crisis')}
-            className="p-3.5 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800/90 border border-amber-500/40 hover:border-amber-400 text-left transition-all group shadow-[0_0_15px_rgba(245,158,11,0.1)] active:scale-98"
+            className="p-4 rounded-2xl bg-zinc-950/80 hover:bg-zinc-900/90 border border-rose-500/40 hover:border-rose-400 text-left transition-all group shadow-[0_0_20px_rgba(244,63,94,0.15)] active:scale-98 backdrop-blur-xl relative overflow-hidden"
           >
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-mono text-amber-400 font-bold uppercase tracking-wider">
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-rose-400 via-white to-rose-400" />
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] font-mono text-rose-400 font-bold uppercase tracking-wider">
                 {t.trigger3.tag}
               </span>
-              <AlertTriangle className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
+              <AlertTriangle className="w-4 h-4 text-rose-400 group-hover:scale-110 transition-transform" />
             </div>
             <div className="text-xs font-bold text-white">
               {t.trigger3.title}
@@ -232,13 +232,14 @@ export const LiveTelemetryDemo = ({ lang = 'es' }) => {
           <button
             type="button"
             onClick={() => triggerEventSimulation('surge')}
-            className="p-3.5 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800/90 border border-white/30 hover:border-white text-left transition-all group shadow-[0_0_15px_rgba(255,255,255,0.1)] active:scale-98"
+            className="p-4 rounded-2xl bg-zinc-950/80 hover:bg-zinc-900/90 border border-purple-500/40 hover:border-purple-400 text-left transition-all group shadow-[0_0_20px_rgba(168,85,247,0.15)] active:scale-98 backdrop-blur-xl relative overflow-hidden"
           >
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-mono text-white font-bold uppercase tracking-wider">
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-400 via-white to-purple-400" />
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] font-mono text-purple-400 font-bold uppercase tracking-wider">
                 {t.trigger4.tag}
               </span>
-              <Zap className="w-4 h-4 text-neon group-hover:scale-110 transition-transform" />
+              <Zap className="w-4 h-4 text-purple-400 group-hover:scale-110 transition-transform" />
             </div>
             <div className="text-xs font-bold text-white">
               {t.trigger4.title}
@@ -249,19 +250,30 @@ export const LiveTelemetryDemo = ({ lang = 'es' }) => {
           </button>
         </div>
 
-        {/* Live Notification Banner */}
+        {/* Live Notification Banner (Persistent until user dismisses or clicks another trigger) */}
         {activeAlert && (
-          <div className="p-4 rounded-2xl bg-zinc-900 border border-neon text-xs font-mono flex items-center justify-between animate-fade-in shadow-neon">
-            <div className="flex items-center gap-3">
-              <span className="w-2.5 h-2.5 rounded-full bg-neon animate-ping" />
+          <div className="p-4 sm:p-5 rounded-2xl bg-zinc-950/90 border border-neon/50 text-xs font-mono flex items-start sm:items-center justify-between gap-4 animate-fade-in shadow-[0_0_30px_rgba(231,249,0,0.2)] backdrop-blur-2xl">
+            <div className="flex items-start sm:items-center gap-3">
+              <span className="w-2.5 h-2.5 rounded-full bg-neon animate-ping mt-1 sm:mt-0 shrink-0" />
               <div>
-                <span className="font-bold text-white block">{activeAlert.title}</span>
-                <span className="text-zinc-400">{activeAlert.details}</span>
+                <span className="font-bold text-white text-sm block mb-0.5">{activeAlert.title}</span>
+                <span className="text-zinc-300 font-sans text-xs leading-relaxed">{activeAlert.details}</span>
               </div>
             </div>
-            <span className="text-[10px] text-neon uppercase font-bold px-2 py-0.5 rounded bg-neon/15">
-              DISPATCHED
-            </span>
+            
+            <div className="flex items-center gap-2.5 shrink-0">
+              <span className="text-[10px] text-neon uppercase font-black px-2.5 py-1 rounded-lg bg-neon/15 border border-neon/30">
+                DISPATCHED
+              </span>
+              <button
+                type="button"
+                onClick={() => setActiveAlert(null)}
+                className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-white/10 transition-colors"
+                title="Cerrar notificación"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
 
@@ -271,11 +283,21 @@ export const LiveTelemetryDemo = ({ lang = 'es' }) => {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pb-6 border-b border-white/10">
             <div>
               <span className="text-[10px] font-mono text-zinc-500 uppercase block">{t.meters.events}</span>
-              <span className="text-2xl font-black text-white font-mono">{totalSimulatedEvents.toLocaleString()}</span>
+              <span
+                suppressHydrationWarning
+                className="text-2xl font-black text-white font-mono"
+              >
+                {String(totalSimulatedEvents).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              </span>
             </div>
             <div>
               <span className="text-[10px] font-mono text-zinc-500 uppercase block">{t.meters.revenue}</span>
-              <span className="text-2xl font-black text-neon font-mono">${revenueAttributed.toLocaleString()}</span>
+              <span
+                suppressHydrationWarning
+                className="text-2xl font-black text-neon font-mono"
+              >
+                ${String(revenueAttributed).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              </span>
             </div>
             <div>
               <span className="text-[10px] font-mono text-zinc-500 uppercase block">{t.meters.capi}</span>
@@ -365,7 +387,9 @@ export const LiveTelemetryDemo = ({ lang = 'es' }) => {
                   <div key={idx} className="space-y-1 text-xs font-mono">
                     <div className="flex items-center justify-between text-zinc-300">
                       <span>{ch.channel}</span>
-                      <span className="font-bold text-white">{ch.volume.toLocaleString()} ev ({ch.share})</span>
+                      <span className="font-bold text-white" suppressHydrationWarning>
+                        {String(ch.volume).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} ev ({ch.share})
+                      </span>
                     </div>
                     <div className="h-2 w-full rounded-full bg-zinc-900 overflow-hidden">
                       <div

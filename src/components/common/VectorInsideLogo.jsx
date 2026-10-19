@@ -69,7 +69,7 @@ export const VectorInsideLogo = ({
           </div>
           {showCommunity && (
             <span className="text-[8px] font-mono font-bold tracking-[0.25em] text-zinc-300 uppercase mt-0.5">
-              // COMMUNITY
+              {`// COMMUNITY`}
             </span>
           )}
         </div>
@@ -98,7 +98,7 @@ export const VectorInsideLogo = ({
         {/* Descriptor Vector Community (evita duplicar la palabra VECTOR) */}
         {showCommunity && (
           <div className="flex items-center gap-1 mt-1">
-            <span className="text-neon font-mono font-black text-[9px]">//</span>
+            <span className="text-neon font-mono font-black text-[9px]">{`//`}</span>
             <span className={`font-mono font-bold tracking-[0.22em] text-zinc-300 uppercase ${currentSize.subSize}`}>
               COMMUNITY OS
             </span>

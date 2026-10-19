@@ -27,7 +27,8 @@ import {
   Shield,
   Save,
   Trash2,
-  Plus
+  Plus,
+  Clock,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -769,10 +770,10 @@ export const SubBotsConfig = () => {
 
             <div>
               <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                Modelo LLM Activo
+                Modelo LLM Activo (ADR-004 Model Routing)
               </label>
               <select
-                value={config?.[vertical]?.activeModel || 'Claude 3.5 Sonnet / Vector RAG'}
+                value={config?.[vertical]?.activeModel || 'DeepSeek V3 (deepseek-chat - < 800ms)'}
                 onChange={(e) =>
                   setConfig({
                     ...config,
@@ -782,12 +783,74 @@ export const SubBotsConfig = () => {
                     },
                   })
                 }
-                className="w-full bg-dark-base border border-dark-border rounded-xl px-3.5 py-2 text-xs text-white focus:border-brand-primary focus:outline-none"
+                className="w-full bg-dark-base border border-dark-border rounded-xl px-3.5 py-2 text-xs text-white focus:border-brand-primary focus:outline-none font-mono"
               >
-                <option value="Claude 3.5 Sonnet / Vector RAG">Claude 3.5 Sonnet (Recomendado)</option>
-                <option value="GPT-4o / Vector Medical RAG">GPT-4o (Alta Precisión)</option>
-                <option value="GPT-4o Mini / Vector E-Commerce Embeddings">GPT-4o Mini (Ultra Rápido)</option>
+                <option value="DeepSeek V3 (deepseek-chat - < 800ms)">DeepSeek V3 (Motor Operativo &lt; 800ms - Oficial)</option>
+                <option value="DeepSeek R1 (deepseek-reasoner - CoT)">DeepSeek R1 (Motor Cognitivo &amp; Razonamiento CoT)</option>
+                <option value="Groq / Meta Llama 3 70B ($0 USD)">Groq / Meta Llama 3 70B (Costo $0 USD / Batching 24h)</option>
+                <option value="Claude 3.5 Sonnet / Vector RAG">Claude 3.5 Sonnet (Multi-Modal / Fallback)</option>
               </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Prompts y Guiones Estrictos XML Oficiales (Plan v4.0) */}
+        <div className="p-6 rounded-2xl bg-dark-surface border border-dark-border space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-dark-border">
+            <div className="flex items-center gap-2">
+              <Key className="w-5 h-5 text-neon" />
+              <h3 className="text-base font-bold text-white font-sans">
+                Guiones &amp; Prompts Estrictos XML de Sub-Agentes (Plan v4.0)
+              </h3>
+            </div>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neon/15 text-neon border border-neon/30 font-bold">
+              XML Delimitado + JSON Schemas
+            </span>
+          </div>
+
+          <p className="text-xs text-zinc-400 font-sans leading-relaxed">
+            Estructurados bajo formato XML delimitado con tipos de entrada/salida forzados para garantizar cero alucinaciones y ejecución determinista:
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs font-mono">
+            <div className="p-3.5 rounded-xl bg-dark-base border border-dark-border space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-white">🤖 1. Supervisor ("Lobo Vectorial")</span>
+                <span className="text-[10px] text-neon">0ms / Event-Driven</span>
+              </div>
+              <p className="text-zinc-400 text-[11px] font-sans">
+                Enruta WhatsApp/DMs según intención protegiendo el <code className="text-neon">{activeTenantId}</code>.
+              </p>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-dark-base border border-dark-border space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-white">🤖 2. Moderador &amp; Closer</span>
+                <span className="text-[10px] text-amber-400">AIDA / JTBD</span>
+              </div>
+              <p className="text-zinc-400 text-[11px] font-sans">
+                Presenta beneficio antes del precio y audita los 4 requisitos booleanos para cobrar $350 MXN.
+              </p>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-dark-base border border-dark-border space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-white">🤖 3. Re-Engagement 24h</span>
+                <span className="text-[10px] text-purple-400">Vaca Púrpura</span>
+              </div>
+              <p className="text-zinc-400 text-[11px] font-sans">
+                Dispara a las 24h exactas en Redis Queue: máx 40 palabras, dato curioso y micro-CTA.
+              </p>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-dark-base border border-dark-border space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-white">🤖 4. Analista Performance</span>
+                <span className="text-[10px] text-cyan-400">CAPI / GA4</span>
+              </div>
+              <p className="text-zinc-400 text-[11px] font-sans">
+                Mide ROAS Real, detecta fatiga creativa (Hook Rate &lt; 20%) y alerta fricción si Click-to-WA &lt; 3%.
+              </p>
             </div>
           </div>
         </div>
