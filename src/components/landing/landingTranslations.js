@@ -46,25 +46,25 @@ export const LANDING_TRANSLATIONS = {
     },
     metrics: {
       mrr: {
-        label: 'Ingresos Brutos (MRR)',
-        badge: 'Flujo ARR en Vivo',
+        label: 'Conversaciones Moderadas',
+        badge: 'Atención 24/7 en Vivo',
         growth: '+28.4%',
         sub: 'vs mes anterior (Match CAPI 98%)',
       },
       throughput: {
-        label: 'Eventos Ingestados / Seg',
-        badge: 'Ingesta Sub-segundo',
-        sub: '0 paquetes perdidos',
+        label: 'Tiempo al Primer Contacto',
+        badge: '11 seg con IA',
+        sub: '< 15 min handoff humano',
       },
       aiAccuracy: {
-        label: 'Precisión DeepSeek R1',
+        label: 'Precisión Calificación BANT',
         badge: 'Cero Alucinaciones',
-        sub: 'RAG Autónomo',
+        sub: 'Leads validados para venta',
       },
       latency: {
-        label: 'Latencia P99 Edge',
-        badge: 'Acelerado en Edge',
-        sub: '<1.2s Handoff Humano HITL',
+        label: 'Citas Confirmadas en Agenda',
+        badge: 'Sincronizado con Google Cal',
+        sub: 'Agenda llena en piloto automático',
       },
     },
     trustBadges: {
@@ -474,25 +474,25 @@ export const LANDING_TRANSLATIONS = {
     },
     metrics: {
       mrr: {
-        label: 'Gross Revenue (MRR)',
-        badge: 'Live ARR Stream',
+        label: 'Managed Conversations',
+        badge: 'Live 24/7 Response',
         growth: '+28.4%',
         sub: 'vs last mo (CAPI match 98%)',
       },
       throughput: {
-        label: 'Ingested Events / Sec',
-        badge: 'Sub-second Ingestion',
-        sub: '0 dropped pkts',
+        label: 'First Contact Speed',
+        badge: '11s AI Response',
+        sub: '<15m human handoff',
       },
       aiAccuracy: {
-        label: 'DeepSeek R1 Accuracy',
+        label: 'BANT Lead Accuracy',
         badge: 'Zero Hallucinations',
-        sub: 'Autonomous RAG',
+        sub: 'Sales-qualified opportunities',
       },
       latency: {
-        label: 'P99 Edge Latency',
-        badge: 'Edge Accelerated',
-        sub: '<1.2s Human HITL Handoff',
+        label: 'Confirmed Appointments',
+        badge: 'Synced with Google Cal',
+        sub: 'Automated booking calendar',
       },
     },
     trustBadges: {

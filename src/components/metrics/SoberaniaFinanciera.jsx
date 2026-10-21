@@ -106,23 +106,23 @@ export const SoberaniaFinanciera = () => {
       {/* Header */}
       <header className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border-color)] pb-4 gap-4">
         <div>
-          <h2 className="text-3xl font-black uppercase tracking-tighter text-[var(--text-main)]">
-            Soberanía <span className="text-neon">Financiera</span>
+          <h2 className="text-3xl font-heading font-black tracking-tight text-[var(--text-main)]">
+            Resultados <span className="text-neon">& Rendimiento Comercial</span>
           </h2>
-          <p className="text-xs font-mono text-[var(--text-muted)] mt-1">
-            Auditoría Full Funnel y Métricas para: <strong className="text-[var(--text-main)]">{activeTenant?.name}</strong>
+          <p className="text-xs sm:text-sm font-sans text-[var(--text-muted)] mt-1">
+            Atribución multicanal, retorno de inversión (ROAS) y costo por lead conciliado para: <strong className="text-[var(--text-main)] font-semibold">{activeTenant?.name}</strong>
           </p>
         </div>
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={handleGenerateMonthlyReport}
-            className="bg-neon text-black text-xs font-bold px-4 py-2 rounded-xl hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_12px_var(--neon-glow)] flex items-center gap-2 active:scale-95"
+            className="bg-neon text-black text-xs font-sans font-bold px-4 py-2.5 rounded-xl hover:bg-[var(--neon-hover)] transition-all shadow-sm flex items-center gap-2 active:scale-95"
           >
             <FileText className="w-4 h-4" />
             <span>Generar Reporte Ejecutivo Mensual</span>
           </button>
-          <span className="text-[10px] font-mono bg-emerald-900/30 text-emerald-400 border border-emerald-500/50 px-3 py-2 rounded-xl flex items-center gap-2 shadow-[0_0_10px_rgba(16,185,129,0.2)]">
+          <span className="text-[11px] font-sans font-medium bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 px-3 py-2 rounded-xl flex items-center gap-2 shadow-sm">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             Meta CAPI Sincronizado
           </span>
@@ -130,7 +130,7 @@ export const SoberaniaFinanciera = () => {
       </header>
 
       {/* Digital Presence & Micro-Landing Bar */}
-      <div className="mb-6 p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-xs">
+      <div className="mb-6 p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex flex-col sm:flex-row items-center justify-between gap-4 font-sans text-xs">
         <div className="flex items-center gap-3">
           <span className="p-2.5 rounded-xl bg-neon/10 text-neon border border-neon/20">
             {activeTenant?.hasWebsite ? <Globe className="w-5 h-5" /> : <Smartphone className="w-5 h-5" />}
@@ -140,8 +140,8 @@ export const SoberaniaFinanciera = () => {
               <span className="text-[var(--text-main)] font-bold text-sm">
                 {activeTenant?.hasWebsite ? 'Presencia: Sitio Web Oficial Sincronizado' : 'Presencia: Ecosistema Puro en WhatsApp (SIN Web)'}
               </span>
-              <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
-                {activeTenant?.hasWebsite ? 'GA4 Measurement ID ($0 USD)' : 'Micro-Landing Activa'}
+              <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
+                {activeTenant?.hasWebsite ? 'Medición Web GA4 (Sin costo)' : 'Micro-Landing Activa'}
               </span>
             </div>
             <p className="text-[var(--text-muted)] text-xs mt-0.5 font-sans">
@@ -169,49 +169,49 @@ export const SoberaniaFinanciera = () => {
           </button>
           <button
             type="button"
-            onClick={() => router.push('/performance')}
+            onClick={() => router.push('/contactability')}
             className="px-3.5 py-2 rounded-xl bg-neon text-black font-bold text-xs shadow-neon-sm hover:scale-[1.02] active:scale-[0.98] flex items-center gap-1.5 transition-all"
           >
             <Globe className="w-3.5 h-3.5" />
-            <span>Ver Telemetría Web & CAPI</span>
+            <span>Ver Contactabilidad & CAPI</span>
           </button>
         </div>
       </div>
 
       {/* KPI Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="vector-bg-panel vector-border p-5 rounded-lg">
-          <p className="text-[10px] font-mono text-[var(--text-muted)] uppercase mb-2">
+        <div className="vector-bg-panel vector-border p-5 rounded-xl shadow-sm">
+          <p className="text-[11px] font-sans font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">
             MER (ROAS Global)
           </p>
-          <p className="text-2xl font-black text-[var(--text-main)] font-mono">
+          <p className="text-2xl font-black text-[var(--text-main)] font-sans tabular-nums">
             {activeTenant?.mer}
           </p>
         </div>
 
-        <div className="vector-bg-panel vector-border p-5 rounded-lg">
-          <p className="text-[10px] font-mono text-[var(--text-muted)] uppercase mb-2">
+        <div className="vector-bg-panel vector-border p-5 rounded-xl shadow-sm">
+          <p className="text-[11px] font-sans font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">
             CAC (Costo Adquisición)
           </p>
-          <p className="text-2xl font-black text-[var(--text-main)] font-mono">
-            {activeTenant?.cac} <span className="text-xs font-normal">MXN</span>
+          <p className="text-2xl font-black text-[var(--text-main)] font-sans tabular-nums">
+            {activeTenant?.cac} <span className="text-xs font-normal text-[var(--text-muted)]">MXN</span>
           </p>
         </div>
 
-        <div className="vector-bg-panel vector-border p-5 rounded-lg">
-          <p className="text-[10px] font-mono text-[var(--text-muted)] uppercase mb-2">
+        <div className="vector-bg-panel vector-border p-5 rounded-xl shadow-sm">
+          <p className="text-[11px] font-sans font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">
             LTV (Valor Vida Cliente)
           </p>
-          <p className="text-2xl font-black text-neon font-mono">
-            {activeTenant?.ltv} <span className="text-xs font-normal">MXN</span>
+          <p className="text-2xl font-black text-neon font-sans tabular-nums">
+            {activeTenant?.ltv} <span className="text-xs font-normal text-[var(--text-muted)]">MXN</span>
           </p>
         </div>
 
-        <div className="vector-bg-panel border border-[var(--success)] bg-[var(--success-bg)] p-5 rounded-lg">
-          <p className="text-[10px] font-mono text-[var(--success)] font-bold uppercase mb-2">
+        <div className="vector-bg-panel border border-[var(--success)] bg-[var(--success-bg)] p-5 rounded-xl shadow-sm">
+          <p className="text-[11px] font-sans text-[var(--success)] font-bold uppercase tracking-wider mb-2">
             Citas Agendadas IA
           </p>
-          <p className="text-2xl font-black text-[var(--text-main)] font-mono flex items-center gap-2">
+          <p className="text-2xl font-black text-[var(--text-main)] font-sans tabular-nums flex items-center gap-2">
             <CalendarCheck className="w-5 h-5 text-[var(--success)]" />
             <span>{activeTenant?.citas}</span>
           </p>

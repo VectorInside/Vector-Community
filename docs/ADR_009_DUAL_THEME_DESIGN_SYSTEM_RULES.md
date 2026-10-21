@@ -44,22 +44,26 @@ graph LR
 
 ---
 
-## 3. Ontología Maestra de Tokens de Diseño
+## 3. Ontología Maestra de Tokens de Diseño Oficiales (Vector Inside UX/UI)
 
-La arquitectura CSS se apoya en variables CSS dinámicas en `globals.css` complementadas con la variante declarativa `dark:` de Tailwind CSS (`darkMode: 'class'`).
+La arquitectura CSS se apoya en variables CSS dinámicas en `globals.css` complementadas con la variante declarativa `dark:` de Tailwind CSS (`darkMode: 'class'`), unificadas con la entrega de marca oficial:
 
 | Token Semántico | Variable CSS | Modo Oscuro (`:root`) | Modo Claro (`.light`) | Función y Rol en la UI | WCAG Ratio |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Lienzo Base** | `--bg-base` | `#000000` | `#F8FAFC` | Fondo general de la ventana y el viewport. | N/A |
-| **Superficie Panel** | `--bg-panel` | `#07080A` | `#FFFFFF` | Sidebar, Header y paneles primarios. | N/A |
-| **Superficie Tarjeta** | `--bg-card` | `#0E0F13` | `#FFFFFF` | Tarjetas Kanban, módulos interactivos. | N/A |
-| **Superficie Pozo** | `--bg-card-subtle` | `#14171F` | `#F1F5F9` | Cajas de mensajes, auditorías internas. | N/A |
-| **Borde Estructural** | `--border-color` | `#1A1C22` | `#E2E8F0` | Separadores y bordes nítidos de módulos. | 3.5:1 |
-| **Texto Primario** | `--text-main` | `#FFFFFF` | `#090D16` | Títulos `h1`-`h4`, nombres y datos clave. | **>15:1 (AAA)** |
-| **Texto Secundario** | `--text-muted` | `#8E9199` | `#64748B` | Metadatos, subtítulos y marcas de tiempo. | **>4.8:1 (AA)** |
-| **Amarillo Vectorial** | `--neon-primary` | `#E7F900` | `#E7F900` | Botones de acción principal y badges. | >12:1 con negro |
-| **Tinta de Acento** | `--neon-text` | `#E7F900` | `#4D5600` | Texto de énfasis corporativo y enlaces. | **>6.5:1 (AAA)** |
-| **Azul Cognitivo** | `--azul-cognitivo` | `#8A95B6` | `#384568` | Telemetría IA, RAG, datos analíticos. | **>5.5:1 (AA)** |
+| **Lienzo Base** | `--bg-base` | `#101114` | `#F5F5F8` | Fondo general de la ventana y el viewport de trabajo. | N/A |
+| **Superficie Panel** | `--bg-panel` | `#191A1F` | `#FFFFFF` | Sidebar, Header y paneles primarios. | N/A |
+| **Superficie Tarjeta** | `--bg-card` | `#202127` | `#F1F2F6` | Tarjetas Kanban, módulos interactivos y modales. | N/A |
+| **Superficie Pozo** | `--bg-card-subtle` | `#141519` | `#E8E9F0` | Cajas de mensajes hundidas, auditorías internas. | N/A |
+| **Borde Estructural** | `--border-color` | `#303139` | `#E2E3EA` | Separadores y bordes nítidos de módulos. | >3.8:1 |
+| **Texto Primario** | `--text-main` | `#F3F3F5` | `#21232B` | Títulos `h1`-`h4`, nombres y datos clave. | **>15:1 (AAA)** |
+| **Texto Secundario** | `--text-muted` | `#A4A6B2` | `#666C7A` | Metadatos, subtítulos y marcas de tiempo. | **>4.8:1 (AA)** |
+| **Lima Vectorial (Acción)** | `--lime` / `--neon-primary` | `#C3F400` | `#C3F400` | Botón CTA principal (texto negro) y selección activa. | **>14:1 con negro** |
+| **Tinta de Acento Lima** | `--lime-text` / `--neon-text` | `#D4FB52` | `#506500` | Texto de énfasis corporativo y enlaces legibles. | **>6.5:1 (AAA)** |
+| **Morado Asistencia** | `--purple` | `#AA8BFB` | `#7753CB` | Asistencia de agentes, prompts y contexto IA. | **>5.5:1 (AA)** |
+| **Azul Datos / Contexto** | `--blue` | `#80B8FF` | `#326FAF` | Datos analíticos, filtros y telemetría de apoyo. | **>5.0:1 (AA)** |
+| **Verde Éxito / Calificado** | `--green` | `#72D4AE` | `#237E5D` | Estados favorables (`BILLABLE_LEAD`, ganado) con etiqueta. | **>5.0:1 (AA)** |
+| **Rojo Error / Riesgo** | `--red` | `#FF9699` | `#BD3949` | Alertas de riesgo, pérdidas o crisis con texto explícito. | **>4.8:1 (AA)** |
+| **Ámbar Revisión / Tarea** | `--orange` | `#F0B66B` | `#956016` | Piezas pendientes de revisión, estados intermedios. | **>4.8:1 (AA)** |
 
 ---
 

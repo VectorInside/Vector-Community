@@ -19,27 +19,41 @@ module.exports = {
           hover: "#1A1D24",
         },
         brand: {
-          primary: "var(--neon-primary)", // #E7F900 Amarillo Vectorial
+          primary: "var(--neon-primary)", // #C3F400 Lima Vectorial Oficial
           hover: "var(--neon-hover)",
           subtle: "var(--neon-glow)",
           glow: "var(--neon-glow)",
-          cognitive: "var(--azul-cognitivo)", // #8A95B6 Azul Cognitivo
+          cognitive: "var(--azul-cognitivo)", // #80B8FF Azul Cognitivo
+          purple: "var(--purple)", // #AA8BFB Morado Asistencia
+          blue: "var(--blue)", // #80B8FF Azul Datos
         },
         cognitive: {
           DEFAULT: "var(--azul-cognitivo)",
           glow: "var(--azul-cognitivo-glow)",
-          border: "rgba(138, 149, 182, 0.3)",
+          border: "rgba(128, 184, 255, 0.3)",
         },
         neon: {
           DEFAULT: "var(--neon-primary)",
           hover: "var(--neon-hover)",
           glow: "var(--neon-glow)",
+          text: "var(--neon-text)",
+        },
+        lime: {
+          action: "var(--neon-primary)",
+          text: "var(--neon-text)",
+        },
+        purple: {
+          DEFAULT: "var(--purple)",
+          glow: "var(--purple-glow)",
+        },
+        blue: {
+          DEFAULT: "var(--blue)",
         },
         status: {
           success: "var(--success)",
           warning: "var(--warning)",
           danger: "var(--danger)",
-          info: "#8A95B6",
+          info: "var(--blue)",
         },
       },
       boxShadow: {
@@ -50,9 +64,9 @@ module.exports = {
         'surface': '0 10px 30px -10px rgba(0, 0, 0, 0.8)',
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-        heading: ['Montserrat', 'Inter', 'sans-serif'],
-        mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+        sans: ['var(--font-sans)', 'Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        heading: ['var(--font-heading)', 'Montserrat', 'Inter', 'sans-serif'],
+        mono: ['var(--font-mono)', 'JetBrains Mono', 'Fira Code', 'monospace'],
       },
       animation: {
         'fade-in': 'fadeIn 0.25s ease-out forwards',

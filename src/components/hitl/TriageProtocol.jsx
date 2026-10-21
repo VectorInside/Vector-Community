@@ -54,10 +54,10 @@ import { REENGAGEMENT_QUEUE_MOCK } from '@/utils/mockData';
 import { PreCitaDrawer } from './PreCitaDrawer';
 import { Portal } from '@/components/common/Portal';
 
-export const TriageProtocol = () => {
+export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
   const { triggerModal, activeTenant } = useAuth();
   const [activeTab, setActiveTab] = useState('chats'); // 'chats' | 'meta_comments' | 'redis_queue'
-  const [viewMode, setViewMode] = useState('kanban'); // 'kanban' or 'chat'
+  const [viewMode, setViewMode] = useState(defaultViewMode); // 'kanban' or 'chat'
   const [kanbanDensity, setKanbanDensity] = useState('compact'); // 'compact' (ultra-visión) | 'standard'
   const [selectedColumnFilter, setSelectedColumnFilter] = useState('ALL');
   const [activeContact, setActiveContact] = useState('ana');
@@ -880,20 +880,20 @@ export const TriageProtocol = () => {
       {/* ========================================================================= */}
       <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 border-b border-zinc-200 dark:border-zinc-800/80 pb-6">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neon/15 text-neon border border-neon/30 text-[11px] font-mono font-bold uppercase tracking-wider mb-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neon/15 text-neon border border-neon/30 text-[11px] font-sans font-semibold uppercase tracking-wider mb-2">
             <Bot className="w-3.5 h-3.5" />
-            Supervisión HITL • Triage Operativo en Tiempo Real
+            Operación · Calificación y Triage en Tiempo Real
           </div>
-          <h2 className="text-2xl sm:text-3xl font-heading font-black uppercase tracking-tight text-zinc-900 dark:text-white">
-            Tablero de Triage <span className="text-neon">& Sutura Arcángel</span>
+          <h2 className="text-2xl sm:text-3xl font-heading font-black tracking-tight text-zinc-900 dark:text-white">
+            Prospectos y Ventas <span className="text-neon">· Calificación HITL</span>
           </h2>
-          <p className="text-xs font-mono text-zinc-600 dark:text-zinc-400 mt-1 max-w-3xl leading-relaxed">
-            Gobernanza multitenant con Lobo Vectorial: Matriz de temperatura determinista, protocolo de re-contactación a 24 horas y motor de atribución Server-to-Server (Meta CAPI).
+          <p className="text-xs sm:text-sm font-sans text-zinc-600 dark:text-zinc-400 mt-1 max-w-3xl leading-relaxed">
+            Seguimiento comercial y calificación en tiempo real. Protocolo de re-contactación a 24 horas y aprobación de Pre-Citas con dictamen en 1 clic.
           </p>
         </div>
 
         {/* Tab Switcher: Chats vs Meta Graph vs Cola Redis 24h */}
-        <div className="flex flex-wrap items-center gap-1.5 bg-zinc-100 dark:bg-zinc-950/90 p-1.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 font-mono text-xs shrink-0 shadow-sm dark:shadow-lg">
+        <div className="flex flex-wrap items-center gap-1.5 bg-zinc-100 dark:bg-zinc-950/90 p-1.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 font-sans text-xs shrink-0 shadow-sm dark:shadow-lg">
           <button
             type="button"
             onClick={() => setActiveTab('chats')}
@@ -904,7 +904,7 @@ export const TriageProtocol = () => {
             }`}
           >
             <MessageCircle className="w-4 h-4" />
-            <span>Triage ({Object.keys(threads).length})</span>
+            <span>Prospectos ({Object.keys(threads).length})</span>
           </button>
 
           <button
@@ -917,7 +917,7 @@ export const TriageProtocol = () => {
             }`}
           >
             <Instagram className="w-4 h-4 text-pink-500 dark:text-pink-400" />
-            <span>Meta Graph Stream</span>
+            <span>Comentarios Meta</span>
           </button>
 
           <button
@@ -930,7 +930,7 @@ export const TriageProtocol = () => {
             }`}
           >
             <Clock className="w-4 h-4 text-purple-400" />
-            <span>Cola Redis 24h (Regla 95/5)</span>
+            <span>Recuperación 24h (Regla 95/5)</span>
           </button>
         </div>
       </header>
@@ -971,7 +971,7 @@ export const TriageProtocol = () => {
           <div className="flex flex-wrap items-center justify-center gap-2.5">
             {/* Control de Densidad (Solo activo en modo Kanban) */}
             {viewMode === 'kanban' && (
-              <div className="flex items-center gap-1 bg-zinc-100 dark:bg-black/70 p-1 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs font-mono shadow-inner">
+              <div className="flex items-center gap-1 bg-zinc-100 dark:bg-black/70 p-1 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs font-sans shadow-inner">
                 <button
                   type="button"
                   onClick={() => setKanbanDensity('compact')}
@@ -1002,7 +1002,7 @@ export const TriageProtocol = () => {
             )}
 
             {/* Selector de Modo de Vista */}
-            <div className="flex items-center gap-1 bg-zinc-100 dark:bg-black/70 p-1 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-inner">
+            <div className="flex items-center gap-1 bg-zinc-100 dark:bg-black/70 p-1 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-inner font-sans text-xs">
               <button
                 type="button"
                 onClick={() => setViewMode('kanban')}
@@ -1038,7 +1038,7 @@ export const TriageProtocol = () => {
       {activeTab === 'chats' && viewMode === 'kanban' && (
         <div className="space-y-4">
           {/* Barra de Filtro Rápido / Navegación de Columnas (Centrada y Balanceada) */}
-          <div className="flex flex-wrap items-center justify-center gap-3 overflow-x-auto pb-1 pt-1 font-mono text-xs">
+          <div className="flex flex-wrap items-center justify-center gap-3 overflow-x-auto pb-1 pt-1 font-sans text-xs">
             <div className="flex flex-wrap items-center justify-center gap-2 shrink-0">
               <span className="text-zinc-500 dark:text-zinc-400 text-[11px] uppercase tracking-wider font-bold mr-1 flex items-center gap-1">
                 <Filter className="w-3.5 h-3.5" /> Filtrar:

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import QRCode from 'qrcode';
 import { Portal } from './Portal';
 import {
@@ -376,7 +377,14 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] flex items-center justify-center overflow-hidden shrink-0">
                   {customData.logo ? (
-                    <img src={customData.logo} alt="Logo" className="w-full h-full object-contain p-0.5" />
+                    <Image
+                      src={customData.logo}
+                      alt="Logo"
+                      width={36}
+                      height={36}
+                      unoptimized
+                      className="w-full h-full object-contain p-0.5"
+                    />
                   ) : (
                     <span className="text-xl">{tenant.avatar || '🏢'}</span>
                   )}
@@ -604,7 +612,14 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
                       <div className="flex items-center gap-3">
                         <div className="w-14 h-14 rounded-2xl bg-[var(--bg-card-subtle)] border-2 border-dashed border-[var(--border-color)] flex items-center justify-center overflow-hidden shrink-0">
                           {customData.logo ? (
-                            <img src={customData.logo} alt="Logo preview" className="w-full h-full object-contain p-1" />
+                            <Image
+                              src={customData.logo}
+                              alt="Logo preview"
+                              width={56}
+                              height={56}
+                              unoptimized
+                              className="w-full h-full object-contain p-1"
+                            />
                           ) : (
                             <span className="text-2xl">{tenant.avatar || '🏢'}</span>
                           )}

@@ -1,64 +1,69 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700;800&family=Montserrat:wght@400;600;700;800;900&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    /* Código Maestro Vector Inside 2026 - Paleta Institucional Oficial */
-    --bg-base: #000000;                     /* Negro Vectorial: Territorio de autoridad y profundidad */
-    --bg-panel: #07080a;                    /* Superficie profunda con sutil elevación */
-    --bg-card: #0e0f13;                     /* Tarjetas y módulos de interacción */
-    --bg-card-subtle: #14171f;              /* Pozos y contenedores secundarios */
-    --text-main: #FFFFFF;                   /* Blanco Operativo: Lectura de alta precisión */
-    --text-muted: #8E9199;                  /* Neutral de soporte */
-    --border-color: #1a1c22;                /* Línea fina de estructura */
+    /* Código Maestro Vector Inside 2026 - Paleta Institucional Oficial UX/UI (Dark Mode) */
+    --bg-base: #101114;                     /* Fondo general lienzo de trabajo */
+    --bg-panel: #191a1f;                    /* Superficie de paneles y barras */
+    --bg-card: #202127;                     /* Tarjetas y módulos de interacción */
+    --bg-card-subtle: #141519;              /* Pozos y contenedores secundarios */
+    --text-main: #f3f3f5;                   /* Lectura de alta precisión */
+    --text-muted: #a4a6b2;                  /* Neutral de soporte y metadatos */
+    --text-faint: #727581;                  /* Textos tenues */
+    --border-color: #303139;                /* Borde estructural de precisión */
     
-    /* Amarillo Vectorial (#E7F900) - Color Activo / Señal de Activación */
-    --neon-primary: #E7F900;
-    --neon-hover: #d2e300;
-    --neon-glow: rgba(231, 249, 0, 0.22);
-    --neon-text: #E7F900;                   /* En dark mode, fluorescente de alto impacto */
+    /* Lima Vectorial Oficial (#C3F400) - Color Activo / CTA Principal */
+    --neon-primary: #c3f400;
+    --neon-hover: #b0dc00;
+    --neon-glow: rgba(195, 244, 0, 0.22);
+    --neon-text: #c3f400;                   /* Acento de alto impacto en dark mode */
+    --neon-text-ink: #c3f400;
     
-    /* Azul Cognitivo (#8A95B6) - IA, Datos, Telemetría, Pensamiento */
-    --azul-cognitivo: #8A95B6;
-    --azul-cognitivo-hover: #7b85a3;
-    --azul-cognitivo-glow: rgba(138, 149, 182, 0.22);
+    /* Acentos Estratégicos UX/UI */
+    --purple: #aa8bfb;                      /* Asistencia, prompts, contexto IA */
+    --purple-glow: rgba(170, 139, 251, 0.2);
+    --blue: #80b8ff;                        /* Datos analíticos, filtros y telemetría */
+    --azul-cognitivo: #80b8ff;
     
-    --danger: #ef4444;
-    --danger-bg: rgba(239, 68, 68, 0.12);
-    --success: #10b981;
-    --success-bg: rgba(16, 185, 129, 0.12);
-    --warning: #f59e0b;
-    --warning-bg: rgba(245, 158, 11, 0.12);
+    --success: #72d4ae;
+    --success-bg: rgba(114, 212, 174, 0.12);
+    --danger: #ff9699;
+    --danger-bg: rgba(255, 150, 153, 0.12);
+    --warning: #f0b66b;
+    --warning-bg: rgba(240, 182, 107, 0.12);
   }
 
   .light {
-    --bg-base: #f8fafc;                     /* Lienzo blanco suave tipo porcelana ejecutiva */
-    --bg-panel: #ffffff;                    /* Superficie de paneles y barras de navegación */
-    --bg-card: #ffffff;                     /* Tarjetas limpias elevadas */
-    --bg-card-subtle: #f1f5f9;              /* Pozos, previsualizaciones y contenedores internos */
-    --text-main: #090d16;                   /* Grafito profundo/negro para máxima legibilidad */
-    --text-muted: #334155;                  /* Slate 700 nítido para metadatos y etiquetas secundarias (>7.5:1 AAA) */
-    --border-color: #cbd5e1;                /* Bordes estructurados nítidos Slate 300 */
+    /* Modo Claro Ejecutivo (Light Mode) */
+    --bg-base: #f5f5f8;                     /* Lienzo blanco suave tipo porcelana */
+    --bg-panel: #ffffff;                    /* Superficie de paneles y navegación */
+    --bg-card: #f1f2f6;                     /* Tarjetas limpias elevadas */
+    --bg-card-subtle: #e8e9f0;              /* Pozos y contenedores internos */
+    --text-main: #21232b;                   /* Grafito profundo para máxima legibilidad */
+    --text-muted: #666c7a;                  /* Metadatos y etiquetas secundarias (>7.5:1 AAA) */
+    --text-faint: #727988;
+    --border-color: #e2e3ea;                /* Bordes nítidos estructurados */
     
-    /* Amarillo Vectorial en Modo Claro */
-    --neon-primary: #E7F900;                /* Mantenido para fondos/botones con texto negro */
-    --neon-hover: #d4e500;
-    --neon-glow: rgba(231, 249, 0, 0.35);
-    --neon-text: #4D5600;                   /* Citrón/Oliva oscuro accesible WCAG AAA (>6.5:1) para texto */
+    /* Lima Vectorial en Modo Claro: Fill para botones, Ink oscuro para textos */
+    --neon-primary: #c3f400;                /* Fondos de botones con texto negro #000 */
+    --neon-hover: #b0dc00;
+    --neon-glow: rgba(195, 244, 0, 0.35);
+    --neon-text: #3b5400;                   /* Verde citrón profundo accesible (>5.8:1 WCAG AA) */
+    --neon-text-ink: #3b5400;
     
-    --azul-cognitivo: #384568;              /* Azul cognitivo profundo legible */
-    --azul-cognitivo-hover: #26304b;
-    --azul-cognitivo-glow: rgba(56, 69, 104, 0.15);
+    --purple: #7753cb;
+    --purple-glow: rgba(119, 83, 203, 0.15);
+    --blue: #326faf;
+    --azul-cognitivo: #326faf;
     
-    --danger: #dc2626;
-    --danger-bg: rgba(220, 38, 38, 0.1);
-    --success: #059669;
-    --success-bg: rgba(5, 150, 105, 0.1);
-    --warning: #d97706;
-    --warning-bg: rgba(217, 119, 6, 0.1);
+    --success: #237e5d;
+    --success-bg: rgba(35, 126, 93, 0.1);
+    --danger: #bd3949;
+    --danger-bg: rgba(189, 57, 73, 0.1);
+    --warning: #956016;
+    --warning-bg: rgba(149, 96, 22, 0.1);
   }
 
   body {

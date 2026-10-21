@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Portal } from '@/components/common/Portal';
@@ -37,6 +38,7 @@ import {
 } from 'lucide-react';
 import { VectorLobo } from '@/components/common/VectorLobo';
 import { MicroLandingPreviewModal } from '@/components/common/MicroLandingPreviewModal';
+import { MeasurementGuideModal } from '@/components/common/MeasurementGuideModal';
 import { GOVERNANCE_SYSTEM_RULES } from '@/utils/constants';
 
 const formatNumber = (num) => {
@@ -68,6 +70,8 @@ export const CentroDeMando = () => {
   const [previewTenant, setPreviewTenant] = useState(null);
   const [selectedRuleModal, setSelectedRuleModal] = useState(null);
   const [drawerTenantId, setDrawerTenantId] = useState(null);
+  const [guideMetricId, setGuideMetricId] = useState(null);
+  const [completedTasks, setCompletedTasks] = useState([]);
 
   // Filters & Search State
   const [searchQuery, setSearchQuery] = useState('');
@@ -181,45 +185,158 @@ export const CentroDeMando = () => {
         </div>
       </header>
 
-      {/* Lobo Vectorial Sentinel Diagnostic Banner */}
-      <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
-        <div className="flex items-center gap-3.5">
-          <VectorLobo size={42} showStatus={true} status="active" />
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono font-bold uppercase tracking-wider text-neon">
-                Lobo Vectorial • Centinela de Gobernanza
-              </span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cognitive/10 text-cognitive border border-cognitive/20">
-                IFV 48/50 Óptimo
-              </span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                5 Reglas Cumplidas
-              </span>
-            </div>
-            <p className="text-xs text-[var(--text-main)] italic mt-0.5 font-sans">
-              "Auditoría activa en {tenantsList.length} tenants. Presencia digital CON Web & Micro-Landings RLS verificada."
-            </p>
+      {/* Official UX/UI Hero Panel: Direccion Clara / Accion Concreta */}
+      <section className="relative overflow-hidden rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-6 sm:p-8 shadow-sm">
+        <div className="relative z-10 max-w-2xl space-y-4">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-sans uppercase tracking-widest text-neon font-extrabold bg-neon/10 px-2.5 py-1 rounded-full border border-neon/30">
+              OPERACIÓN · DIRECCIÓN CLARA
+            </span>
+            <span className="text-xs font-sans text-[var(--text-muted)]">
+              Octubre 2026
+            </span>
+          </div>
+
+          <h1 className="text-2xl sm:text-4xl font-heading font-black text-[var(--text-main)] leading-tight tracking-tight">
+            Convierte la atención en conversaciones.<br />
+            <span className="text-neon">Dale dirección a cada oportunidad.</span>
+          </h1>
+
+          <p className="text-xs sm:text-sm text-[var(--text-muted)] font-sans leading-relaxed">
+            Conecta tu estrategia, contenido y seguimiento en un solo lugar. 3 consultas esperan atención inmediata en bandeja y 2 piezas requieren revisión editorial antes de programarse.
+          </p>
+
+          <div className="flex flex-wrap items-center gap-3 pt-2 font-sans">
+            <button
+              type="button"
+              onClick={() => router.push('/inbox')}
+              className="px-5 py-3 rounded-xl bg-neon text-black font-sans font-bold text-xs uppercase flex items-center gap-2 hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_20px_var(--neon-glow)] active:scale-95"
+            >
+              <span>Atender conversaciones (3)</span>
+              <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => router.push('/planner')}
+              className="px-4 py-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon text-[var(--text-main)] font-sans font-semibold text-xs transition-colors flex items-center gap-2"
+            >
+              <span>Piezas por revisar (2)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setPreviewTenant(activeTenant)}
+              className="px-4 py-3 rounded-xl bg-neon/10 border border-neon/30 text-neon hover:bg-neon hover:text-black font-sans font-semibold text-xs transition-all flex items-center gap-1.5"
+            >
+              <Smartphone className="w-3.5 h-3.5" />
+              <span>Ver Micro-Landing</span>
+            </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={() => setPreviewTenant(activeTenant)}
-            className="text-xs font-mono font-bold px-3 py-1.5 rounded-xl bg-neon/15 text-neon border border-neon/40 hover:bg-neon hover:text-black transition-all flex items-center gap-1.5"
-          >
-            <Smartphone className="w-3.5 h-3.5" />
-            <span>Ver Micro-Landing ({activeTenant?.shortName || activeTenant?.name})</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => router.push('/performance')}
-            className="text-xs font-mono font-bold px-3 py-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon text-[var(--text-main)] transition-colors flex items-center gap-1.5"
-          >
-            <BarChart2 className="w-3.5 h-3.5" />
-            <span>Métricas Web & CAPI</span>
-          </button>
+        {/* Official Brand Wolf Floating */}
+        <Image
+          src="/assets/vector-wolf.png"
+          alt="Lobo Vectorial"
+          width={320}
+          height={320}
+          priority
+          className="absolute right-[-40px] sm:right-[-20px] lg:right-4 bottom-[-20px] w-52 sm:w-72 lg:w-80 h-auto object-contain opacity-25 lg:opacity-40 pointer-events-none select-none filter drop-shadow-[0_0_30px_rgba(195,244,0,0.2)]"
+        />
+      </section>
+
+      {/* 4 Core Cohort KPI Cards (Taxonomía UX/UI Oficial) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-sans">
+        {/* Card 1: Contactos Nuevos */}
+        <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2 shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-sans text-[var(--text-muted)] uppercase tracking-wider font-semibold">
+              Contactos Nuevos
+            </span>
+            <span className="text-[9px] font-sans px-2 py-0.5 rounded bg-[var(--bg-card)] text-[var(--text-muted)] border border-[var(--border-color)]">
+              Meta + Web
+            </span>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-heading font-black text-[var(--text-main)]">18</span>
+            <span className="text-xs font-sans text-[var(--text-muted)]">personas únicas</span>
+          </div>
+          <p className="text-[11px] text-[var(--text-muted)] font-sans">
+            13 con intercambio confirmado (72.2%)
+          </p>
+        </div>
+
+        {/* Card 2: Contactabilidad */}
+        <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2 relative group shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-sans text-[var(--text-muted)] uppercase tracking-wider font-semibold">
+              Contactabilidad
+            </span>
+            <button
+              type="button"
+              onClick={() => setGuideMetricId('contactabilidad_ratio')}
+              className="p-1 rounded-md text-[var(--text-faint)] hover:text-neon hover:bg-[var(--bg-card)] transition-colors"
+              title="Ver definición y fórmula operativa"
+            >
+              <Info className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-heading font-black text-neon">72.2%</span>
+            <span className="text-xs font-sans text-emerald-600 dark:text-emerald-400 font-bold">SLA Cumplido</span>
+          </div>
+          <p className="text-[11px] text-[var(--text-muted)] font-sans">
+            Meta 82% · Web 64% · 11 min promedio
+          </p>
+        </div>
+
+        {/* Card 3: Prospectos Calificados */}
+        <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2 relative group shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-sans text-[var(--text-muted)] uppercase tracking-wider font-semibold">
+              Prospectos Calificados
+            </span>
+            <button
+              type="button"
+              onClick={() => setGuideMetricId('lead_calificado')}
+              className="p-1 rounded-md text-[var(--text-faint)] hover:text-neon hover:bg-[var(--bg-card)] transition-colors"
+              title="Ver definición y fórmula operativa"
+            >
+              <Info className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-heading font-black text-[var(--text-main)]">8</span>
+            <span className="text-xs font-sans text-neon font-bold">BILLABLE_LEAD</span>
+          </div>
+          <p className="text-[11px] text-[var(--text-muted)] font-sans">
+            $224,000 MXN en valor de pipeline
+          </p>
+        </div>
+
+        {/* Card 4: Ventas Ganadas */}
+        <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2 relative group shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-sans text-[var(--text-muted)] uppercase tracking-wider font-semibold">
+              Ventas Ganadas
+            </span>
+            <button
+              type="button"
+              onClick={() => setGuideMetricId('venta_ganada')}
+              className="p-1 rounded-md text-[var(--text-faint)] hover:text-lime-400 hover:bg-[var(--bg-card)] transition-colors"
+              title="Ver definición y fórmula operativa"
+            >
+              <Info className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-heading font-black text-lime-400">$78,000</span>
+            <span className="text-xs font-mono text-[var(--text-faint)]">MXN</span>
+          </div>
+          <p className="text-[11px] text-[var(--text-muted)] font-sans">
+            3 cierres comerciales en octubre
+          </p>
         </div>
       </div>
 
@@ -870,6 +987,13 @@ export const CentroDeMando = () => {
           tenant={previewTenant}
         />
       )}
+
+      {/* Modal de Guía de Medición */}
+      <MeasurementGuideModal
+        isOpen={!!guideMetricId}
+        onClose={() => setGuideMetricId(null)}
+        initialMetricId={guideMetricId}
+      />
     </div>
   );
 };

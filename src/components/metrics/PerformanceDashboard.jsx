@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTenant } from '@/hooks/useTenant';
 import { performanceService } from '@/services/performanceService';
 import { StatCard } from '@/components/common/StatCard';
@@ -57,7 +57,7 @@ export const PerformanceDashboard = () => {
   const [showMicroLandingModal, setShowMicroLandingModal] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const perf = await performanceService.getPerformanceMetrics(activeTenantId);
@@ -69,11 +69,11 @@ export const PerformanceDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTenantId]);
 
   useEffect(() => {
     loadData();
-  }, [activeTenantId]);
+  }, [loadData]);
 
   const handleEmitCapiTest = async () => {
     setIsSendingSignal(true);
@@ -143,12 +143,12 @@ export const PerformanceDashboard = () => {
               <BarChart2 className="w-5 h-5" />
             </span>
             <div>
-              <h2 className="text-xl font-bold text-[var(--text-main)] tracking-tight flex items-center gap-2">
-                Telemetría Web & Performance CAPI
+              <h2 className="text-xl font-heading font-black text-[var(--text-main)] tracking-tight flex items-center gap-2">
+                Contactabilidad & Tiempos de Respuesta
               </h2>
-              <p className="text-xs text-[var(--text-muted)]">
-                Analítica web GA4 ($0 USD), atribución server-to-server y micro-landing para{' '}
-                <strong className="text-[var(--text-main)]">{activeTenant?.name}</strong>
+              <p className="text-xs sm:text-sm font-sans text-[var(--text-muted)] mt-0.5">
+                Embudo de captación comercial, velocidad de atención y tasa de respuesta en &lt; 15 min para{' '}
+                <strong className="text-[var(--text-main)] font-semibold">{activeTenant?.name}</strong>
               </p>
             </div>
           </div>
@@ -158,7 +158,7 @@ export const PerformanceDashboard = () => {
           <button
             type="button"
             onClick={() => setShowMicroLandingModal(true)}
-            className="px-3.5 py-2 rounded-xl bg-dark-base hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] text-xs font-mono font-bold border border-dark-border flex items-center gap-2 transition-all hover:border-brand-primary shadow-sm"
+            className="px-3.5 py-2 rounded-xl bg-dark-base hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] text-xs font-sans font-bold border border-dark-border flex items-center gap-2 transition-all hover:border-brand-primary shadow-sm"
           >
             <Smartphone className="w-4 h-4 text-brand-primary" />
             <span>Ver Micro-Landing</span>
@@ -177,44 +177,44 @@ export const PerformanceDashboard = () => {
       </div>
 
       {/* Navigation Sub-Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-dark-border">
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-dark-border font-sans">
         <button
           type="button"
           onClick={() => setActiveTab('web')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all ${
+          className={`px-4 py-2.5 rounded-xl text-xs font-medium flex items-center gap-2 transition-all ${
             activeTab === 'web'
-              ? 'bg-brand-primary text-black shadow-neon-sm'
+              ? 'bg-brand-primary text-black shadow-neon-sm font-bold'
               : 'bg-dark-base text-[var(--text-muted)] hover:text-[var(--text-main)] border border-dark-border'
           }`}
         >
           <Globe className="w-4 h-4" />
-          <span>Telemetría Web & GA4 (Sitio del Negocio)</span>
+          <span>Salud de Canales & Tráfico Web</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('capi')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all ${
+          className={`px-4 py-2.5 rounded-xl text-xs font-medium flex items-center gap-2 transition-all ${
             activeTab === 'capi'
-              ? 'bg-brand-primary text-black shadow-neon-sm'
+              ? 'bg-brand-primary text-black shadow-neon-sm font-bold'
               : 'bg-dark-base text-[var(--text-muted)] hover:text-[var(--text-main)] border border-dark-border'
           }`}
         >
           <Activity className="w-4 h-4" />
-          <span>Atribución Backend & Meta CAPI (ROAS Real)</span>
+          <span>Atribución Publicitaria (ROAS Real)</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('microlanding')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all ${
+          className={`px-4 py-2.5 rounded-xl text-xs font-medium flex items-center gap-2 transition-all ${
             activeTab === 'microlanding'
-              ? 'bg-brand-primary text-black shadow-neon-sm'
+              ? 'bg-brand-primary text-black shadow-neon-sm font-bold'
               : 'bg-dark-base text-[var(--text-muted)] hover:text-[var(--text-main)] border border-dark-border'
           }`}
         >
           <Smartphone className="w-4 h-4" />
-          <span>Micro-Landing & Link en Bio</span>
+          <span>Micro-Landing & Captación</span>
         </button>
       </div>
 

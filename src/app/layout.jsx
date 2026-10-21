@@ -1,32 +1,45 @@
 import '@/styles/globals.css';
+import { Inter, Montserrat, JetBrains_Mono } from 'next/font/google';
 import { AuthProvider } from '@/context/AuthContext';
 import { LayoutWrapper } from '@/components/layout/LayoutWrapper';
 
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-sans',
+});
+
+const montserrat = Montserrat({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-heading',
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-mono',
+});
+
 export const metadata = {
-  title: 'Vector Community OS — Master Control | Vector Inside',
-  description: 'Arquitectura de gobernanza HITL, Orquestación Multi-Agente, Multi-Tenant RAG y Soberanía Financiera impulsada por Vector Inside.',
+  title: 'VECTOR COMUNITY · Centro de Mando | Vector Inside',
+  description: 'Conecta estrategia, contenido y seguimiento para convertir la atención en conversaciones y resultados comerciales.',
   icons: {
-    icon: '/vector-inside-logo.svg',
+    icon: '/assets/vector-isotype.png',
   },
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="es" className="dark">
+    <html lang="es" className={`dark ${inter.variable} ${montserrat.variable} ${jetbrainsMono.variable}`}>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&family=Montserrat:wght@400;600;700;800;900&display=swap"
-          rel="stylesheet"
-        />
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=localStorage.getItem('vector_theme');if(t==='light'){document.documentElement.classList.remove('dark');document.documentElement.classList.add('light');}else if(t==='dark'){document.documentElement.classList.remove('light');document.documentElement.classList.add('dark');}}catch(e){}})()`,
           }}
         />
       </head>
-      <body className="min-h-screen antialiased selection:bg-[#E7F900] selection:text-black">
+      <body className="min-h-screen antialiased font-sans selection:bg-[#c3f400] selection:text-black">
         <AuthProvider>
           <LayoutWrapper>{children}</LayoutWrapper>
         </AuthProvider>
