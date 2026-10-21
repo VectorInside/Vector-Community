@@ -21,6 +21,8 @@ import {
   ChevronRight,
   Shield,
   UserCheck,
+  Sliders,
+  LogOut,
 } from 'lucide-react';
 import { VectorInsideLogo } from '@/components/common/VectorInsideLogo';
 
@@ -48,9 +50,6 @@ export const Sidebar = () => {
   };
 
   const isLinkActive = (href) => {
-    if (href === '/dashboard') {
-      return pathname === '/dashboard' || pathname === '/';
-    }
     return pathname === href || pathname.startsWith(href);
   };
 
@@ -128,7 +127,7 @@ export const Sidebar = () => {
           </div>
         ) : (
           <>
-            <label className="text-[9px] font-mono text-[var(--text-muted)] uppercase tracking-wider mb-1.5 block">
+            <label className="text-[10px] font-mono font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1.5 block">
               Rol Operativo
             </label>
             <select
@@ -173,7 +172,7 @@ export const Sidebar = () => {
             isSidebarCollapsed
               ? 'justify-center p-3'
               : 'gap-3 px-3.5 py-2.5'
-          } ${
+            } ${
             isLinkActive('/triage')
               ? 'bg-neon text-black font-bold shadow-[0_0_15px_var(--neon-glow)]'
               : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] font-medium'
@@ -196,7 +195,7 @@ export const Sidebar = () => {
         {isAdmin && (
           <>
             {!isSidebarCollapsed && (
-              <label className="text-[9px] font-mono text-[var(--text-muted)] uppercase tracking-wider mt-5 mb-1.5 px-1 block">
+              <label className="text-[10px] font-mono font-bold text-[var(--text-muted)] uppercase tracking-wider mt-5 mb-1.5 px-1 block">
                 Ingeniería IA
               </label>
             )}
@@ -220,7 +219,7 @@ export const Sidebar = () => {
 
             <Link
               href="/config"
-              title="Multi-Tenant RAG (4 Pilares)"
+              title="Centro de Configuración & RAG"
               className={`w-full flex items-center rounded-xl transition-all ${
                 isSidebarCollapsed
                   ? 'justify-center p-3'
@@ -232,14 +231,31 @@ export const Sidebar = () => {
               }`}
             >
               <Database className="w-4 h-4 shrink-0" />
-              {!isSidebarCollapsed && <span className="text-sm font-sans">Multi-Tenant RAG</span>}
+              {!isSidebarCollapsed && <span className="text-sm font-sans">Config & RAG</span>}
+            </Link>
+
+            <Link
+              href="/settings"
+              title="Gobernanza & Reglas de Negocio"
+              className={`w-full flex items-center rounded-xl transition-all ${
+                isSidebarCollapsed
+                  ? 'justify-center p-3'
+                  : 'gap-3 px-3.5 py-2.5'
+              } ${
+                isLinkActive('/settings')
+                  ? 'bg-neon text-black font-bold shadow-[0_0_15px_var(--neon-glow)]'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] font-medium'
+              }`}
+            >
+              <Sliders className="w-4 h-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="text-sm font-sans">Reglas & Precios</span>}
             </Link>
           </>
         )}
 
         {/* Sección: Operaciones de Contenido */}
         {!isSidebarCollapsed && (
-          <label className="text-[9px] font-mono text-[var(--text-muted)] uppercase tracking-wider mt-5 mb-1.5 px-1 block">
+          <label className="text-[10px] font-mono font-bold text-[var(--text-muted)] uppercase tracking-wider mt-5 mb-1.5 px-1 block">
             Operaciones de Contenido
           </label>
         )}
@@ -261,7 +277,7 @@ export const Sidebar = () => {
           {!isSidebarCollapsed ? (
             <>
               <span className="text-sm font-sans">Parrilla de Contenido</span>
-              <span className="ml-auto bg-amber-500/20 text-amber-400 border border-amber-500/40 text-[9px] font-bold px-1.5 py-0.5 rounded font-mono">
+              <span className="ml-auto bg-amber-500/20 text-amber-500 dark:text-amber-400 border border-amber-500/40 text-[9px] font-bold px-1.5 py-0.5 rounded font-mono">
                 2
               </span>
             </>
@@ -272,7 +288,7 @@ export const Sidebar = () => {
 
         {/* Sección: Analítica de Negocio */}
         {!isSidebarCollapsed && (
-          <label className="text-[9px] font-mono text-[var(--text-muted)] uppercase tracking-wider mt-5 mb-1.5 px-1 block">
+          <label className="text-[10px] font-mono font-bold text-[var(--text-muted)] uppercase tracking-wider mt-5 mb-1.5 px-1 block">
             Analítica de Negocio
           </label>
         )}
@@ -295,6 +311,23 @@ export const Sidebar = () => {
         </Link>
 
         <Link
+          href="/performance"
+          title="Telemetría Web & CAPI"
+          className={`w-full flex items-center rounded-xl transition-all ${
+            isSidebarCollapsed
+              ? 'justify-center p-3'
+              : 'gap-3 px-3.5 py-2.5'
+          } ${
+            isLinkActive('/performance')
+              ? 'bg-neon text-black font-bold shadow-[0_0_15px_var(--neon-glow)]'
+              : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] font-medium'
+          }`}
+        >
+          <Globe className="w-4 h-4 shrink-0" />
+          {!isSidebarCollapsed && <span className="text-sm font-sans">Telemetría Web & CAPI</span>}
+        </Link>
+
+        <Link
           href="/agenda"
           title="Master Agenda (Google Calendar)"
           className={`w-full flex items-center rounded-xl transition-all ${
@@ -311,39 +344,9 @@ export const Sidebar = () => {
           {!isSidebarCollapsed && <span className="text-sm font-sans">Master Agenda</span>}
         </Link>
 
-        {/* Sección: Comercial & Landing */}
-        {!isSidebarCollapsed && (
-          <label className="text-[9px] font-mono text-[var(--text-muted)] uppercase tracking-wider mt-5 mb-1.5 px-1 block">
-            Comercial & Marketing
-          </label>
-        )}
-
-        <Link
-          href="/landing"
-          title="Landing Page Comercial"
-          className={`w-full flex items-center rounded-xl transition-all ${
-            isSidebarCollapsed
-              ? 'justify-center p-3'
-              : 'gap-3 px-3.5 py-2.5'
-          } ${
-            isLinkActive('/landing')
-              ? 'bg-neon text-black font-bold shadow-[0_0_15px_var(--neon-glow)]'
-              : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] font-medium'
-          }`}
-        >
-          <Globe className="w-4 h-4 text-cyan-400 shrink-0" />
-          {!isSidebarCollapsed && (
-            <>
-              <span className="text-sm font-sans">Landing Page</span>
-              <span className="ml-auto bg-neon/15 text-neon border border-neon/30 text-[9px] font-bold px-1.5 py-0.5 rounded font-mono">
-                LIVE
-              </span>
-            </>
-          )}
-        </Link>
       </nav>
 
-      {/* Theme Switcher & Collapse Toggle Footer */}
+      {/* Theme Switcher & Logout Footer */}
       <div className="mt-auto p-3 border-t border-[var(--border-color)] bg-[var(--bg-card)]/50 space-y-1.5">
         <button
           type="button"
@@ -360,10 +363,22 @@ export const Sidebar = () => {
             </>
           ) : (
             <>
-              <Moon className="w-4 h-4 text-zinc-400 shrink-0" />
+              <Moon className="w-4 h-4 text-zinc-800 dark:text-zinc-400 shrink-0" />
               {!isSidebarCollapsed && <span>Modo Oscuro</span>}
             </>
           )}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => router.push('/login')}
+          title="Cerrar Sesión"
+          className={`flex items-center rounded-lg text-xs text-rose-400/80 hover:text-rose-400 hover:bg-rose-500/10 transition-colors font-mono uppercase w-full ${
+            isSidebarCollapsed ? 'justify-center p-2.5' : 'gap-2 px-3 py-2'
+          }`}
+        >
+          <LogOut className="w-4 h-4 shrink-0" />
+          {!isSidebarCollapsed && <span>Cerrar Sesión</span>}
         </button>
       </div>
     </aside>

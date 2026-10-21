@@ -25,12 +25,12 @@ export const Button = ({
 
   const variantStyles = {
     primary: 'bg-brand-primary text-black font-semibold hover:bg-brand-hover hover:shadow-neon focus:ring-brand-primary',
-    secondary: 'bg-dark-elevated text-zinc-100 hover:bg-dark-hover border border-dark-border focus:ring-zinc-600',
-    success: 'bg-emerald-500 text-white hover:bg-emerald-600 focus:ring-emerald-500 shadow-sm',
-    danger: 'bg-rose-500/15 text-rose-400 hover:bg-rose-500/25 border border-rose-500/30 focus:ring-rose-500',
-    outline: 'bg-transparent text-zinc-300 border border-dark-border hover:border-zinc-500 hover:text-white',
-    ghost: 'bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-dark-elevated',
-    neonOutline: 'bg-transparent text-brand-primary border border-brand-primary/40 hover:bg-brand-primary/10 hover:border-brand-primary',
+    secondary: 'bg-dark-elevated text-[var(--text-main)] hover:bg-[var(--bg-card-subtle)] border border-dark-border focus:ring-zinc-600',
+    success: 'bg-emerald-600 dark:bg-emerald-500 text-white hover:bg-emerald-700 dark:hover:bg-emerald-600 focus:ring-emerald-500 shadow-sm',
+    danger: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 hover:bg-rose-500/25 border border-rose-500/30 focus:ring-rose-500',
+    outline: 'bg-transparent text-[var(--text-main)] border border-dark-border hover:border-zinc-500 hover:text-[var(--text-main)]',
+    ghost: 'bg-transparent text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-dark-elevated',
+    neonOutline: 'bg-transparent text-neon border border-neon/40 hover:bg-neon/10 hover:border-neon',
   };
 
   return (

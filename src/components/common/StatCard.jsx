@@ -36,15 +36,15 @@ export const StatCard = ({
 
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wider text-zinc-400">
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
             {title}
           </p>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl lg:text-3xl font-bold tracking-tight text-white font-mono">
+            <span className="text-2xl lg:text-3xl font-bold tracking-tight text-[var(--text-main)] font-mono">
               {value}
             </span>
             {subvalue && (
-              <span className="text-xs text-zinc-500 font-mono">
+              <span className="text-xs text-[var(--text-muted)] font-mono">
                 {subvalue}
               </span>
             )}
@@ -52,7 +52,7 @@ export const StatCard = ({
         </div>
 
         {Icon && (
-          <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-dark-elevated border border-dark-border text-zinc-300 group-hover:text-brand-primary group-hover:border-brand-primary/40 transition-colors">
+          <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-dark-elevated border border-dark-border text-[var(--text-main)] group-hover:text-brand-primary group-hover:border-brand-primary/40 transition-colors">
             <Icon className="h-5 w-5" />
           </div>
         )}
@@ -62,31 +62,31 @@ export const StatCard = ({
         {change !== undefined ? (
           <div className="flex items-center gap-1.5 text-xs font-medium">
             {isPositive === true && (
-              <span className="flex items-center gap-0.5 text-emerald-400">
+              <span className="flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400 font-bold">
                 <TrendingUp className="w-3.5 h-3.5" />
                 {change}
               </span>
             )}
             {isPositive === false && (
-              <span className="flex items-center gap-0.5 text-rose-400">
+              <span className="flex items-center gap-0.5 text-rose-600 dark:text-rose-400 font-bold">
                 <TrendingDown className="w-3.5 h-3.5" />
                 {change}
               </span>
             )}
             {isPositive === null && (
-              <span className="flex items-center gap-0.5 text-zinc-400">
+              <span className="flex items-center gap-0.5 text-[var(--text-muted)]">
                 <Minus className="w-3.5 h-3.5" />
                 {change}
               </span>
             )}
-            <span className="text-zinc-500">vs período anterior</span>
+            <span className="text-[var(--text-muted)]">vs período anterior</span>
           </div>
         ) : (
-          <span className="text-xs text-zinc-500">Sincronización en vivo</span>
+          <span className="text-xs text-[var(--text-muted)]">Sincronización en vivo</span>
         )}
 
         {badgeText && (
-          <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-dark-elevated text-zinc-400 border border-dark-border">
+          <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-dark-elevated text-[var(--text-muted)] border border-dark-border">
             {badgeText}
           </span>
         )}

@@ -40,8 +40,8 @@
     --bg-card: #ffffff;                     /* Tarjetas limpias elevadas */
     --bg-card-subtle: #f1f5f9;              /* Pozos, previsualizaciones y contenedores internos */
     --text-main: #090d16;                   /* Grafito profundo/negro para máxima legibilidad */
-    --text-muted: #64748b;                  /* Slate elegante para metadatos y etiquetas secundarias */
-    --border-color: #e2e8f0;                /* Bordes estructurados nítidos */
+    --text-muted: #334155;                  /* Slate 700 nítido para metadatos y etiquetas secundarias (>7.5:1 AAA) */
+    --border-color: #cbd5e1;                /* Bordes estructurados nítidos Slate 300 */
     
     /* Amarillo Vectorial en Modo Claro */
     --neon-primary: #E7F900;                /* Mantenido para fondos/botones con texto negro */
@@ -113,6 +113,14 @@
   .vector-card-subtle {
     background-color: var(--bg-card-subtle);
     border: 1px solid var(--border-color);
+  }
+
+  /* High-Contrast Typography Utilities */
+  .text-main {
+    color: var(--text-main);
+  }
+  .text-muted {
+    color: var(--text-muted);
   }
   
   /* Amarillo Vectorial Classes */

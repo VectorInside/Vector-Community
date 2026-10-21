@@ -11,13 +11,13 @@ export const Badge = ({
   dot = false,
 }) => {
   const variantStyles = {
-    neon: 'bg-brand-primary/10 text-brand-primary border-brand-primary/30',
-    success: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
-    warning: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
-    danger: 'bg-rose-500/10 text-rose-400 border-rose-500/30',
-    info: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
-    purple: 'bg-purple-500/10 text-purple-400 border-purple-500/30',
-    default: 'bg-zinc-800 text-zinc-300 border-zinc-700',
+    neon: 'bg-brand-primary/15 text-neon border-brand-primary/30 font-bold',
+    success: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 font-semibold',
+    warning: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30 font-semibold',
+    danger: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30 font-semibold',
+    info: 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/30 font-semibold',
+    purple: 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/30 font-semibold',
+    default: 'bg-[var(--bg-card-subtle)] text-[var(--text-main)] border border-[var(--border-color)]',
   };
 
   const dotColors = {

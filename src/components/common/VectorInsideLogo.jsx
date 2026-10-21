@@ -40,11 +40,11 @@ export const VectorInsideLogo = ({
         d="M10 0 L40 76 L60 76 L90 0 L72 0 L50 56 L28 0 Z"
         fill="#E7F900"
       />
-      {/* Cortes Geométricos de Código y Núcleo (#000000) */}
-      <rect x="36" y="24" width="16" height="6" fill="#000000" />
-      <rect x="52" y="40" width="14" height="7" fill="#000000" />
-      <rect x="30" y="52" width="10" height="5" fill="#000000" />
-      <rect x="62" y="16" width="12" height="4" fill="#000000" />
+      {/* Cortes Geométricos de Código y Núcleo Adaptativos */}
+      <rect x="36" y="24" width="16" height="6" fill="var(--bg-panel, #000000)" />
+      <rect x="52" y="40" width="14" height="7" fill="var(--bg-panel, #000000)" />
+      <rect x="30" y="52" width="10" height="5" fill="var(--bg-panel, #000000)" />
+      <rect x="62" y="16" width="12" height="4" fill="var(--bg-panel, #000000)" />
     </svg>
   );
 
@@ -63,13 +63,13 @@ export const VectorInsideLogo = ({
       <div className={`relative inline-flex items-center justify-center p-4 select-none ${className}`}>
         <IsotypeSvg w={currentSize.width * 2.2} h={currentSize.height * 2.2} customClass="opacity-90" />
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[1px] px-2">
-          <div className="flex items-center gap-1 font-heading font-black tracking-[0.2em] text-white uppercase text-center text-xs sm:text-sm drop-shadow-md">
+          <div className="flex items-center gap-1 font-heading font-black tracking-[0.2em] text-[var(--text-main)] uppercase text-center text-xs sm:text-sm drop-shadow-md">
             <span>VECTOR</span>
             <span className="text-neon">INSIDE</span>
           </div>
           {showCommunity && (
-            <span className="text-[8px] font-mono font-bold tracking-[0.25em] text-zinc-300 uppercase mt-0.5">
-              // COMMUNITY
+            <span className="text-[8px] font-mono font-bold tracking-[0.25em] text-[var(--text-muted)] uppercase mt-0.5">
+              {`// COMMUNITY`}
             </span>
           )}
         </div>
@@ -87,7 +87,7 @@ export const VectorInsideLogo = ({
       <div className="flex flex-col justify-center">
         {/* Wordmark Oficial Vector Inside */}
         <div className="flex items-center gap-1.5 leading-none">
-          <span className={`font-heading font-black tracking-[0.16em] text-white uppercase ${currentSize.fontSize}`}>
+          <span className={`font-heading font-black tracking-[0.16em] text-[var(--text-main)] uppercase ${currentSize.fontSize}`}>
             VECTOR
           </span>
           <span className={`font-heading font-black tracking-[0.16em] text-neon uppercase ${currentSize.fontSize}`}>
@@ -98,8 +98,8 @@ export const VectorInsideLogo = ({
         {/* Descriptor Vector Community (evita duplicar la palabra VECTOR) */}
         {showCommunity && (
           <div className="flex items-center gap-1 mt-1">
-            <span className="text-neon font-mono font-black text-[9px]">//</span>
-            <span className={`font-mono font-bold tracking-[0.22em] text-zinc-300 uppercase ${currentSize.subSize}`}>
+            <span className="text-neon font-mono font-black text-[9px]">{`//`}</span>
+            <span className={`font-mono font-bold tracking-[0.22em] text-[var(--text-muted)] uppercase ${currentSize.subSize}`}>
               COMMUNITY OS
             </span>
           </div>

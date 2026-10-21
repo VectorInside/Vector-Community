@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { RAGWizard } from '@/components/rag/RAGWizard';
+import { SystemConfigHub } from '@/components/settings/SystemConfigHub';
 
 export default function SettingsPage() {
-  return <RAGWizard />;
+  return <SystemConfigHub initialTab="policies" />;
 }
