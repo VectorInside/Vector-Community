@@ -19,45 +19,40 @@ export const VectorInsideLogo = ({
   useOfficialImage = true,
 }) => {
   const sizeMap = {
-    sm: { width: 28, height: 24, imgWidth: 112, fontSize: 'text-xs', subSize: 'text-[8px]', claimSize: 'text-[7px]' },
-    md: { width: 38, height: 32, imgWidth: 160, fontSize: 'text-sm', subSize: 'text-[9px]', claimSize: 'text-[8px]' },
-    lg: { width: 56, height: 48, imgWidth: 220, fontSize: 'text-lg', subSize: 'text-[10px]', claimSize: 'text-[9px]' },
-    xl: { width: 85, height: 72, imgWidth: 280, fontSize: 'text-2xl', subSize: 'text-xs', claimSize: 'text-[10px]' },
+    xs: { width: 22, height: 28, imgWidth: 100, fontSize: 'text-xs', subSize: 'text-[8px]', claimSize: 'text-[7px]' },
+    sm: { width: 28, height: 36, imgWidth: 120, fontSize: 'text-xs', subSize: 'text-[8px]', claimSize: 'text-[7px]' },
+    md: { width: 34, height: 44, imgWidth: 160, fontSize: 'text-sm', subSize: 'text-[9px]', claimSize: 'text-[8px]' },
+    lg: { width: 44, height: 56, imgWidth: 220, fontSize: 'text-lg', subSize: 'text-[10px]', claimSize: 'text-[9px]' },
+    xl: { width: 64, height: 82, imgWidth: 280, fontSize: 'text-2xl', subSize: 'text-xs', claimSize: 'text-[10px]' },
   };
 
   const currentSize = sizeMap[size] || sizeMap.md;
 
-  // Render oficial con los assets PNG aportados por la marca
-  if (useOfficialImage && (variant === 'official' || variant === 'imagotype')) {
-    const calculatedHeight = Math.round(currentSize.imgWidth * (1634 / 6322)) || 36;
-    return (
-      <div className={`inline-flex items-center gap-1.5 select-none shrink-0 ${className}`}>
-        <Image
-          src="/assets/vector-logo-white.png"
-          alt="Vector Inside"
-          width={currentSize.imgWidth}
-          height={calculatedHeight}
-          priority
-          style={{ width: currentSize.imgWidth, height: 'auto' }}
-          className="dark:block hidden object-contain shrink-0"
-        />
-        <Image
-          src="/assets/vector-logo-light.png"
-          alt="Vector Inside"
-          width={currentSize.imgWidth}
-          height={calculatedHeight}
-          priority
-          style={{ width: currentSize.imgWidth, height: 'auto' }}
-          className="dark:hidden block object-contain shrink-0"
-        />
-        {showCommunity && (
-          <span className="text-[9px] font-heading font-extrabold px-1.5 py-0.5 rounded bg-lime-400 text-black uppercase tracking-wider shrink-0">
-            COMUNITY
-          </span>
-        )}
-      </div>
-    );
-  }
+  // Render oficial de la "V" Vectorial oficial con transparencia alfa real
+  const OfficialVImage = ({ customClass = '' }) => (
+    <div className={`relative inline-flex items-center justify-center shrink-0 ${customClass}`}>
+      {/* Dark theme: V blanca oficial con brillo sutil */}
+      <Image
+        src="/assets/vector-v-official.png"
+        alt="Vector Inside"
+        width={currentSize.width}
+        height={currentSize.height}
+        priority
+        style={{ width: currentSize.width, height: currentSize.height }}
+        className="dark:block hidden object-contain drop-shadow-[0_0_12px_rgba(195,244,0,0.25)] select-none pointer-events-none"
+      />
+      {/* Light theme: V oscura oficial */}
+      <Image
+        src="/assets/vector-v-dark.png"
+        alt="Vector Inside"
+        width={currentSize.width}
+        height={currentSize.height}
+        priority
+        style={{ width: currentSize.width, height: currentSize.height }}
+        className="dark:hidden block object-contain select-none pointer-events-none"
+      />
+    </div>
+  );
 
   // SVG Isotipo Oficial: "V" Vectorial con cortes geométricos y color oficial #C3F400
   const IsotypeSvg = ({ w = currentSize.width, h = currentSize.height, customClass = '' }) => (
@@ -82,23 +77,11 @@ export const VectorInsideLogo = ({
     </svg>
   );
 
-  // Variante 1: Solo Isotipo
+  // Variante 1: Solo Isotipo (Solo la "V" oficial de la empresa)
   if (variant === 'isotype') {
     return (
-      <div className={`inline-flex items-center justify-center ${className}`}>
-        {useOfficialImage ? (
-          <Image
-            src="/assets/vector-isotype.png"
-            alt="V"
-            width={currentSize.width}
-            height={Math.round(currentSize.width * 0.5) || 20}
-            priority
-            style={{ width: currentSize.width, height: 'auto' }}
-            className="object-contain drop-shadow-[0_0_8px_rgba(195,244,0,0.3)]"
-          />
-        ) : (
-          <IsotypeSvg />
-        )}
+      <div className={`inline-flex items-center justify-center select-none ${className}`}>
+        {useOfficialImage ? <OfficialVImage /> : <IsotypeSvg />}
       </div>
     );
   }
@@ -123,11 +106,11 @@ export const VectorInsideLogo = ({
     );
   }
 
-  // Variante 3 (Predeterminada): Imagotipo Horizontal Principal
+  // Variante 3 (Predeterminada): Imagotipo Horizontal Principal (V Oficial + Tipografía CSS sin recuadros negros)
   return (
-    <div className={`inline-flex items-center gap-3 select-none ${className}`}>
-      <div className="relative flex items-center justify-center">
-        <IsotypeSvg />
+    <div className={`inline-flex items-center gap-2.5 select-none shrink-0 ${className}`}>
+      <div className="relative flex items-center justify-center shrink-0">
+        {useOfficialImage ? <OfficialVImage /> : <IsotypeSvg />}
       </div>
 
       <div className="flex flex-col justify-center">
