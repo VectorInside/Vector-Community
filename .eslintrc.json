@@ -1,5 +1,10 @@
 {
   "extends": "next/core-web-vitals",
+  "settings": {
+    "next": {
+      "rootDir": ["Vector-Community/", "./"]
+    }
+  },
   "rules": {
     "react/no-unescaped-entities": "off",
     "@next/next/no-img-element": "warn"

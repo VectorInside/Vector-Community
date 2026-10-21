@@ -30,6 +30,7 @@ import {
   HelpCircle,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { Portal } from '@/components/common/Portal';
 import {
   SUB_AGENTS_CONFIG,
   MARKETING_FRAMEWORKS_REGISTRY,
@@ -499,8 +500,14 @@ export const OrchestrationView = () => {
       {/* MODAL DE INSPECCIÓN PROFUNDA DE PROMPTS Y SCHEMAS                        */}
       {/* ========================================================================= */}
       {selectedAgent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="w-full max-w-4xl max-h-[90vh] bg-zinc-950 border border-zinc-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden text-zinc-200">
+        <Portal>
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) handleCloseInspector();
+            }}
+          >
+            <div className="w-full max-w-4xl max-h-[90vh] bg-zinc-950 border border-zinc-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden text-zinc-200 my-auto animate-scale-up">
             {/* Modal Header */}
             <div className="p-6 border-b border-zinc-800/80 bg-zinc-900/60 flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -702,6 +709,7 @@ export const OrchestrationView = () => {
             </div>
           </div>
         </div>
+        </Portal>
       )}
     </div>
   );

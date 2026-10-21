@@ -18,6 +18,7 @@ import {
   Check,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { Portal } from '@/components/common/Portal';
 import { LANDING_TRANSLATIONS } from './landingTranslations';
 
 // TAXONOMÍA UNIVERSAL DE GIROS DE NEGOCIO (Las 16 verticales oficiales de la plataforma)
@@ -113,8 +114,14 @@ export const TrialModal = ({ isOpen, onClose, lang = 'es' }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto">
-      <div className="w-full max-w-md rounded-2xl bg-zinc-950 border border-neon/40 shadow-[0_0_40px_rgba(231,249,0,0.2)] p-4 sm:p-5 relative space-y-3 max-h-[90vh] flex flex-col justify-between overflow-y-auto">
+    <Portal>
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) onClose();
+        }}
+      >
+        <div className="w-full max-w-md rounded-2xl bg-zinc-950 border border-neon/40 shadow-[0_0_40px_rgba(231,249,0,0.2)] p-4 sm:p-5 relative space-y-3 max-h-[90vh] flex flex-col justify-between overflow-y-auto my-auto animate-scale-up">
         {/* Close Button */}
         <button
           type="button"
@@ -308,5 +315,6 @@ export const TrialModal = ({ isOpen, onClose, lang = 'es' }) => {
         )}
       </div>
     </div>
+    </Portal>
   );
 };

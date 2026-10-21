@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useTenant } from '@/hooks/useTenant';
 import { calendarService } from '@/services/calendarService';
 import { Button } from '@/components/common/Button';
+import { Portal } from '@/components/common/Portal';
 import { Badge } from '@/components/common/Badge';
 import { formatDateTime } from '@/utils/formatters';
 import {
@@ -943,8 +944,14 @@ export const MasterAgenda = () => {
       {/* 6. MODAL INTERACTIVO DE DETALLE DE CITA & GMAIL NOTIFICACIÓN              */}
       {/* ========================================================================= */}
       {selectedAppointment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-lg rounded-3xl bg-zinc-950 border border-brand-primary/50 shadow-2xl p-6 relative space-y-5">
+        <Portal>
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setSelectedAppointment(null);
+            }}
+          >
+            <div className="w-full max-w-lg rounded-3xl bg-zinc-950 border border-brand-primary/50 shadow-2xl p-6 relative space-y-5 my-auto animate-scale-up">
             <button
               type="button"
               onClick={() => setSelectedAppointment(null)}
@@ -1123,14 +1130,21 @@ export const MasterAgenda = () => {
             </div>
           </div>
         </div>
+        </Portal>
       )}
 
       {/* ========================================================================= */}
       {/* 7. CENTRO DE PERSONALIZACIÓN INTEGRAL: AGENDA, TURNOS & EMAIL STUDIO       */}
       {/* ========================================================================= */}
       {showConfigModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-4xl rounded-3xl bg-zinc-950 border border-brand-primary/50 shadow-2xl p-5 sm:p-7 relative flex flex-col max-h-[92vh] overflow-hidden">
+        <Portal>
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setShowConfigModal(false);
+            }}
+          >
+            <div className="w-full max-w-4xl rounded-3xl bg-zinc-950 border border-brand-primary/50 shadow-2xl p-5 sm:p-7 relative flex flex-col max-h-[92vh] overflow-hidden my-auto animate-scale-up">
             {/* Header del Modal */}
             <div className="flex items-start justify-between pb-4 border-b border-zinc-800 shrink-0">
               <div className="space-y-1">
@@ -1858,6 +1872,7 @@ export const MasterAgenda = () => {
             </div>
           </div>
         </div>
+        </Portal>
       )}
     </div>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import {
   Database,
@@ -68,6 +68,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { VectorLobo } from '@/components/common/VectorLobo';
+import { Portal } from '@/components/common/Portal';
 import { SAMPLE_ONBOARDING_PAYLOAD } from '@/utils/constants';
 
 // =========================================================================
@@ -623,12 +624,31 @@ export const BUSINESS_VERTICALS_CONFIG = {
   },
 };
 
-export const RAGWizard = () => {
+export const RAGWizard = ({
+  externalAdminViewMode,
+  onAdminViewModeChange,
+}) => {
   const { role, isAdmin, isClient, activeTenant, triggerModal, tenantsData } = useAuth();
 
   // Mode for Admin: 'list' (Tenant Overview & Requests) or 'wizard' (Step-by-Step New Business Onboarding)
-  const [adminViewMode, setAdminViewMode] = useState('list');
+  const [internalAdminViewMode, setInternalAdminViewMode] = useState(externalAdminViewMode || 'list');
   const [currentStep, setCurrentStep] = useState(1);
+
+  // Sync with external mode prop if provided
+  useEffect(() => {
+    if (externalAdminViewMode) {
+      setInternalAdminViewMode(externalAdminViewMode);
+    }
+  }, [externalAdminViewMode]);
+
+  const adminViewMode = externalAdminViewMode || internalAdminViewMode;
+
+  const setAdminViewMode = (newMode) => {
+    setInternalAdminViewMode(newMode);
+    if (onAdminViewModeChange) {
+      onAdminViewModeChange(newMode);
+    }
+  };
 
   // Category Filter and Search Query for Vertical Selection
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -1046,13 +1066,23 @@ export const RAGWizard = () => {
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neon/10 border border-neon/30 text-neon text-[11px] font-mono font-bold uppercase tracking-wider mb-2">
             <Database className="w-3.5 h-3.5" />
-            Taxonomía Universal de Giros RAG & Auto-Ingestión
+            {adminViewMode === 'wizard' ? 'Aprovisionamiento RLS de Nuevo Tenant' : 'Taxonomía Universal de Giros RAG & Auto-Ingestión'}
           </div>
           <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-[var(--text-main)]">
-            Base de Conocimiento <span className="text-neon">& Clasificación por Giro de Negocio</span>
+            {adminViewMode === 'wizard' ? (
+              <>
+                Asistente de Alta <span className="text-neon">& Provisión de Negocio</span>
+              </>
+            ) : (
+              <>
+                Base de Conocimiento <span className="text-neon">& Clasificación por Giro</span>
+              </>
+            )}
           </h2>
           <p className="text-xs font-mono text-[var(--text-muted)] mt-1">
-            Gimnasios, Escuelas, Redes de Networking, Clínicas, E-Commerce o Consultoría: La IA adapta los 4 pilares y sus reglas inviolables.
+            {adminViewMode === 'wizard'
+              ? 'Paso a paso para integrar un nuevo cliente: Giro comercial (16 verticales), los 4 pilares y aislamiento en base de datos.'
+              : 'Gimnasios, Escuelas, Redes de Networking, Clínicas, E-Commerce o Consultoría: La IA adapta los 4 pilares y sus reglas inviolables.'}
           </p>
         </div>
 
@@ -2577,8 +2607,14 @@ export const RAGWizard = () => {
       {/* MODAL: SOLICITUD DE CAMBIO DE DOCUMENTO (CLIENTE)                         */}
       {/* ========================================================================= */}
       {showChangeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="w-full max-w-lg rounded-3xl bg-zinc-950 border border-neon/40 shadow-2xl p-6 sm:p-8 relative space-y-5">
+        <Portal>
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setShowChangeModal(false);
+            }}
+          >
+            <div className="w-full max-w-lg rounded-3xl bg-zinc-950 border border-neon/40 shadow-2xl p-6 sm:p-8 relative space-y-5 my-auto animate-scale-up">
             <button
               type="button"
               onClick={() => setShowChangeModal(false)}
@@ -2672,6 +2708,7 @@ export const RAGWizard = () => {
             </form>
           </div>
         </div>
+        </Portal>
       )}
     </div>
   );

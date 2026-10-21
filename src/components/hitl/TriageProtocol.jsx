@@ -52,6 +52,7 @@ import {
 } from '@/utils/constants';
 import { REENGAGEMENT_QUEUE_MOCK } from '@/utils/mockData';
 import { PreCitaDrawer } from './PreCitaDrawer';
+import { Portal } from '@/components/common/Portal';
 
 export const TriageProtocol = () => {
   const { triggerModal, activeTenant } = useAuth();
@@ -1805,8 +1806,14 @@ export const TriageProtocol = () => {
       {/* 6. MODAL AUDITOR: META CAPI SERVER-TO-SERVER & BILLING LEDGER PROOF       */}
       {/* ========================================================================= */}
       {selectedCapiLead && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="w-full max-w-2xl rounded-3xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-neon/50 shadow-2xl p-6 sm:p-8 relative space-y-4 font-mono text-xs max-h-[90vh] overflow-y-auto">
+        <Portal>
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setSelectedCapiLead(null);
+            }}
+          >
+            <div className="w-full max-w-2xl rounded-3xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-neon/50 shadow-2xl p-6 sm:p-8 relative space-y-4 font-mono text-xs max-h-[90vh] overflow-y-auto my-auto animate-scale-up">
             <div className="flex items-start justify-between pb-3 border-b border-zinc-200 dark:border-zinc-800">
               <div className="space-y-1">
                 <span className="text-[10px] font-bold uppercase text-neon tracking-wider flex items-center gap-1.5">
@@ -1912,6 +1919,7 @@ VALUES (
             </div>
           </div>
         </div>
+        </Portal>
       )}
 
       {/* Ficha Dictamen Pre-Cita (Drawer Lateral de Alta Fidelidad) */}

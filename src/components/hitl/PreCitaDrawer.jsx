@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Portal } from '@/components/common/Portal';
 import {
   X,
   CalendarCheck,
@@ -26,6 +27,19 @@ import { LEAD_STATUS_ENUM } from '@/utils/constants';
 export const PreCitaDrawer = ({ isOpen, onClose, lead, onApproveAppointment, onOpenChat }) => {
   const [isApproving, setIsApproving] = useState(false);
   const [approvedSuccess, setApprovedSuccess] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    document.body.style.overflow = 'hidden';
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = 'unset';
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen || !lead) return null;
 
@@ -79,15 +93,16 @@ export const PreCitaDrawer = ({ isOpen, onClose, lead, onApproveAppointment, onO
   ];
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden animate-fadeIn">
-      {/* Backdrop */}
-      <div
-        onClick={onClose}
-        className="absolute inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm transition-opacity"
-      />
+    <Portal>
+      <div className="fixed inset-0 z-50 overflow-hidden animate-fade-in">
+        {/* Backdrop */}
+        <div
+          onClick={onClose}
+          className="absolute inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm transition-opacity cursor-pointer"
+        />
 
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-        <div className="w-screen max-w-xl bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 shadow-2xl flex flex-col justify-between transition-all transform ease-out duration-300">
+        <div className="fixed inset-y-0 right-0 max-w-full flex pl-10 pointer-events-none">
+          <div className="w-screen max-w-xl bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 shadow-2xl flex flex-col justify-between transition-all transform ease-out duration-300 pointer-events-auto animate-slide-in-right">
           {/* Header */}
           <div className="p-6 border-b border-zinc-200 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-900/40">
             <div className="flex items-center justify-between">
@@ -324,5 +339,6 @@ export const PreCitaDrawer = ({ isOpen, onClose, lead, onApproveAppointment, onO
         </div>
       </div>
     </div>
+    </Portal>
   );
 };

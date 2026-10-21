@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import QRCode from 'qrcode';
+import { Portal } from './Portal';
 import {
   X,
   Copy,
@@ -269,6 +270,19 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
     );
   }, [activeTab, tenant, customData.logo]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    document.body.style.overflow = 'hidden';
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = 'unset';
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen || !tenant) return null;
 
   const prodUrl = `https://app.vectorinside.com/m/${tenant.id}`;
@@ -319,8 +333,9 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
-      <div className="w-full max-w-6xl rounded-3xl bg-zinc-950 border border-[#D4FF00]/40 shadow-2xl overflow-hidden flex flex-col lg:flex-row max-h-[94vh]">
+    <Portal>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto">
+        <div className="w-full max-w-6xl rounded-3xl bg-zinc-950 border border-[#D4FF00]/40 shadow-2xl overflow-hidden flex flex-col lg:flex-row max-h-[94vh] my-auto animate-scale-up">
         
         {/* Left Column: Phone Mockup Frame (Sleek Dynamic Island Pro) */}
         <div className="w-full lg:w-[380px] bg-zinc-900/60 p-4 sm:p-5 flex flex-col items-center justify-center border-b lg:border-b-0 lg:border-r border-zinc-800 relative shrink-0">
@@ -875,5 +890,6 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
 
       </div>
     </div>
+    </Portal>
   );
 };

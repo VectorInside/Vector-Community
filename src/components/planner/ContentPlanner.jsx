@@ -39,6 +39,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Badge } from '@/components/common/Badge';
+import { Portal } from '@/components/common/Portal';
 import { SOCIAL_NETWORKS_CATALOG } from '@/utils/constants';
 
 export const ContentPlanner = () => {
@@ -938,8 +939,14 @@ export const ContentPlanner = () => {
 
       {/* MODAL PARA ACTUALIZAR OFERTA COMERCIAL */}
       {showOfferModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="w-full max-w-lg rounded-3xl bg-zinc-950 border border-neon/40 shadow-2xl p-6 sm:p-8 relative space-y-4">
+        <Portal>
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setShowOfferModal(false);
+            }}
+          >
+            <div className="w-full max-w-lg rounded-3xl bg-zinc-950 border border-neon/40 shadow-2xl p-6 sm:p-8 relative space-y-4 my-auto animate-scale-up">
             <div className="space-y-1">
               <span className="text-[10px] font-mono font-bold uppercase text-neon">
                 Sincronización con DeepSeek R1
@@ -1007,6 +1014,7 @@ export const ContentPlanner = () => {
             </form>
           </div>
         </div>
+        </Portal>
       )}
     </div>
   );
