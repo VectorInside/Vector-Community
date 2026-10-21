@@ -116,7 +116,7 @@ export const BusinessPolicyEngine = () => {
               className="vector-bg-card vector-border p-5 rounded-2xl space-y-3 relative overflow-hidden group hover:border-neon transition-all"
             >
               <div className="flex justify-between items-start">
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700">
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-300 border border-zinc-300 dark:border-zinc-700">
                   {rule.number} • {rule.adrRef}
                 </span>
                 <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${rule.statusColor}`}>
@@ -134,7 +134,7 @@ export const BusinessPolicyEngine = () => {
               </div>
 
               <div className="pt-2 border-t border-[var(--border-color)] flex items-center justify-between text-xs font-mono">
-                <span className="text-zinc-500">Métrica Actual:</span>
+                <span className="text-[var(--text-muted)] font-medium">Métrica Actual:</span>
                 <span className="font-bold text-[var(--text-main)]">{rule.metric}</span>
               </div>
             </div>
@@ -197,7 +197,7 @@ export const BusinessPolicyEngine = () => {
               {/* Price and Deposit Config */}
               <div className="space-y-3 pt-2 border-t border-[var(--border-color)] font-mono text-xs">
                 <div className="flex justify-between items-center">
-                  <span className="text-zinc-400 text-[11px]">Precio por Lead:</span>
+                  <span className="text-[var(--text-muted)] text-[11px] font-medium">Precio por Lead:</span>
                   <div className="flex items-center gap-1">
                     <span className="text-neon font-bold">$</span>
                     <input
@@ -208,25 +208,25 @@ export const BusinessPolicyEngine = () => {
                       }
                       className="w-20 bg-[var(--bg-card)] border border-[var(--border-color)] focus:border-neon rounded px-2 py-0.5 text-right font-bold text-[var(--text-main)] outline-none"
                     />
-                    <span className="text-[10px] text-zinc-500">MXN</span>
+                    <span className="text-[10px] text-[var(--text-muted)]">MXN</span>
                   </div>
                 </div>
 
                 <div className="flex justify-between items-center text-[11px]">
-                  <span className="text-zinc-400">Leads Facturados Mes:</span>
-                  <span className="font-bold text-white">{t.billedLeadsMonth || 0} leads</span>
+                  <span className="text-[var(--text-muted)]">Leads Facturados Mes:</span>
+                  <span className="font-bold text-[var(--text-main)]">{t.billedLeadsMonth || 0} leads</span>
                 </div>
 
                 <div className="flex justify-between items-center text-[11px]">
-                  <span className="text-zinc-400">Facturación Acumulada:</span>
+                  <span className="text-[var(--text-muted)]">Facturación Acumulada:</span>
                   <span className="font-bold text-neon" suppressHydrationWarning>
                     ${formatNumber((t.billedLeadsMonth || 0) * (t.leadPriceMXN || 350))} MXN
                   </span>
                 </div>
 
                 <div className="flex justify-between items-center text-[11px]">
-                  <span className="text-zinc-400">Saldo Retenido (Garantía):</span>
-                  <span className="font-bold text-cyan-400" suppressHydrationWarning>
+                  <span className="text-[var(--text-muted)]">Saldo Retenido (Garantía):</span>
+                  <span className="font-bold text-cyan-600 dark:text-cyan-400" suppressHydrationWarning>
                     ${formatNumber(t.retainedDepositMXN || 15000)} MXN
                   </span>
                 </div>
@@ -260,7 +260,7 @@ export const BusinessPolicyEngine = () => {
                   }
                   className="w-16 bg-[var(--bg-card)] border border-neon rounded px-2 py-1 text-center font-bold text-neon outline-none"
                 />
-                <span className="text-zinc-400">min</span>
+                <span className="text-[var(--text-muted)] font-medium">min</span>
               </div>
             </div>
 
@@ -279,7 +279,7 @@ export const BusinessPolicyEngine = () => {
                   }
                   className="w-16 bg-[var(--bg-card)] border border-neon rounded px-2 py-1 text-center font-bold text-neon outline-none"
                 />
-                <span className="text-zinc-400">pts</span>
+                <span className="text-[var(--text-muted)] font-medium">pts</span>
               </div>
             </div>
 
@@ -297,7 +297,7 @@ export const BusinessPolicyEngine = () => {
                   }
                   className="w-16 bg-[var(--bg-card)] border border-neon rounded px-2 py-1 text-center font-bold text-neon outline-none"
                 />
-                <span className="text-zinc-400">%</span>
+                <span className="text-[var(--text-muted)] font-medium">%</span>
               </div>
             </div>
 
@@ -315,7 +315,7 @@ export const BusinessPolicyEngine = () => {
                   }
                   className="w-16 bg-[var(--bg-card)] border border-neon rounded px-2 py-1 text-center font-bold text-neon outline-none"
                 />
-                <span className="text-zinc-400">hrs</span>
+                <span className="text-[var(--text-muted)] font-medium">hrs</span>
               </div>
             </div>
           </div>
@@ -362,13 +362,13 @@ export const BusinessPolicyEngine = () => {
             {crisisKeywordsList.map((word) => (
               <span
                 key={word}
-                className="px-2.5 py-1 rounded-lg bg-red-500/10 border border-red-500/30 text-red-300 text-xs font-mono flex items-center gap-1.5"
+                className="px-2.5 py-1 rounded-lg bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-300 text-xs font-mono flex items-center gap-1.5"
               >
                 <span>{word}</span>
                 <button
                   type="button"
                   onClick={() => handleRemoveKeyword(word)}
-                  className="hover:text-white transition-colors"
+                  className="hover:text-red-800 dark:hover:text-white transition-colors"
                   title="Eliminar palabra clave"
                 >
                   <Trash2 className="w-3 h-3" />
@@ -396,7 +396,7 @@ export const BusinessPolicyEngine = () => {
             className={`text-xs font-mono font-bold px-3 py-1.5 rounded-xl border flex items-center gap-1.5 ${
               isBillableLead
                 ? 'bg-neon/15 text-neon border-neon/40 shadow-[0_0_12px_var(--neon-glow)]'
-                : 'bg-zinc-800 text-zinc-400 border-zinc-700'
+                : 'bg-[var(--bg-card-subtle)] text-[var(--text-muted)] border-[var(--border-color)]'
             }`}
           >
             {isBillableLead ? (
@@ -406,7 +406,7 @@ export const BusinessPolicyEngine = () => {
               </>
             ) : (
               <>
-                <AlertTriangle className="w-4 h-4 text-zinc-500" />
+                <AlertTriangle className="w-4 h-4 text-[var(--text-muted)]" />
                 <span>NO FACTURABLE (Criterios Incompletos)</span>
               </>
             )}
@@ -417,7 +417,7 @@ export const BusinessPolicyEngine = () => {
           {/* Criterio 1 */}
           <div className="p-3 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono text-zinc-400 uppercase">Criterio 1: Contacto</span>
+              <span className="text-[10px] font-mono text-[var(--text-muted)] font-bold uppercase">Criterio 1: Contacto</span>
               <input
                 type="checkbox"
                 checked={Boolean(testLead.phone && testLead.phone.length >= 10)}
@@ -438,7 +438,7 @@ export const BusinessPolicyEngine = () => {
           {/* Criterio 2 */}
           <div className="p-3 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono text-zinc-400 uppercase">Criterio 2: Catálogo</span>
+              <span className="text-[10px] font-mono text-[var(--text-muted)] font-bold uppercase">Criterio 2: Catálogo</span>
               <input
                 type="checkbox"
                 checked={testLead.hasIntent}
@@ -455,7 +455,7 @@ export const BusinessPolicyEngine = () => {
           {/* Criterio 3 */}
           <div className="p-3 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono text-zinc-400 uppercase">Criterio 3: Calendar</span>
+              <span className="text-[10px] font-mono text-[var(--text-muted)] font-bold uppercase">Criterio 3: Calendar</span>
               <input
                 type="checkbox"
                 checked={testLead.hasCalendarEvent}
@@ -472,7 +472,7 @@ export const BusinessPolicyEngine = () => {
           {/* Criterio 4 */}
           <div className="p-3 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono text-zinc-400 uppercase">Criterio 4: Consentimiento</span>
+              <span className="text-[10px] font-mono text-[var(--text-muted)] font-bold uppercase">Criterio 4: Consentimiento</span>
               <input
                 type="checkbox"
                 checked={testLead.hasConsent}

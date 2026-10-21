@@ -1105,7 +1105,7 @@ export const RAGWizard = ({
               <button
                 type="button"
                 onClick={() => setAdminViewMode('list')}
-                className="bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-zinc-300 font-mono font-bold px-4 py-2.5 rounded-xl hover:text-white transition-all flex items-center gap-2"
+                className="bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-main)] font-mono font-bold px-4 py-2.5 rounded-xl hover:border-neon transition-all flex items-center gap-2 shadow-sm"
               >
                 <ArrowLeft className="w-4 h-4" />
                 <span>Volver a Lista de Tenants</span>
@@ -1123,11 +1123,11 @@ export const RAGWizard = ({
           {/* LISTA DE NEGOCIOS / TENANTS ACTIVOS */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-black uppercase text-white tracking-tight flex items-center gap-2">
+              <h3 className="text-lg font-black uppercase text-[var(--text-main)] tracking-tight flex items-center gap-2">
                 <Building2 className="w-5 h-5 text-neon" />
                 <span>Negocios Activos & Estado de Pilares</span>
               </h3>
-              <span className="text-xs font-mono text-zinc-400">
+              <span className="text-xs font-mono text-[var(--text-muted)] font-medium">
                 5 Tenants Aislados con PostgreSQL RLS
               </span>
             </div>
@@ -1136,31 +1136,31 @@ export const RAGWizard = ({
               {Object.values(tenantsData || {}).map((tenant) => (
                 <div
                   key={tenant.id}
-                  className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] hover:border-white/20 transition-all space-y-4"
+                  className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] hover:border-neon/40 transition-all space-y-4 shadow-sm"
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border-color)] pb-4">
                     <div className="flex items-center gap-3">
-                      <div className="text-2xl p-2 rounded-xl bg-zinc-900 border border-white/10">
+                      <div className="text-2xl p-2 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)]">
                         {tenant.avatar || '🏢'}
                       </div>
                       <div>
-                        <h4 className="text-base font-bold text-white font-mono flex items-center gap-2">
+                        <h4 className="text-base font-bold text-[var(--text-main)] font-mono flex items-center gap-2">
                           <span>{tenant.name}</span>
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neon/10 text-neon border border-neon/30 uppercase">
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neon/15 text-neon border border-neon/30 uppercase font-bold">
                             {tenant.giro || tenant.vertical || 'Vertical Activa'}
                           </span>
                         </h4>
-                        <p className="text-xs text-zinc-400 font-mono">
-                          ID: <span className="text-zinc-300">{tenant.id}</span> • CAPI Status:{' '}
-                          <span className="text-emerald-400 font-bold">{tenant.capiStatus || 'Sincronizado'}</span>
+                        <p className="text-xs text-[var(--text-muted)] font-mono">
+                          ID: <span className="text-[var(--text-main)] font-bold">{tenant.id}</span> • CAPI Status:{' '}
+                          <span className="text-emerald-600 dark:text-emerald-400 font-bold">{tenant.capiStatus || 'Sincronizado'}</span>
                         </p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3 text-xs font-mono">
-                      <span className="text-zinc-400">RAG Health:</span>
-                      <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-bold flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="text-[var(--text-muted)]">RAG Health:</span>
+                      <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-bold flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                         {tenant.ifv || '94%'} Antifrágil
                       </span>
                     </div>
@@ -1168,36 +1168,36 @@ export const RAGWizard = ({
 
                   {/* 4 Pillars Status Badges */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs font-mono">
-                    <div className="p-3 rounded-xl bg-zinc-900/60 border border-white/5 space-y-1">
+                    <div className="p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-1">
                       <span className="text-neon font-bold text-[10px] flex items-center gap-1">
                         <DollarSign className="w-3 h-3" /> PILAR 1: RENTABILIDAD
                       </span>
-                      <p className="text-white font-bold truncate">Matriz_Precios.json</p>
-                      <span className="text-[10px] text-zinc-500 block">CAC Máx: {tenant.cacMax || '$180 MXN'}</span>
+                      <p className="text-[var(--text-main)] font-bold truncate">Matriz_Precios.json</p>
+                      <span className="text-[10px] text-[var(--text-muted)] block">CAC Máx: {tenant.cacMax || '$180 MXN'}</span>
                     </div>
 
-                    <div className="p-3 rounded-xl bg-zinc-900/60 border border-cyan-500/30 space-y-1 shadow-[0_0_10px_rgba(6,182,212,0.1)]">
-                      <span className="text-cyan-400 font-bold text-[10px] flex items-center gap-1">
+                    <div className="p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-cyan-500/30 space-y-1 shadow-sm">
+                      <span className="text-cyan-600 dark:text-cyan-400 font-bold text-[10px] flex items-center gap-1">
                         <BookOpen className="w-3 h-3" /> PILAR 2: BRANDBOOK
                       </span>
-                      <p className="text-white font-bold truncate">Brandbook_TonoVoz.md</p>
-                      <span className="text-[10px] text-zinc-400 block">Identidad Activa</span>
+                      <p className="text-[var(--text-main)] font-bold truncate">Brandbook_TonoVoz.md</p>
+                      <span className="text-[10px] text-[var(--text-muted)] block">Identidad Activa</span>
                     </div>
 
-                    <div className="p-3 rounded-xl bg-zinc-900/60 border border-white/5 space-y-1">
-                      <span className="text-amber-400 font-bold text-[10px] flex items-center gap-1">
+                    <div className="p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-1">
+                      <span className="text-amber-600 dark:text-amber-400 font-bold text-[10px] flex items-center gap-1">
                         <AlertTriangle className="w-3 h-3" /> PILAR 3: CRISIS & FAQS
                       </span>
-                      <p className="text-white font-bold truncate">Crisis_Objeciones.md</p>
-                      <span className="text-[10px] text-zinc-500 block">Filtro HITL Sub-segundo</span>
+                      <p className="text-[var(--text-main)] font-bold truncate">Crisis_Objeciones.md</p>
+                      <span className="text-[10px] text-[var(--text-muted)] block">Filtro HITL Sub-segundo</span>
                     </div>
 
-                    <div className="p-3 rounded-xl bg-zinc-900/60 border border-white/5 space-y-1">
-                      <span className="text-purple-400 font-bold text-[10px] flex items-center gap-1">
+                    <div className="p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-1">
+                      <span className="text-purple-600 dark:text-purple-400 font-bold text-[10px] flex items-center gap-1">
                         <History className="w-3 h-3" /> PILAR 4: HISTÓRICO
                       </span>
-                      <p className="text-white font-bold truncate">Casos_Exito_2025.txt</p>
-                      <span className="text-[10px] text-zinc-500 block">Memoria retroactiva</span>
+                      <p className="text-[var(--text-main)] font-bold truncate">Casos_Exito_2025.txt</p>
+                      <span className="text-[10px] text-[var(--text-muted)] block">Memoria retroactiva</span>
                     </div>
                   </div>
                 </div>
@@ -1213,29 +1213,29 @@ export const RAGWizard = ({
       {isAdmin && adminViewMode === 'wizard' && (
         <div className="vector-bg-card vector-border rounded-2xl p-6 sm:p-8 max-w-5xl mx-auto shadow-2xl space-y-8 animate-fade-in">
           {/* Ingestion Mode Switcher */}
-          <div className="p-4 rounded-2xl bg-zinc-900/80 border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
               <span className="text-[10px] font-mono text-neon font-bold uppercase tracking-wider block">
                 Método de Ingestión RAG
               </span>
-              <h4 className="text-sm font-bold text-white font-mono">
+              <h4 className="text-sm font-bold text-[var(--text-main)] font-mono">
                 {ingestionMode === 'briefing' ? '⚡ Modo 1-Click Briefing Maestro' : '📋 Formulario Guiado en 5 Etapas'}
               </h4>
-              <p className="text-[11px] text-zinc-400">
+              <p className="text-[11px] text-[var(--text-muted)]">
                 {ingestionMode === 'briefing'
                   ? 'Sube el documento del cliente y la IA clasificará automáticamente los 4 pilares según el giro.'
                   : 'Ingresa cada pilar manualmente para un control granular.'}
               </p>
             </div>
 
-            <div className="flex items-center gap-2 bg-black p-1 rounded-xl border border-zinc-800">
+            <div className="flex items-center gap-2 bg-[var(--bg-base)] p-1 rounded-xl border border-[var(--border-color)]">
               <button
                 type="button"
                 onClick={() => setIngestionMode('briefing')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all flex items-center gap-1.5 ${
                   ingestionMode === 'briefing'
                     ? 'bg-neon text-black shadow-neon-sm'
-                    : 'text-zinc-400 hover:text-white'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                 }`}
               >
                 <Zap className="w-3.5 h-3.5" />
@@ -1247,7 +1247,7 @@ export const RAGWizard = ({
                 className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all flex items-center gap-1.5 ${
                   ingestionMode === 'guided'
                     ? 'bg-neon text-black shadow-neon-sm'
-                    : 'text-zinc-400 hover:text-white'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                 }`}
               >
                 <Sliders className="w-3.5 h-3.5" />
@@ -1257,20 +1257,20 @@ export const RAGWizard = ({
           </div>
 
           {/* RAG Health Score & Proactive Suggestions Banner */}
-          <div className="p-5 rounded-2xl bg-gradient-to-r from-zinc-950 via-zinc-900 to-zinc-950 border border-neon/30 space-y-4">
+          <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-neon/40 space-y-4 shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-xl bg-neon/10 border border-neon/30 flex items-center justify-center text-neon font-black font-mono text-lg shadow-[0_0_15px_var(--neon-glow)]">
                   {healthScore}%
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-white font-mono flex items-center gap-2">
+                  <h4 className="text-sm font-bold text-[var(--text-main)] font-mono flex items-center gap-2">
                     <span>Score de Calidad RAG</span>
                     <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                       Óptimo para {currentVerticalObj.name}
                     </span>
                   </h4>
-                  <p className="text-xs text-zinc-400">
+                  <p className="text-xs text-[var(--text-muted)]">
                     Calculado en base a los pilares y reglas requeridas para este modelo de negocio.
                   </p>
                 </div>
@@ -1279,8 +1279,8 @@ export const RAGWizard = ({
 
             {/* Suggestions list */}
             {suggestions.length > 0 && (
-              <div className="pt-3 border-t border-zinc-800 space-y-2">
-                <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1">
+              <div className="pt-3 border-t border-[var(--border-color)] space-y-2">
+                <span className="text-[10px] font-mono font-bold text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-1">
                   <Lightbulb className="w-3.5 h-3.5 text-neon" />
                   Sugerencias Proactivas de la IA para {currentVerticalObj.name}:
                 </span>
@@ -1288,22 +1288,22 @@ export const RAGWizard = ({
                   {suggestions.map((sug) => (
                     <div
                       key={sug.id}
-                      className="p-3 rounded-xl bg-zinc-900/90 border border-white/5 flex flex-col justify-between space-y-2"
+                      className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex flex-col justify-between space-y-2"
                     >
                       <div>
                         <div className="flex items-center justify-between text-[11px] font-mono mb-1">
-                          <span className="font-bold text-white">{sug.title}</span>
-                          <span className="text-[9px] text-cyan-400 px-1.5 py-0.5 rounded bg-cyan-500/10">
+                          <span className="font-bold text-[var(--text-main)]">{sug.title}</span>
+                          <span className="text-[9px] text-cyan-500 dark:text-cyan-400 px-1.5 py-0.5 rounded bg-cyan-500/10">
                             {sug.targetPilar}
                           </span>
                         </div>
-                        <p className="text-[10px] text-zinc-400 leading-tight">{sug.description}</p>
+                        <p className="text-[10px] text-[var(--text-muted)] leading-tight">{sug.description}</p>
                       </div>
 
                       <div className="flex justify-end pt-1">
                         {sug.applied ? (
                           <span className="text-[10px] font-mono text-emerald-400 font-bold flex items-center gap-1">
-                            <CheckCircle2 className="w-3 h-3" /> Aplicado
+                            <CheckCircle2 className="w-3.5 h-3.5" /> Aplicado
                           </span>
                         ) : (
                           <button
@@ -1311,7 +1311,7 @@ export const RAGWizard = ({
                             onClick={() => handleApplySuggestion(sug.id)}
                             className="text-[10px] font-mono font-bold bg-neon text-black px-2.5 py-1 rounded hover:bg-[var(--neon-hover)] transition-all flex items-center gap-1"
                           >
-                            <Sparkles className="w-3 h-3" />
+                            <Sparkles className="w-3.5 h-3.5" />
                             <span>{sug.actionLabel}</span>
                           </button>
                         )}
@@ -1329,23 +1329,23 @@ export const RAGWizard = ({
           <div className="space-y-4 pt-2">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <label className="block text-xs font-mono font-bold text-white uppercase tracking-wider">
+                <label className="block text-xs font-mono font-bold text-[var(--text-main)] uppercase tracking-wider">
                   1. Selecciona el Giro Comercial del Negocio ({filteredVerticals.length} disponibles)
                 </label>
-                <p className="text-[11px] text-zinc-400 font-mono">
+                <p className="text-[11px] text-[var(--text-muted)] font-mono">
                   Filtra por categoría o busca tu negocio específico (gym, escuela, networking, spa, etc.):
                 </p>
               </div>
 
               {/* Search Bar */}
               <div className="relative w-full sm:w-64">
-                <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Search className="w-3.5 h-3.5 text-[var(--text-muted)] absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="Buscar giro (ej. gym, escuela)..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 text-xs rounded-xl pl-9 pr-3 py-2 text-white placeholder-zinc-500 focus:border-neon outline-none font-mono"
+                  className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs rounded-xl pl-9 pr-3 py-2 text-[var(--text-main)] placeholder-[var(--text-muted)] focus:border-neon outline-none font-mono"
                 />
               </div>
             </div>
@@ -1362,8 +1362,8 @@ export const RAGWizard = ({
                     onClick={() => setSelectedCategory(cat.id)}
                     className={`px-3 py-1.5 rounded-xl whitespace-nowrap transition-all flex items-center gap-1.5 font-bold ${
                       isSelected
-                        ? 'bg-white/10 text-neon border border-neon/40 shadow-[0_0_10px_var(--neon-glow)]'
-                        : 'bg-zinc-900/60 text-zinc-400 border border-white/5 hover:text-white'
+                        ? 'bg-brand-primary/15 text-brand-primary border border-brand-primary/40 shadow-sm'
+                        : 'bg-[var(--bg-card)] text-[var(--text-muted)] border border-[var(--border-color)] hover:text-[var(--text-main)]'
                     }`}
                   >
                     <Icon className="w-3.5 h-3.5" />
@@ -1383,24 +1383,24 @@ export const RAGWizard = ({
                     onClick={() => handleSelectVertical(vert.id)}
                     className={`p-4 rounded-2xl border transition-all cursor-pointer space-y-2 flex flex-col justify-between ${
                       isSelected
-                        ? 'bg-zinc-900 border-2 border-neon shadow-[0_0_15px_var(--neon-glow)]'
-                        : 'bg-zinc-950/60 border border-white/10 hover:border-white/20'
+                        ? 'bg-[var(--bg-panel)] border-2 border-brand-primary shadow-sm'
+                        : 'bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-brand-primary/40'
                     }`}
                   >
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
                         <span className="text-2xl">{vert.avatar}</span>
-                        <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-zinc-800 text-cyan-300 border border-white/5">
+                        <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-[var(--bg-base)] text-cyan-500 dark:text-cyan-300 border border-[var(--border-color)]">
                           {vert.badge}
                         </span>
                       </div>
-                      <h4 className="text-xs font-bold text-white font-mono">{vert.name}</h4>
-                      <p className="text-[10px] text-zinc-400 leading-relaxed font-sans">{vert.description}</p>
+                      <h4 className="text-xs font-bold text-[var(--text-main)] font-mono">{vert.name}</h4>
+                      <p className="text-[10px] text-[var(--text-muted)] leading-relaxed font-sans">{vert.description}</p>
                     </div>
 
-                    <div className="pt-2 border-t border-zinc-800/80 text-[9px] font-mono text-zinc-500">
+                    <div className="pt-2 border-t border-[var(--border-color)] text-[9px] font-mono text-[var(--text-muted)]">
                       <span className="text-neon font-bold">Meta de Conversión: </span>
-                      <span className="text-zinc-300 font-sans">{vert.conversionGoal}</span>
+                      <span className="text-[var(--text-main)] font-sans">{vert.conversionGoal}</span>
                     </div>
                   </div>
                 );
@@ -1408,9 +1408,9 @@ export const RAGWizard = ({
             </div>
 
             {/* Selected Vertical Detail & 4 Pillars Mapping */}
-            <div className="p-4 rounded-2xl bg-zinc-900/80 border border-neon/30 space-y-3 text-xs font-mono">
+            <div className="p-4 rounded-2xl bg-[var(--bg-card)] border border-neon/30 space-y-3 text-xs font-mono">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-white flex items-center gap-2">
+                <span className="font-bold text-[var(--text-main)] flex items-center gap-2">
                   <span>{currentVerticalObj.avatar}</span>
                   <span>Configuración Adaptada de los 4 Pilares para: <strong>{currentVerticalObj.name}</strong></span>
                 </span>
@@ -1419,13 +1419,13 @@ export const RAGWizard = ({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px]">
                 {Object.entries(currentVerticalObj.pillars).map(([k, p]) => (
-                  <div key={k} className="p-2.5 rounded-xl bg-black/40 border border-white/5 flex items-start gap-2">
+                  <div key={k} className="p-2.5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex items-start gap-2">
                     {p.status === 'mandatory' || p.status === 'mandatory_critical' ? (
                       <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                     ) : (
-                      <Info className="w-4 h-4 text-zinc-500 shrink-0 mt-0.5" />
+                      <Info className="w-4 h-4 text-[var(--text-muted)] shrink-0 mt-0.5" />
                     )}
-                    <span className="text-zinc-300 leading-tight">{p.label}</span>
+                    <span className="text-[var(--text-main)] leading-tight">{p.label}</span>
                   </div>
                 ))}
               </div>
@@ -1436,33 +1436,33 @@ export const RAGWizard = ({
           {/* MODO A: 1-CLICK MASTER BRIEFING UPLOAD                           */}
           {/* ================================================================= */}
           {ingestionMode === 'briefing' && (
-            <div className="space-y-6 animate-fade-in pt-4 border-t border-zinc-800">
+            <div className="space-y-6 animate-fade-in pt-4 border-t border-[var(--border-color)]">
               {/* Master Briefing Upload & Dropzone */}
               <div className="space-y-3">
-                <label className="block text-xs font-mono font-bold text-zinc-300">
+                <label className="block text-xs font-mono font-bold text-[var(--text-main)]">
                   2. Carga el Documento Maestro / Briefing Integral (.pdf, .docx, .md) o Pega el Texto
                 </label>
                 
-                <div className="border-2 border-dashed border-zinc-700 hover:border-neon rounded-2xl p-6 text-center space-y-3 bg-zinc-950/50 transition-all">
+                <div className="border-2 border-dashed border-[var(--border-color)] hover:border-brand-primary rounded-2xl p-6 text-center space-y-3 bg-[var(--bg-card-subtle)] transition-all">
                   <div className="w-12 h-12 mx-auto rounded-full bg-neon/10 border border-neon/30 flex items-center justify-center text-neon">
                     <Upload className="w-6 h-6" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-white font-mono">
+                    <p className="text-xs font-bold text-[var(--text-main)] font-mono">
                       Arrastra tu Master Briefing, Catálogo, Reglamento o Brandbook aquí
                     </p>
-                    <p className="text-[10px] text-zinc-400 font-mono mt-0.5">
+                    <p className="text-[10px] text-[var(--text-muted)] font-mono mt-0.5">
                       Soporta PDF, Word (.docx), Markdown (.md) y archivos de texto plano
                     </p>
                   </div>
                   <input
                     type="file"
-                    className="text-xs text-zinc-400 file:mr-3 file:py-1.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-neon file:text-black hover:file:bg-[var(--neon-hover)] cursor-pointer"
+                    className="text-xs text-[var(--text-muted)] file:mr-3 file:py-1.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-neon file:text-black hover:file:bg-[var(--neon-hover)] cursor-pointer"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-mono text-zinc-400 block">
+                  <label className="text-[10px] font-mono text-[var(--text-muted)] block">
                     O pega el texto del brief / instrucciones aquí:
                   </label>
                   <textarea
@@ -1470,15 +1470,15 @@ export const RAGWizard = ({
                     placeholder={`Pega la información de ${currentVerticalObj.name}, precios, reglas inviolables, tono de voz o propuesta comercial...`}
                     value={masterDocText}
                     onChange={(e) => setMasterDocText(e.target.value)}
-                    className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs rounded-xl p-3 text-white focus:border-neon outline-none font-mono"
+                    className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs rounded-xl p-3 text-[var(--text-main)] focus:border-neon outline-none font-mono"
                   />
                 </div>
               </div>
 
               {/* Ingestion Trigger Button & Status */}
-              <div className="p-4 rounded-xl bg-zinc-900 border border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="space-y-1 text-center sm:text-left">
-                  <span className="text-[10px] font-mono text-zinc-400 block">
+                  <span className="text-[10px] font-mono text-[var(--text-muted)] block">
                     Extracción Semántica con DeepSeek R1 Reasoning
                   </span>
                   {isAnalyzingBriefing && (
@@ -1507,13 +1507,13 @@ export const RAGWizard = ({
               </div>
 
               {/* Reglas Inviolables del Negocio */}
-              <div className="p-5 rounded-2xl bg-zinc-900/80 border border-white/10 space-y-4">
+              <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-4">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-white font-mono text-xs font-bold uppercase">
+                  <div className="flex items-center gap-2 text-[var(--text-main)] font-mono text-xs font-bold uppercase">
                     <Shield className="w-4 h-4 text-neon" />
                     <span>Reglas Inviolables de {currentVerticalObj.name} (Guardrails)</span>
                   </div>
-                  <span className="text-[10px] font-mono text-zinc-400">
+                  <span className="text-[10px] font-mono text-[var(--text-muted)]">
                     Límites estrictos que el bot jamás romperá
                   </span>
                 </div>
@@ -1522,7 +1522,7 @@ export const RAGWizard = ({
                   {wizardData.inviolableRules.map((rule, idx) => (
                     <div
                       key={idx}
-                      className="p-2.5 rounded-xl bg-black/50 border border-white/5 flex items-center justify-between text-xs font-mono text-zinc-300"
+                      className="p-2.5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex items-center justify-between text-xs font-mono text-[var(--text-main)]"
                     >
                       <div className="flex items-center gap-2">
                         <span className="w-1.5 h-1.5 rounded-full bg-neon" />
@@ -1531,7 +1531,7 @@ export const RAGWizard = ({
                       <button
                         type="button"
                         onClick={() => handleRemoveRule(idx)}
-                        className="text-zinc-500 hover:text-red-400 p-1"
+                        className="text-[var(--text-muted)] hover:text-red-500 p-1"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -1545,11 +1545,11 @@ export const RAGWizard = ({
                     value={wizardData.newRuleInput}
                     onChange={(e) => setWizardData({ ...wizardData, newRuleInput: e.target.value })}
                     placeholder="Agregar nueva regla inviolable..."
-                    className="flex-1 bg-zinc-950 border border-zinc-800 text-xs rounded-xl px-3 py-2 text-white focus:border-neon outline-none font-mono"
+                    className="flex-1 bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs rounded-xl px-3 py-2 text-[var(--text-main)] focus:border-neon outline-none font-mono"
                   />
                   <button
                     type="submit"
-                    className="bg-zinc-800 text-white hover:bg-zinc-700 px-4 py-2 rounded-xl text-xs font-mono font-bold"
+                    className="bg-[var(--bg-base)] text-[var(--text-main)] hover:bg-[var(--bg-card)] border border-[var(--border-color)] px-4 py-2 rounded-xl text-xs font-mono font-bold"
                   >
                     + Agregar
                   </button>
@@ -1557,7 +1557,7 @@ export const RAGWizard = ({
               </div>
 
               {/* Deploy Button */}
-              <div className="flex justify-end pt-4 border-t border-zinc-800">
+              <div className="flex justify-end pt-4 border-t border-[var(--border-color)]">
                 <button
                   type="button"
                   onClick={handleDeploySwarm}
@@ -1574,7 +1574,7 @@ export const RAGWizard = ({
           {/* MODO B: FORMULARIO GUIADO EN 5 ETAPAS                            */}
           {/* ================================================================= */}
           {ingestionMode === 'guided' && (
-            <div className="space-y-6 pt-4 border-t border-zinc-800">
+            <div className="space-y-6 pt-4 border-t border-[var(--border-color)]">
               {/* Step Breadcrumbs */}
               <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-4 font-mono text-xs overflow-x-auto gap-2">
                 {[
@@ -1592,8 +1592,8 @@ export const RAGWizard = ({
                       currentStep === st.num
                         ? 'bg-neon text-black shadow-neon-sm'
                         : currentStep > st.num
-                        ? 'text-emerald-400 hover:text-white'
-                        : 'text-zinc-500 hover:text-zinc-300'
+                        ? 'text-emerald-500 dark:text-emerald-400 hover:text-[var(--text-main)]'
+                        : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                     }`}
                   >
                     {st.title}
@@ -1605,18 +1605,18 @@ export const RAGWizard = ({
               {currentStep === 1 && (
                 <div className="space-y-6 animate-fade-in">
                   <div>
-                    <h3 className="text-lg font-black text-white uppercase flex items-center gap-2">
+                    <h3 className="text-lg font-black text-[var(--text-main)] uppercase flex items-center gap-2">
                       <Building2 className="w-5 h-5 text-neon" />
                       <span>Paso 1: Entidad del Negocio</span>
                     </h3>
-                    <p className="text-xs text-zinc-400 font-mono mt-1">
+                    <p className="text-xs text-[var(--text-muted)] font-mono mt-1">
                       Giro seleccionado: <strong className="text-neon">{currentVerticalObj.name}</strong>
                     </p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-mono font-bold text-zinc-300 mb-1">
+                      <label className="block text-xs font-mono font-bold text-[var(--text-main)] mb-1">
                         Nombre Comercial del Negocio *
                       </label>
                       <input
@@ -1625,12 +1625,12 @@ export const RAGWizard = ({
                         placeholder="ej. Clínica Dental Sonrisas / Urban Sneaks"
                         value={wizardData.businessName}
                         onChange={(e) => setWizardData({ ...wizardData, businessName: e.target.value })}
-                        className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs rounded-xl p-3 text-white focus:border-neon outline-none font-mono"
+                        className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs rounded-xl p-3 text-[var(--text-main)] focus:border-neon outline-none font-mono"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-mono font-bold text-zinc-300 mb-1">
+                      <label className="block text-xs font-mono font-bold text-[var(--text-main)] mb-1">
                         Razón Social & RFC (Tax ID)
                       </label>
                       <input
@@ -1638,12 +1638,12 @@ export const RAGWizard = ({
                         placeholder="ej. Sonrisas Dentales S.A. de C.V. / SDS120304XYZ"
                         value={wizardData.legalNameTaxId}
                         onChange={(e) => setWizardData({ ...wizardData, legalNameTaxId: e.target.value })}
-                        className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs rounded-xl p-3 text-white focus:border-neon outline-none font-mono"
+                        className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs rounded-xl p-3 text-[var(--text-main)] focus:border-neon outline-none font-mono"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-mono font-bold text-zinc-300 mb-1">
+                      <label className="block text-xs font-mono font-bold text-[var(--text-main)] mb-1">
                         Contacto Principal / Administrador
                       </label>
                       <input
@@ -1651,12 +1651,12 @@ export const RAGWizard = ({
                         placeholder="ej. Dr. Alejandro Silva"
                         value={wizardData.primaryContact}
                         onChange={(e) => setWizardData({ ...wizardData, primaryContact: e.target.value })}
-                        className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs rounded-xl p-3 text-white focus:border-neon outline-none font-mono"
+                        className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs rounded-xl p-3 text-[var(--text-main)] focus:border-neon outline-none font-mono"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-mono font-bold text-zinc-300 mb-1">
+                      <label className="block text-xs font-mono font-bold text-[var(--text-main)] mb-1">
                         Teléfono / WhatsApp de Contacto
                       </label>
                       <input
@@ -1664,19 +1664,19 @@ export const RAGWizard = ({
                         placeholder="ej. +52 55 9876 5432"
                         value={wizardData.ownerPhone}
                         onChange={(e) => setWizardData({ ...wizardData, ownerPhone: e.target.value })}
-                        className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs rounded-xl p-3 text-white focus:border-neon outline-none font-mono"
+                        className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs rounded-xl p-3 text-[var(--text-main)] focus:border-neon outline-none font-mono"
                       />
                     </div>
                   </div>
 
                   {/* ESTRATEGIA DUAL: CON WEB vs SIN WEB */}
-                  <div className="p-5 rounded-2xl bg-zinc-900/80 border border-white/10 space-y-4">
+                  <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-mono font-bold uppercase text-white flex items-center gap-2">
+                      <span className="text-xs font-mono font-bold uppercase text-[var(--text-main)] flex items-center gap-2">
                         <Zap className="w-4 h-4 text-neon" />
                         Estrategia de Adquisición Digital: ¿El Negocio Cuenta con Página Web?
                       </span>
-                      <span className="text-[10px] font-mono text-zinc-400">
+                      <span className="text-[10px] font-mono text-[var(--text-muted)]">
                         Afecta CAPI, Analytics y Telemetría
                       </span>
                     </div>
@@ -1687,17 +1687,17 @@ export const RAGWizard = ({
                         onClick={() => setWizardData({ ...wizardData, hasWebsite: true })}
                         className={`p-4 rounded-xl border text-left transition-all ${
                           wizardData.hasWebsite
-                            ? 'bg-neon/10 border-neon text-white shadow-neon-sm'
-                            : 'bg-zinc-950/60 border-zinc-800 text-zinc-400 hover:border-zinc-700'
+                            ? 'bg-neon/10 border-neon text-[var(--text-main)] shadow-neon-sm'
+                            : 'bg-[var(--bg-panel)] border-[var(--border-color)] text-[var(--text-muted)] hover:border-brand-primary/50'
                         }`}
                       >
                         <div className="flex items-center justify-between mb-1">
-                          <span className="font-mono text-xs font-bold text-white flex items-center gap-2">
+                          <span className="font-mono text-xs font-bold text-[var(--text-main)] flex items-center gap-2">
                             <span>🌐 CON Página Web</span>
                           </span>
                           {wizardData.hasWebsite && <span className="w-2 h-2 rounded-full bg-neon animate-pulse" />}
                         </div>
-                        <p className="text-[11px] text-zinc-400 font-mono">
+                        <p className="text-[11px] text-[var(--text-muted)] font-mono">
                           Mide GA4 API ($0 USD), Pixel Web y diagnóstico algorítmico de fricción web.
                         </p>
                       </button>
@@ -1707,17 +1707,17 @@ export const RAGWizard = ({
                         onClick={() => setWizardData({ ...wizardData, hasWebsite: false })}
                         className={`p-4 rounded-xl border text-left transition-all ${
                           !wizardData.hasWebsite
-                            ? 'bg-neon/10 border-neon text-white shadow-neon-sm'
-                            : 'bg-zinc-950/60 border-zinc-800 text-zinc-400 hover:border-zinc-700'
+                            ? 'bg-neon/10 border-neon text-[var(--text-main)] shadow-neon-sm'
+                            : 'bg-[var(--bg-panel)] border-[var(--border-color)] text-[var(--text-muted)] hover:border-brand-primary/50'
                         }`}
                       >
                         <div className="flex items-center justify-between mb-1">
-                          <span className="font-mono text-xs font-bold text-white flex items-center gap-2">
+                          <span className="font-mono text-xs font-bold text-[var(--text-main)] flex items-center gap-2">
                             <span>💬 SIN Página Web (Direct-to-Messaging)</span>
                           </span>
                           {!wizardData.hasWebsite && <span className="w-2 h-2 rounded-full bg-neon animate-pulse" />}
                         </div>
-                        <p className="text-[11px] text-zinc-400 font-mono">
+                        <p className="text-[11px] text-[var(--text-muted)] font-mono">
                           Pauta a Click-to-WhatsApp. CAPI for Messaging directo y Micro-Landing autogenerada.
                         </p>
                       </button>
@@ -1725,46 +1725,46 @@ export const RAGWizard = ({
 
                     {/* Inputs según hasWebsite */}
                     {wizardData.hasWebsite ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-xl bg-zinc-950/80 border border-zinc-800 animate-fadeIn text-xs font-mono">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] animate-fadeIn text-xs font-mono">
                         <div>
-                          <label className="text-[10px] text-zinc-400 block mb-1">URL del Sitio Web</label>
+                          <label className="text-[10px] text-[var(--text-muted)] block mb-1">URL del Sitio Web</label>
                           <input
                             type="url"
                             placeholder="https://..."
                             value={wizardData.websiteUrl}
                             onChange={(e) => setWizardData({ ...wizardData, websiteUrl: e.target.value })}
-                            className="w-full bg-zinc-900 border border-zinc-800 rounded p-2 text-white focus:border-neon outline-none"
+                            className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded p-2 text-[var(--text-main)] focus:border-neon outline-none"
                           />
                         </div>
                         <div>
-                          <label className="text-[10px] text-zinc-400 block mb-1">GA4 Measurement ID ($0 USD)</label>
+                          <label className="text-[10px] text-[var(--text-muted)] block mb-1">GA4 Measurement ID ($0 USD)</label>
                           <input
                             type="text"
                             placeholder="G-XXXXXXXXXX"
                             value={wizardData.ga4MeasurementId}
                             onChange={(e) => setWizardData({ ...wizardData, ga4MeasurementId: e.target.value })}
-                            className="w-full bg-zinc-900 border border-zinc-800 rounded p-2 text-white focus:border-neon outline-none"
+                            className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded p-2 text-[var(--text-main)] focus:border-neon outline-none"
                           />
                         </div>
                         <div>
-                          <label className="text-[10px] text-zinc-400 block mb-1">Meta Pixel ID</label>
+                          <label className="text-[10px] text-[var(--text-muted)] block mb-1">Meta Pixel ID</label>
                           <input
                             type="text"
                             placeholder="123456789012345"
                             value={wizardData.metaPixelId}
                             onChange={(e) => setWizardData({ ...wizardData, metaPixelId: e.target.value })}
-                            className="w-full bg-zinc-900 border border-zinc-800 rounded p-2 text-white focus:border-neon outline-none"
+                            className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded p-2 text-[var(--text-main)] focus:border-neon outline-none"
                           />
                         </div>
                       </div>
                     ) : (
                       <div className="space-y-3 animate-fadeIn text-xs font-mono">
-                        <div className="p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-300 space-y-1">
-                          <div className="flex items-center gap-2 font-bold text-white">
+                        <div className="p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400 space-y-1">
+                          <div className="flex items-center gap-2 font-bold text-[var(--text-main)]">
                             <CheckCircle2 className="w-4 h-4 text-neon" />
                             <span>Estrategia Direct-to-Messaging & Micro-Landing Activada</span>
                           </div>
-                          <p className="text-[11px] text-zinc-400">
+                          <p className="text-[11px] text-[var(--text-muted)]">
                             Se autogenera la micro-landing de catálogo/agenda en:{' '}
                             <code className="text-neon">
                               https://app.vectorinside.com/m/
@@ -1774,29 +1774,29 @@ export const RAGWizard = ({
                         </div>
 
                         {/* Telemetría y Píxeles para la Micro-Landing */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-xl bg-zinc-950/80 border border-zinc-800">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)]">
                           <div>
                             <div className="flex items-center justify-between mb-1">
-                              <label className="text-[10px] text-zinc-400 font-bold block">
+                              <label className="text-[10px] text-[var(--text-muted)] font-bold block">
                                 GA4 Measurement ID (Para la Micro-Landing)
                               </label>
-                              <span className="text-[9px] text-zinc-500 font-bold">$0 USD</span>
+                              <span className="text-[9px] text-[var(--text-muted)] font-bold">$0 USD</span>
                             </div>
                             <input
                               type="text"
                               placeholder="G-XXXXXXXXXX"
                               value={wizardData.ga4MeasurementId || ''}
                               onChange={(e) => setWizardData({ ...wizardData, ga4MeasurementId: e.target.value })}
-                              className="w-full bg-zinc-900 border border-zinc-800 rounded p-2 text-white focus:border-neon outline-none"
+                              className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded p-2 text-[var(--text-main)] focus:border-neon outline-none"
                             />
-                            <span className="text-[10px] text-zinc-500 mt-1 block">
+                            <span className="text-[10px] text-[var(--text-muted)] mt-1 block">
                               Mide visitas a tu micro-landing sin costo en Google Analytics 4.
                             </span>
                           </div>
 
                           <div>
                             <div className="flex items-center justify-between mb-1">
-                              <label className="text-[10px] text-zinc-400 font-bold block">
+                              <label className="text-[10px] text-[var(--text-muted)] font-bold block">
                                 Meta Pixel ID (Para Meta Ads en la Micro-Landing)
                               </label>
                               <span className="text-[9px] text-neon font-bold">Recomendado</span>
@@ -1806,9 +1806,9 @@ export const RAGWizard = ({
                               placeholder="123456789012345"
                               value={wizardData.metaPixelId || ''}
                               onChange={(e) => setWizardData({ ...wizardData, metaPixelId: e.target.value })}
-                              className="w-full bg-zinc-900 border border-zinc-800 rounded p-2 text-white focus:border-neon outline-none"
+                              className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded p-2 text-[var(--text-main)] focus:border-neon outline-none"
                             />
-                            <span className="text-[10px] text-zinc-500 mt-1 block">
+                            <span className="text-[10px] text-[var(--text-muted)] mt-1 block">
                               Rastrea visitas y clics de tus anuncios de Instagram/Facebook.
                             </span>
                           </div>
@@ -1820,7 +1820,7 @@ export const RAGWizard = ({
                   {/* Integración Google Calendar & Pricing */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-mono font-bold text-zinc-300 mb-1">
+                      <label className="block text-xs font-mono font-bold text-[var(--text-main)] mb-1">
                         Google Calendar ID (Master Agenda)
                       </label>
                       <input
@@ -1828,15 +1828,15 @@ export const RAGWizard = ({
                         placeholder="c_tenant@group.calendar.google.com"
                         value={wizardData.googleCalendarId}
                         onChange={(e) => setWizardData({ ...wizardData, googleCalendarId: e.target.value })}
-                        className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs rounded-xl p-3 text-white focus:border-neon outline-none font-mono"
+                        className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs rounded-xl p-3 text-[var(--text-main)] focus:border-neon outline-none font-mono"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-mono font-bold text-zinc-300 mb-1">
+                      <label className="block text-xs font-mono font-bold text-[var(--text-main)] mb-1">
                         Modelo de Cobro por Lead Calificado (Pay-Per-Qualified-Lead)
                       </label>
-                      <div className="p-2.5 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-between text-xs font-mono">
-                        <span className="text-zinc-400 font-bold">$350.00 MXN / Lead Calificado</span>
+                      <div className="p-2.5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex items-center justify-between text-xs font-mono">
+                        <span className="text-[var(--text-muted)] font-bold">$350.00 MXN / Lead Calificado</span>
                         <span className="text-[10px] px-2 py-0.5 rounded bg-neon/15 text-neon font-black">
                           4/4 Criterios AND
                         </span>
@@ -1845,11 +1845,11 @@ export const RAGWizard = ({
                   </div>
 
                   {/* Configuración Inteligente de Turnos y Agenda según el Giro */}
-                  <div className="p-4 rounded-2xl bg-zinc-900/80 border border-brand-primary/30 space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-800 pb-3">
+                  <div className="p-4 rounded-2xl bg-[var(--bg-card)] border border-brand-primary/30 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--border-color)] pb-3">
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4 text-brand-primary" />
-                        <h4 className="text-xs font-bold font-mono text-white uppercase">
+                        <h4 className="text-xs font-bold font-mono text-[var(--text-main)] uppercase">
                           Reglas de Turnos y Horarios Sugeridos para {currentVerticalObj.name}
                         </h4>
                       </div>
@@ -1860,11 +1860,11 @@ export const RAGWizard = ({
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono">
                       <div>
-                        <label className="text-[10px] text-zinc-400 block mb-1">Modelo de Agenda</label>
+                        <label className="text-[10px] text-[var(--text-muted)] block mb-1">Modelo de Agenda</label>
                         <select
                           value={wizardData.calendarScheduleType}
                           onChange={(e) => setWizardData({ ...wizardData, calendarScheduleType: e.target.value })}
-                          className="w-full bg-zinc-950 border border-zinc-800 text-xs rounded-xl p-2.5 text-white focus:border-brand-primary outline-none"
+                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs rounded-xl p-2.5 text-[var(--text-main)] focus:border-brand-primary outline-none"
                         >
                           <option value="split">2 Turnos Divididos (con receso)</option>
                           <option value="single">Horario Corrido (Turno continuo)</option>
@@ -1874,11 +1874,11 @@ export const RAGWizard = ({
                       </div>
 
                       <div>
-                        <label className="text-[10px] text-zinc-400 block mb-1">Duración por Bloque</label>
+                        <label className="text-[10px] text-[var(--text-muted)] block mb-1">Duración por Bloque</label>
                         <select
                           value={wizardData.appointmentDuration}
                           onChange={(e) => setWizardData({ ...wizardData, appointmentDuration: Number(e.target.value) })}
-                          className="w-full bg-zinc-950 border border-zinc-800 text-xs rounded-xl p-2.5 text-white focus:border-brand-primary outline-none"
+                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs rounded-xl p-2.5 text-[var(--text-main)] focus:border-brand-primary outline-none"
                         >
                           <option value={15}>15 minutos (Quick check)</option>
                           <option value={30}>30 minutos (Discovery / B2B)</option>
@@ -1889,21 +1889,21 @@ export const RAGWizard = ({
                       </div>
 
                       <div>
-                        <label className="text-[10px] text-zinc-400 block mb-1">Capacidad Concurrente</label>
+                        <label className="text-[10px] text-[var(--text-muted)] block mb-1">Capacidad Concurrente</label>
                         <input
                           type="number"
                           min={1}
                           max={50}
                           value={wizardData.concurrencyLimit}
                           onChange={(e) => setWizardData({ ...wizardData, concurrencyLimit: Number(e.target.value) })}
-                          className="w-full bg-zinc-950 border border-zinc-800 text-xs rounded-xl p-2 text-white focus:border-brand-primary outline-none"
+                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs rounded-xl p-2 text-[var(--text-main)] focus:border-brand-primary outline-none"
                         />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs font-mono">
-                      <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800 space-y-2">
-                        <span className="text-[10px] text-amber-400 font-bold flex items-center gap-1.5">
+                      <div className="p-3 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2">
+                        <span className="text-[10px] text-amber-500 font-bold flex items-center gap-1.5">
                           <Sun className="w-3.5 h-3.5" /> Turno 1 (Matutino / Comida)
                         </span>
                         <div className="flex items-center gap-2">
@@ -1911,19 +1911,19 @@ export const RAGWizard = ({
                             type="text"
                             value={wizardData.shiftMorningStart}
                             onChange={(e) => setWizardData({ ...wizardData, shiftMorningStart: e.target.value })}
-                            className="w-1/2 bg-zinc-900 border border-zinc-700 rounded p-1.5 text-center text-white"
+                            className="w-1/2 bg-[var(--bg-card)] border border-[var(--border-color)] rounded p-1.5 text-center text-[var(--text-main)]"
                           />
-                          <span className="text-zinc-500">a</span>
+                          <span className="text-[var(--text-muted)]">a</span>
                           <input
                             type="text"
                             value={wizardData.shiftMorningEnd}
                             onChange={(e) => setWizardData({ ...wizardData, shiftMorningEnd: e.target.value })}
-                            className="w-1/2 bg-zinc-900 border border-zinc-700 rounded p-1.5 text-center text-white"
+                            className="w-1/2 bg-[var(--bg-card)] border border-[var(--border-color)] rounded p-1.5 text-center text-[var(--text-main)]"
                           />
                         </div>
                       </div>
 
-                      <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800 space-y-2">
+                      <div className="p-3 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2">
                         <span className="text-[10px] text-indigo-400 font-bold flex items-center gap-1.5">
                           <Sunset className="w-3.5 h-3.5" /> Turno 2 (Vespertino / Cena)
                         </span>
@@ -1932,21 +1932,21 @@ export const RAGWizard = ({
                             type="text"
                             value={wizardData.shiftAfternoonStart}
                             onChange={(e) => setWizardData({ ...wizardData, shiftAfternoonStart: e.target.value })}
-                            className="w-1/2 bg-zinc-900 border border-zinc-700 rounded p-1.5 text-center text-white"
+                            className="w-1/2 bg-[var(--bg-card)] border border-[var(--border-color)] rounded p-1.5 text-center text-[var(--text-main)]"
                           />
-                          <span className="text-zinc-500">a</span>
+                          <span className="text-[var(--text-muted)]">a</span>
                           <input
                             type="text"
                             value={wizardData.shiftAfternoonEnd}
                             onChange={(e) => setWizardData({ ...wizardData, shiftAfternoonEnd: e.target.value })}
-                            className="w-1/2 bg-zinc-900 border border-zinc-700 rounded p-1.5 text-center text-white"
+                            className="w-1/2 bg-[var(--bg-card)] border border-[var(--border-color)] rounded p-1.5 text-center text-[var(--text-main)]"
                           />
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex justify-end pt-4 border-t border-zinc-800">
+                  <div className="flex justify-end pt-4 border-t border-[var(--border-color)]">
                     <button
                       type="button"
                       onClick={() => setCurrentStep(2)}
@@ -1964,21 +1964,21 @@ export const RAGWizard = ({
                 <div className="space-y-6 animate-fade-in">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
-                      <h3 className="text-lg font-black text-white uppercase flex items-center gap-2">
+                      <h3 className="text-lg font-black text-[var(--text-main)] uppercase flex items-center gap-2">
                         <Database className="w-5 h-5 text-neon" />
                         <span>Paso 2: Configuración de los 4 Pilares RAG</span>
                       </h3>
-                      <p className="text-xs text-zinc-400 font-mono mt-0.5">
-                        <strong className="text-cyan-400">Pilar 2 (Brandbook) es obligatorio</strong>. Los demás son opcionales y adaptados a {currentVerticalObj.name}.
+                      <p className="text-xs text-[var(--text-muted)] font-mono mt-0.5">
+                        <strong className="text-cyan-500 dark:text-cyan-400">Pilar 2 (Brandbook) es obligatorio</strong>. Los demás son opcionales y adaptados a {currentVerticalObj.name}.
                       </p>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     {/* Pilar 2 */}
-                    <div className="p-5 rounded-2xl bg-zinc-900/90 border-2 border-cyan-400/80 space-y-3">
+                    <div className="p-5 rounded-2xl bg-[var(--bg-card)] border-2 border-cyan-400/80 space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-mono font-bold text-cyan-400 flex items-center gap-1.5">
+                        <span className="text-xs font-mono font-bold text-cyan-500 dark:text-cyan-400 flex items-center gap-1.5">
                           <BookOpen className="w-4 h-4" />
                           PILAR 2: Brandbook & Tono de Voz
                         </span>
@@ -1986,22 +1986,22 @@ export const RAGWizard = ({
                           ★ OBLIGATORIO
                         </span>
                       </div>
-                      <p className="text-[11px] text-zinc-300">
+                      <p className="text-[11px] text-[var(--text-muted)]">
                         Personalidad, tono y arquetipo para {currentVerticalObj.name}.
                       </p>
                       <div>
-                        <label className="text-[10px] text-zinc-400 block font-mono">Tono de Voz</label>
+                        <label className="text-[10px] text-[var(--text-muted)] block font-mono">Tono de Voz</label>
                         <input
                           type="text"
                           value={wizardData.brandTone}
                           onChange={(e) => setWizardData({ ...wizardData, brandTone: e.target.value })}
-                          className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-xs text-white font-mono focus:border-cyan-400 outline-none"
+                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-lg p-2 text-xs text-[var(--text-main)] font-mono focus:border-cyan-400 outline-none"
                         />
                       </div>
                     </div>
 
                     {/* Propuesta Comercial */}
-                    <div className="p-5 rounded-2xl bg-zinc-900/90 border-2 border-neon/70 space-y-3">
+                    <div className="p-5 rounded-2xl bg-[var(--bg-card)] border-2 border-neon/70 space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-mono font-bold text-neon flex items-center gap-1.5">
                           <Sparkles className="w-4 h-4" />
@@ -2012,42 +2012,42 @@ export const RAGWizard = ({
                         </span>
                       </div>
                       <div>
-                        <label className="text-[9px] text-zinc-400 font-mono block">Gancho del Mes / Lead Magnet</label>
+                        <label className="text-[9px] text-[var(--text-muted)] font-mono block">Gancho del Mes / Lead Magnet</label>
                         <input
                           type="text"
                           value={wizardData.offerHook}
                           onChange={(e) => setWizardData({ ...wizardData, offerHook: e.target.value })}
-                          className="w-full bg-zinc-950 border border-zinc-800 rounded p-1.5 text-[11px] text-white font-mono focus:border-neon outline-none"
+                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded p-1.5 text-[11px] text-[var(--text-main)] font-mono focus:border-neon outline-none"
                         />
                       </div>
                     </div>
 
                     {/* Pilar 1 */}
-                    <div className="p-5 rounded-2xl bg-zinc-900/60 border border-white/10 space-y-2">
+                    <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-2">
                       <span className="text-xs font-mono font-bold text-neon flex items-center gap-1.5">
                         <DollarSign className="w-4 h-4" /> PILAR 1: Precios & Membresías
                       </span>
-                      <p className="text-[11px] text-zinc-400">
+                      <p className="text-[11px] text-[var(--text-muted)]">
                         {currentVerticalObj.pillars.pilar1.label}
                       </p>
                     </div>
 
                     {/* Pilar 3 */}
-                    <div className="p-5 rounded-2xl bg-zinc-900/60 border border-white/10 space-y-2">
-                      <span className="text-xs font-mono font-bold text-amber-400 flex items-center gap-1.5">
+                    <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-2">
+                      <span className="text-xs font-mono font-bold text-amber-500 dark:text-amber-400 flex items-center gap-1.5">
                         <AlertTriangle className="w-4 h-4" /> PILAR 3: Políticas & FAQs
                       </span>
-                      <p className="text-[11px] text-zinc-400">
+                      <p className="text-[11px] text-[var(--text-muted)]">
                         {currentVerticalObj.pillars.pilar3.label}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex justify-between pt-4 border-t border-zinc-800">
+                  <div className="flex justify-between pt-4 border-t border-[var(--border-color)]">
                     <button
                       type="button"
                       onClick={() => setCurrentStep(1)}
-                      className="bg-zinc-900 border border-zinc-700 text-xs px-4 py-2.5 rounded-xl text-white font-mono flex items-center gap-1.5"
+                      className="bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs px-4 py-2.5 rounded-xl text-[var(--text-main)] font-mono flex items-center gap-1.5"
                     >
                       <ArrowLeft className="w-4 h-4" />
                       <span>Atrás</span>
@@ -2068,7 +2068,7 @@ export const RAGWizard = ({
               {currentStep === 3 && (
                 <div className="space-y-6 animate-fade-in">
                   <div>
-                    <h3 className="text-lg font-black text-white uppercase flex items-center gap-2">
+                    <h3 className="text-lg font-black text-[var(--text-main)] uppercase flex items-center gap-2">
                       <Shield className="w-5 h-5 text-neon" />
                       <span>Paso 3: Reglas Inviolables de {currentVerticalObj.name}</span>
                     </h3>
@@ -2078,7 +2078,7 @@ export const RAGWizard = ({
                     {wizardData.inviolableRules.map((rule, idx) => (
                       <div
                         key={idx}
-                        className="p-3 rounded-xl bg-zinc-950 border border-white/5 flex items-center justify-between text-xs font-mono text-zinc-300"
+                        className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-between text-xs font-mono text-[var(--text-main)]"
                       >
                         <div className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-neon" />
@@ -2087,7 +2087,7 @@ export const RAGWizard = ({
                         <button
                           type="button"
                           onClick={() => handleRemoveRule(idx)}
-                          className="text-zinc-500 hover:text-red-400 p-1"
+                          className="text-[var(--text-muted)] hover:text-red-500 p-1"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
@@ -2095,11 +2095,11 @@ export const RAGWizard = ({
                     ))}
                   </div>
 
-                  <div className="flex justify-between pt-4 border-t border-zinc-800">
+                  <div className="flex justify-between pt-4 border-t border-[var(--border-color)]">
                     <button
                       type="button"
                       onClick={() => setCurrentStep(2)}
-                      className="bg-zinc-900 border border-zinc-700 text-xs px-4 py-2.5 rounded-xl text-white font-mono flex items-center gap-1.5"
+                      className="bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs px-4 py-2.5 rounded-xl text-[var(--text-main)] font-mono flex items-center gap-1.5"
                     >
                       <ArrowLeft className="w-4 h-4" />
                       <span>Atrás</span>
@@ -2120,7 +2120,7 @@ export const RAGWizard = ({
               {currentStep === 4 && (
                 <div className="space-y-6 animate-fade-in">
                   <div>
-                    <h3 className="text-lg font-black text-white uppercase flex items-center gap-2">
+                    <h3 className="text-lg font-black text-[var(--text-main)] uppercase flex items-center gap-2">
                       <Key className="w-5 h-5 text-neon" />
                       <span>Paso 4: Canales Meta & WhatsApp</span>
                     </h3>
@@ -2128,7 +2128,7 @@ export const RAGWizard = ({
 
                   <div className="space-y-5 font-mono text-xs">
                     {/* Explicación de conexión */}
-                    <div className="p-3.5 rounded-xl bg-neon/5 border border-neon/20 text-zinc-300 text-xs font-sans flex items-start gap-2.5">
+                    <div className="p-3.5 rounded-xl bg-neon/10 border border-neon/30 text-[var(--text-main)] text-xs font-sans flex items-start gap-2.5">
                       <Sparkles className="w-4 h-4 text-neon shrink-0 mt-0.5" />
                       <p className="leading-relaxed text-[11px]">
                         Configura las credenciales de <strong>WhatsApp Cloud API</strong> y la <strong>ApiKey / Token de Meta (CAPI)</strong> para que las conversaciones califiquen prospectos automáticamente y sincronicen conversiones con Meta Ads.
@@ -2136,7 +2136,7 @@ export const RAGWizard = ({
                     </div>
 
                     {/* Bloque 1: Canales de WhatsApp */}
-                    <div className="p-4 rounded-2xl bg-zinc-950/70 border border-zinc-800 space-y-3">
+                    <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-3">
                       <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block flex items-center gap-1.5">
                         <MessageSquare className="w-3.5 h-3.5" />
                         <span>Canales de WhatsApp Cloud API</span>
@@ -2144,7 +2144,7 @@ export const RAGWizard = ({
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-zinc-300 font-bold mb-1">
+                          <label className="block text-[var(--text-main)] font-bold mb-1">
                             WhatsApp Cloud API Phone Number ID *
                           </label>
                           <input
@@ -2152,13 +2152,13 @@ export const RAGWizard = ({
                             placeholder="ej. 109283746592019"
                             value={wizardData.whatsappPhoneId || ''}
                             onChange={(e) => setWizardData({ ...wizardData, whatsappPhoneId: e.target.value })}
-                            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-2.5 text-white focus:border-neon outline-none font-mono text-xs"
+                            className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl p-2.5 text-[var(--text-main)] focus:border-neon outline-none font-mono text-xs"
                           />
-                          <span className="text-[10px] text-zinc-500 mt-1 block">ID numérico del número telefónico en Meta Cloud API</span>
+                          <span className="text-[10px] text-[var(--text-muted)] mt-1 block">ID numérico del número telefónico en Meta Cloud API</span>
                         </div>
 
                         <div>
-                          <label className="block text-zinc-300 font-bold mb-1">
+                          <label className="block text-[var(--text-main)] font-bold mb-1">
                             WhatsApp Business Account ID (WABA ID)
                           </label>
                           <input
@@ -2166,15 +2166,15 @@ export const RAGWizard = ({
                             placeholder="ej. 987654321098765"
                             value={wizardData.wabaId || ''}
                             onChange={(e) => setWizardData({ ...wizardData, wabaId: e.target.value })}
-                            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-2.5 text-white focus:border-neon outline-none font-mono text-xs"
+                            className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl p-2.5 text-[var(--text-main)] focus:border-neon outline-none font-mono text-xs"
                           />
-                          <span className="text-[10px] text-zinc-500 mt-1 block">ID de la cuenta de WhatsApp Business para templates</span>
+                          <span className="text-[10px] text-[var(--text-muted)] mt-1 block">ID de la cuenta de WhatsApp Business para templates</span>
                         </div>
                       </div>
                     </div>
 
                     {/* Bloque 2: Meta Conversions API (CAPI) & Pixel Tracking */}
-                    <div className="p-4 rounded-2xl bg-zinc-950/70 border border-zinc-800 space-y-3">
+                    <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-3">
                       <span className="text-[10px] text-neon font-bold uppercase tracking-wider block flex items-center gap-1.5">
                         <Key className="w-3.5 h-3.5" />
                         <span>Meta Conversions API (CAPI) & Pixel Dataset</span>
@@ -2182,7 +2182,7 @@ export const RAGWizard = ({
 
                       <div>
                         <div className="flex items-center justify-between mb-1">
-                          <label className="text-zinc-300 font-bold">
+                          <label className="text-[var(--text-main)] font-bold">
                             Meta CAPI Permanent Access Token (ApiKey / Token Permanente) *
                           </label>
                           <span className="text-[10px] text-neon font-bold">System User Token</span>
@@ -2192,16 +2192,16 @@ export const RAGWizard = ({
                           placeholder="EAAX... (Token de acceso de sistema generado en Business Manager)"
                           value={wizardData.metaCapiToken || ''}
                           onChange={(e) => setWizardData({ ...wizardData, metaCapiToken: e.target.value })}
-                          className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-2.5 text-white focus:border-neon outline-none font-mono text-xs"
+                          className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl p-2.5 text-[var(--text-main)] focus:border-neon outline-none font-mono text-xs"
                         />
-                        <span className="text-[10px] text-zinc-500 mt-1 block">
+                        <span className="text-[10px] text-[var(--text-muted)] mt-1 block">
                           Permite enviar eventos de conversión 'Lead' y 'Purchase' directamente al servidor de Meta sin depender de cookies.
                         </span>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                         <div>
-                          <label className="block text-zinc-300 font-bold mb-1">
+                          <label className="block text-[var(--text-main)] font-bold mb-1">
                             Meta Pixel ID / Dataset ID *
                           </label>
                           <input
@@ -2209,13 +2209,13 @@ export const RAGWizard = ({
                             placeholder="ej. 123456789012345"
                             value={wizardData.metaPixelId || ''}
                             onChange={(e) => setWizardData({ ...wizardData, metaPixelId: e.target.value })}
-                            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-2.5 text-white focus:border-neon outline-none font-mono text-xs"
+                            className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl p-2.5 text-[var(--text-main)] focus:border-neon outline-none font-mono text-xs"
                           />
-                          <span className="text-[10px] text-zinc-500 mt-1 block">ID del Pixel/Dataset para atribución de anuncios</span>
+                          <span className="text-[10px] text-[var(--text-muted)] mt-1 block">ID del Pixel/Dataset para atribución de anuncios</span>
                         </div>
 
                         <div>
-                          <label className="block text-zinc-300 font-bold mb-1">
+                          <label className="block text-[var(--text-main)] font-bold mb-1">
                             Instagram Business Account ID (Opcional)
                           </label>
                           <input
@@ -2223,28 +2223,28 @@ export const RAGWizard = ({
                             placeholder="ej. 1784140000000"
                             value={wizardData.instagramAccountId || ''}
                             onChange={(e) => setWizardData({ ...wizardData, instagramAccountId: e.target.value })}
-                            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-2.5 text-white focus:border-neon outline-none font-mono text-xs"
+                            className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl p-2.5 text-[var(--text-main)] focus:border-neon outline-none font-mono text-xs"
                           />
-                          <span className="text-[10px] text-zinc-500 mt-1 block">ID para automatización de DMs y comentarios</span>
+                          <span className="text-[10px] text-[var(--text-muted)] mt-1 block">ID para automatización de DMs y comentarios</span>
                         </div>
                       </div>
                     </div>
 
                     {/* Bloque 3: LinkedIn Conversions API & B2B Social Ingestion (Opcional por Cliente) */}
-                    <div className="p-4 rounded-2xl bg-zinc-950/70 border border-sky-900/40 space-y-3">
+                    <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-sky-500/30 space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] text-sky-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                        <span className="text-[10px] text-sky-500 dark:text-sky-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
                           <Linkedin className="w-3.5 h-3.5" />
                           <span>LinkedIn Conversions API & OAuth 2.0 (B2B / Corporativo)</span>
                         </span>
-                        <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-sky-950 text-sky-300 border border-sky-800/50">
+                        <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-sky-500/10 text-sky-500 dark:text-sky-300 border border-sky-500/20">
                           Personalizable por Cliente
                         </span>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-zinc-300 font-bold mb-1">
+                          <label className="block text-[var(--text-main)] font-bold mb-1">
                             LinkedIn Organization ID / Ad Account
                           </label>
                           <input
@@ -2252,13 +2252,13 @@ export const RAGWizard = ({
                             placeholder="ej. urn:li:organization:12345678"
                             value={wizardData.linkedinOrgId || ''}
                             onChange={(e) => setWizardData({ ...wizardData, linkedinOrgId: e.target.value })}
-                            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-2.5 text-white focus:border-sky-400 outline-none font-mono text-xs"
+                            className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl p-2.5 text-[var(--text-main)] focus:border-sky-400 outline-none font-mono text-xs"
                           />
-                          <span className="text-[10px] text-zinc-500 mt-1 block">Para sincronizar formularios Lead Gen y publicaciones B2B</span>
+                          <span className="text-[10px] text-[var(--text-muted)] mt-1 block">Para sincronizar formularios Lead Gen y publicaciones B2B</span>
                         </div>
 
                         <div>
-                          <label className="block text-zinc-300 font-bold mb-1">
+                          <label className="block text-[var(--text-main)] font-bold mb-1">
                             LinkedIn Conversions CAPI Token (OAuth)
                           </label>
                           <input
@@ -2266,19 +2266,19 @@ export const RAGWizard = ({
                             placeholder="AQU... (OAuth 2.0 Token de Decisores)"
                             value={wizardData.linkedinCapiToken || ''}
                             onChange={(e) => setWizardData({ ...wizardData, linkedinCapiToken: e.target.value })}
-                            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-2.5 text-white focus:border-sky-400 outline-none font-mono text-xs"
+                            className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl p-2.5 text-[var(--text-main)] focus:border-sky-400 outline-none font-mono text-xs"
                           />
-                          <span className="text-[10px] text-zinc-500 mt-1 block">Atribución Server-to-Server de Discovery Calls en LinkedIn</span>
+                          <span className="text-[10px] text-[var(--text-muted)] mt-1 block">Atribución Server-to-Server de Discovery Calls en LinkedIn</span>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex justify-between pt-4 border-t border-zinc-800">
+                  <div className="flex justify-between pt-4 border-t border-[var(--border-color)]">
                     <button
                       type="button"
                       onClick={() => setCurrentStep(3)}
-                      className="bg-zinc-900 border border-zinc-700 text-xs px-4 py-2.5 rounded-xl text-white font-mono flex items-center gap-1.5"
+                      className="bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs px-4 py-2.5 rounded-xl text-[var(--text-main)] font-mono flex items-center gap-1.5"
                     >
                       <ArrowLeft className="w-4 h-4" />
                       <span>Atrás</span>
@@ -2299,19 +2299,19 @@ export const RAGWizard = ({
               {currentStep === 5 && (
                 <div className="space-y-6 animate-fade-in">
                   <div>
-                    <h3 className="text-lg font-black text-white uppercase flex items-center gap-2">
+                    <h3 className="text-lg font-black text-[var(--text-main)] uppercase flex items-center gap-2">
                       <Cpu className="w-5 h-5 text-neon" />
                       <span>Paso 5: Resumen & Despliegue RLS</span>
                     </h3>
                   </div>
 
-                  <div className="p-5 rounded-2xl bg-zinc-950 border border-neon/30 space-y-4 font-mono text-xs">
-                    <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+                  <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-neon/30 space-y-4 font-mono text-xs">
+                    <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)]">
                       <div className="flex items-center gap-3">
                         <VectorLobo size={32} showStatus={true} status="active" />
                         <div>
-                          <span className="text-white font-bold block">Auditoría Previa Lobo Vectorial</span>
-                          <span className="text-[10px] text-zinc-400">Parámetros de memoria RAG y blindaje RLS (ADR-001)</span>
+                          <span className="text-[var(--text-main)] font-bold block">Auditoría Previa Lobo Vectorial</span>
+                          <span className="text-[10px] text-[var(--text-muted)]">Parámetros de memoria RAG y blindaje RLS (ADR-001)</span>
                         </div>
                       </div>
                       <span className="px-2.5 py-1 rounded bg-neon/15 text-neon font-bold border border-neon/30 text-[10px]">
@@ -2321,24 +2321,24 @@ export const RAGWizard = ({
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <span className="text-zinc-500 block text-[10px] uppercase">Negocio & Razón Social</span>
-                        <span className="text-white font-bold text-sm">{wizardData.businessName || 'Nuevo Negocio'}</span>
-                        <span className="text-[10px] text-zinc-400 block mt-0.5">{wizardData.legalNameTaxId || 'RFC / Tax ID por verificar'}</span>
+                        <span className="text-[var(--text-muted)] block text-[10px] uppercase">Negocio & Razón Social</span>
+                        <span className="text-[var(--text-main)] font-bold text-sm">{wizardData.businessName || 'Nuevo Negocio'}</span>
+                        <span className="text-[10px] text-[var(--text-muted)] block mt-0.5">{wizardData.legalNameTaxId || 'RFC / Tax ID por verificar'}</span>
                       </div>
                       <div>
-                        <span className="text-zinc-500 block text-[10px] uppercase">Giro Comercial</span>
+                        <span className="text-[var(--text-muted)] block text-[10px] uppercase">Giro Comercial</span>
                         <span className="text-neon font-bold text-sm">{currentVerticalObj.name}</span>
-                        <span className="text-[10px] text-zinc-400 block mt-0.5">Meta: {currentVerticalObj.conversionGoal?.split('/')[0]}</span>
+                        <span className="text-[10px] text-[var(--text-muted)] block mt-0.5">Meta: {currentVerticalObj.conversionGoal?.split('/')[0]}</span>
                       </div>
                       <div>
-                        <span className="text-zinc-500 block text-[10px] uppercase">Estrategia Digital</span>
+                        <span className="text-[var(--text-muted)] block text-[10px] uppercase">Estrategia Digital</span>
                         {wizardData.hasWebsite ? (
                           <div className="flex items-center gap-2 mt-1">
                             <span className="px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[10px] font-bold flex items-center gap-1">
                               <Globe className="w-3 h-3" />
                               CON Sitio Web
                             </span>
-                            <span className="text-[10px] text-zinc-400 truncate">
+                            <span className="text-[10px] text-[var(--text-muted)] truncate">
                               {wizardData.websiteUrl || 'https://negocio.com'}
                             </span>
                           </div>
@@ -2352,11 +2352,11 @@ export const RAGWizard = ({
                         )}
                       </div>
                       <div>
-                        <span className="text-zinc-500 block text-[10px] uppercase">Agenda & Conversión</span>
-                        <span className="text-white font-bold block mt-1">
+                        <span className="text-[var(--text-muted)] block text-[10px] uppercase">Agenda & Conversión</span>
+                        <span className="text-[var(--text-main)] font-bold block mt-1">
                           Google Calendar: {wizardData.appointmentDuration || 45} min / cita
                         </span>
-                        <span className="text-[10px] text-zinc-400 block">
+                        <span className="text-[10px] text-[var(--text-muted)] block">
                           Costo Unitario Lead Calificado: ${wizardData.costPerQualifiedLead || 350} MXN
                         </span>
                       </div>
@@ -2364,20 +2364,20 @@ export const RAGWizard = ({
                   </div>
 
                   {/* 6-Block JSON Onboarding Payload Inspector */}
-                  <div className="p-5 rounded-2xl bg-zinc-950/80 border border-white/10 space-y-4 font-mono text-xs">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-800">
+                  <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-4 font-mono text-xs">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--border-color)]">
                       <div className="flex items-center gap-2">
                         <FileCode className="w-4 h-4 text-neon" />
                         <div>
-                          <span className="text-white font-bold block">Payload Onboarding 6-Bloques</span>
-                          <span className="text-[10px] text-zinc-400">Endpoint: POST /api/v1/tenants/onboard (ADR-001 §2.7)</span>
+                          <span className="text-[var(--text-main)] font-bold block">Payload Onboarding 6-Bloques</span>
+                          <span className="text-[10px] text-[var(--text-muted)]">Endpoint: POST /api/v1/tenants/onboard (ADR-001 §2.7)</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
                           onClick={handleCopyPayload}
-                          className="px-3.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-neon border border-neon/40 flex items-center gap-1.5 transition-all text-xs font-bold active:scale-95 shadow-[0_0_10px_rgba(231,249,0,0.1)]"
+                          className="px-3.5 py-1.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-neon border border-neon/40 flex items-center gap-1.5 transition-all text-xs font-bold active:scale-95 shadow-[0_0_10px_rgba(231,249,0,0.1)]"
                         >
                           {copiedPayload ? (
                             <>
@@ -2394,7 +2394,7 @@ export const RAGWizard = ({
                         <button
                           type="button"
                           onClick={() => setShowPayloadModal(!showPayloadModal)}
-                          className="px-3.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-white/10 flex items-center gap-1.5 transition-all text-xs"
+                          className="px-3.5 py-1.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)] flex items-center gap-1.5 transition-all text-xs"
                         >
                           <Code className="w-3.5 h-3.5" />
                           <span>{showPayloadModal ? 'Ocultar JSON' : 'Inspeccionar JSON'}</span>
@@ -2403,15 +2403,15 @@ export const RAGWizard = ({
                     </div>
 
                     {showPayloadModal && (
-                      <div className="p-4 rounded-xl bg-black/90 border border-neon/30 overflow-x-auto max-h-80 text-[11px] text-zinc-300 font-mono leading-relaxed select-all animate-fade-in shadow-inner">
-                        <pre className="text-emerald-400/95 whitespace-pre">
+                      <div className="p-4 rounded-xl bg-[var(--bg-base)] border border-neon/30 overflow-x-auto max-h-80 text-[11px] text-[var(--text-main)] font-mono leading-relaxed select-all animate-fade-in shadow-inner">
+                        <pre className="text-emerald-500 dark:text-emerald-400 whitespace-pre">
                           {JSON.stringify(getDynamicOnboardingPayload(), null, 2)}
                         </pre>
                       </div>
                     )}
 
                     {/* 6 Verification Checkpoints */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-[10px] text-zinc-400 pt-1">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-[10px] text-[var(--text-muted)] pt-1">
                       <div className="flex items-center gap-1.5">
                         <CheckCircle2 className="w-3.5 h-3.5 text-neon shrink-0" />
                         <span>1. Tenant Core & RLS</span>
@@ -2439,11 +2439,11 @@ export const RAGWizard = ({
                     </div>
                   </div>
 
-                  <div className="flex justify-between pt-4 border-t border-zinc-800">
+                  <div className="flex justify-between pt-4 border-t border-[var(--border-color)]">
                     <button
                       type="button"
                       onClick={() => setCurrentStep(4)}
-                      className="bg-zinc-900 border border-zinc-700 text-xs px-4 py-2.5 rounded-xl text-white font-mono flex items-center gap-1.5"
+                      className="bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs px-4 py-2.5 rounded-xl text-[var(--text-main)] font-mono flex items-center gap-1.5"
                     >
                       <ArrowLeft className="w-4 h-4" />
                       <span>Atrás</span>
@@ -2470,18 +2470,18 @@ export const RAGWizard = ({
       {isClient && (
         <div className="space-y-8 animate-fade-in">
           {/* Header Card for Client */}
-          <div className="p-6 rounded-3xl bg-zinc-900/60 border border-white/10 backdrop-blur-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="p-6 rounded-3xl bg-[var(--bg-card)] border border-[var(--border-color)] backdrop-blur-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="space-y-1">
               <span className="text-[10px] font-mono font-bold uppercase text-neon tracking-wider">
                 Panel del Negocio / Cliente
               </span>
-              <h3 className="text-2xl font-black text-white font-mono flex items-center gap-2">
+              <h3 className="text-2xl font-black text-[var(--text-main)] font-mono flex items-center gap-2">
                 <span>{activeTenant?.name || 'Tu Negocio'}</span>
                 <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
                   Bot Activo 24/7
                 </span>
               </h3>
-              <p className="text-xs text-zinc-400">
+              <p className="text-xs text-[var(--text-muted)]">
                 Consulta el estado de tu bot. Si requieres cambiar tono, ideas o precios, solicita una actualización con 1 clic.
               </p>
             </div>
@@ -2497,19 +2497,19 @@ export const RAGWizard = ({
           </div>
 
           {/* RAG Health Score & IFV Widget for Client (Bloque 6 & 13.9 Manual Maestro) */}
-          <div className="p-5 rounded-2xl bg-zinc-900/80 border border-neon/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-brand-primary/40 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <VectorLobo size={44} showStatus={true} status="active" />
               <div>
                 <div className="flex items-center gap-2">
-                  <h4 className="text-sm font-bold text-white font-mono">
+                  <h4 className="text-sm font-bold text-[var(--text-main)] font-mono">
                     Base de Conocimiento Calibrada
                   </h4>
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neon/15 text-neon font-bold border border-neon/30">
                     IFV: 48/50
                   </span>
                 </div>
-                <p className="text-xs text-zinc-400 mt-0.5">
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">
                   Lobo Vectorial supervisa identidad (Pilar 2), precios y filtros sin alucinaciones.
                 </p>
               </div>
@@ -2524,9 +2524,9 @@ export const RAGWizard = ({
 
           {/* 4 Pillars Client Status Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="p-6 rounded-2xl bg-zinc-900/70 border-2 border-cyan-500/40 space-y-4 shadow-[0_0_20px_rgba(6,182,212,0.1)]">
+            <div className="p-6 rounded-2xl bg-[var(--bg-panel)] border-2 border-cyan-500/40 space-y-4 shadow-sm">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-cyan-400 font-bold font-mono text-sm">
+                <div className="flex items-center gap-2 text-cyan-500 dark:text-cyan-400 font-bold font-mono text-sm">
                   <BookOpen className="w-4 h-4" />
                   <span>Pilar 2: Identidad & Tono de Marca</span>
                 </div>
@@ -2534,37 +2534,37 @@ export const RAGWizard = ({
                   Obligatorio • Activo
                 </span>
               </div>
-              <p className="text-xs text-zinc-300 leading-relaxed">
+              <p className="text-xs text-[var(--text-muted)] leading-relaxed">
                 Estilo de redacción, lenguaje natural y personalidad con la que tu bot interactúa con tu audiencia.
               </p>
-              <div className="p-3 rounded-xl bg-zinc-950 border border-white/5 text-xs font-mono flex items-center justify-between text-zinc-400">
+              <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs font-mono flex items-center justify-between text-[var(--text-muted)]">
                 <span>Archivo activo: Brandbook_Identidad.md</span>
                 <span className="text-emerald-400 font-bold">100% Sincronizado</span>
               </div>
             </div>
 
-            <div className="p-6 rounded-2xl bg-zinc-900/40 border border-white/10 space-y-4">
+            <div className="p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-neon font-bold font-mono text-sm">
                   <DollarSign className="w-4 h-4" />
                   <span>Pilar 1: Precios & Catálogo de Ventas</span>
                 </div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-400">
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--bg-card)] text-[var(--text-muted)]">
                   Opcional
                 </span>
               </div>
-              <p className="text-xs text-zinc-400 leading-relaxed">
+              <p className="text-xs text-[var(--text-muted)] leading-relaxed">
                 Cotizaciones y paquetes configurables según el giro de negocio.
               </p>
-              <div className="p-3 rounded-xl bg-zinc-950 border border-white/5 text-xs font-mono flex items-center justify-between text-zinc-400">
+              <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs font-mono flex items-center justify-between text-[var(--text-muted)]">
                 <span>Estado: Matriz_Precios.json</span>
-                <span className="text-zinc-500 font-bold">Configurable</span>
+                <span className="text-[var(--text-muted)] font-bold">Configurable</span>
               </div>
             </div>
 
-            <div className="p-6 rounded-2xl bg-zinc-900/40 border border-white/10 space-y-4">
+            <div className="p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-amber-400 font-bold font-mono text-sm">
+                <div className="flex items-center gap-2 text-amber-500 dark:text-amber-400 font-bold font-mono text-sm">
                   <AlertTriangle className="w-4 h-4" />
                   <span>Pilar 3: Preguntas Frecuentes & Seguridad</span>
                 </div>
@@ -2572,29 +2572,29 @@ export const RAGWizard = ({
                   Activo
                 </span>
               </div>
-              <p className="text-xs text-zinc-300 leading-relaxed">
+              <p className="text-xs text-[var(--text-muted)] leading-relaxed">
                 Respuestas automáticas a dudas frecuentes y filtros para evitar respuestas indebidas.
               </p>
-              <div className="p-3 rounded-xl bg-zinc-950 border border-white/5 text-xs font-mono flex items-center justify-between text-zinc-400">
+              <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs font-mono flex items-center justify-between text-[var(--text-muted)]">
                 <span>Archivo activo: FAQs_Objeciones.md</span>
                 <span className="text-emerald-400 font-bold">Plantilla Activa</span>
               </div>
             </div>
 
-            <div className="p-6 rounded-2xl bg-zinc-900/40 border border-white/10 space-y-4">
+            <div className="p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-purple-400 font-bold font-mono text-sm">
                   <History className="w-4 h-4" />
                   <span>Pilar 4: Histórico & Casos de Éxito</span>
                 </div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-400">
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--bg-card)] text-[var(--text-muted)]">
                   Opcional
                 </span>
               </div>
-              <p className="text-xs text-zinc-400 leading-relaxed">
+              <p className="text-xs text-[var(--text-muted)] leading-relaxed">
                 Contexto de publicaciones pasadas y aprendizajes de campañas previas.
               </p>
-              <div className="p-3 rounded-xl bg-zinc-950 border border-white/5 text-xs font-mono flex items-center justify-between text-zinc-400">
+              <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs font-mono flex items-center justify-between text-[var(--text-muted)]">
                 <span>Estado: En Aprendizaje Continuo</span>
                 <span className="text-emerald-400 font-bold">Sincronizado</span>
               </div>
@@ -2609,16 +2609,16 @@ export const RAGWizard = ({
       {showChangeModal && (
         <Portal>
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto"
             onClick={(e) => {
               if (e.target === e.currentTarget) setShowChangeModal(false);
             }}
           >
-            <div className="w-full max-w-lg rounded-3xl bg-zinc-950 border border-neon/40 shadow-2xl p-6 sm:p-8 relative space-y-5 my-auto animate-scale-up">
+            <div className="w-full max-w-lg rounded-3xl bg-[var(--bg-panel)] border border-brand-primary/40 shadow-2xl p-6 sm:p-8 relative space-y-5 my-auto animate-scale-up">
             <button
               type="button"
               onClick={() => setShowChangeModal(false)}
-              className="absolute top-5 right-5 p-2 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white"
+              className="absolute top-5 right-5 p-2 rounded-xl bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)]"
             >
               <X className="w-4 h-4" />
             </button>
@@ -2628,10 +2628,10 @@ export const RAGWizard = ({
                 <Upload className="w-3.5 h-3.5" />
                 Workflow de Validación
               </div>
-              <h3 className="text-xl font-black text-white">
+              <h3 className="text-xl font-black text-[var(--text-main)]">
                 Solicitar Actualización de Documento
               </h3>
-              <p className="text-xs text-zinc-400 font-mono">
+              <p className="text-xs text-[var(--text-muted)] font-mono">
                 La agencia validará los cambios de tono, ideas o políticas antes de re-indexar el bot.
               </p>
             </div>
@@ -2648,13 +2648,13 @@ export const RAGWizard = ({
               className="space-y-4 pt-2 font-mono text-xs"
             >
               <div>
-                <label className="block font-bold text-zinc-300 mb-1">
+                <label className="block font-bold text-[var(--text-main)] mb-1">
                   Selecciona el Pilar que deseas actualizar
                 </label>
                 <select
                   value={selectedPillarForChange}
                   onChange={(e) => setSelectedPillarForChange(e.target.value)}
-                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-2.5 text-white focus:border-neon outline-none cursor-pointer"
+                  className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl p-2.5 text-[var(--text-main)] focus:border-neon outline-none cursor-pointer"
                 >
                   <option value="pillar2">Pilar 2: Identidad & Tono de Voz (Brandbook) — [Principal]</option>
                   <option value="pillar1">Pilar 1: Precios / Membresías / Catálogo</option>
@@ -2664,19 +2664,19 @@ export const RAGWizard = ({
               </div>
 
               <div>
-                <label className="block font-bold text-zinc-300 mb-1">
+                <label className="block font-bold text-[var(--text-main)] mb-1">
                   Subir Nuevo Archivo (Markdown .md, PDF, Word o TXT)
                 </label>
                 <input
                   type="file"
                   required
                   onChange={(e) => setChangeFileName(e.target.files[0]?.name || 'Nuevo_Documento.md')}
-                  className="text-xs text-zinc-400 w-full file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-neon file:text-black hover:file:bg-[var(--neon-hover)] cursor-pointer"
+                  className="text-xs text-[var(--text-muted)] w-full file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-neon file:text-black hover:file:bg-[var(--neon-hover)] cursor-pointer"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-zinc-300 mb-1">
+                <label className="block font-bold text-[var(--text-main)] mb-1">
                   Explicación breve de los cambios realizados *
                 </label>
                 <textarea
@@ -2685,7 +2685,7 @@ export const RAGWizard = ({
                   placeholder="ej. Actualizamos los precios de membresías del gimnasio y agregamos 3 nuevas preguntas frecuentes sobre clases de CrossFit."
                   value={changeNotes}
                   onChange={(e) => setChangeNotes(e.target.value)}
-                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white focus:border-neon outline-none"
+                  className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl p-3 text-[var(--text-main)] focus:border-neon outline-none"
                 />
               </div>
 
@@ -2693,7 +2693,7 @@ export const RAGWizard = ({
                 <button
                   type="button"
                   onClick={() => setShowChangeModal(false)}
-                  className="px-4 py-2.5 rounded-xl border border-zinc-700 text-zinc-400 hover:text-white"
+                  className="px-4 py-2.5 rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)]"
                 >
                   Cancelar
                 </button>

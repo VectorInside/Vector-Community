@@ -61,7 +61,7 @@ export const SystemConfigHub = ({ initialTab = 'rag', initialMode = 'list' }) =>
             <button
               type="button"
               onClick={() => setAdminMode('list')}
-              className="text-xs bg-[var(--bg-card)] hover:bg-zinc-800 text-zinc-200 hover:text-white border border-[var(--border-color)] hover:border-white px-4 py-2.5 rounded-xl font-mono font-bold transition-all flex items-center gap-2 active:scale-95 shadow-sm"
+              className="text-xs bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] border border-[var(--border-color)] hover:border-neon px-4 py-2.5 rounded-xl font-mono font-bold transition-all flex items-center gap-2 active:scale-95 shadow-sm"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Volver a Lista de Tenants</span>
@@ -86,10 +86,10 @@ export const SystemConfigHub = ({ initialTab = 'rag', initialMode = 'list' }) =>
 
           {/* Ecosistema Status & Action Button (Homologado, sin dropdown duplicado) */}
           <div className="flex flex-wrap items-center gap-3">
-            <div className="px-3.5 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-2.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs font-mono text-zinc-300">
-                <strong className="text-white font-bold">{Object.keys(tenantsData || {}).length} Tenants</strong> Aislados RLS
+            <div className="px-3.5 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-2.5 shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-xs font-mono text-[var(--text-muted)]">
+                <strong className="text-[var(--text-main)] font-bold">{Object.keys(tenantsData || {}).length} Tenants</strong> Aislados RLS
               </span>
             </div>
 
@@ -117,7 +117,7 @@ export const SystemConfigHub = ({ initialTab = 'rag', initialMode = 'list' }) =>
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all shrink-0 ${
               activeTab === 'rag'
                 ? 'bg-neon text-black shadow-[0_0_12px_var(--neon-glow)]'
-                : 'text-[var(--text-muted)] hover:text-white bg-[var(--bg-card)] border border-[var(--border-color)]'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] border border-[var(--border-color)]'
             }`}
           >
             <Database className="w-4 h-4" />
@@ -130,7 +130,7 @@ export const SystemConfigHub = ({ initialTab = 'rag', initialMode = 'list' }) =>
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all shrink-0 ${
               activeTab === 'subbots'
                 ? 'bg-neon text-black shadow-[0_0_12px_var(--neon-glow)]'
-                : 'text-[var(--text-muted)] hover:text-white bg-[var(--bg-card)] border border-[var(--border-color)]'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] border border-[var(--border-color)]'
             }`}
           >
             <Cpu className="w-4 h-4" />
@@ -143,7 +143,7 @@ export const SystemConfigHub = ({ initialTab = 'rag', initialMode = 'list' }) =>
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all shrink-0 ${
               activeTab === 'policies'
                 ? 'bg-neon text-black shadow-[0_0_12px_var(--neon-glow)]'
-                : 'text-[var(--text-muted)] hover:text-white bg-[var(--bg-card)] border border-[var(--border-color)]'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] border border-[var(--border-color)]'
             }`}
           >
             <Sliders className="w-4 h-4" />

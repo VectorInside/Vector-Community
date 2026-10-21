@@ -496,36 +496,36 @@ export const MasterAgenda = () => {
       {/* ========================================================================= */}
       {/* 1. TOP HERO: GOOGLE CALENDAR 2-WAY SYNC BANNER                            */}
       {/* ========================================================================= */}
-      <div className="p-6 rounded-3xl bg-zinc-950/80 border border-zinc-800/80 shadow-2xl backdrop-blur-xl flex flex-col md:flex-row md:items-center justify-between gap-5 relative overflow-hidden">
-        <div className="absolute -top-16 -right-16 w-64 h-64 bg-brand-primary/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="p-6 rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] shadow-2xl backdrop-blur-xl flex flex-col md:flex-row md:items-center justify-between gap-5 relative overflow-hidden">
+        <div className="absolute -top-16 -right-16 w-64 h-64 bg-neon/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="flex items-center gap-4 relative z-10">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-brand-primary/20 via-brand-primary/5 to-transparent border border-brand-primary/30 flex items-center justify-center text-brand-primary shadow-neon-sm">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-neon/20 via-neon/5 to-transparent border border-neon/30 flex items-center justify-center text-neon shadow-neon-sm">
             <CalendarIcon className="w-6 h-6" />
           </div>
           <div>
             <div className="flex items-center gap-2.5">
-              <h2 className="text-2xl font-black text-white tracking-tight uppercase">
-                Master <span className="text-brand-primary">Agenda</span>
+              <h2 className="text-2xl font-black text-[var(--text-main)] tracking-tight uppercase">
+                Master <span className="text-neon">Agenda</span>
               </h2>
-              <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Google Calendar 2-Way Sync
               </span>
             </div>
-            <p className="text-xs text-zinc-400 mt-0.5 flex flex-wrap items-center gap-2 font-mono">
+            <p className="text-xs text-[var(--text-muted)] mt-0.5 flex flex-wrap items-center gap-2 font-mono">
               <span>Negocio activo:</span>
-              <strong className="text-white">{activeTenant?.name || 'Clínica Odontológica Integral'}</strong>
-              <span className="text-zinc-600">•</span>
-              <span className="text-brand-primary">Giro: {activeTenant?.giro || 'Servicios Profesionales'}</span>
+              <strong className="text-[var(--text-main)]">{activeTenant?.name || 'Clínica Odontológica Integral'}</strong>
+              <span className="text-[var(--text-muted)]">•</span>
+              <span className="text-neon">Giro: {activeTenant?.giro || 'Servicios Profesionales'}</span>
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-3 relative z-10">
           <div className="hidden lg:flex flex-col text-right font-mono pr-2">
-            <span className="text-xs text-zinc-300 font-bold">API Handshake Activo</span>
-            <span className="text-[11px] text-zinc-500">
+            <span className="text-xs text-[var(--text-main)] font-bold">API Handshake Activo</span>
+            <span className="text-[11px] text-[var(--text-muted)]">
               Duración: {calendarConfig.slotDurationMin} min • Concurrencia: {calendarConfig.concurrencyLimit}
             </span>
           </div>
@@ -533,10 +533,10 @@ export const MasterAgenda = () => {
           <button
             type="button"
             onClick={() => setShowConfigModal(true)}
-            className="px-3.5 py-2.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-850 text-white border border-brand-primary/50 hover:border-brand-primary text-xs font-mono font-bold flex items-center gap-2 transition-all shadow-sm hover:shadow-neon-sm"
+            className="px-3.5 py-2.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] border border-neon/50 hover:border-neon text-xs font-mono font-bold flex items-center gap-2 transition-all shadow-sm hover:shadow-neon-sm"
             title="Personalizar turnos, duración de citas, descansos y membrete de correo"
           >
-            <Settings2 className="w-4 h-4 text-brand-primary" />
+            <Settings2 className="w-4 h-4 text-neon" />
             <span>Personalizar Agenda & Turnos</span>
           </button>
 
@@ -564,16 +564,16 @@ export const MasterAgenda = () => {
       {/* ========================================================================= */}
       {/* 2. BARRA DE CONTROL: SWITCHER DE VISTAS & FILTROS                          */}
       {/* ========================================================================= */}
-      <div className="p-4 rounded-2xl bg-zinc-950/70 border border-zinc-800/80 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
         {/* Selector de Vistas Segmentado */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-zinc-900/90 border border-zinc-800">
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)]">
           <button
             type="button"
             onClick={() => setViewMode('grid')}
             className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
               viewMode === 'grid'
                 ? 'bg-brand-primary text-black font-bold shadow-neon-sm'
-                : 'text-zinc-400 hover:text-white'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
@@ -586,7 +586,7 @@ export const MasterAgenda = () => {
             className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
               viewMode === 'week_table'
                 ? 'bg-brand-primary text-black font-bold shadow-neon-sm'
-                : 'text-zinc-400 hover:text-white'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
             }`}
           >
             <CalendarDays className="w-3.5 h-3.5" />
@@ -599,7 +599,7 @@ export const MasterAgenda = () => {
             className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
               viewMode === 'list'
                 ? 'bg-brand-primary text-black font-bold shadow-neon-sm'
-                : 'text-zinc-400 hover:text-white'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
             }`}
           >
             <List className="w-3.5 h-3.5" />
@@ -609,7 +609,7 @@ export const MasterAgenda = () => {
 
         {/* Filtros de Estado */}
         <div className="flex items-center gap-2">
-          <span className="text-xs text-zinc-500 font-mono hidden sm:inline">Filtrar Citas:</span>
+          <span className="text-xs text-[var(--text-muted)] font-mono hidden sm:inline">Filtrar Citas:</span>
           {[
             { id: 'ALL', label: 'Todas' },
             { id: 'CONFIRMED', label: '● Confirmadas' },
@@ -621,8 +621,8 @@ export const MasterAgenda = () => {
               onClick={() => setFilterStatus(st.id)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 filterStatus === st.id
-                  ? 'bg-zinc-800 text-white font-bold border border-zinc-700 shadow-sm'
-                  : 'text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white font-bold border border-zinc-300 dark:border-zinc-700 shadow-sm'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
               }`}
             >
               {st.label}
@@ -637,14 +637,14 @@ export const MasterAgenda = () => {
       {viewMode === 'grid' && (
         <div className="space-y-4 animate-fadeIn">
           {/* Header del Día + Selector de Pestañas de Días */}
-          <div className="p-5 rounded-2xl bg-zinc-950/80 border border-zinc-800/80 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-800/60">
+          <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-4 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--border-color)]">
               <div className="flex items-center gap-2.5">
                 <CalendarCheck className="w-5 h-5 text-brand-primary" />
-                <span className="text-sm font-bold text-white tracking-wide">
+                <span className="text-sm font-bold text-[var(--text-main)] tracking-wide">
                   Semana 43 • Octubre 2026
                 </span>
-                <span className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[11px] text-zinc-400 font-mono">
+                <span className="px-2 py-0.5 rounded bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[11px] text-[var(--text-muted)] font-mono">
                   Zona Horaria: America/Mexico_City (GMT-6)
                 </span>
               </div>
@@ -664,8 +664,8 @@ export const MasterAgenda = () => {
                         isActive
                           ? 'bg-brand-primary text-black border-brand-primary font-bold shadow-neon-sm'
                           : isDayOpen
-                          ? 'bg-zinc-900/60 text-zinc-400 hover:text-zinc-200 border-zinc-800/80 hover:border-zinc-700'
-                          : 'bg-zinc-950 text-zinc-600 border-zinc-900 line-through opacity-60'
+                          ? 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] border-[var(--border-color)]'
+                          : 'bg-[var(--bg-card-subtle)] text-[var(--text-muted)] border-[var(--border-color)] line-through opacity-50'
                       }`}
                     >
                       <span className="block text-xs font-bold leading-tight">{d.name}</span>
@@ -686,7 +686,7 @@ export const MasterAgenda = () => {
             </div>
 
             {/* Strip Ejecutivo de Métricas del Día */}
-            <div className="flex flex-wrap items-center justify-between gap-4 p-3.5 rounded-xl bg-zinc-900/40 border border-zinc-800/60 text-xs">
+            <div className="flex flex-wrap items-center justify-between gap-4 p-3.5 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-xs">
               <div className="flex flex-wrap items-center gap-3">
                 <span className="px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-400" />
@@ -698,27 +698,27 @@ export const MasterAgenda = () => {
                     {triageCount} Pre-Citas IA
                   </span>
                 )}
-                <span className="px-2.5 py-1 rounded-md bg-zinc-800/60 text-zinc-400 border border-zinc-700/60 font-medium">
+                <span className="px-2.5 py-1 rounded-md bg-[var(--bg-panel)] text-[var(--text-muted)] border border-[var(--border-color)] font-medium">
                   {freeSlotsCount} Espacios Libres
                 </span>
               </div>
 
               <div className="flex items-center gap-5 font-mono">
                 <div className="flex items-center gap-2">
-                  <span className="text-zinc-500 text-[11px]">Ocupación:</span>
-                  <div className="w-24 h-2 rounded-full bg-zinc-800 overflow-hidden">
+                  <span className="text-[var(--text-muted)] text-[11px]">Ocupación:</span>
+                  <div className="w-24 h-2 rounded-full bg-[var(--bg-card)] border border-[var(--border-color)] overflow-hidden">
                     <div
                       className="h-full bg-brand-primary transition-all duration-500"
                       style={{ width: `${totalOccupancyPct}%` }}
                     />
                   </div>
-                  <span className="text-zinc-200 font-bold text-[11px]">{totalOccupancyPct}%</span>
+                  <span className="text-[var(--text-main)] font-bold text-[11px]">{totalOccupancyPct}%</span>
                 </div>
 
                 <div className="flex items-center gap-1 text-emerald-400 font-bold">
                   <DollarSign className="w-3.5 h-3.5" />
                   <span suppressHydrationWarning>${String(estimatedDayRevenue).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} MXN</span>
-                  <span className="text-[10px] text-zinc-500 font-normal">estimados</span>
+                  <span className="text-[10px] text-[var(--text-muted)] font-normal">estimados</span>
                 </div>
               </div>
             </div>
@@ -726,12 +726,12 @@ export const MasterAgenda = () => {
 
           {/* DÍA CERRADO (SI EL NEGOCIO CIERRA ESE DÍA) */}
           {!isOperatingDay ? (
-            <div className="p-12 text-center rounded-2xl bg-zinc-950/50 border border-dashed border-zinc-800 space-y-2">
-              <Lock className="w-8 h-8 text-zinc-600 mx-auto" />
-              <h4 className="text-sm font-bold text-zinc-400 font-mono">
+            <div className="p-12 text-center rounded-2xl bg-[var(--bg-card-subtle)] border border-dashed border-[var(--border-color)] space-y-2">
+              <Lock className="w-8 h-8 text-[var(--text-muted)] mx-auto" />
+              <h4 className="text-sm font-bold text-[var(--text-main)] font-mono">
                 {currentDayConfig.name} — Día no operativo para {activeTenant?.name}
               </h4>
-              <p className="text-xs text-zinc-600 font-mono">
+              <p className="text-xs text-[var(--text-muted)] font-mono">
                 El agente de IA de WhatsApp no ofrecerá citas ni reservas para este día según las políticas extraídas.
               </p>
             </div>
@@ -744,10 +744,10 @@ export const MasterAgenda = () => {
 
                 return (
                   <React.Fragment key={shift.id}>
-                    <div className="rounded-2xl bg-zinc-950/70 border border-zinc-800/80 p-5 space-y-3">
+                    <div className="rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-5 space-y-3">
                       {/* Cabecera del Turno */}
-                      <div className="flex items-center justify-between pb-2 border-b border-zinc-800/50">
-                        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-zinc-300">
+                      <div className="flex items-center justify-between pb-2 border-b border-[var(--border-color)]">
+                        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
                           {isMorning ? (
                             <Sun className="w-4 h-4 text-amber-400" />
                           ) : isDinner ? (
@@ -755,13 +755,13 @@ export const MasterAgenda = () => {
                           ) : (
                             <Sunset className="w-4 h-4 text-indigo-400" />
                           )}
-                          <span className="text-white font-mono font-bold">{shift.name}</span>
-                          <span className="text-zinc-500 font-mono font-normal">
+                          <span className="text-[var(--text-main)] font-mono font-bold">{shift.name}</span>
+                          <span className="text-[var(--text-muted)] font-mono font-normal">
                             • {shift.start} a {shift.end} ({calendarConfig.slotDurationMin} min/bloque)
                           </span>
                         </div>
 
-                        <span className="text-[11px] font-mono text-zinc-500">
+                        <span className="text-[11px] font-mono text-[var(--text-muted)]">
                           Capacidad: {calendarConfig.concurrencyLimit} {calendarConfig.capacityLabel}
                         </span>
                       </div>
@@ -790,7 +790,7 @@ export const MasterAgenda = () => {
 
                     {/* INTERMEDIO / DESCANSO ENTRE TURNOS */}
                     {shiftIndex === 0 && calendarConfig.breakInterval && (
-                      <div className="p-3 rounded-xl bg-zinc-900/30 border border-zinc-800/40 flex items-center justify-center gap-2 text-xs font-mono text-zinc-500">
+                      <div className="p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] flex items-center justify-center gap-2 text-xs font-mono text-[var(--text-muted)]">
                         <Coffee className="w-3.5 h-3.5 text-amber-500/70" />
                         <span>
                           {calendarConfig.breakInterval.start} - {calendarConfig.breakInterval.end}:{' '}
@@ -810,13 +810,13 @@ export const MasterAgenda = () => {
       {/* 4. VISTA 2: SEMANA COMPLETA EN MATRIZ (7 DÍAS EN PARALELO)                 */}
       {/* ========================================================================= */}
       {viewMode === 'week_table' && (
-        <div className="rounded-2xl bg-zinc-950/80 border border-zinc-800/80 p-5 space-y-4 animate-fadeIn overflow-x-auto">
-          <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+        <div className="rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-5 space-y-4 animate-fadeIn overflow-x-auto">
+          <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)]">
+            <h3 className="text-sm font-bold text-[var(--text-main)] flex items-center gap-2">
               <CalendarDays className="w-4 h-4 text-brand-primary" />
               Matriz Semanal de Citas vs Disponibilidad ({activeTenant?.name})
             </h3>
-            <span className="text-xs text-zinc-400 font-mono">
+            <span className="text-xs text-[var(--text-muted)] font-mono">
               Haz clic en cualquier día para abrir sus turnos por horas
             </span>
           </div>
@@ -834,32 +834,32 @@ export const MasterAgenda = () => {
                   }}
                   className={`p-3 rounded-xl border transition-all cursor-pointer ${
                     selectedDay === day.id
-                      ? 'bg-zinc-900/90 border-brand-primary/60 shadow-neon-sm'
+                      ? 'bg-brand-primary/15 border-brand-primary/60 shadow-neon-sm'
                       : isDayOpen
-                      ? 'bg-zinc-900/40 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900/60'
-                      : 'bg-zinc-950/60 border-zinc-900 opacity-50'
+                      ? 'bg-[var(--bg-card)] border-[var(--border-color)] hover:border-brand-primary/40'
+                      : 'bg-[var(--bg-card-subtle)] border-[var(--border-color)] opacity-50'
                   }`}
                 >
-                  <div className="text-center pb-2 border-b border-zinc-800/60">
-                    <span className="text-xs font-bold text-white block">{day.name}</span>
-                    <span className="text-[10px] text-zinc-500 font-mono">{day.dateStr}</span>
+                  <div className="text-center pb-2 border-b border-[var(--border-color)]">
+                    <span className="text-xs font-bold text-[var(--text-main)] block">{day.name}</span>
+                    <span className="text-[10px] text-[var(--text-muted)] font-mono">{day.dateStr}</span>
                   </div>
 
                   <div className="mt-3 space-y-2">
                     {!isDayOpen ? (
-                      <div className="py-6 text-center text-[10px] text-zinc-600 font-mono">
+                      <div className="py-6 text-center text-[10px] text-[var(--text-muted)] font-mono">
                         Cerrado
                       </div>
                     ) : aptsForDay.length === 0 ? (
-                      <div className="py-6 text-center text-[11px] text-zinc-600 font-mono">
+                      <div className="py-6 text-center text-[11px] text-[var(--text-muted)] font-mono">
                         Sin citas
-                        <span className="block text-[9px] text-zinc-700">{totalSlotsCount} libres</span>
+                        <span className="block text-[9px] text-[var(--text-muted)] opacity-70">{totalSlotsCount} libres</span>
                       </div>
                     ) : (
                       aptsForDay.map((apt) => (
                         <div
                           key={apt.id}
-                          className="p-2 rounded-lg bg-zinc-950 border border-zinc-800/80 hover:border-brand-primary/50 text-[11px] space-y-1"
+                          className="p-2 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] hover:border-brand-primary/50 text-[11px] space-y-1"
                         >
                           <div className="flex items-center justify-between">
                             <span className="font-mono text-[10px] text-brand-primary font-bold">
@@ -867,8 +867,8 @@ export const MasterAgenda = () => {
                             </span>
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                           </div>
-                          <p className="text-zinc-200 font-medium truncate">{apt.client}</p>
-                          <p className="text-[10px] text-zinc-500 truncate">{apt.serviceName}</p>
+                          <p className="text-[var(--text-main)] font-medium truncate">{apt.client}</p>
+                          <p className="text-[10px] text-[var(--text-muted)] truncate">{apt.serviceName}</p>
                         </div>
                       ))
                     )}
@@ -884,11 +884,11 @@ export const MasterAgenda = () => {
       {/* 5. VISTA 3: LISTA CLÁSICA AUDITADA                                        */}
       {/* ========================================================================= */}
       {viewMode === 'list' && (
-        <div className="rounded-2xl bg-zinc-950/80 border border-zinc-800/80 p-6 space-y-4 animate-fadeIn">
-          <div className="flex items-center justify-between pb-4 border-b border-zinc-800">
+        <div className="rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-6 space-y-4 animate-fadeIn">
+          <div className="flex items-center justify-between pb-4 border-b border-[var(--border-color)]">
             <div>
-              <h3 className="text-base font-bold text-white">Todas las Citas de {activeTenant?.name}</h3>
-              <p className="text-xs text-zinc-400">
+              <h3 className="text-base font-bold text-[var(--text-main)]">Todas las Citas de {activeTenant?.name}</h3>
+              <p className="text-xs text-[var(--text-muted)]">
                 Mostrando {filteredAppointments.length} citas sincronizadas con Google Calendar API
               </p>
             </div>
@@ -902,31 +902,31 @@ export const MasterAgenda = () => {
               <div
                 key={apt.id}
                 onClick={() => setSelectedAppointment(apt)}
-                className="p-4 rounded-2xl bg-zinc-900/40 border border-zinc-800 hover:border-brand-primary/60 cursor-pointer transition-all space-y-3 group shadow-sm hover:shadow-neon-sm"
+                className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-brand-primary/60 cursor-pointer transition-all space-y-3 group shadow-sm hover:shadow-neon-sm"
               >
                 <div className="flex items-start justify-between">
                   <div className="space-y-0.5">
-                    <h4 className="text-sm font-bold text-white group-hover:text-brand-primary transition-colors">
+                    <h4 className="text-sm font-bold text-[var(--text-main)] group-hover:text-brand-primary transition-colors">
                       {apt.title}
                     </h4>
-                    <p className="text-xs text-zinc-400 font-mono">{apt.specialist}</p>
+                    <p className="text-xs text-[var(--text-muted)] font-mono">{apt.specialist}</p>
                   </div>
                   <Badge variant={apt.depositPaid ? 'success' : 'purple'} size="xs">
                     {apt.depositPaid ? 'ANTICIPO VERIFICADO' : 'TRIAGE IA'}
                   </Badge>
                 </div>
 
-                <div className="pt-2 border-t border-zinc-800/60 grid grid-cols-2 gap-2 text-xs font-mono">
-                  <div className="text-zinc-300 flex items-center gap-1.5">
+                <div className="pt-2 border-t border-[var(--border-color)] grid grid-cols-2 gap-2 text-xs font-mono">
+                  <div className="text-[var(--text-main)] flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5 text-brand-primary" />
                     <span>{apt.start ? formatDateTime(apt.start) : `${apt.hour} hrs`}</span>
                   </div>
-                  <div className="text-zinc-400 flex items-center gap-1.5 truncate">
-                    <User className="w-3.5 h-3.5 text-zinc-500" />
+                  <div className="text-[var(--text-muted)] flex items-center gap-1.5 truncate">
+                    <User className="w-3.5 h-3.5 text-[var(--text-muted)]" />
                     <span className="truncate">{apt.client}</span>
                   </div>
-                  <div className="text-zinc-400 flex items-center gap-1.5 truncate">
-                    <Phone className="w-3.5 h-3.5 text-zinc-500" />
+                  <div className="text-[var(--text-muted)] flex items-center gap-1.5 truncate">
+                    <Phone className="w-3.5 h-3.5 text-[var(--text-muted)]" />
                     <span className="truncate">{apt.phone}</span>
                   </div>
                   <div className="text-emerald-400 flex items-center gap-1.5">
@@ -951,76 +951,76 @@ export const MasterAgenda = () => {
               if (e.target === e.currentTarget) setSelectedAppointment(null);
             }}
           >
-            <div className="w-full max-w-lg rounded-3xl bg-zinc-950 border border-brand-primary/50 shadow-2xl p-6 relative space-y-5 my-auto animate-scale-up">
+            <div className="w-full max-w-lg rounded-3xl bg-[var(--bg-panel)] border border-neon/50 shadow-2xl p-6 relative space-y-5 my-auto animate-scale-up">
             <button
               type="button"
               onClick={() => setSelectedAppointment(null)}
-              className="absolute top-5 right-5 p-2 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white transition-colors"
+              className="absolute top-5 right-5 p-2 rounded-xl bg-[var(--bg-card-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
 
             <div className="space-y-1">
-              <span className="text-[10px] font-mono font-bold uppercase text-brand-primary tracking-wider flex items-center gap-1.5">
-                <CheckCircle2 className="w-3 h-3 text-brand-primary" />
+              <span className="text-[10px] font-mono font-bold uppercase text-neon tracking-wider flex items-center gap-1.5">
+                <CheckCircle2 className="w-3 h-3 text-neon" />
                 Cita Confirmada Google Calendar & Vector Inside
               </span>
-              <h3 className="text-xl font-bold text-white leading-snug">
+              <h3 className="text-xl font-bold text-[var(--text-main)] leading-snug">
                 {selectedAppointment.title}
               </h3>
-              <p className="text-xs text-zinc-400 font-mono">
-                Paciente / Cliente: <strong className="text-zinc-200">{selectedAppointment.client}</strong>
+              <p className="text-xs text-[var(--text-muted)] font-mono">
+                Paciente / Cliente: <strong className="text-[var(--text-main)]">{selectedAppointment.client}</strong>
               </p>
             </div>
 
             {/* Metadatos en Grilla */}
             <div className="grid grid-cols-2 gap-3 text-xs font-mono">
-              <div className="p-3 rounded-xl bg-zinc-900/60 border border-zinc-800">
-                <span className="text-[10px] text-zinc-500 uppercase block">Horario Agendado</span>
-                <span className="text-white font-bold">
+              <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
+                <span className="text-[10px] text-[var(--text-muted)] uppercase block">Horario Agendado</span>
+                <span className="text-[var(--text-main)] font-bold">
                   {selectedAppointment.start ? formatDateTime(selectedAppointment.start) : `${selectedAppointment.hour} hrs`}
                 </span>
               </div>
-              <div className="p-3 rounded-xl bg-zinc-900/60 border border-zinc-800">
-                <span className="text-[10px] text-zinc-500 uppercase block">Contacto WhatsApp</span>
-                <span className="text-emerald-400 font-bold">{selectedAppointment.phone}</span>
+              <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
+                <span className="text-[10px] text-[var(--text-muted)] uppercase block">Contacto WhatsApp</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-bold">{selectedAppointment.phone}</span>
               </div>
-              <div className="p-3 rounded-xl bg-zinc-900/60 border border-zinc-800">
-                <span className="text-[10px] text-zinc-500 uppercase block">Especialista / Asignado</span>
-                <span className="text-zinc-200 font-medium truncate">{selectedAppointment.specialist}</span>
+              <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
+                <span className="text-[10px] text-[var(--text-muted)] uppercase block">Especialista / Asignado</span>
+                <span className="text-[var(--text-main)] font-medium truncate">{selectedAppointment.specialist}</span>
               </div>
-              <div className="p-3 rounded-xl bg-zinc-900/60 border border-zinc-800">
-                <span className="text-[10px] text-zinc-500 uppercase block">Valor Estimado Cita</span>
-                <span className="text-emerald-400 font-bold">${selectedAppointment.estimatedValue || 1200} MXN</span>
+              <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
+                <span className="text-[10px] text-[var(--text-muted)] uppercase block">Valor Estimado Cita</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-bold">${selectedAppointment.estimatedValue || 1200} MXN</span>
               </div>
             </div>
 
             {/* Tarjeta de Correo Gmail & Previsualización Membretada */}
-            <div className="p-4 rounded-2xl bg-gradient-to-b from-zinc-900 to-zinc-950 border border-zinc-800 space-y-3 text-xs font-mono">
-              <div className="flex items-center justify-between text-blue-400 font-bold border-b border-zinc-800/80 pb-2">
+            <div className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-3 text-xs font-mono">
+              <div className="flex items-center justify-between text-blue-500 font-bold border-b border-[var(--border-color)] pb-2">
                 <span className="flex items-center gap-1.5">
-                  <Mail className="w-4 h-4 text-brand-primary" />
+                  <Mail className="w-4 h-4 text-neon" />
                   Notificación Membretada Oficial
                 </span>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
                   Archivo .ICS Adjunto ✅
                 </span>
               </div>
 
               {/* Simulación del Correo Membretado HTML */}
               <div
-                className="rounded-xl border border-zinc-800/80 bg-zinc-950 p-4 space-y-3 font-sans shadow-lg"
+                className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-card-subtle)] p-4 space-y-3 font-sans shadow-lg"
                 style={{ borderTop: `4px solid ${emailConfig.accentColor || '#D4FF00'}` }}
               >
                 {/* Membrete / Header de Marca */}
-                <div className="flex items-center justify-between pb-2.5 border-b border-zinc-800/80">
+                <div className="flex items-center justify-between pb-2.5 border-b border-[var(--border-color)]">
                   <div className="flex items-center gap-2.5">
-                    <span className="text-xl p-1.5 rounded-lg bg-zinc-900 border border-zinc-800">
+                    <span className="text-xl p-1.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)]">
                       {emailConfig.logoAvatar || activeTenant?.avatar || '🏢'}
                     </span>
                     <div>
-                      <span className="text-xs font-bold text-white block">{emailConfig.senderName}</span>
-                      <span className="text-[10px] text-zinc-500 font-mono">{emailConfig.senderEmail}</span>
+                      <span className="text-xs font-bold text-[var(--text-main)] block">{emailConfig.senderName}</span>
+                      <span className="text-[10px] text-[var(--text-muted)] font-mono">{emailConfig.senderEmail}</span>
                     </div>
                   </div>
                   <span
@@ -1037,7 +1037,7 @@ export const MasterAgenda = () => {
 
                 {/* Cuerpo del Mensaje */}
                 <div className="space-y-1">
-                  <p className="text-xs font-bold text-zinc-100">
+                  <p className="text-xs font-bold text-[var(--text-main)]">
                     {replaceEmailVariables(emailConfig.welcomeMessage, {
                       client: selectedAppointment.client,
                       service: selectedAppointment.serviceName,
@@ -1045,26 +1045,26 @@ export const MasterAgenda = () => {
                       business: emailConfig.senderName,
                     })}
                   </p>
-                  <p className="text-[11px] text-zinc-400 leading-relaxed">
-                    Tu cita para <strong className="text-white">{selectedAppointment.serviceName || selectedAppointment.title}</strong> ha sido verificada y registrada en el sistema.
+                  <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
+                    Tu cita para <strong className="text-[var(--text-main)]">{selectedAppointment.serviceName || selectedAppointment.title}</strong> ha sido verificada y registrada en el sistema.
                   </p>
                 </div>
 
                 {/* Tarjeta de Resumen en el Correo */}
-                <div className="p-3 rounded-lg bg-zinc-900/80 border border-zinc-800 text-[11px] font-mono space-y-1.5 text-zinc-300">
+                <div className="p-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] text-[11px] font-mono space-y-1.5 text-[var(--text-main)]">
                   <div className="flex items-center gap-2">
-                    <span className="text-zinc-500">🗓️ Fecha:</span>
-                    <strong className="text-white">
+                    <span className="text-[var(--text-muted)]">🗓️ Fecha:</span>
+                    <strong className="text-[var(--text-main)]">
                       {selectedAppointment.start ? formatDateTime(selectedAppointment.start) : `${selectedAppointment.hour} hrs`}
                     </strong>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-zinc-500">👤 Asignado:</span>
-                    <span className="text-zinc-200">{selectedAppointment.specialist}</span>
+                    <span className="text-[var(--text-muted)]">👤 Asignado:</span>
+                    <span className="text-[var(--text-main)]">{selectedAppointment.specialist}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-zinc-500">📍 Lugar:</span>
-                    <span className="text-zinc-300">
+                    <span className="text-[var(--text-muted)]">📍 Lugar:</span>
+                    <span className="text-[var(--text-main)]">
                       {emailConfig.locationType === 'virtual'
                         ? 'Enlace Virtual Google Meet'
                         : emailConfig.locationAddress}
@@ -1074,15 +1074,15 @@ export const MasterAgenda = () => {
 
                 {/* Indicaciones Previas */}
                 {emailConfig.instructions && (
-                  <div className="p-2.5 rounded-lg bg-zinc-900/40 border border-zinc-800/60 text-[10px] text-zinc-400 font-mono flex items-start gap-2">
-                    <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                  <div className="p-2.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] text-[10px] text-[var(--text-muted)] font-mono flex items-start gap-2">
+                    <AlertCircle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
                     <span>{emailConfig.instructions}</span>
                   </div>
                 )}
 
                 {/* Botón CTA dentro del correo */}
-                <div className="pt-1 flex items-center justify-between text-[10px] text-zinc-500 font-mono">
-                  <span className="flex items-center gap-1 text-emerald-400">
+                <div className="pt-1 flex items-center justify-between text-[10px] text-[var(--text-muted)] font-mono">
+                  <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
                     <CheckCircle2 className="w-3 h-3" />
                     Adjunto: {selectedAppointment.id}.ics
                   </span>
@@ -1094,8 +1094,8 @@ export const MasterAgenda = () => {
             </div>
 
             {gmailSentSuccess && (
-              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-mono flex items-center gap-2 animate-fadeIn">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-300 text-xs font-mono flex items-center gap-2 animate-fadeIn">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                 <span>¡Correo de confirmación membretado despachado con éxito!</span>
               </div>
             )}
@@ -1115,7 +1115,7 @@ export const MasterAgenda = () => {
                 href={`https://wa.me/${selectedAppointment.phone.replace(/[^0-9]/g, '')}`}
                 target="_blank"
                 rel="noreferrer"
-                className="px-4 py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-bold border border-emerald-500/30 flex items-center gap-1.5 transition-all"
+                className="px-4 py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-500/30 flex items-center gap-1.5 transition-all"
               >
                 <MessageCircle className="w-4 h-4" />
                 <span>WhatsApp</span>
@@ -1123,7 +1123,7 @@ export const MasterAgenda = () => {
               <button
                 type="button"
                 onClick={() => setSelectedAppointment(null)}
-                className="px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 text-xs font-mono border border-zinc-800"
+                className="px-4 py-2.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)] text-xs font-mono border border-[var(--border-color)]"
               >
                 Cerrar
               </button>
@@ -1139,37 +1139,37 @@ export const MasterAgenda = () => {
       {showConfigModal && (
         <Portal>
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto"
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 dark:bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto"
             onClick={(e) => {
               if (e.target === e.currentTarget) setShowConfigModal(false);
             }}
           >
-            <div className="w-full max-w-4xl rounded-3xl bg-zinc-950 border border-brand-primary/50 shadow-2xl p-5 sm:p-7 relative flex flex-col max-h-[92vh] overflow-hidden my-auto animate-scale-up">
+            <div className="w-full max-w-4xl rounded-3xl bg-[var(--bg-panel)] border border-brand-primary/50 shadow-2xl p-5 sm:p-7 relative flex flex-col max-h-[92vh] overflow-hidden my-auto animate-scale-up">
             {/* Header del Modal */}
-            <div className="flex items-start justify-between pb-4 border-b border-zinc-800 shrink-0">
+            <div className="flex items-start justify-between pb-4 border-b border-[var(--border-color)] shrink-0">
               <div className="space-y-1">
                 <span className="text-[10px] font-mono font-bold uppercase text-brand-primary tracking-wider flex items-center gap-1.5">
                   <Settings2 className="w-3.5 h-3.5 text-brand-primary" />
                   Tenant: {activeTenant?.name} • {activeTenant?.giro}
                 </span>
-                <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                <h3 className="text-xl sm:text-2xl font-black text-[var(--text-main)] tracking-tight">
                   Centro de Personalización: Agenda, Turnos & Email Studio
                 </h3>
-                <p className="text-xs text-zinc-400 font-mono">
+                <p className="text-xs text-[var(--text-muted)] font-mono">
                   Configura horarios, turnos dinámicos y el diseño exacto del correo membretado oficial para tus clientes.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowConfigModal(false)}
-                className="p-2 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white transition-colors"
+                className="p-2 rounded-xl bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)] transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Pestañas de Navegación del Modal */}
-            <div className="flex items-center gap-2 pt-3 pb-3 border-b border-zinc-800 shrink-0 overflow-x-auto">
+            <div className="flex items-center gap-2 pt-3 pb-3 border-b border-[var(--border-color)] shrink-0 overflow-x-auto">
               {[
                 { id: 'shifts', label: '1. Horarios & Turnos Dinámicos', icon: Clock },
                 { id: 'email', label: '2. Email Studio & Membrete', icon: Palette },
@@ -1185,7 +1185,7 @@ export const MasterAgenda = () => {
                     className={`px-4 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all shrink-0 ${
                       isActive
                         ? 'bg-brand-primary text-black shadow-neon-sm'
-                        : 'bg-zinc-900/60 text-zinc-400 hover:text-white hover:bg-zinc-900'
+                        : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)]'
                     }`}
                   >
                     <IconComponent className="w-4 h-4" />
@@ -1203,13 +1203,13 @@ export const MasterAgenda = () => {
               {activeModalTab === 'shifts' && (
                 <div className="space-y-5 animate-fadeIn">
                   {/* Días Operativos de la Semana */}
-                  <div className="p-4 rounded-2xl bg-zinc-900/40 border border-zinc-800 space-y-3">
+                  <div className="p-4 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-white font-mono flex items-center gap-2">
+                      <span className="text-xs font-bold text-[var(--text-main)] font-mono flex items-center gap-2">
                         <CalendarDays className="w-4 h-4 text-brand-primary" />
                         Días de Operación Semanal
                       </span>
-                      <span className="text-[11px] text-zinc-500 font-mono">
+                      <span className="text-[11px] text-[var(--text-muted)] font-mono">
                         {(calendarConfig.operatingDays || []).length} días abiertos
                       </span>
                     </div>
@@ -1223,8 +1223,8 @@ export const MasterAgenda = () => {
                             onClick={() => handleToggleDay(d.id)}
                             className={`p-2.5 rounded-xl border text-center transition-all ${
                               isOpen
-                                ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/40 font-bold shadow-sm'
-                                : 'bg-zinc-950 text-zinc-600 border-zinc-900 line-through'
+                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/40 font-bold shadow-sm'
+                                : 'bg-[var(--bg-card)] text-[var(--text-muted)] border-[var(--border-color)] line-through opacity-50'
                             }`}
                           >
                             <span className="block text-xs">{d.name}</span>
@@ -1236,14 +1236,14 @@ export const MasterAgenda = () => {
                   </div>
 
                   {/* Duración de Citas & Capacidad */}
-                  <div className="p-4 rounded-2xl bg-zinc-900/40 border border-zinc-800 space-y-4">
-                    <span className="text-xs font-bold text-white font-mono flex items-center gap-2">
+                  <div className="p-4 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-4">
+                    <span className="text-xs font-bold text-[var(--text-main)] font-mono flex items-center gap-2">
                       <Clock className="w-4 h-4 text-brand-primary" />
                       Duración por Cita & Capacidad Concurrente
                     </span>
 
                     <div className="space-y-2">
-                      <label className="text-[11px] text-zinc-400 font-mono block">
+                      <label className="text-[11px] text-[var(--text-muted)] font-mono block">
                         Duración de cada Bloque (Selecciona o escribe en minutos):
                       </label>
                       <div className="grid grid-cols-2 sm:grid-cols-6 gap-2 text-xs font-mono">
@@ -1255,7 +1255,7 @@ export const MasterAgenda = () => {
                             className={`p-2 rounded-xl border transition-all text-center ${
                               calendarConfig.slotDurationMin === mins
                                 ? 'bg-brand-primary text-black font-bold border-brand-primary shadow-neon-sm'
-                                : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:text-white hover:border-zinc-700'
+                                : 'bg-[var(--bg-card)] text-[var(--text-muted)] border-[var(--border-color)] hover:text-[var(--text-main)] hover:border-brand-primary/50'
                             }`}
                           >
                             {mins} min
@@ -1266,7 +1266,7 @@ export const MasterAgenda = () => {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono pt-1">
                       <div>
-                        <label className="text-[10px] text-zinc-400 block mb-1">
+                        <label className="text-[10px] text-[var(--text-muted)] block mb-1">
                           Capacidad Concurrente (Pacientes/Clientes simultáneos)
                         </label>
                         <input
@@ -1277,12 +1277,12 @@ export const MasterAgenda = () => {
                           onChange={(e) =>
                             setCalendarConfig({ ...calendarConfig, concurrencyLimit: Math.max(1, Number(e.target.value)) })
                           }
-                          className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 text-white font-bold focus:border-brand-primary outline-none"
+                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2.5 text-[var(--text-main)] font-bold focus:border-brand-primary outline-none"
                         />
                       </div>
 
                       <div>
-                        <label className="text-[10px] text-zinc-400 block mb-1">
+                        <label className="text-[10px] text-[var(--text-muted)] block mb-1">
                           Nomenclatura del Recurso
                         </label>
                         <input
@@ -1290,16 +1290,16 @@ export const MasterAgenda = () => {
                           value={calendarConfig.capacityLabel || 'Cita / Paciente'}
                           onChange={(e) => setCalendarConfig({ ...calendarConfig, capacityLabel: e.target.value })}
                           placeholder="Ej: Sillón / Paciente, Mesa / Comensal, Box Médico"
-                          className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 text-white focus:border-brand-primary outline-none"
+                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2.5 text-[var(--text-main)] focus:border-brand-primary outline-none"
                         />
                       </div>
                     </div>
                   </div>
 
                   {/* Gestor Dinámico de Turnos */}
-                  <div className="p-4 rounded-2xl bg-zinc-900/40 border border-zinc-800 space-y-4">
+                  <div className="p-4 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-white font-mono flex items-center gap-2">
+                      <span className="text-xs font-bold text-[var(--text-main)] font-mono flex items-center gap-2">
                         <Sun className="w-4 h-4 text-amber-400" />
                         Turnos Operativos Configurados ({calendarConfig.shifts?.length || 0})
                       </span>
@@ -1317,7 +1317,7 @@ export const MasterAgenda = () => {
                       {(calendarConfig.shifts || []).map((shift, idx) => (
                         <div
                           key={shift.id || idx}
-                          className="p-3.5 rounded-xl bg-zinc-950 border border-zinc-800/90 space-y-3"
+                          className="p-3.5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-3"
                         >
                           <div className="flex items-center justify-between gap-3">
                             <div className="flex-1">
@@ -1325,11 +1325,11 @@ export const MasterAgenda = () => {
                                 type="text"
                                 value={shift.name}
                                 onChange={(e) => handleUpdateShift(idx, 'name', e.target.value)}
-                                className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono font-bold focus:border-brand-primary outline-none"
+                                className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg px-2.5 py-1.5 text-xs text-[var(--text-main)] font-mono font-bold focus:border-brand-primary outline-none"
                                 placeholder="Nombre del Turno (ej. Turno Matutino)"
                               />
                             </div>
-                            <span className="px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-800 text-[10px] font-mono text-brand-primary font-bold shrink-0">
+                            <span className="px-2.5 py-1 rounded-md bg-[var(--bg-card)] border border-[var(--border-color)] text-[10px] font-mono text-brand-primary font-bold shrink-0">
                               ⚡ {shift.hours?.length || 0} slots ({calendarConfig.slotDurationMin} min)
                             </span>
                             {(calendarConfig.shifts || []).length > 1 && (
@@ -1346,23 +1346,23 @@ export const MasterAgenda = () => {
 
                           <div className="grid grid-cols-2 gap-3 text-xs font-mono">
                             <div>
-                              <span className="text-[10px] text-zinc-500 block mb-1">Hora Inicio</span>
+                              <span className="text-[10px] text-[var(--text-muted)] block mb-1">Hora Inicio</span>
                               <input
                                 type="text"
                                 value={shift.start}
                                 onChange={(e) => handleUpdateShift(idx, 'start', e.target.value)}
                                 placeholder="09:00"
-                                className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-center text-white focus:border-brand-primary outline-none"
+                                className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg p-2 text-center text-[var(--text-main)] focus:border-brand-primary outline-none"
                               />
                             </div>
                             <div>
-                              <span className="text-[10px] text-zinc-500 block mb-1">Hora Fin</span>
+                              <span className="text-[10px] text-[var(--text-muted)] block mb-1">Hora Fin</span>
                               <input
                                 type="text"
                                 value={shift.end}
                                 onChange={(e) => handleUpdateShift(idx, 'end', e.target.value)}
                                 placeholder="14:00"
-                                className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-center text-white focus:border-brand-primary outline-none"
+                                className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg p-2 text-center text-[var(--text-main)] focus:border-brand-primary outline-none"
                               />
                             </div>
                           </div>
@@ -1372,9 +1372,9 @@ export const MasterAgenda = () => {
                   </div>
 
                   {/* Receso / Intervalo Intermedio */}
-                  <div className="p-4 rounded-2xl bg-zinc-900/40 border border-zinc-800 space-y-3">
+                  <div className="p-4 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-white font-mono flex items-center gap-2">
+                      <span className="text-xs font-bold text-[var(--text-main)] font-mono flex items-center gap-2">
                         <Coffee className="w-4 h-4 text-amber-500" />
                         Pausa Intermedia / Esterilización / Almuerzo
                       </span>
@@ -1396,7 +1396,7 @@ export const MasterAgenda = () => {
                     {calendarConfig.breakInterval && (
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs font-mono pt-1">
                         <div>
-                          <label className="text-[10px] text-zinc-500 block mb-1">Inicio de Pausa</label>
+                          <label className="text-[10px] text-[var(--text-muted)] block mb-1">Inicio de Pausa</label>
                           <input
                             type="text"
                             value={calendarConfig.breakInterval.start}
@@ -1406,11 +1406,11 @@ export const MasterAgenda = () => {
                                 breakInterval: { ...calendarConfig.breakInterval, start: e.target.value },
                               })
                             }
-                            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-2 text-center text-white"
+                            className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2 text-center text-[var(--text-main)]"
                           />
                         </div>
                         <div>
-                          <label className="text-[10px] text-zinc-500 block mb-1">Fin de Pausa</label>
+                          <label className="text-[10px] text-[var(--text-muted)] block mb-1">Fin de Pausa</label>
                           <input
                             type="text"
                             value={calendarConfig.breakInterval.end}
@@ -1420,11 +1420,11 @@ export const MasterAgenda = () => {
                                 breakInterval: { ...calendarConfig.breakInterval, end: e.target.value },
                               })
                             }
-                            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-2 text-center text-white"
+                            className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2 text-center text-[var(--text-main)]"
                           />
                         </div>
                         <div>
-                          <label className="text-[10px] text-zinc-500 block mb-1">Motivo / Etiqueta</label>
+                          <label className="text-[10px] text-[var(--text-muted)] block mb-1">Motivo / Etiqueta</label>
                           <input
                             type="text"
                             value={calendarConfig.breakInterval.label}
@@ -1434,7 +1434,7 @@ export const MasterAgenda = () => {
                                 breakInterval: { ...calendarConfig.breakInterval, label: e.target.value },
                               })
                             }
-                            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-2 text-white"
+                            className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2 text-[var(--text-main)]"
                           />
                         </div>
                       </div>
@@ -1449,46 +1449,46 @@ export const MasterAgenda = () => {
               {activeModalTab === 'email' && (
                 <div className="space-y-5 animate-fadeIn">
                   {/* Identidad del Remitente */}
-                  <div className="p-4 rounded-2xl bg-zinc-900/40 border border-zinc-800 space-y-4">
-                    <span className="text-xs font-bold text-white font-mono flex items-center gap-2">
+                  <div className="p-4 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-4">
+                    <span className="text-xs font-bold text-[var(--text-main)] font-mono flex items-center gap-2">
                       <Building2 className="w-4 h-4 text-brand-primary" />
                       1. Identidad del Remitente & Branding Oficial
                     </span>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono">
                       <div>
-                        <label className="text-[10px] text-zinc-400 block mb-1">Nombre Oficial Remitente</label>
+                        <label className="text-[10px] text-[var(--text-muted)] block mb-1">Nombre Oficial Remitente</label>
                         <input
                           type="text"
                           value={emailConfig.senderName}
                           onChange={(e) => setEmailConfig({ ...emailConfig, senderName: e.target.value })}
-                          className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-2 text-white focus:border-brand-primary outline-none"
+                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2 text-[var(--text-main)] focus:border-brand-primary outline-none"
                         />
                       </div>
                       <div>
-                        <label className="text-[10px] text-zinc-400 block mb-1">Correo Emisor (Gmail / SMTP)</label>
+                        <label className="text-[10px] text-[var(--text-muted)] block mb-1">Correo Emisor (Gmail / SMTP)</label>
                         <input
                           type="text"
                           value={emailConfig.senderEmail}
                           onChange={(e) => setEmailConfig({ ...emailConfig, senderEmail: e.target.value })}
-                          className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-2 text-white focus:border-brand-primary outline-none"
+                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2 text-[var(--text-main)] focus:border-brand-primary outline-none"
                         />
                       </div>
                       <div>
-                        <label className="text-[10px] text-zinc-400 block mb-1">Logotipo / Avatar del Negocio</label>
+                        <label className="text-[10px] text-[var(--text-muted)] block mb-1">Logotipo / Avatar del Negocio</label>
                         <input
                           type="text"
                           value={emailConfig.logoAvatar}
                           onChange={(e) => setEmailConfig({ ...emailConfig, logoAvatar: e.target.value })}
                           placeholder="Emoji (🦷) o URL de imagen"
-                          className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-2 text-white focus:border-brand-primary outline-none"
+                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2 text-[var(--text-main)] focus:border-brand-primary outline-none"
                         />
                       </div>
                     </div>
 
                     {/* Selector de Color de Marca */}
                     <div className="space-y-2 pt-1">
-                      <label className="text-[10px] text-zinc-400 font-mono block">
+                      <label className="text-[10px] text-[var(--text-muted)] font-mono block">
                         Color Primario del Membrete & Botones:
                       </label>
                       <div className="flex flex-wrap items-center gap-2">
@@ -1506,8 +1506,8 @@ export const MasterAgenda = () => {
                             onClick={() => setEmailConfig({ ...emailConfig, accentColor: c.color })}
                             className={`px-3 py-1.5 rounded-xl border text-xs font-mono flex items-center gap-2 transition-all ${
                               emailConfig.accentColor === c.color
-                                ? 'bg-zinc-800 text-white font-bold border-white'
-                                : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:text-white'
+                                ? 'bg-brand-primary/20 text-[var(--text-main)] font-bold border-brand-primary shadow-sm'
+                                : 'bg-[var(--bg-card)] text-[var(--text-muted)] border-[var(--border-color)] hover:text-[var(--text-main)]'
                             }`}
                           >
                             <span className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: c.color }} />
@@ -1518,7 +1518,7 @@ export const MasterAgenda = () => {
                           type="color"
                           value={emailConfig.accentColor}
                           onChange={(e) => setEmailConfig({ ...emailConfig, accentColor: e.target.value })}
-                          className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-700 cursor-pointer"
+                          className="w-8 h-8 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] cursor-pointer"
                           title="Color personalizado"
                         />
                       </div>
@@ -1526,16 +1526,16 @@ export const MasterAgenda = () => {
                   </div>
 
                   {/* Redacción & Variables Dinámicas */}
-                  <div className="p-4 rounded-2xl bg-zinc-900/40 border border-zinc-800 space-y-4">
+                  <div className="p-4 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <span className="text-xs font-bold text-white font-mono flex items-center gap-2">
+                      <span className="text-xs font-bold text-[var(--text-main)] font-mono flex items-center gap-2">
                         <Mail className="w-4 h-4 text-brand-primary" />
                         2. Redacción del Correo & Variables Dinámicas
                       </span>
-                      <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-mono text-zinc-400">
-                        <span className="text-zinc-500">Variables:</span>
+                      <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-mono text-[var(--text-muted)]">
+                        <span className="text-[var(--text-muted)]">Variables:</span>
                         {['{{cliente}}', '{{servicio}}', '{{fecha}}', '{{hora}}', '{{especialista}}', '{{negocio}}'].map((v) => (
-                          <span key={v} className="px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-brand-primary">
+                          <span key={v} className="px-1.5 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--border-color)] text-brand-primary">
                             {v}
                           </span>
                         ))}
@@ -1544,27 +1544,27 @@ export const MasterAgenda = () => {
 
                     <div className="space-y-3 text-xs font-mono">
                       <div>
-                        <label className="text-[10px] text-zinc-400 block mb-1">Asunto del Correo (Subject)</label>
+                        <label className="text-[10px] text-[var(--text-muted)] block mb-1">Asunto del Correo (Subject)</label>
                         <input
                           type="text"
                           value={emailConfig.subject}
                           onChange={(e) => setEmailConfig({ ...emailConfig, subject: e.target.value })}
-                          className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 text-white focus:border-brand-primary outline-none"
+                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2.5 text-[var(--text-main)] focus:border-brand-primary outline-none"
                         />
                       </div>
 
                       <div>
-                        <label className="text-[10px] text-zinc-400 block mb-1">Mensaje de Saludo & Bienvenida</label>
+                        <label className="text-[10px] text-[var(--text-muted)] block mb-1">Mensaje de Saludo & Bienvenida</label>
                         <textarea
                           rows={2}
                           value={emailConfig.welcomeMessage}
                           onChange={(e) => setEmailConfig({ ...emailConfig, welcomeMessage: e.target.value })}
-                          className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 text-white focus:border-brand-primary outline-none"
+                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2.5 text-[var(--text-main)] focus:border-brand-primary outline-none"
                         />
                       </div>
 
                       <div>
-                        <label className="text-[10px] text-zinc-400 block mb-1">
+                        <label className="text-[10px] text-[var(--text-muted)] block mb-1">
                           Indicaciones Previas / Preparación para la Cita
                         </label>
                         <textarea
@@ -1572,46 +1572,46 @@ export const MasterAgenda = () => {
                           value={emailConfig.instructions}
                           onChange={(e) => setEmailConfig({ ...emailConfig, instructions: e.target.value })}
                           placeholder="Ej: Llegar 10 min antes, presentar identificación oficial y estudios previos."
-                          className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 text-white focus:border-brand-primary outline-none"
+                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2.5 text-[var(--text-main)] focus:border-brand-primary outline-none"
                         />
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                          <label className="text-[10px] text-zinc-400 block mb-1">Modalidad & Dirección Física</label>
+                          <label className="text-[10px] text-[var(--text-muted)] block mb-1">Modalidad & Dirección Física</label>
                           <input
                             type="text"
                             value={emailConfig.locationAddress}
                             onChange={(e) => setEmailConfig({ ...emailConfig, locationAddress: e.target.value })}
-                            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-2 text-white focus:border-brand-primary outline-none"
+                            className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2 text-[var(--text-main)] focus:border-brand-primary outline-none"
                           />
                         </div>
                         <div>
-                          <label className="text-[10px] text-zinc-400 block mb-1">Texto Botón de Acción (CTA)</label>
+                          <label className="text-[10px] text-[var(--text-muted)] block mb-1">Texto Botón de Acción (CTA)</label>
                           <input
                             type="text"
                             value={emailConfig.ctaText}
                             onChange={(e) => setEmailConfig({ ...emailConfig, ctaText: e.target.value })}
-                            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-2 text-white focus:border-brand-primary outline-none"
+                            className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2 text-[var(--text-main)] focus:border-brand-primary outline-none"
                           />
                         </div>
                       </div>
 
                       <div>
-                        <label className="text-[10px] text-zinc-400 block mb-1">Políticas de Cancelación & Reprogramación</label>
+                        <label className="text-[10px] text-[var(--text-muted)] block mb-1">Políticas de Cancelación & Reprogramación</label>
                         <input
                           type="text"
                           value={emailConfig.cancellationPolicy}
                           onChange={(e) => setEmailConfig({ ...emailConfig, cancellationPolicy: e.target.value })}
-                          className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-2 text-white focus:border-brand-primary outline-none"
+                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2.5 text-[var(--text-main)] focus:border-brand-primary outline-none"
                         />
                       </div>
                     </div>
                   </div>
 
                   {/* Automatizaciones de Adjunto & WhatsApp */}
-                  <div className="p-4 rounded-2xl bg-zinc-900/40 border border-zinc-800 space-y-2 text-xs font-mono">
-                    <label className="flex items-center gap-2.5 cursor-pointer text-zinc-200">
+                  <div className="p-4 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-2 text-xs font-mono">
+                    <label className="flex items-center gap-2.5 cursor-pointer text-[var(--text-main)]">
                       <input
                         type="checkbox"
                         checked={emailConfig.includeIcs}
@@ -1621,7 +1621,7 @@ export const MasterAgenda = () => {
                       <span>Adjuntar archivo <strong>.ICS (RFC 5545)</strong> autogenerado para Google / Apple / Outlook Calendar</span>
                     </label>
 
-                    <label className="flex items-center gap-2.5 cursor-pointer text-zinc-200">
+                    <label className="flex items-center gap-2.5 cursor-pointer text-[var(--text-main)]">
                       <input
                         type="checkbox"
                         checked={emailConfig.includeWhatsapp}
@@ -1640,20 +1640,20 @@ export const MasterAgenda = () => {
               {activeModalTab === 'preview' && (
                 <div className="space-y-4 animate-fadeIn">
                   {/* Selector de Dispositivo Desktop / Móvil */}
-                  <div className="flex items-center justify-between pb-2 border-b border-zinc-800">
-                    <div className="flex items-center gap-2 text-xs font-mono text-zinc-400">
+                  <div className="flex items-center justify-between pb-2 border-b border-[var(--border-color)]">
+                    <div className="flex items-center gap-2 text-xs font-mono text-[var(--text-muted)]">
                       <Eye className="w-4 h-4 text-brand-primary" />
                       <span>Previsualización en tiempo real del correo membretado HTML</span>
                     </div>
 
-                    <div className="flex items-center gap-1.5 p-1 rounded-xl bg-zinc-900 border border-zinc-800">
+                    <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
                       <button
                         type="button"
                         onClick={() => setPreviewDevice('desktop')}
                         className={`px-3 py-1 rounded-lg text-xs font-mono flex items-center gap-1.5 transition-all ${
                           previewDevice === 'desktop'
-                            ? 'bg-zinc-800 text-white font-bold'
-                            : 'text-zinc-400 hover:text-white'
+                            ? 'bg-[var(--bg-panel)] text-[var(--text-main)] font-bold shadow-sm'
+                            : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                         }`}
                       >
                         <Monitor className="w-3.5 h-3.5" />
@@ -1664,8 +1664,8 @@ export const MasterAgenda = () => {
                         onClick={() => setPreviewDevice('mobile')}
                         className={`px-3 py-1 rounded-lg text-xs font-mono flex items-center gap-1.5 transition-all ${
                           previewDevice === 'mobile'
-                            ? 'bg-zinc-800 text-white font-bold'
-                            : 'text-zinc-400 hover:text-white'
+                            ? 'bg-[var(--bg-panel)] text-[var(--text-main)] font-bold shadow-sm'
+                            : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                         }`}
                       >
                         <Smartphone className="w-3.5 h-3.5" />
@@ -1676,19 +1676,19 @@ export const MasterAgenda = () => {
 
                   {/* Simulador de Cliente de Correo */}
                   <div className={`mx-auto transition-all ${previewDevice === 'mobile' ? 'max-w-sm' : 'w-full'}`}>
-                    <div className="rounded-2xl border border-zinc-800 bg-zinc-950 shadow-2xl overflow-hidden font-sans">
+                    <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--bg-panel)] shadow-2xl overflow-hidden font-sans">
                       {/* Barra Superior del Correo (Headers) */}
-                      <div className="p-3.5 bg-zinc-900/90 border-b border-zinc-800 text-xs font-mono space-y-1">
-                        <div className="flex items-center justify-between text-zinc-400 text-[11px]">
+                      <div className="p-3.5 bg-[var(--bg-card)] border-b border-[var(--border-color)] text-xs font-mono space-y-1">
+                        <div className="flex items-center justify-between text-[var(--text-muted)] text-[11px]">
                           <div>
-                            <strong className="text-zinc-200">De:</strong> {emailConfig.senderName} &lt;{emailConfig.senderEmail}&gt;
+                            <strong className="text-[var(--text-main)]">De:</strong> {emailConfig.senderName} &lt;{emailConfig.senderEmail}&gt;
                           </div>
-                          <span className="text-[10px] text-zinc-500">hace 1 minuto</span>
+                          <span className="text-[10px] text-[var(--text-muted)]">hace 1 minuto</span>
                         </div>
-                        <div className="text-zinc-400 text-[11px]">
-                          <strong className="text-zinc-200">Para:</strong> Carlos Villaseñor &lt;carlos.villasenor@gmail.com&gt;
+                        <div className="text-[var(--text-muted)] text-[11px]">
+                          <strong className="text-[var(--text-main)]">Para:</strong> Carlos Villaseñor &lt;carlos.villasenor@gmail.com&gt;
                         </div>
-                        <div className="text-white font-bold text-xs pt-1 truncate">
+                        <div className="text-[var(--text-main)] font-bold text-xs pt-1 truncate">
                           {replaceEmailVariables(emailConfig.subject, {
                             cliente: 'Carlos Villaseñor',
                             servicio: 'Limpieza Dental y Profilaxis',
@@ -1699,18 +1699,18 @@ export const MasterAgenda = () => {
 
                       {/* Cuerpo del Correo Membretado */}
                       <div
-                        className="p-5 sm:p-6 space-y-4 bg-zinc-950"
+                        className="p-5 sm:p-6 space-y-4 bg-[var(--bg-panel)]"
                         style={{ borderTop: `4px solid ${emailConfig.accentColor || '#D4FF00'}` }}
                       >
                         {/* Cabecera Membretada con Logo */}
-                        <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+                        <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)]">
                           <div className="flex items-center gap-3">
-                            <span className="text-2xl p-2 rounded-xl bg-zinc-900 border border-zinc-800">
+                            <span className="text-2xl p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
                               {emailConfig.logoAvatar || '🏢'}
                             </span>
                             <div>
-                              <h4 className="text-sm font-bold text-white leading-tight">{emailConfig.senderName}</h4>
-                              <span className="text-[10px] text-zinc-500 font-mono">Notificación Oficial Transaccional</span>
+                              <h4 className="text-sm font-bold text-[var(--text-main)] leading-tight">{emailConfig.senderName}</h4>
+                              <span className="text-[10px] text-[var(--text-muted)] font-mono">Notificación Oficial Transaccional</span>
                             </div>
                           </div>
                           <span
@@ -1727,44 +1727,44 @@ export const MasterAgenda = () => {
 
                         {/* Mensaje de Bienvenida */}
                         <div className="space-y-1.5">
-                          <p className="text-sm font-semibold text-zinc-100">
+                          <p className="text-sm font-semibold text-[var(--text-main)]">
                             {replaceEmailVariables(emailConfig.welcomeMessage, {
                               cliente: 'Carlos Villaseñor',
                               servicio: 'Limpieza Dental y Profilaxis',
                               especialista: 'Dra. Claudia Ortiz',
                             })}
                           </p>
-                          <p className="text-xs text-zinc-400 leading-relaxed">
+                          <p className="text-xs text-[var(--text-muted)] leading-relaxed">
                             A continuación encontrarás los detalles completos de tu cita programada y el archivo para sincronizarlo con tu calendario personal.
                           </p>
                         </div>
 
                         {/* Tarjeta de Resumen de la Cita */}
-                        <div className="p-4 rounded-xl bg-zinc-900/80 border border-zinc-800 space-y-2 text-xs font-mono">
-                          <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2">
-                            <span className="text-zinc-400">Servicio Reservado:</span>
-                            <strong className="text-white">Limpieza Dental y Profilaxis</strong>
+                        <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-2 text-xs font-mono">
+                          <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-2">
+                            <span className="text-[var(--text-muted)]">Servicio Reservado:</span>
+                            <strong className="text-[var(--text-main)]">Limpieza Dental y Profilaxis</strong>
                           </div>
-                          <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2">
-                            <span className="text-zinc-400">Fecha y Hora:</span>
-                            <strong className="text-white">Viernes 23 Octubre 2026 • 11:00 hrs</strong>
+                          <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-2">
+                            <span className="text-[var(--text-muted)]">Fecha y Hora:</span>
+                            <strong className="text-[var(--text-main)]">Viernes 23 Octubre 2026 • 11:00 hrs</strong>
                           </div>
-                          <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2">
-                            <span className="text-zinc-400">Especialista:</span>
-                            <span className="text-zinc-200">Dra. Claudia Ortiz (Ortodoncia)</span>
+                          <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-2">
+                            <span className="text-[var(--text-muted)]">Especialista:</span>
+                            <span className="text-[var(--text-main)]">Dra. Claudia Ortiz (Ortodoncia)</span>
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-zinc-400">Ubicación:</span>
-                            <span className="text-zinc-300 truncate max-w-[220px]">{emailConfig.locationAddress}</span>
+                            <span className="text-[var(--text-muted)]">Ubicación:</span>
+                            <span className="text-[var(--text-main)] truncate max-w-[220px]">{emailConfig.locationAddress}</span>
                           </div>
                         </div>
 
                         {/* Indicaciones Previas Destacadas */}
                         {emailConfig.instructions && (
-                          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs font-mono flex items-start gap-2.5">
-                            <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-500 dark:text-amber-200 text-xs font-mono flex items-start gap-2.5">
+                            <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                             <div>
-                              <strong className="block text-amber-300 mb-0.5">Indicaciones Previas:</strong>
+                              <strong className="block text-amber-600 dark:text-amber-300 mb-0.5">Indicaciones Previas:</strong>
                               <span>{emailConfig.instructions}</span>
                             </div>
                           </div>
@@ -1784,7 +1784,7 @@ export const MasterAgenda = () => {
                           {emailConfig.includeWhatsapp && (
                             <button
                               type="button"
-                              className="w-full py-2 px-4 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold text-xs font-mono flex items-center justify-center gap-2"
+                              className="w-full py-2 px-4 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 dark:text-emerald-400 border border-emerald-500/30 font-bold text-xs font-mono flex items-center justify-center gap-2"
                             >
                               <MessageCircle className="w-4 h-4" />
                               <span>Confirmar o Enviar Dudas vía WhatsApp</span>
@@ -1794,12 +1794,12 @@ export const MasterAgenda = () => {
 
                         {/* Adjunto .ICS */}
                         {emailConfig.includeIcs && (
-                          <div className="p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-between text-xs font-mono">
-                            <div className="flex items-center gap-2 text-zinc-300">
+                          <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-between text-xs font-mono">
+                            <div className="flex items-center gap-2 text-[var(--text-main)]">
                               <span className="text-base">📎</span>
                               <div>
                                 <span className="block font-bold">confirmacion_cita.ics</span>
-                                <span className="text-[10px] text-zinc-500">RFC 5545 • Compatible con Google Calendar / Apple / Outlook</span>
+                                <span className="text-[10px] text-[var(--text-muted)]">RFC 5545 • Compatible con Google Calendar / Apple / Outlook</span>
                               </div>
                             </div>
                             <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold">
@@ -1809,9 +1809,9 @@ export const MasterAgenda = () => {
                         )}
 
                         {/* Footer y Políticas de Cancelación */}
-                        <div className="pt-3 border-t border-zinc-800 text-center text-[10px] text-zinc-500 font-mono space-y-1">
+                        <div className="pt-3 border-t border-[var(--border-color)] text-center text-[10px] text-[var(--text-muted)] font-mono space-y-1">
                           <p>{emailConfig.cancellationPolicy}</p>
-                          <p className="text-zinc-600">
+                          <p className="opacity-80">
                             © 2026 {emailConfig.senderName} • Potenciado por la infraestructura de Vector Inside
                           </p>
                         </div>
@@ -1820,15 +1820,15 @@ export const MasterAgenda = () => {
                   </div>
 
                   {/* Botón para Simular Envío de Prueba */}
-                  <div className="flex items-center justify-between p-3 rounded-2xl bg-zinc-900/60 border border-zinc-800">
-                    <span className="text-xs text-zinc-400 font-mono">
+                  <div className="flex items-center justify-between p-3 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)]">
+                    <span className="text-xs text-[var(--text-muted)] font-mono">
                       ¿Quieres comprobar cómo entra a tu bandeja de entrada real?
                     </span>
                     <button
                       type="button"
                       onClick={handleTestEmail}
                       disabled={testEmailSent}
-                      className="px-3.5 py-2 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 text-xs font-mono font-bold flex items-center gap-2 transition-all shadow-sm"
+                      className="px-3.5 py-2 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 dark:text-blue-400 border border-blue-500/30 text-xs font-mono font-bold flex items-center gap-2 transition-all shadow-sm"
                     >
                       <Send className="w-3.5 h-3.5" />
                       <span>{testEmailSent ? '¡Correo de prueba enviado!' : 'Enviar Correo de Prueba'}</span>
@@ -1840,15 +1840,15 @@ export const MasterAgenda = () => {
 
             {/* Alerta de Éxito al Guardar */}
             {savedConfigSuccess && (
-              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-mono flex items-center gap-2 animate-fadeIn shrink-0">
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono flex items-center gap-2 animate-fadeIn shrink-0">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                 <span>¡Configuración de turnos dinámicos y membrete guardada y aplicada en vivo!</span>
               </div>
             )}
 
             {/* Footer con Botones de Acción */}
-            <div className="flex items-center justify-between pt-4 border-t border-zinc-800 shrink-0">
-              <span className="text-xs text-zinc-500 font-mono hidden sm:inline">
+            <div className="flex items-center justify-between pt-4 border-t border-[var(--border-color)] shrink-0">
+              <span className="text-xs text-[var(--text-muted)] font-mono hidden sm:inline">
                 {calendarConfig.shifts?.length || 0} Turnos configurados • {calendarConfig.slotDurationMin} min/bloque
               </span>
 
@@ -1856,7 +1856,7 @@ export const MasterAgenda = () => {
                 <button
                   type="button"
                   onClick={() => setShowConfigModal(false)}
-                  className="px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white text-xs font-mono transition-colors"
+                  className="px-4 py-2.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)] text-xs font-mono transition-colors"
                 >
                   Cancelar
                 </button>
@@ -1897,18 +1897,18 @@ function SlotRowItem({
     return (
       <div
         onClick={() => onSelectAppointment(appointment)}
-        className="group relative flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-zinc-900/60 border border-zinc-800/80 hover:border-brand-primary/60 hover:bg-zinc-900/90 cursor-pointer transition-all shadow-sm hover:shadow-neon-sm"
+        className="group relative flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] hover:border-brand-primary/60 hover:bg-[var(--bg-card)] cursor-pointer transition-all shadow-sm hover:shadow-neon-sm"
         style={{ borderLeftWidth: '4px', borderLeftColor: appointment.serviceColor || '#3B82F6' }}
       >
         <div className="flex items-center gap-3 shrink-0">
-          <div className="w-12 h-10 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-200 font-mono text-xs font-bold">
+          <div className="w-12 h-10 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-center text-[var(--text-main)] font-mono text-xs font-bold">
             {hour}
           </div>
           <div>
-            <span className="text-xs font-bold text-white block tracking-tight">
+            <span className="text-xs font-bold text-[var(--text-main)] block tracking-tight">
               {hour} hrs ({durationMin} min)
             </span>
-            <span className="text-[11px] text-zinc-500 font-mono">
+            <span className="text-[11px] text-[var(--text-muted)] font-mono">
               {shift.name}
             </span>
           </div>
@@ -1916,10 +1916,10 @@ function SlotRowItem({
 
         <div className="flex-1 min-w-0 px-1 sm:px-4">
           <div className="flex items-center gap-2">
-            <h4 className="text-xs font-bold text-white group-hover:text-brand-primary transition-colors truncate">
+            <h4 className="text-xs font-bold text-[var(--text-main)] group-hover:text-brand-primary transition-colors truncate">
               {appointment.client}
             </h4>
-            <span className="px-2 py-0.5 rounded-md bg-zinc-950 text-zinc-300 border border-zinc-800 text-[10px] font-mono shrink-0">
+            <span className="px-2 py-0.5 rounded-md bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border-color)] text-[10px] font-mono shrink-0">
               {appointment.serviceName}
             </span>
             {appointment.depositPaid ? (
@@ -1932,7 +1932,7 @@ function SlotRowItem({
               </span>
             )}
           </div>
-          <p className="text-[11px] text-zinc-400 truncate font-mono mt-0.5">
+          <p className="text-[11px] text-[var(--text-muted)] truncate font-mono mt-0.5">
             {appointment.specialist} • {appointment.phone}
           </p>
         </div>
@@ -1951,22 +1951,22 @@ function SlotRowItem({
 
   // CASO 2: HORARIO LIBRE / DISPONIBLE PARA AUTO-AGENDAMIENTO IA
   return (
-    <div className="group relative flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-zinc-950/40 border border-dashed border-zinc-800/80 hover:border-zinc-700 hover:bg-zinc-900/30 transition-all">
+    <div className="group relative flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-dashed border-[var(--border-color)] hover:border-[var(--text-muted)] hover:bg-[var(--bg-panel)] transition-all">
       <div className="flex items-center gap-3 shrink-0">
-        <div className="w-12 h-10 rounded-xl bg-zinc-900/50 border border-zinc-800/50 flex items-center justify-center text-zinc-500 group-hover:text-zinc-300 font-mono text-xs transition-colors">
+        <div className="w-12 h-10 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-center text-[var(--text-muted)] group-hover:text-[var(--text-main)] font-mono text-xs transition-colors">
           {hour}
         </div>
         <div>
-          <span className="text-xs font-medium text-zinc-300 block">
+          <span className="text-xs font-medium text-[var(--text-main)] block">
             {hour} hrs ({durationMin} min)
           </span>
-          <span className="text-[11px] text-zinc-600 font-mono">
+          <span className="text-[11px] text-[var(--text-muted)] font-mono">
             {capacityLabel}: {concurrencyLimit} disp.
           </span>
         </div>
       </div>
 
-      <div className="flex-1 px-1 sm:px-4 flex items-center gap-2 text-xs text-zinc-500 group-hover:text-zinc-400 transition-colors">
+      <div className="flex-1 px-1 sm:px-4 flex items-center gap-2 text-xs text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-colors">
         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/60 animate-pulse" />
         <span>Slot libre • Auto-agendamiento IA & WhatsApp habilitado</span>
       </div>
@@ -1975,7 +1975,7 @@ function SlotRowItem({
         <button
           type="button"
           onClick={onManualBook}
-          className="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-semibold flex items-center gap-1 transition-all"
+          className="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 dark:text-emerald-400 border border-emerald-500/30 text-xs font-semibold flex items-center gap-1 transition-all"
         >
           <Plus className="w-3 h-3" />
           <span>+ Cita</span>
@@ -1983,7 +1983,7 @@ function SlotRowItem({
         <button
           type="button"
           onClick={onBlockSlot}
-          className="px-2.5 py-1 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-800 text-xs font-mono transition-all"
+          className="px-2.5 py-1 rounded-lg bg-[var(--bg-card)] hover:bg-[var(--bg-panel)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)] text-xs font-mono transition-all"
         >
           Bloquear
         </button>

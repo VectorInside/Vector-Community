@@ -143,12 +143,12 @@ export const PerformanceDashboard = () => {
               <BarChart2 className="w-5 h-5" />
             </span>
             <div>
-              <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+              <h2 className="text-xl font-bold text-[var(--text-main)] tracking-tight flex items-center gap-2">
                 Telemetría Web & Performance CAPI
               </h2>
-              <p className="text-xs text-zinc-400">
+              <p className="text-xs text-[var(--text-muted)]">
                 Analítica web GA4 ($0 USD), atribución server-to-server y micro-landing para{' '}
-                <strong className="text-white">{activeTenant?.name}</strong>
+                <strong className="text-[var(--text-main)]">{activeTenant?.name}</strong>
               </p>
             </div>
           </div>
@@ -158,7 +158,7 @@ export const PerformanceDashboard = () => {
           <button
             type="button"
             onClick={() => setShowMicroLandingModal(true)}
-            className="px-3.5 py-2 rounded-xl bg-dark-base hover:bg-zinc-800 text-white text-xs font-mono font-bold border border-dark-border flex items-center gap-2 transition-all hover:border-brand-primary"
+            className="px-3.5 py-2 rounded-xl bg-dark-base hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] text-xs font-mono font-bold border border-dark-border flex items-center gap-2 transition-all hover:border-brand-primary shadow-sm"
           >
             <Smartphone className="w-4 h-4 text-brand-primary" />
             <span>Ver Micro-Landing</span>
@@ -184,7 +184,7 @@ export const PerformanceDashboard = () => {
           className={`px-4 py-2.5 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all ${
             activeTab === 'web'
               ? 'bg-brand-primary text-black shadow-neon-sm'
-              : 'bg-dark-base text-zinc-400 hover:text-white border border-dark-border'
+              : 'bg-dark-base text-[var(--text-muted)] hover:text-[var(--text-main)] border border-dark-border'
           }`}
         >
           <Globe className="w-4 h-4" />
@@ -197,7 +197,7 @@ export const PerformanceDashboard = () => {
           className={`px-4 py-2.5 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all ${
             activeTab === 'capi'
               ? 'bg-brand-primary text-black shadow-neon-sm'
-              : 'bg-dark-base text-zinc-400 hover:text-white border border-dark-border'
+              : 'bg-dark-base text-[var(--text-muted)] hover:text-[var(--text-main)] border border-dark-border'
           }`}
         >
           <Activity className="w-4 h-4" />
@@ -210,7 +210,7 @@ export const PerformanceDashboard = () => {
           className={`px-4 py-2.5 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all ${
             activeTab === 'microlanding'
               ? 'bg-brand-primary text-black shadow-neon-sm'
-              : 'bg-dark-base text-zinc-400 hover:text-white border border-dark-border'
+              : 'bg-dark-base text-[var(--text-muted)] hover:text-[var(--text-main)] border border-dark-border'
           }`}
         >
           <Smartphone className="w-4 h-4" />
@@ -231,14 +231,14 @@ export const PerformanceDashboard = () => {
               </span>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-white font-bold text-sm">
+                  <span className="text-[var(--text-main)] font-bold text-sm">
                     {activeTenant?.hasWebsite ? 'Sitio Web Oficial Sincronizado' : 'Ecosistema Directo a WhatsApp'}
                   </span>
                   <Badge variant={activeTenant?.hasWebsite ? 'info' : 'success'} size="xs">
                     {activeTenant?.hasWebsite ? 'GA4 Measurement API ($0 USD)' : 'CAPI Messaging Only'}
                   </Badge>
                 </div>
-                <p className="text-zinc-400 text-xs mt-0.5 font-sans">
+                <p className="text-[var(--text-muted)] text-xs mt-0.5 font-sans">
                   URL:{' '}
                   <a
                     href={activeTenant?.websiteUrl || '#'}
@@ -362,10 +362,10 @@ export const PerformanceDashboard = () => {
           <div className="p-6 rounded-2xl bg-dark-surface border border-dark-border space-y-5">
             <div className="flex items-center justify-between pb-3 border-b border-dark-border">
               <div>
-                <h3 className="text-base font-bold text-white">
+                <h3 className="text-base font-bold text-[var(--text-main)]">
                   Embudo de Conversión Web Paso a Paso (Funnel Telemetry)
                 </h3>
-                <p className="text-xs text-zinc-400">
+                <p className="text-xs text-[var(--text-muted)]">
                   Identificación exacta del punto de fuga de visitantes antes de iniciar el chat con el bot
                 </p>
               </div>
@@ -376,8 +376,8 @@ export const PerformanceDashboard = () => {
               {/* Step 1 */}
               <div>
                 <div className="flex items-center justify-between text-[11px] mb-1">
-                  <span className="text-zinc-300">1. Clics en Anuncios de Meta Ads</span>
-                  <span className="text-white font-bold">4,800 clics (100%)</span>
+                  <span className="text-[var(--text-muted)]">1. Clics en Anuncios de Meta Ads</span>
+                  <span className="text-[var(--text-main)] font-bold">4,800 clics (100%)</span>
                 </div>
                 <div className="w-full h-3 rounded-full bg-dark-base overflow-hidden">
                   <div className="h-full bg-blue-500 rounded-full" style={{ width: '100%' }} />
@@ -465,14 +465,14 @@ export const PerformanceDashboard = () => {
                     <Smartphone className="w-3.5 h-3.5 text-brand-primary" />
                     <span>Dispositivos Móviles (Smartphones)</span>
                   </span>
-                  <span className="text-white font-bold">89.2% (Mayoritaria)</span>
+                  <span className="text-[var(--text-main)] font-bold">89.2% (Mayoritaria)</span>
                 </div>
                 <div className="flex justify-between items-center p-2 rounded-xl bg-dark-base border border-dark-border">
                   <span className="flex items-center gap-1.5">
-                    <Globe className="w-3.5 h-3.5 text-zinc-400" />
+                    <Globe className="w-3.5 h-3.5 text-[var(--text-muted)]" />
                     <span>Computadoras de Escritorio (Desktop)</span>
                   </span>
-                  <span className="text-zinc-400 font-bold">10.8%</span>
+                  <span className="text-[var(--text-muted)] font-bold">10.8%</span>
                 </div>
               </div>
             </div>
@@ -536,10 +536,10 @@ export const PerformanceDashboard = () => {
           <div className="p-6 rounded-2xl bg-dark-surface border border-dark-border space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-dark-border">
               <div>
-                <h3 className="text-base font-bold text-white">
+                <h3 className="text-base font-bold text-[var(--text-main)]">
                   Curva de Atribución y Hook Rate
                 </h3>
-                <p className="text-xs text-zinc-400">
+                <p className="text-xs text-[var(--text-muted)]">
                   Ingresos atribuidos por el backend de Vector Inside vs Gasto Diario en Meta Ads
                 </p>
               </div>
@@ -624,21 +624,21 @@ export const PerformanceDashboard = () => {
                     <th className="py-2.5 px-3">Fuente de Señal</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-dark-border/60 text-zinc-300">
+                <tbody className="divide-y divide-dark-border/60 text-[var(--text-main)]">
                   {capiLogs.map((log) => (
                     <tr key={log.id} className="hover:bg-dark-elevated/40 transition-colors">
-                      <td className="py-3 px-3 font-semibold text-white flex items-center gap-2">
+                      <td className="py-3 px-3 font-semibold text-[var(--text-main)] flex items-center gap-2">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                         {log.event}
                       </td>
-                      <td className="py-3 px-3 text-zinc-400">{log.timestamp}</td>
+                      <td className="py-3 px-3 text-[var(--text-muted)]">{log.timestamp}</td>
                       <td className="py-3 px-3 font-bold text-brand-primary">{log.value}</td>
                       <td className="py-3 px-3">
-                        <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px]">
+                        <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-bold">
                           {log.status}
                         </span>
                       </td>
-                      <td className="py-3 px-3 text-zinc-400">{log.signalSource}</td>
+                      <td className="py-3 px-3 text-[var(--text-muted)]">{log.signalSource}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -659,10 +659,10 @@ export const PerformanceDashboard = () => {
                 <Smartphone className="w-6 h-6" />
               </span>
               <div>
-                <h3 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                <h3 className="text-xl font-bold text-[var(--text-main)] tracking-tight flex items-center gap-2">
                   Micro-Landing Page de {activeTenant?.name}
                 </h3>
-                <p className="text-xs text-zinc-400 font-mono">
+                <p className="text-xs text-[var(--text-muted)] font-mono">
                   Diseño móvil ultraligero alojado en: app.vectorinside.com/m/{activeTenant?.id}
                 </p>
               </div>
@@ -672,7 +672,7 @@ export const PerformanceDashboard = () => {
               <button
                 type="button"
                 onClick={handleCopyPublicLink}
-                className="px-4 py-2 rounded-xl bg-dark-base hover:bg-zinc-800 text-white text-xs font-mono font-bold border border-dark-border flex items-center gap-1.5 transition-all"
+                className="px-4 py-2 rounded-xl bg-dark-base hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] text-xs font-mono font-bold border border-dark-border flex items-center gap-1.5 transition-all"
               >
                 {copiedLink ? <Check className="w-4 h-4 text-brand-primary" /> : <ExternalLink className="w-4 h-4" />}
                 <span>{copiedLink ? '¡Copiado!' : 'Copiar URL Pública'}</span>
@@ -695,27 +695,27 @@ export const PerformanceDashboard = () => {
                 <Sparkles className="w-4 h-4" />
                 1. Cero Pérdida de Carga Web
               </span>
-              <p className="text-zinc-300 font-sans text-xs">
+              <p className="text-[var(--text-muted)] font-sans text-xs">
                 Carga en menos de 0.8s en redes celulares 4G/5G, eliminando la tasa de rebote del 65% que sufren las páginas pesadas.
               </p>
             </div>
 
             <div className="p-5 rounded-2xl bg-dark-surface border border-dark-border space-y-2">
-              <span className="text-emerald-400 font-bold text-xs flex items-center gap-1.5">
+              <span className="text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4" />
                 2. Directo a WhatsApp Cloud API
               </span>
-              <p className="text-zinc-300 font-sans text-xs">
+              <p className="text-[var(--text-muted)] font-sans text-xs">
                 Botón con mensaje de gancho prellenado que abre la conversación y activa el bot calificador de inmediato.
               </p>
             </div>
 
             <div className="p-5 rounded-2xl bg-dark-surface border border-dark-border space-y-2">
-              <span className="text-blue-400 font-bold text-xs flex items-center gap-1.5">
+              <span className="text-blue-600 dark:text-blue-400 font-bold text-xs flex items-center gap-1.5">
                 <QrCode className="w-4 h-4" />
                 3. QR para Mostrador Físico
               </span>
-              <p className="text-zinc-300 font-sans text-xs">
+              <p className="text-[var(--text-muted)] font-sans text-xs">
                 Incluye código QR descargable para exhibir en recepción, mesas o folletos para captar clientes en persona.
               </p>
             </div>
@@ -723,7 +723,7 @@ export const PerformanceDashboard = () => {
 
           {/* Quick Preview Embed */}
           <div className="p-6 rounded-3xl bg-dark-surface border border-dark-border flex flex-col items-center justify-center space-y-4">
-            <span className="text-xs font-mono text-zinc-400">
+            <span className="text-xs font-mono text-[var(--text-muted)]">
               Vista previa rápida de la micro-landing oficial:
             </span>
             <div className="w-full max-w-sm h-[500px] rounded-3xl bg-black border-2 border-zinc-800 shadow-2xl overflow-hidden">

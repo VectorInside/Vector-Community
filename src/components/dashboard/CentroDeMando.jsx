@@ -163,10 +163,10 @@ export const CentroDeMando = () => {
 
         {/* Global Ecosistema Health Badge + Action */}
         <div className="flex flex-wrap items-center gap-3">
-          <div className="px-3.5 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-2.5">
-            <span className="w-2 h-2 rounded-full bg-neon animate-pulse" />
-            <span className="text-xs font-mono text-zinc-300">
-              <strong className="text-white font-bold">{tenantsList.length} Negocios</strong> en Ecosistema
+          <div className="px-3.5 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-2.5 shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-xs font-mono text-[var(--text-muted)]">
+              <strong className="text-[var(--text-main)] font-bold">{tenantsList.length} Negocios</strong> en Ecosistema
             </span>
           </div>
 
@@ -253,7 +253,7 @@ export const CentroDeMando = () => {
               className="p-4 rounded-xl vector-bg-card vector-border hover:border-neon transition-all cursor-pointer group space-y-2 relative overflow-hidden"
             >
               <div className="flex items-center justify-between">
-                <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700">
+                <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-300 border border-zinc-300 dark:border-zinc-700">
                   {rule.number}
                 </span>
                 <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded border ${rule.statusColor}`}>
@@ -265,14 +265,14 @@ export const CentroDeMando = () => {
                 <h4 className="text-xs font-bold text-[var(--text-main)] group-hover:text-neon transition-colors">
                   {rule.name}
                 </h4>
-                <p className="text-[11px] text-[var(--text-muted)] line-clamp-1 mt-0.5 font-sans">
+                <p className="text-[11px] text-[var(--text-muted)] line-clamp-1 mt-0.5 font-sans font-medium">
                   {rule.description}
                 </p>
               </div>
 
               <div className="pt-2 border-t border-[var(--border-color)] flex justify-between items-center text-[10px] font-mono">
-                <span className="text-zinc-500">{rule.adrRef}</span>
-                <span className="font-bold text-white flex items-center gap-1">
+                <span className="text-[var(--text-muted)] font-medium">{rule.adrRef}</span>
+                <span className="font-bold text-[var(--text-main)] flex items-center gap-1">
                   <span>{rule.metric}</span>
                   <ArrowRight className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity text-neon" />
                 </span>
@@ -296,24 +296,24 @@ export const CentroDeMando = () => {
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="p-3 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)]">
-            <p className="text-[9px] font-mono text-[var(--text-muted)] uppercase">Total Leads Facturados</p>
-            <p className="text-2xl font-black text-white font-mono mt-1">{totalBilledLeads}</p>
+            <p className="text-[9px] font-mono text-[var(--text-muted)] font-bold uppercase">Total Leads Facturados</p>
+            <p className="text-2xl font-black text-[var(--text-main)] font-mono mt-1">{totalBilledLeads}</p>
           </div>
           <div className="p-3 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)]">
-            <p className="text-[9px] font-mono text-[var(--text-muted)] uppercase">Facturación Bruta</p>
+            <p className="text-[9px] font-mono text-[var(--text-muted)] font-bold uppercase">Facturación Bruta</p>
             <p className="text-xl font-black text-neon font-mono mt-1" suppressHydrationWarning>
               ${formatNumber(totalRevenueMXN)} MXN
             </p>
           </div>
           <div className="p-3 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)]">
-            <p className="text-[9px] font-mono text-[var(--text-muted)] uppercase">Ingreso Agencia (70%)</p>
-            <p className="text-xl font-black text-emerald-400 font-mono mt-1" suppressHydrationWarning>
+            <p className="text-[9px] font-mono text-[var(--text-muted)] font-bold uppercase">Ingreso Agencia (70%)</p>
+            <p className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono mt-1" suppressHydrationWarning>
               ${formatNumber(agencyRevenueMXN)} MXN
             </p>
           </div>
           <div className="p-3 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)]">
-            <p className="text-[9px] font-mono text-[var(--text-muted)] uppercase">Custodia Depósitos</p>
-            <p className="text-xl font-black text-cyan-400 font-mono mt-1" suppressHydrationWarning>
+            <p className="text-[9px] font-mono text-[var(--text-muted)] font-bold uppercase">Custodia Depósitos</p>
+            <p className="text-xl font-black text-cyan-600 dark:text-cyan-400 font-mono mt-1" suppressHydrationWarning>
               ${formatNumber(totalRetainedDeposits)} MXN
             </p>
           </div>
@@ -331,7 +331,7 @@ export const CentroDeMando = () => {
               <Building2 className="w-5 h-5 text-neon" />
               <span>Deck de Negocios & Administración 1-Click</span>
             </h3>
-            <p className="text-xs text-zinc-400 font-mono mt-0.5">
+            <p className="text-xs text-[var(--text-muted)] font-mono mt-0.5">
               Supervisión de cada cliente, control de Kill-Switch de IA, tarifas y acceso a herramientas operativas.
             </p>
           </div>
@@ -339,19 +339,19 @@ export const CentroDeMando = () => {
           <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
             {/* Search Input */}
             <div className="relative flex-1 sm:w-64">
-              <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-2.5" />
+              <Search className="w-3.5 h-3.5 text-[var(--text-muted)] absolute left-3 top-2.5" />
               <input
                 type="text"
                 placeholder="Buscar negocio o giro..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] focus:border-neon rounded-xl pl-8 pr-7 py-1.5 text-xs text-white font-mono placeholder-zinc-500 outline-none transition-colors"
+                className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] focus:border-neon rounded-xl pl-8 pr-7 py-1.5 text-xs text-[var(--text-main)] font-mono placeholder-[var(--text-muted)] outline-none transition-colors"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-2.5 top-2 text-zinc-500 hover:text-white"
+                  className="absolute right-2.5 top-2 text-[var(--text-muted)] hover:text-[var(--text-main)]"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -365,8 +365,8 @@ export const CentroDeMando = () => {
                 onClick={() => setStatusFilter('all')}
                 className={`px-2.5 py-1 rounded-lg transition-all ${
                   statusFilter === 'all'
-                    ? 'bg-zinc-800 text-white font-bold'
-                    : 'text-zinc-400 hover:text-white'
+                    ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white font-bold'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                 }`}
               >
                 Todos ({tenantsList.length})
@@ -376,11 +376,11 @@ export const CentroDeMando = () => {
                 onClick={() => setStatusFilter('active')}
                 className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 ${
                   statusFilter === 'active'
-                    ? 'bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30'
-                    : 'text-zinc-400 hover:text-emerald-400'
+                    ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/30'
+                    : 'text-[var(--text-muted)] hover:text-emerald-600 dark:hover:text-emerald-400'
                 }`}
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                 IA Activa ({tenantsList.filter((t) => t.isAiActive).length})
               </button>
               <button
@@ -388,11 +388,11 @@ export const CentroDeMando = () => {
                 onClick={() => setStatusFilter('paused')}
                 className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 ${
                   statusFilter === 'paused'
-                    ? 'bg-red-500/20 text-red-400 font-bold border border-red-500/30'
-                    : 'text-zinc-400 hover:text-red-400'
+                    ? 'bg-red-500/20 text-red-600 dark:text-red-400 font-bold border border-red-500/30'
+                    : 'text-[var(--text-muted)] hover:text-red-600 dark:hover:text-red-400'
                 }`}
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
                 Pausado ({tenantsList.filter((t) => !t.isAiActive).length})
               </button>
             </div>
@@ -409,7 +409,7 @@ export const CentroDeMando = () => {
               className={`px-3 py-1 rounded-full whitespace-nowrap transition-all border flex items-center gap-1.5 ${
                 categoryFilter === cat.id
                   ? 'bg-neon text-black font-bold border-neon shadow-[0_0_12px_rgba(231,249,0,0.3)]'
-                  : 'bg-[var(--bg-card)] text-zinc-400 hover:text-white border-[var(--border-color)] hover:border-zinc-700'
+                  : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] border-[var(--border-color)] hover:border-[var(--text-muted)]'
               }`}
             >
               <span>{cat.icon}</span>
@@ -429,7 +429,7 @@ export const CentroDeMando = () => {
                 key={t.id}
                 className={`rounded-2xl p-5 border transition-all duration-200 relative flex flex-col justify-between group ${
                   isSelected
-                    ? 'bg-zinc-950/90 border-neon shadow-[0_0_25px_rgba(231,249,0,0.15)] ring-1 ring-neon/40'
+                    ? 'bg-[var(--bg-panel)] border-neon shadow-[0_0_25px_rgba(231,249,0,0.15)] ring-2 ring-neon/60'
                     : t.isAiActive
                     ? 'bg-[var(--bg-card)] border-[var(--border-color)] hover:border-neon/40 hover:shadow-lg'
                     : 'bg-red-950/15 border-red-500/40 shadow-[0_0_15px_rgba(239,68,68,0.1)]'
@@ -439,12 +439,12 @@ export const CentroDeMando = () => {
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 rounded-xl bg-zinc-900 border border-white/10 flex items-center justify-center text-2xl shrink-0 shadow-sm">
+                      <div className="w-11 h-11 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] flex items-center justify-center text-2xl shrink-0 shadow-sm">
                         {t.avatar}
                       </div>
                       <div>
                         <div className="flex items-center gap-1.5">
-                          <h4 className="text-sm font-bold text-white font-sans group-hover:text-neon transition-colors">
+                          <h4 className="text-sm font-bold text-[var(--text-main)] font-sans group-hover:text-neon transition-colors">
                             {t.name}
                           </h4>
                           {isSelected && (
@@ -453,7 +453,7 @@ export const CentroDeMando = () => {
                             </span>
                           )}
                         </div>
-                        <span className="text-[11px] font-mono text-zinc-400 block line-clamp-1">
+                        <span className="text-[11px] font-mono text-[var(--text-muted)] block line-clamp-1 font-medium">
                           {t.giro}
                         </span>
                       </div>
@@ -489,7 +489,7 @@ export const CentroDeMando = () => {
                       </span>
                     )}
 
-                    <span className="px-2 py-0.5 bg-zinc-800 text-zinc-300 border border-zinc-700 rounded">
+                    <span className="px-2 py-0.5 bg-[var(--bg-card-subtle)] text-[var(--text-muted)] border border-[var(--border-color)] rounded font-medium">
                       MER: {t.mer || '5.2x'}
                     </span>
                   </div>
@@ -497,16 +497,16 @@ export const CentroDeMando = () => {
                   {/* Micro-Metrics Grid (3-column financial & leads snapshot) */}
                   <div className="grid grid-cols-3 gap-2 p-2.5 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] font-mono text-center">
                     <div>
-                      <span className="text-[9px] text-zinc-400 uppercase block">Leads Mes</span>
-                      <span className="text-xs font-bold text-white mt-0.5 block">{t.billedLeadsMonth || 0}</span>
+                      <span className="text-[9px] text-[var(--text-muted)] font-bold uppercase block">Leads Mes</span>
+                      <span className="text-xs font-bold text-[var(--text-main)] mt-0.5 block">{t.billedLeadsMonth || 0}</span>
                     </div>
                     <div>
-                      <span className="text-[9px] text-zinc-400 uppercase block">Tarifa Lead</span>
+                      <span className="text-[9px] text-[var(--text-muted)] font-bold uppercase block">Tarifa Lead</span>
                       <span className="text-xs font-bold text-neon mt-0.5 block">${t.leadPriceMXN || 350}</span>
                     </div>
                     <div>
-                      <span className="text-[9px] text-zinc-400 uppercase block">Facturación</span>
-                      <span className="text-xs font-bold text-emerald-400 mt-0.5 block" suppressHydrationWarning>
+                      <span className="text-[9px] text-[var(--text-muted)] font-bold uppercase block">Facturación</span>
+                      <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 block" suppressHydrationWarning>
                         ${formatNumber(monthlyBilling)}
                       </span>
                     </div>
@@ -530,7 +530,7 @@ export const CentroDeMando = () => {
                     <button
                       type="button"
                       onClick={() => setPreviewTenant(t)}
-                      className="p-1.5 rounded-xl bg-[var(--bg-base)] hover:bg-zinc-800 border border-[var(--border-color)] text-zinc-300 hover:text-white transition-colors"
+                      className="p-1.5 rounded-xl bg-[var(--bg-base)] hover:bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
                       title="Ver Micro-Landing Móvil"
                     >
                       <Smartphone className="w-3.5 h-3.5" />
@@ -544,12 +544,12 @@ export const CentroDeMando = () => {
                     disabled={isSelected}
                     className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-bold transition-all flex items-center gap-1 ${
                       isSelected
-                        ? 'bg-zinc-800 text-zinc-400 border-zinc-700 cursor-default'
-                        : 'bg-[var(--bg-base)] hover:bg-zinc-800 text-zinc-200 border-[var(--border-color)] hover:border-white'
+                        ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-[var(--border-color)] cursor-default'
+                        : 'bg-[var(--bg-base)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] border-[var(--border-color)] hover:border-neon'
                     }`}
                   >
                     <span>{isSelected ? 'Activo' : 'Seleccionar'}</span>
-                    {!isSelected && <ChevronRight className="w-3 h-3 text-zinc-400" />}
+                    {!isSelected && <ChevronRight className="w-3 h-3 text-[var(--text-muted)]" />}
                   </button>
                 </div>
               </div>
@@ -559,8 +559,8 @@ export const CentroDeMando = () => {
 
         {filteredTenants.length === 0 && (
           <div className="p-12 text-center rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-3 font-mono">
-            <Building2 className="w-10 h-10 text-zinc-600 mx-auto" />
-            <p className="text-sm text-zinc-400 font-bold">No se encontraron negocios con esos filtros.</p>
+            <Building2 className="w-10 h-10 text-[var(--text-muted)] mx-auto" />
+            <p className="text-sm text-[var(--text-main)] font-bold">No se encontraron negocios con esos filtros.</p>
             <button
               type="button"
               onClick={() => {
@@ -586,22 +586,22 @@ export const CentroDeMando = () => {
               className="absolute inset-0 cursor-pointer"
               onClick={() => setDrawerTenantId(null)}
             />
-            <div className="relative z-10 w-full max-w-lg bg-zinc-950 border-l border-neon/40 h-full overflow-y-auto p-6 space-y-6 shadow-2xl flex flex-col justify-between animate-slide-in-right">
+            <div className="relative z-10 w-full max-w-lg bg-[var(--bg-panel)] border-l border-neon/40 h-full overflow-y-auto p-6 space-y-6 shadow-2xl flex flex-col justify-between animate-slide-in-right">
             {/* Drawer Header */}
             <div className="space-y-4">
-              <div className="flex items-start justify-between border-b border-white/10 pb-4">
+              <div className="flex items-start justify-between border-b border-[var(--border-color)] pb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-white/10 flex items-center justify-center text-3xl shrink-0">
+                  <div className="w-12 h-12 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] flex items-center justify-center text-3xl shrink-0">
                     {drawerTenant.avatar}
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-white font-sans">
+                    <h3 className="text-lg font-bold text-[var(--text-main)] font-sans">
                       {drawerTenant.name}
                     </h3>
                     <span className="text-xs font-mono text-neon block">
                       {drawerTenant.giro}
                     </span>
-                    <span className="text-[10px] font-mono text-zinc-500 block">
+                    <span className="text-[10px] font-mono text-[var(--text-muted)] block">
                       ID: {drawerTenant.id}
                     </span>
                   </div>
@@ -610,16 +610,16 @@ export const CentroDeMando = () => {
                 <button
                   type="button"
                   onClick={() => setDrawerTenantId(null)}
-                  className="p-2 rounded-xl bg-zinc-900 border border-white/10 text-zinc-400 hover:text-white transition-colors"
+                  className="p-2 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
               {/* Sección 1: Control de Inteligencia Artificial (Kill-Switch) */}
-              <div className="p-4 rounded-xl bg-zinc-900/80 border border-white/10 space-y-3 font-mono text-xs">
+              <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-3 font-mono text-xs">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-zinc-200 uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="font-bold text-[var(--text-main)] uppercase tracking-wider flex items-center gap-1.5">
                     <Power className="w-4 h-4 text-neon" />
                     <span>Kill-Switch de IA</span>
                   </span>
@@ -628,7 +628,7 @@ export const CentroDeMando = () => {
                     onClick={() => toggleTenantAi(drawerTenant.id)}
                     className={`px-3 py-1.5 rounded-lg border font-bold text-xs flex items-center gap-1.5 transition-all ${
                       drawerTenant.isAiActive
-                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 hover:bg-red-500/20 hover:text-red-400'
+                        ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/40 hover:bg-red-500/20 hover:text-red-400'
                         : 'bg-red-500 text-white border-red-400 animate-pulse'
                     }`}
                   >
@@ -636,7 +636,7 @@ export const CentroDeMando = () => {
                     <span>{drawerTenant.isAiActive ? 'IA ACTIVA' : 'PAUSADO (HITL)'}</span>
                   </button>
                 </div>
-                <p className="text-[11px] text-zinc-400 leading-relaxed">
+                <p className="text-[11px] text-[var(--text-muted)] font-medium leading-relaxed">
                   {drawerTenant.isAiActive
                     ? 'La IA está respondiendo automáticamente a prospectos en menos de 850ms y agendando citas en tiempo real.'
                     : 'IA CONGELADA. Intervención humana obligatoria activada. Los mensajes automáticos están suspendidos.'}
@@ -644,8 +644,8 @@ export const CentroDeMando = () => {
               </div>
 
               {/* Sección 2: Ajuste de Tarifa Pay-Per-Lead */}
-              <div className="p-4 rounded-xl bg-zinc-900/80 border border-white/10 space-y-3 font-mono text-xs">
-                <span className="font-bold text-zinc-200 uppercase tracking-wider flex items-center gap-1.5">
+              <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-3 font-mono text-xs">
+                <span className="font-bold text-[var(--text-main)] uppercase tracking-wider flex items-center gap-1.5">
                   <DollarSign className="w-4 h-4 text-neon" />
                   <span>Tarifa por Lead Calificado ($ MXN)</span>
                 </span>
@@ -661,15 +661,15 @@ export const CentroDeMando = () => {
                           leadPriceMXN: Number(e.target.value),
                         })
                       }
-                      className="w-full bg-zinc-950 border border-white/15 focus:border-neon rounded-xl pl-7 pr-3 py-1.5 text-xs text-white font-mono font-bold outline-none"
+                      className="w-full bg-[var(--bg-base)] border border-[var(--border-color)] focus:border-neon rounded-xl pl-7 pr-3 py-1.5 text-xs text-[var(--text-main)] font-mono font-bold outline-none"
                     />
                   </div>
-                  <span className="text-[10px] text-zinc-400">MXN / lead</span>
+                  <span className="text-[10px] text-[var(--text-muted)]">MXN / lead</span>
                 </div>
 
                 {/* Preset Fast Buttons */}
                 <div className="flex items-center gap-2 pt-1 text-[10px]">
-                  <span className="text-zinc-500">Ajuste rápido:</span>
+                  <span className="text-[var(--text-muted)]">Ajuste rápido:</span>
                   {[200, 350, 500].map((price) => (
                     <button
                       key={price}
@@ -678,7 +678,7 @@ export const CentroDeMando = () => {
                       className={`px-2 py-0.5 rounded border transition-colors ${
                         drawerTenant.leadPriceMXN === price
                           ? 'bg-neon/20 text-neon border-neon'
-                          : 'bg-zinc-800 text-zinc-300 border-zinc-700 hover:border-white'
+                          : 'bg-[var(--bg-card-subtle)] text-[var(--text-muted)] border-[var(--border-color)] hover:border-[var(--text-muted)]'
                       }`}
                     >
                       ${price}
@@ -688,23 +688,23 @@ export const CentroDeMando = () => {
               </div>
 
               {/* Sección 3: Métricas Financieras del Negocio */}
-              <div className="p-4 rounded-xl bg-zinc-900/80 border border-white/10 space-y-2 font-mono text-xs">
-                <span className="font-bold text-zinc-200 uppercase tracking-wider block text-[11px] mb-1">
+              <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-2 font-mono text-xs">
+                <span className="font-bold text-[var(--text-main)] uppercase tracking-wider block text-[11px] mb-1">
                   Métricas Acumuladas del Mes
                 </span>
-                <div className="flex justify-between text-zinc-400">
+                <div className="flex justify-between text-[var(--text-muted)] font-medium">
                   <span>Leads Calificados:</span>
-                  <span className="text-white font-bold">{drawerTenant.billedLeadsMonth || 0} leads</span>
+                  <span className="text-[var(--text-main)] font-bold">{drawerTenant.billedLeadsMonth || 0} leads</span>
                 </div>
-                <div className="flex justify-between text-zinc-400">
+                <div className="flex justify-between text-[var(--text-muted)] font-medium">
                   <span>Facturación Acumulada:</span>
                   <span className="text-neon font-bold" suppressHydrationWarning>
                     ${formatNumber((drawerTenant.billedLeadsMonth || 0) * (drawerTenant.leadPriceMXN || 350))} MXN
                   </span>
                 </div>
-                <div className="flex justify-between text-zinc-400">
+                <div className="flex justify-between text-[var(--text-muted)] font-medium">
                   <span>Depósito en Garantía:</span>
-                  <span className="text-cyan-400 font-bold" suppressHydrationWarning>
+                  <span className="text-cyan-600 dark:text-cyan-400 font-bold" suppressHydrationWarning>
                     ${formatNumber(drawerTenant.retainedDepositMXN || 15000)} MXN
                   </span>
                 </div>
@@ -712,7 +712,7 @@ export const CentroDeMando = () => {
 
               {/* Sección 4: Atajos de Gestión a Módulos Clave */}
               <div className="space-y-2 font-mono text-xs">
-                <span className="text-zinc-400 uppercase tracking-wider text-[11px] block">
+                <span className="text-[var(--text-muted)] font-bold uppercase tracking-wider text-[11px] block">
                   Herramientas Operativas de este Negocio
                 </span>
 
@@ -724,11 +724,11 @@ export const CentroDeMando = () => {
                       setDrawerTenantId(null);
                       router.push('/performance');
                     }}
-                    className="p-3 rounded-xl bg-zinc-900 border border-white/10 hover:border-neon text-left transition-all hover:bg-zinc-800 space-y-1"
+                    className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon text-left transition-all hover:bg-[var(--bg-card-subtle)] space-y-1"
                   >
                     <BarChart2 className="w-4 h-4 text-neon" />
-                    <p className="font-bold text-white text-[11px]">Métricas Web & CAPI</p>
-                    <p className="text-[9px] text-zinc-400">GA4, Pixel & Tráfico</p>
+                    <p className="font-bold text-[var(--text-main)] text-[11px]">Métricas Web & CAPI</p>
+                    <p className="text-[9px] text-[var(--text-muted)]">GA4, Pixel & Tráfico</p>
                   </button>
 
                   <button
@@ -738,11 +738,11 @@ export const CentroDeMando = () => {
                       setDrawerTenantId(null);
                       router.push('/agenda');
                     }}
-                    className="p-3 rounded-xl bg-zinc-900 border border-white/10 hover:border-neon text-left transition-all hover:bg-zinc-800 space-y-1"
+                    className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon text-left transition-all hover:bg-[var(--bg-card-subtle)] space-y-1"
                   >
-                    <Calendar className="w-4 h-4 text-cyan-400" />
-                    <p className="font-bold text-white text-[11px]">Master Agenda</p>
-                    <p className="text-[9px] text-zinc-400">Turnos & Citas IA</p>
+                    <Calendar className="w-4 h-4 text-cyan-500 dark:text-cyan-400" />
+                    <p className="font-bold text-[var(--text-main)] text-[11px]">Master Agenda</p>
+                    <p className="text-[9px] text-[var(--text-muted)]">Turnos & Citas IA</p>
                   </button>
 
                   <button
@@ -752,11 +752,11 @@ export const CentroDeMando = () => {
                       setDrawerTenantId(null);
                       router.push('/config');
                     }}
-                    className="p-3 rounded-xl bg-zinc-900 border border-white/10 hover:border-neon text-left transition-all hover:bg-zinc-800 space-y-1"
+                    className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon text-left transition-all hover:bg-[var(--bg-card-subtle)] space-y-1"
                   >
-                    <BrainCircuit className="w-4 h-4 text-purple-400" />
-                    <p className="font-bold text-white text-[11px]">RAG Wizard</p>
-                    <p className="text-[9px] text-zinc-400">Base de Conocimiento</p>
+                    <BrainCircuit className="w-4 h-4 text-purple-500 dark:text-purple-400" />
+                    <p className="font-bold text-[var(--text-main)] text-[11px]">RAG Wizard</p>
+                    <p className="text-[9px] text-[var(--text-muted)]">Base de Conocimiento</p>
                   </button>
 
                   <button
@@ -764,18 +764,18 @@ export const CentroDeMando = () => {
                     onClick={() => {
                       setPreviewTenant(drawerTenant);
                     }}
-                    className="p-3 rounded-xl bg-zinc-900 border border-white/10 hover:border-neon text-left transition-all hover:bg-zinc-800 space-y-1"
+                    className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon text-left transition-all hover:bg-[var(--bg-card-subtle)] space-y-1"
                   >
-                    <Smartphone className="w-4 h-4 text-emerald-400" />
-                    <p className="font-bold text-white text-[11px]">Micro-Landing</p>
-                    <p className="text-[9px] text-zinc-400">Simulador Móvil</p>
+                    <Smartphone className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+                    <p className="font-bold text-[var(--text-main)] text-[11px]">Micro-Landing</p>
+                    <p className="text-[9px] text-[var(--text-muted)]">Simulador Móvil</p>
                   </button>
                 </div>
               </div>
             </div>
 
             {/* Drawer Bottom Actions: Set as Active Context */}
-            <div className="pt-4 border-t border-white/10 space-y-2">
+            <div className="pt-4 border-t border-[var(--border-color)] space-y-2">
               <button
                 type="button"
                 onClick={() => {
@@ -791,7 +791,7 @@ export const CentroDeMando = () => {
               <button
                 type="button"
                 onClick={() => setDrawerTenantId(null)}
-                className="w-full py-2 rounded-xl bg-zinc-900 border border-white/10 text-zinc-400 hover:text-white font-mono text-xs transition-colors"
+                className="w-full py-2 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)] font-mono text-xs transition-colors"
               >
                 Cerrar Panel
               </button>
@@ -823,7 +823,7 @@ export const CentroDeMando = () => {
                 <button
                   type="button"
                   onClick={() => setSelectedRuleModal(null)}
-                  className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+                  className="p-1.5 rounded-lg hover:bg-[var(--bg-card-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -835,12 +835,12 @@ export const CentroDeMando = () => {
 
               <div className="p-3 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] font-mono text-xs space-y-1.5">
                 <div className="flex justify-between">
-                  <span className="text-zinc-500">Estado de la Regla:</span>
-                  <span className="font-bold text-emerald-400">{selectedRuleModal.statusLabel}</span>
+                  <span className="text-[var(--text-muted)] font-medium">Estado de la Regla:</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">{selectedRuleModal.statusLabel}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-zinc-500">Métrica del Sistema:</span>
-                  <span className="font-bold text-white">{selectedRuleModal.metric}</span>
+                  <span className="text-[var(--text-muted)] font-medium">Métrica del Sistema:</span>
+                  <span className="font-bold text-[var(--text-main)]">{selectedRuleModal.metric}</span>
                 </div>
               </div>
 

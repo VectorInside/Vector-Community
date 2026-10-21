@@ -731,7 +731,7 @@ export const MARKETING_FRAMEWORKS_REGISTRY = [
     businessGoal: 'Definir el propósito de marca antes de vender productos.',
     techImplementation: 'Inyección de brand_purpose en el System Prompt base y en la colección RAG de Supabase (tenant_knowledge).',
     badge: 'Propósito',
-    color: 'border-amber-500/30 text-amber-400 bg-amber-500/10'
+    color: 'border-amber-500/40 text-amber-600 dark:text-amber-400 bg-amber-500/10'
   },
   {
     id: 'purple_cow',
@@ -740,7 +740,7 @@ export const MARKETING_FRAMEWORKS_REGISTRY = [
     businessGoal: 'Romper el patrón de scroll en pauta y revivir leads dormidos.',
     techImplementation: 'Generación de variables creativas por DeepSeek V3/R1 cuando Hook Rate < 20% o re-engagement 24h.',
     badge: 'Disrupción',
-    color: 'border-purple-500/30 text-purple-400 bg-purple-500/10'
+    color: 'border-purple-500/40 text-purple-600 dark:text-purple-400 bg-purple-500/10'
   },
   {
     id: 'jtbd',
@@ -749,7 +749,7 @@ export const MARKETING_FRAMEWORKS_REGISTRY = [
     businessGoal: 'Transición del dolor actual al estado deseado del cliente.',
     techImplementation: 'Algoritmo de Triage en el Sub-Bot Closer que mapea la fricción y presenta el beneficio antes del precio.',
     badge: 'JTBD',
-    color: 'border-blue-500/30 text-blue-400 bg-blue-500/10'
+    color: 'border-blue-500/40 text-blue-600 dark:text-blue-400 bg-blue-500/10'
   },
   {
     id: 'value_equation',
@@ -758,7 +758,7 @@ export const MARKETING_FRAMEWORKS_REGISTRY = [
     businessGoal: 'Maximizar el valor percibido del servicio para justificar tickets y citas.',
     techImplementation: 'Cero tiempo de espera (<10s), confirmación en 1 clic con Google Calendar API y envío de testimonios RAG.',
     badge: 'Valor',
-    color: 'border-neon/30 text-neon bg-neon/10'
+    color: 'border-lime-500/40 text-lime-700 dark:text-neon bg-neon/10'
   },
   {
     id: 'rule_95_5',
@@ -767,7 +767,7 @@ export const MARKETING_FRAMEWORKS_REGISTRY = [
     businessGoal: 'Monetizar el 5% inmediato y cultivar el 95% sin fatigar la base.',
     techImplementation: 'Lead In-Market -> Cita Directa (BILLABLE_LEAD). Lead Out-of-Market -> Secuencia Redis 24h (FOLLOWUP_PENDING_24H).',
     badge: '95/5',
-    color: 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10'
+    color: 'border-emerald-500/40 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10'
   },
   {
     id: 'aida',
@@ -776,7 +776,7 @@ export const MARKETING_FRAMEWORKS_REGISTRY = [
     businessGoal: 'Guiar el ciclo completo desde el anuncio en Meta hasta el pago/cita.',
     techImplementation: 'Mapeo de estados del lead (COLD_DROP, FOLLOWUP_PENDING_24H, WARM_FINANCING, QUALIFIED_TRANSFER, BILLABLE_LEAD).',
     badge: 'AIDA',
-    color: 'border-orange-500/30 text-orange-400 bg-orange-500/10'
+    color: 'border-orange-500/40 text-orange-600 dark:text-orange-400 bg-orange-500/10'
   },
   {
     id: 'pay_per_lead',
@@ -785,7 +785,7 @@ export const MARKETING_FRAMEWORKS_REGISTRY = [
     businessGoal: 'Cobro condicionado ($350 MXN) al cumplimiento de 4 requisitos verificados.',
     techImplementation: 'Función booleana en Spring Boot/FastAPI que valida datos, producto, dudas resueltas y aceptación explícita.',
     badge: '$350 MXN',
-    color: 'border-lime-500/30 text-lime-400 bg-lime-500/10'
+    color: 'border-lime-500/40 text-lime-700 dark:text-lime-400 bg-lime-500/10'
   }
 ];
 

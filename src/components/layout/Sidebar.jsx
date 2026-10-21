@@ -127,7 +127,7 @@ export const Sidebar = () => {
           </div>
         ) : (
           <>
-            <label className="text-[9px] font-mono text-[var(--text-muted)] uppercase tracking-wider mb-1.5 block">
+            <label className="text-[10px] font-mono font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1.5 block">
               Rol Operativo
             </label>
             <select
@@ -172,7 +172,7 @@ export const Sidebar = () => {
             isSidebarCollapsed
               ? 'justify-center p-3'
               : 'gap-3 px-3.5 py-2.5'
-          } ${
+            } ${
             isLinkActive('/triage')
               ? 'bg-neon text-black font-bold shadow-[0_0_15px_var(--neon-glow)]'
               : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] font-medium'
@@ -195,7 +195,7 @@ export const Sidebar = () => {
         {isAdmin && (
           <>
             {!isSidebarCollapsed && (
-              <label className="text-[9px] font-mono text-[var(--text-muted)] uppercase tracking-wider mt-5 mb-1.5 px-1 block">
+              <label className="text-[10px] font-mono font-bold text-[var(--text-muted)] uppercase tracking-wider mt-5 mb-1.5 px-1 block">
                 Ingeniería IA
               </label>
             )}
@@ -255,7 +255,7 @@ export const Sidebar = () => {
 
         {/* Sección: Operaciones de Contenido */}
         {!isSidebarCollapsed && (
-          <label className="text-[9px] font-mono text-[var(--text-muted)] uppercase tracking-wider mt-5 mb-1.5 px-1 block">
+          <label className="text-[10px] font-mono font-bold text-[var(--text-muted)] uppercase tracking-wider mt-5 mb-1.5 px-1 block">
             Operaciones de Contenido
           </label>
         )}
@@ -277,7 +277,7 @@ export const Sidebar = () => {
           {!isSidebarCollapsed ? (
             <>
               <span className="text-sm font-sans">Parrilla de Contenido</span>
-              <span className="ml-auto bg-amber-500/20 text-amber-400 border border-amber-500/40 text-[9px] font-bold px-1.5 py-0.5 rounded font-mono">
+              <span className="ml-auto bg-amber-500/20 text-amber-500 dark:text-amber-400 border border-amber-500/40 text-[9px] font-bold px-1.5 py-0.5 rounded font-mono">
                 2
               </span>
             </>
@@ -288,7 +288,7 @@ export const Sidebar = () => {
 
         {/* Sección: Analítica de Negocio */}
         {!isSidebarCollapsed && (
-          <label className="text-[9px] font-mono text-[var(--text-muted)] uppercase tracking-wider mt-5 mb-1.5 px-1 block">
+          <label className="text-[10px] font-mono font-bold text-[var(--text-muted)] uppercase tracking-wider mt-5 mb-1.5 px-1 block">
             Analítica de Negocio
           </label>
         )}
@@ -363,7 +363,7 @@ export const Sidebar = () => {
             </>
           ) : (
             <>
-              <Moon className="w-4 h-4 text-zinc-400 shrink-0" />
+              <Moon className="w-4 h-4 text-zinc-800 dark:text-zinc-400 shrink-0" />
               {!isSidebarCollapsed && <span>Modo Oscuro</span>}
             </>
           )}

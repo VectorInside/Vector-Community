@@ -170,7 +170,7 @@ export const OrchestrationView = () => {
             className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
               activeViewMode === 'graph'
                 ? 'bg-neon text-black shadow-[0_0_10px_var(--neon-glow)]'
-                : 'text-[var(--text-muted)] hover:text-white'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
             }`}
           >
             Grafo Interactivo
@@ -181,7 +181,7 @@ export const OrchestrationView = () => {
             className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
               activeViewMode === 'matrix'
                 ? 'bg-neon text-black shadow-[0_0_10px_var(--neon-glow)]'
-                : 'text-[var(--text-muted)] hover:text-white'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
             }`}
           >
             Matriz de Frecuencias & Eficiencia
@@ -193,20 +193,20 @@ export const OrchestrationView = () => {
       <div className="flex items-center justify-between p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs font-mono">
         <div className="flex items-center gap-2">
           <span className="text-lg">{activeTenant?.avatar || '🏢'}</span>
-          <span className="text-[var(--text-muted)]">Contexto Activo:</span>
+          <span className="text-[var(--text-muted)] font-semibold">Contexto Activo:</span>
           <strong className="text-[var(--text-main)] font-sans text-sm">{activeTenant?.name}</strong>
-          <span className="text-[10px] px-2 py-0.5 rounded bg-neon/15 text-neon border border-neon/30 font-mono">
+          <span className="text-[10px] px-2 py-0.5 rounded bg-neon/15 text-lime-700 dark:text-neon border border-neon/30 font-mono font-bold">
             {activeTenant?.verticalLabel}
           </span>
         </div>
         <div className="text-[11px] text-[var(--text-muted)] hidden sm:flex items-center gap-4">
           <span className="flex items-center gap-1.5">
-            <Coins className="w-3.5 h-3.5 text-emerald-400" />
-            Costo Estimado Mensual: <strong className="text-emerald-400">$0.00 – $0.15 USD</strong>
+            <Coins className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
+            Costo Estimado Mensual: <strong className="text-emerald-600 dark:text-emerald-400">$0.00 – $0.15 USD</strong>
           </span>
           <span className="flex items-center gap-1.5">
-            <Zap className="w-3.5 h-3.5 text-neon" />
-            Prompt Caching: <strong className="text-neon">Activo (94% Ahorro)</strong>
+            <Zap className="w-3.5 h-3.5 text-lime-700 dark:text-neon" />
+            Prompt Caching: <strong className="text-lime-700 dark:text-neon">Activo (94% Ahorro)</strong>
           </span>
         </div>
       </div>
@@ -221,7 +221,7 @@ export const OrchestrationView = () => {
             onClick={() => handleOpenInspector('supervisor')}
             className="w-full max-w-md p-6 rounded-2xl border-2 border-neon vector-bg-card shadow-[0_0_35px_var(--neon-glow)] text-center cursor-pointer hover:scale-[1.02] transition-all group relative overflow-hidden"
           >
-            <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 rounded-full bg-neon/15 text-neon text-[10px] font-mono font-bold border border-neon/30">
+            <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 rounded-full bg-neon/15 text-lime-800 dark:text-neon text-[10px] font-mono font-bold border border-neon/30">
               <span className="w-2 h-2 rounded-full bg-neon animate-pulse" />
               <span>0ms Latencia</span>
             </div>
@@ -235,17 +235,17 @@ export const OrchestrationView = () => {
               <Activity className="w-4 h-4 text-neon animate-pulse" />
             </h3>
 
-            <p className="text-xs font-mono text-neon font-bold mt-0.5">
+            <p className="text-xs font-mono text-lime-700 dark:text-neon font-bold mt-0.5">
               {SUB_AGENTS_CONFIG.supervisor.engine}
             </p>
 
             <p className="text-xs text-[var(--text-muted)] mt-2 leading-relaxed font-sans">
-              Clasifica intenciones de WhatsApp/Meta DMs y enruta a sub-agentes con estricto aislamiento <code className="text-neon text-[11px]">tenant_id</code>.
+              Clasifica intenciones de WhatsApp/Meta DMs y enruta a sub-agentes con estricto aislamiento <code className="text-lime-700 dark:text-neon font-bold text-[11px]">tenant_id</code>.
             </p>
 
             <div className="mt-4 pt-3 border-t border-[var(--border-color)] flex items-center justify-between text-[11px] font-mono text-[var(--text-muted)]">
-              <span className="text-emerald-400 font-bold">● {SUB_AGENTS_METRICS_MOCK.supervisor.status}</span>
-              <span className="group-hover:text-neon transition-colors font-bold">
+              <span className="text-emerald-600 dark:text-emerald-400 font-bold">● {SUB_AGENTS_METRICS_MOCK.supervisor.status}</span>
+              <span className="group-hover:text-lime-700 dark:group-hover:text-neon transition-colors font-bold">
                 Auditar Prompt XML & Schema →
               </span>
             </div>
@@ -266,10 +266,10 @@ export const OrchestrationView = () => {
             >
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-500 dark:text-amber-400 border border-amber-500/30 flex items-center justify-center">
                     <Target className="w-5 h-5" />
                   </div>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-bold">
                     ⚡ Event-Driven
                   </span>
                 </div>
@@ -277,7 +277,7 @@ export const OrchestrationView = () => {
                 <h4 className="font-heading font-black text-sm uppercase text-[var(--text-main)]">
                   {SUB_AGENTS_CONFIG.closer.name}
                 </h4>
-                <p className="text-[10px] font-mono text-amber-400 font-bold mb-2">
+                <p className="text-[10px] font-mono text-amber-600 dark:text-amber-400 font-bold mb-2">
                   {SUB_AGENTS_CONFIG.closer.engine}
                 </p>
 
@@ -285,21 +285,21 @@ export const OrchestrationView = () => {
                   Aplica embudo AIDA, JTBD (beneficio antes de precio) y valida los 4 requisitos booleanos para cobrar $350 MXN (BILLABLE_LEAD).
                 </p>
 
-                <div className="mt-3 p-2 rounded-lg bg-[var(--bg-base)] border border-[var(--border-color)] text-[10px] font-mono text-zinc-400 space-y-1">
+                <div className="mt-3 p-2 rounded-lg bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[10px] font-mono text-[var(--text-muted)] space-y-1">
                   <div className="flex justify-between">
                     <span>Marco:</span>
-                    <strong className="text-white">JTBD / Ecuación Valor</strong>
+                    <strong className="text-[var(--text-main)]">JTBD / Ecuación Valor</strong>
                   </div>
                   <div className="flex justify-between">
                     <span>Calendar:</span>
-                    <strong className="text-emerald-400">Tool Nativa ($0 tokens)</strong>
+                    <strong className="text-emerald-600 dark:text-emerald-400 font-bold">Tool Nativa ($0 tokens)</strong>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-[var(--border-color)] flex items-center justify-between text-[11px] font-mono text-zinc-500 group-hover:text-amber-400 transition-colors">
+              <div className="mt-4 pt-3 border-t border-[var(--border-color)] flex items-center justify-between text-[11px] font-mono text-[var(--text-muted)] group-hover:text-amber-500 dark:group-hover:text-amber-400 transition-colors">
                 <span>14 Leads Calificados</span>
-                <span>Ver Prompt →</span>
+                <span className="font-bold">Ver Prompt →</span>
               </div>
             </div>
 
@@ -310,10 +310,10 @@ export const OrchestrationView = () => {
             >
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-purple-500/15 text-purple-400 border border-purple-500/30 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-xl bg-purple-500/15 text-purple-500 dark:text-purple-400 border border-purple-500/30 flex items-center justify-center">
                     <Sparkles className="w-5 h-5" />
                   </div>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 font-bold">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 font-bold">
                     ⏱️ Cron Redis 24h
                   </span>
                 </div>
@@ -321,7 +321,7 @@ export const OrchestrationView = () => {
                 <h4 className="font-heading font-black text-sm uppercase text-[var(--text-main)]">
                   {SUB_AGENTS_CONFIG.reengagement.name}
                 </h4>
-                <p className="text-[10px] font-mono text-purple-400 font-bold mb-2">
+                <p className="text-[10px] font-mono text-purple-600 dark:text-purple-400 font-bold mb-2">
                   {SUB_AGENTS_CONFIG.reengagement.engine}
                 </p>
 
@@ -329,21 +329,21 @@ export const OrchestrationView = () => {
                   Re-activa el 95% de prospectos Out-of-Market con la fórmula Vaca Púrpura (dato curioso, máx 40 palabras, micro-CTA sin fricción).
                 </p>
 
-                <div className="mt-3 p-2 rounded-lg bg-[var(--bg-base)] border border-[var(--border-color)] text-[10px] font-mono text-zinc-400 space-y-1">
+                <div className="mt-3 p-2 rounded-lg bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[10px] font-mono text-[var(--text-muted)] space-y-1">
                   <div className="flex justify-between">
                     <span>Marco:</span>
-                    <strong className="text-white">Regla 95/5 / Vaca Púrpura</strong>
+                    <strong className="text-[var(--text-main)]">Regla 95/5 / Vaca Púrpura</strong>
                   </div>
                   <div className="flex justify-between">
                     <span>Cola Redis:</span>
-                    <strong className="text-purple-400">{SUB_AGENTS_METRICS_MOCK.reengagement.active24hQueueCount} leads en espera</strong>
+                    <strong className="text-purple-600 dark:text-purple-400 font-bold">{SUB_AGENTS_METRICS_MOCK.reengagement.active24hQueueCount} leads en espera</strong>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-[var(--border-color)] flex items-center justify-between text-[11px] font-mono text-zinc-500 group-hover:text-purple-400 transition-colors">
+              <div className="mt-4 pt-3 border-t border-[var(--border-color)] flex items-center justify-between text-[11px] font-mono text-[var(--text-muted)] group-hover:text-purple-500 dark:group-hover:text-purple-400 transition-colors">
                 <span>39.1% Tasa Reactivación</span>
-                <span>Ver Prompt →</span>
+                <span className="font-bold">Ver Prompt →</span>
               </div>
             </div>
 
@@ -354,10 +354,10 @@ export const OrchestrationView = () => {
             >
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <div className="w-10 h-10 rounded-lg bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-lg bg-cyan-500/15 text-cyan-500 dark:text-cyan-400 border border-cyan-500/30 flex items-center justify-center">
                     <BarChart2 className="w-5 h-5" />
                   </div>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-bold">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 font-bold">
                     📊 Batch Programado
                   </span>
                 </div>
@@ -365,7 +365,7 @@ export const OrchestrationView = () => {
                 <h4 className="font-heading font-black text-sm uppercase text-[var(--text-main)]">
                   {SUB_AGENTS_CONFIG.analyst.name}
                 </h4>
-                <p className="text-[10px] font-mono text-cyan-400 font-bold mb-2">
+                <p className="text-[10px] font-mono text-cyan-600 dark:text-cyan-400 font-bold mb-2">
                   {SUB_AGENTS_CONFIG.analyst.engine}
                 </p>
 
@@ -373,21 +373,21 @@ export const OrchestrationView = () => {
                   Calcula ROAS Real Backend, detecta fatiga creativa (Hook Rate &lt; 20%) y alerta fricción en landing web si Click-to-WA &lt; 3%.
                 </p>
 
-                <div className="mt-3 p-2 rounded-lg bg-[var(--bg-base)] border border-[var(--border-color)] text-[10px] font-mono text-zinc-400 space-y-1">
+                <div className="mt-3 p-2 rounded-lg bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[10px] font-mono text-[var(--text-muted)] space-y-1">
                   <div className="flex justify-between">
                     <span>Disparador:</span>
-                    <strong className="text-white">Diario 8AM / Dom 11PM</strong>
+                    <strong className="text-[var(--text-main)]">Diario 8AM / Dom 11PM</strong>
                   </div>
                   <div className="flex justify-between">
                     <span>Atribución:</span>
-                    <strong className="text-cyan-400">Meta CAPI Server-to-Server</strong>
+                    <strong className="text-cyan-600 dark:text-cyan-400 font-bold">Meta CAPI Server-to-Server</strong>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-[var(--border-color)] flex items-center justify-between text-[11px] font-mono text-zinc-500 group-hover:text-cyan-400 transition-colors">
+              <div className="mt-4 pt-3 border-t border-[var(--border-color)] flex items-center justify-between text-[11px] font-mono text-[var(--text-muted)] group-hover:text-cyan-500 dark:group-hover:text-cyan-400 transition-colors">
                 <span>ROAS Real: 5.82x</span>
-                <span>Ver Prompt →</span>
+                <span className="font-bold">Ver Prompt →</span>
               </div>
             </div>
           </div>
@@ -421,47 +421,47 @@ export const OrchestrationView = () => {
                   <tr className="hover:bg-[var(--bg-panel)]">
                     <td className="p-3 font-bold font-sans">Recepción Mensaje DM / WA</td>
                     <td className="p-3">
-                      <span className="px-2 py-0.5 rounded bg-neon/15 text-neon font-bold">⚡ Meta Webhook</span>
+                      <span className="px-2 py-0.5 rounded bg-neon/15 text-lime-700 dark:text-neon font-bold">⚡ Meta Webhook</span>
                     </td>
                     <td className="p-3">Tiempo Real (0ms)</td>
                     <td className="p-3">Supervisor + Moderador/Closer</td>
-                    <td className="p-3 text-zinc-400">Prompt Caching en System Prompt base ($0.014/1M). Solo se procesa el delta.</td>
+                    <td className="p-3 text-[var(--text-muted)] font-medium">Prompt Caching en System Prompt base ($0.014/1M). Solo se procesa el delta.</td>
                   </tr>
                   <tr className="hover:bg-[var(--bg-panel)]">
                     <td className="p-3 font-bold font-sans">Consulta de Google Calendar</td>
                     <td className="p-3">
-                      <span className="px-2 py-0.5 rounded bg-blue-500/15 text-blue-400 font-bold">🔧 Tool Call Nativa</span>
+                      <span className="px-2 py-0.5 rounded bg-blue-500/15 text-blue-600 dark:text-blue-400 font-bold">🔧 Tool Call Nativa</span>
                     </td>
                     <td className="p-3">Bajo Demanda en Chat</td>
                     <td className="p-3">Tool Directa (freebusy.query)</td>
-                    <td className="p-3 text-emerald-400 font-bold">Sin llamada a LLM. Conexión REST directa a Google API ($0 USD).</td>
+                    <td className="p-3 text-emerald-600 dark:text-emerald-400 font-bold">Sin llamada a LLM. Conexión REST directa a Google API ($0 USD).</td>
                   </tr>
                   <tr className="hover:bg-[var(--bg-panel)]">
                     <td className="p-3 font-bold font-sans">Seguimiento 24h (Regla 95/5)</td>
                     <td className="p-3">
-                      <span className="px-2 py-0.5 rounded bg-purple-500/15 text-purple-400 font-bold">⏱️ Upstash Redis Queue</span>
+                      <span className="px-2 py-0.5 rounded bg-purple-500/15 text-purple-600 dark:text-purple-400 font-bold">⏱️ Upstash Redis Queue</span>
                     </td>
                     <td className="p-3">A las 24h exactas</td>
                     <td className="p-3">Sub-Bot Re-Engagement</td>
-                    <td className="p-3 text-zinc-400">Batching nocturno con Groq / Llama 3 para latencia sub-segundo a costo marginal.</td>
+                    <td className="p-3 text-[var(--text-muted)] font-medium">Batching nocturno con Groq / Llama 3 para latencia sub-segundo a costo marginal.</td>
                   </tr>
                   <tr className="hover:bg-[var(--bg-panel)]">
                     <td className="p-3 font-bold font-sans">Reporte Diario al Dueño</td>
                     <td className="p-3">
-                      <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-400 font-bold">📊 Scheduler Cron Job</span>
+                      <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold">📊 Scheduler Cron Job</span>
                     </td>
                     <td className="p-3">Diario a las 08:00 AM</td>
                     <td className="p-3">Supervisor Central</td>
-                    <td className="p-3 text-zinc-400">Lectura directa de agregados SQL en Supabase + plantilla WhatsApp ($0 tokens).</td>
+                    <td className="p-3 text-[var(--text-muted)] font-medium">Lectura directa de agregados SQL en Supabase + plantilla WhatsApp ($0 tokens).</td>
                   </tr>
                   <tr className="hover:bg-[var(--bg-panel)]">
                     <td className="p-3 font-bold font-sans">Auditoría Creativa & CAPI</td>
                     <td className="p-3">
-                      <span className="px-2 py-0.5 rounded bg-cyan-500/15 text-cyan-400 font-bold">📊 Scheduler Cron Job</span>
+                      <span className="px-2 py-0.5 rounded bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 font-bold">📊 Scheduler Cron Job</span>
                     </td>
                     <td className="p-3">Domingos a las 11:00 PM</td>
                     <td className="p-3">Sub-Bot Analista (DeepSeek V3)</td>
-                    <td className="p-3 text-zinc-400">Evaluación por lotes de métricas semanales de Meta Ads y GA4 API.</td>
+                    <td className="p-3 text-[var(--text-muted)] font-medium">Evaluación por lotes de métricas semanales de Meta Ads y GA4 API.</td>
                   </tr>
                 </tbody>
               </table>
@@ -483,12 +483,12 @@ export const OrchestrationView = () => {
                     {item.badge}
                   </span>
                 </div>
-                <p className="text-[11px] text-zinc-400 font-sans leading-relaxed">
-                  <strong>Objetivo:</strong> {item.businessGoal}
+                <p className="text-[11px] text-[var(--text-muted)] font-sans leading-relaxed">
+                  <strong className="text-[var(--text-main)] font-bold">Objetivo:</strong> {item.businessGoal}
                 </p>
-                <div className="p-2.5 rounded-lg bg-[var(--bg-base)] border border-[var(--border-color)] text-[10px] text-zinc-300">
-                  <span className="text-neon block font-bold mb-0.5">En Código:</span>
-                  <span>{item.techImplementation}</span>
+                <div className="p-2.5 rounded-lg bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[11px] text-[var(--text-main)] font-mono">
+                  <span className="text-lime-700 dark:text-neon block font-bold mb-0.5">En Código:</span>
+                  <span className="text-[var(--text-muted)] leading-snug block">{item.techImplementation}</span>
                 </div>
               </div>
             ))}
@@ -507,23 +507,23 @@ export const OrchestrationView = () => {
               if (e.target === e.currentTarget) handleCloseInspector();
             }}
           >
-            <div className="w-full max-w-4xl max-h-[90vh] bg-zinc-950 border border-zinc-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden text-zinc-200 my-auto animate-scale-up">
+            <div className="w-full max-w-4xl max-h-[90vh] bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-3xl shadow-2xl flex flex-col overflow-hidden text-[var(--text-main)] my-auto animate-scale-up">
             {/* Modal Header */}
-            <div className="p-6 border-b border-zinc-800/80 bg-zinc-900/60 flex items-center justify-between">
+            <div className="p-6 border-b border-[var(--border-color)] bg-[var(--bg-card)] flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-neon/15 text-neon border border-neon/30 flex items-center justify-center text-lg font-bold">
+                <div className="w-12 h-12 rounded-2xl bg-neon/15 text-lime-700 dark:text-neon border border-neon/30 flex items-center justify-center text-lg font-bold">
                   {selectedAgent.codeName.slice(0, 2).toUpperCase()}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-heading font-black text-white">
+                    <h3 className="text-lg font-heading font-black text-[var(--text-main)]">
                       {selectedAgent.name}
                     </h3>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neon/15 text-neon border border-neon/30 font-bold">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neon/15 text-lime-700 dark:text-neon border border-neon/30 font-bold">
                       {selectedAgent.badge}
                     </span>
                   </div>
-                  <p className="text-xs font-mono text-zinc-400">
+                  <p className="text-xs font-mono text-[var(--text-muted)]">
                     {selectedAgent.engine} • {selectedAgent.triggerLabel}
                   </p>
                 </div>
@@ -532,21 +532,21 @@ export const OrchestrationView = () => {
               <button
                 type="button"
                 onClick={handleCloseInspector}
-                className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+                className="p-2 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card-subtle)] transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Modal Tabs */}
-            <div className="flex items-center gap-2 px-6 pt-3 border-b border-zinc-800 bg-zinc-900/30 text-xs font-mono">
+            <div className="flex items-center gap-2 px-6 pt-3 border-b border-[var(--border-color)] bg-[var(--bg-card)]/40 text-xs font-mono">
               <button
                 type="button"
                 onClick={() => setActiveInspectorTab('prompt')}
                 className={`py-2 px-3 border-b-2 font-bold transition-all ${
                   activeInspectorTab === 'prompt'
-                    ? 'border-neon text-neon'
-                    : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                    ? 'border-neon text-lime-700 dark:text-neon'
+                    : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-main)]'
                 }`}
               >
                 📜 System Prompt Estricto (XML)
@@ -556,8 +556,8 @@ export const OrchestrationView = () => {
                 onClick={() => setActiveInspectorTab('schema')}
                 className={`py-2 px-3 border-b-2 font-bold transition-all ${
                   activeInspectorTab === 'schema'
-                    ? 'border-neon text-neon'
-                    : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                    ? 'border-neon text-lime-700 dark:text-neon'
+                    : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-main)]'
                 }`}
               >
                 🧩 Esquema de Salida JSON
@@ -567,8 +567,8 @@ export const OrchestrationView = () => {
                 onClick={() => setActiveInspectorTab('framework')}
                 className={`py-2 px-3 border-b-2 font-bold transition-all ${
                   activeInspectorTab === 'framework'
-                    ? 'border-neon text-neon'
-                    : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                    ? 'border-neon text-lime-700 dark:text-neon'
+                    : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-main)]'
                 }`}
               >
                 🎯 Marco Estratégico & Eficiencia
@@ -578,8 +578,8 @@ export const OrchestrationView = () => {
                 onClick={() => setActiveInspectorTab('simulation')}
                 className={`py-2 px-3 border-b-2 font-bold transition-all ${
                   activeInspectorTab === 'simulation'
-                    ? 'border-neon text-neon'
-                    : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                    ? 'border-neon text-lime-700 dark:text-neon'
+                    : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-main)]'
                 }`}
               >
                 ⚡ Simulación en Memoria
@@ -590,18 +590,18 @@ export const OrchestrationView = () => {
             <div className="p-6 overflow-y-auto space-y-4 flex-1 font-mono text-xs">
               {activeInspectorTab === 'prompt' && (
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between text-zinc-400 text-[11px]">
+                  <div className="flex items-center justify-between text-[var(--text-muted)] text-[11px]">
                     <span>Inyección dinámica de variables de contexto activa:</span>
                     <button
                       type="button"
                       onClick={() => handleCopyCode(formatPromptWithTenant(selectedAgent.systemPromptXml))}
-                      className="px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-neon flex items-center gap-1.5 transition-colors"
+                      className="px-2.5 py-1 rounded bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-lime-700 dark:text-neon border border-[var(--border-color)] flex items-center gap-1.5 transition-colors font-bold"
                     >
                       {copiedCode ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                       <span>{copiedCode ? 'Copiado' : 'Copiar XML'}</span>
                     </button>
                   </div>
-                  <pre className="p-4 rounded-2xl bg-black border border-zinc-800 text-zinc-300 font-mono text-xs leading-relaxed overflow-x-auto whitespace-pre-wrap select-all max-h-[50vh]">
+                  <pre className="p-4 rounded-2xl bg-[var(--bg-base)] border border-[var(--border-color)] text-[var(--text-main)] font-mono text-xs leading-relaxed overflow-x-auto whitespace-pre-wrap select-all max-h-[50vh]">
                     {formatPromptWithTenant(selectedAgent.systemPromptXml)}
                   </pre>
                 </div>
@@ -609,18 +609,18 @@ export const OrchestrationView = () => {
 
               {activeInspectorTab === 'schema' && (
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between text-zinc-400 text-[11px]">
+                  <div className="flex items-center justify-between text-[var(--text-muted)] text-[11px]">
                     <span>Forzado vía Tool Calling / Json Mode:</span>
                     <button
                       type="button"
                       onClick={() => handleCopyCode(JSON.stringify(selectedAgent.outputJsonSchema, null, 2))}
-                      className="px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-neon flex items-center gap-1.5 transition-colors"
+                      className="px-2.5 py-1 rounded bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-lime-700 dark:text-neon border border-[var(--border-color)] flex items-center gap-1.5 transition-colors font-bold"
                     >
                       {copiedCode ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                       <span>{copiedCode ? 'Copiado' : 'Copiar JSON Schema'}</span>
                     </button>
                   </div>
-                  <pre className="p-4 rounded-2xl bg-black border border-zinc-800 text-emerald-400 font-mono text-xs leading-relaxed overflow-x-auto whitespace-pre-wrap max-h-[50vh]">
+                  <pre className="p-4 rounded-2xl bg-[var(--bg-base)] border border-[var(--border-color)] text-emerald-600 dark:text-emerald-400 font-mono text-xs leading-relaxed overflow-x-auto whitespace-pre-wrap max-h-[50vh]">
                     {JSON.stringify(selectedAgent.outputJsonSchema, null, 2)}
                   </pre>
                 </div>
@@ -628,26 +628,26 @@ export const OrchestrationView = () => {
 
               {activeInspectorTab === 'framework' && (
                 <div className="space-y-4 font-sans text-xs">
-                  <div className="p-4 rounded-2xl bg-zinc-900 border border-zinc-800 space-y-2">
-                    <span className="font-mono text-[10px] text-neon uppercase font-bold block">
+                  <div className="p-4 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-2">
+                    <span className="font-mono text-[10px] text-lime-700 dark:text-neon uppercase font-bold block">
                       Marco de Marketing Estratégico:
                     </span>
-                    <h4 className="text-base font-bold text-white">
+                    <h4 className="text-base font-bold text-[var(--text-main)]">
                       {selectedAgent.framework}
                     </h4>
-                    <p className="text-zinc-400 leading-relaxed">
+                    <p className="text-[var(--text-muted)] leading-relaxed">
                       Este sub-agente está calibrado para nunca disparar información transaccional sin antes validar la psicología del comprador según las reglas de Seth Godin, Alex Hormozi o Simon Sinek.
                     </p>
                   </div>
 
-                  <div className="p-4 rounded-2xl bg-zinc-900 border border-zinc-800 space-y-2">
-                    <span className="font-mono text-[10px] text-emerald-400 uppercase font-bold block">
+                  <div className="p-4 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-2">
+                    <span className="font-mono text-[10px] text-emerald-600 dark:text-emerald-400 uppercase font-bold block">
                       Estrategia de Eficiencia & Costo $0 USD:
                     </span>
-                    <h4 className="text-base font-bold text-white">
+                    <h4 className="text-base font-bold text-[var(--text-main)]">
                       {selectedAgent.efficiencyStrategy}
                     </h4>
-                    <p className="text-zinc-400 leading-relaxed font-mono text-xs">
+                    <p className="text-[var(--text-muted)] leading-relaxed font-mono text-xs">
                       {selectedAgentKey === 'supervisor' && 'El System Prompt base y la base RAG se congelan en memoria caché. Solo se procesa el mensaje entrante del usuario, logrando hasta un 94% de ahorro en tokens de entrada.'}
                       {selectedAgentKey === 'closer' && 'Al detectar intención de cita, se consulta directamente freebusy.query de Google Calendar mediante protocolo REST, evitando que un LLM compute los slots.'}
                       {selectedAgentKey === 'reengagement' && 'Las tareas encoladas a las 24 horas se ejecutan en segundo plano a través de Redis Queue. Se utiliza Llama 3 en Groq a costo cero para redactar el mensaje de reactivación.'}
@@ -661,10 +661,10 @@ export const OrchestrationView = () => {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-bold text-white text-sm">
+                      <h4 className="font-bold text-[var(--text-main)] text-sm">
                         Simulación en Memoria (Buffer Local)
                       </h4>
-                      <p className="text-zinc-400 text-xs">
+                      <p className="text-[var(--text-muted)] text-xs">
                         Ejecuta un ciclo de prueba en buffer con los datos de <strong>{activeTenant?.name}</strong>.
                       </p>
                     </div>
@@ -682,10 +682,10 @@ export const OrchestrationView = () => {
 
                   {simulationOutput && (
                     <div className="space-y-2 animate-fade-in">
-                      <span className="text-[10px] text-emerald-400 font-bold uppercase block">
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase block">
                         Resultado de Simulación (JSON Schema Validado):
                       </span>
-                      <pre className="p-4 rounded-2xl bg-black border border-emerald-500/40 text-emerald-300 font-mono text-xs leading-relaxed overflow-x-auto whitespace-pre-wrap">
+                      <pre className="p-4 rounded-2xl bg-[var(--bg-base)] border border-emerald-500/40 text-emerald-600 dark:text-emerald-300 font-mono text-xs leading-relaxed overflow-x-auto whitespace-pre-wrap">
                         {JSON.stringify(simulationOutput, null, 2)}
                       </pre>
                     </div>
@@ -695,14 +695,14 @@ export const OrchestrationView = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 border-t border-zinc-800 bg-zinc-900/60 flex items-center justify-between text-xs font-mono">
-              <span className="text-zinc-500">
+            <div className="p-4 border-t border-[var(--border-color)] bg-[var(--bg-card)] flex items-center justify-between text-xs font-mono">
+              <span className="text-[var(--text-muted)]">
                 Vector Comunity OS v4.0 • Multi-Tenant RLS Aprobado
               </span>
               <button
                 type="button"
                 onClick={handleCloseInspector}
-                className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold transition-colors"
+                className="px-4 py-2 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] border border-[var(--border-color)] text-[var(--text-main)] font-bold transition-colors"
               >
                 Cerrar
               </button>

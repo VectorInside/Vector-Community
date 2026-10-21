@@ -62,14 +62,14 @@ export const Modal = ({
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+              className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card-subtle)] transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Modal Body */}
-          <div className="px-6 py-5 max-h-[75vh] overflow-y-auto text-sm text-zinc-200">
+          <div className="px-6 py-5 max-h-[75vh] overflow-y-auto text-sm text-[var(--text-main)]">
             {children}
           </div>
         </div>

@@ -76,8 +76,8 @@ export const SoberaniaFinanciera = () => {
       `<b>Periodo:</b> Septiembre 2026<br>
       <b>Cliente:</b> ${activeTenant?.name}<br>
       <b>Agencia Responsable:</b> Vector Inside<br><br>
-      <div style="background:#0D0F12; padding:12px; border-radius:8px; border:1px solid #1F242D; font-family:monospace; font-size:12px; line-height:1.6;">
-        <span style="color:#D4FF00; font-weight:bold;">📊 RESUMEN DE RENDIMIENTO MENSUAL:</span><br>
+      <div style="background:var(--bg-card); color:var(--text-main); padding:12px; border-radius:8px; border:1px solid var(--border-color); font-family:monospace; font-size:12px; line-height:1.6;">
+        <span style="color:var(--text-main); font-weight:bold;">📊 RESUMEN DE RENDIMIENTO MENSUAL:</span><br>
         • <b>DMs y Comentarios Atendidos por IA:</b> 1,480 mensajes<br>
         • <b>Tiempo de Respuesta Promedio:</b> 4.2 segundos (24/7 sin descanso)<br>
         • <b>Horas de Trabajo Humano Ahorradas:</b> 124 hrs estimadas<br>
@@ -130,21 +130,21 @@ export const SoberaniaFinanciera = () => {
       </header>
 
       {/* Digital Presence & Micro-Landing Bar */}
-      <div className="mb-6 p-4 rounded-2xl bg-zinc-900/80 border border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-xs">
+      <div className="mb-6 p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-xs">
         <div className="flex items-center gap-3">
           <span className="p-2.5 rounded-xl bg-neon/10 text-neon border border-neon/20">
             {activeTenant?.hasWebsite ? <Globe className="w-5 h-5" /> : <Smartphone className="w-5 h-5" />}
           </span>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-white font-bold text-sm">
+              <span className="text-[var(--text-main)] font-bold text-sm">
                 {activeTenant?.hasWebsite ? 'Presencia: Sitio Web Oficial Sincronizado' : 'Presencia: Ecosistema Puro en WhatsApp (SIN Web)'}
               </span>
-              <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
+              <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
                 {activeTenant?.hasWebsite ? 'GA4 Measurement ID ($0 USD)' : 'Micro-Landing Activa'}
               </span>
             </div>
-            <p className="text-zinc-400 text-xs mt-0.5 font-sans">
+            <p className="text-[var(--text-muted)] text-xs mt-0.5 font-sans">
               Micro-Landing Oficial:{' '}
               <a
                 href={`/m/${activeTenant?.id}`}
@@ -162,7 +162,7 @@ export const SoberaniaFinanciera = () => {
           <button
             type="button"
             onClick={() => setShowLandingModal(true)}
-            className="px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs border border-zinc-700 hover:border-neon flex items-center gap-1.5 transition-all"
+            className="px-3.5 py-2 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] font-bold text-xs border border-[var(--border-color)] hover:border-neon flex items-center gap-1.5 transition-all"
           >
             <Smartphone className="w-3.5 h-3.5 text-neon" />
             <span>Previsualización Móvil</span>
@@ -325,35 +325,35 @@ export const SoberaniaFinanciera = () => {
 
         {/* Right Column: Reporte Creativo IA (DeepSeek) */}
         <div className="lg:col-span-1">
-          <div className="bg-[#1a1525] border border-[#a855f7]/50 p-6 rounded-lg relative shadow-[0_0_20px_rgba(168,85,247,0.15)] h-full flex flex-col justify-between">
+          <div className="bg-purple-950/20 dark:bg-[#1a1525] border border-purple-500/30 dark:border-[#a855f7]/50 p-6 rounded-lg relative shadow-[0_0_20px_rgba(168,85,247,0.15)] h-full flex flex-col justify-between">
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-[#a855f7]/20 rounded-md">
-                  <BrainCircuit className="w-5 h-5 text-[#c084fc]" />
+                <div className="p-2 bg-purple-500/20 rounded-md">
+                  <BrainCircuit className="w-5 h-5 text-purple-600 dark:text-[#c084fc]" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-black uppercase text-[#e9d5ff]">
+                  <h4 className="text-xs font-black uppercase text-purple-900 dark:text-[#e9d5ff]">
                     Reporte Creativo IA
                   </h4>
-                  <p className="text-[9px] font-mono text-[#a855f7]">
+                  <p className="text-[9px] font-mono text-purple-700 dark:text-[#a855f7]">
                     DeepSeek Analista
                   </p>
                 </div>
               </div>
 
-              <div className="bg-black/40 border border-[#a855f7]/30 p-4 rounded text-sm mb-4">
+              <div className="bg-white/70 dark:bg-black/40 border border-purple-500/20 dark:border-[#a855f7]/30 p-4 rounded text-sm mb-4">
                 <span className="text-[10px] font-bold uppercase text-[var(--danger)] tracking-wider flex items-center gap-1 mb-2">
                   <AlertTriangle className="w-3 h-3" /> Fatiga Detectada
                 </span>
-                <p className="text-xs text-[#d8b4fe] leading-relaxed mb-4">
-                  El anuncio <strong className="text-white">"Imagen Promo"</strong> superó la frecuencia de 3.5. Costos en aumento.
+                <p className="text-xs text-purple-950 dark:text-[#d8b4fe] leading-relaxed mb-4">
+                  El anuncio <strong className="text-[var(--text-main)]">"Imagen Promo"</strong> superó la frecuencia de 3.5. Costos en aumento.
                 </p>
 
-                <div className="border-t border-[#a855f7]/30 pt-3">
-                  <p className="text-[10px] font-mono text-[#e9d5ff] font-bold mb-2 uppercase">
+                <div className="border-t border-purple-500/20 dark:border-[#a855f7]/30 pt-3">
+                  <p className="text-[10px] font-mono text-purple-900 dark:text-[#e9d5ff] font-bold mb-2 uppercase">
                     Sugerencia (Diversidad):
                   </p>
-                  <p className="text-xs text-[#d8b4fe] leading-relaxed">
+                  <p className="text-xs text-purple-950 dark:text-[#d8b4fe] leading-relaxed">
                     Grabar Reel respondiendo dudas de precio (objeción principal de Leads Tibios esta semana).
                   </p>
                 </div>
@@ -363,7 +363,7 @@ export const SoberaniaFinanciera = () => {
             <button
               type="button"
               onClick={handleGenerateScript}
-              className="w-full mt-4 bg-[#a855f7] hover:bg-[#9333ea] text-white font-black text-[10px] uppercase tracking-widest py-3 rounded transition-colors flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(168,85,247,0.3)] active:scale-95"
+              className="w-full mt-4 bg-purple-600 hover:bg-purple-700 text-white font-black text-[10px] uppercase tracking-widest py-3 rounded transition-colors flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(168,85,247,0.3)] active:scale-95"
             >
               <PenTool className="w-4 h-4" />
               <span>Generar Guion</span>

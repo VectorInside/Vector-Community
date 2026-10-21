@@ -18,9 +18,21 @@ export const AuthProvider = ({ children }) => {
     onAction: null,
   });
 
-  // Sync sidebar state from localStorage on client mount
+  // Sync preferences from localStorage on client mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('vector_theme');
+      if (savedTheme === 'light' || savedTheme === 'dark') {
+        setTheme(savedTheme);
+      }
+      const savedRole = localStorage.getItem('vector_role');
+      if (savedRole === 'admin' || savedRole === 'client') {
+        setRole(savedRole);
+      }
+      const savedTenant = localStorage.getItem('vector_active_tenant_key');
+      if (savedTenant && INITIAL_TENANTS_DATA[savedTenant]) {
+        setActiveTenantKey(savedTenant);
+      }
       const savedCollapsed = localStorage.getItem('vector_sidebar_collapsed');
       if (savedCollapsed !== null) {
         setIsSidebarCollapsed(savedCollapsed === 'true');
@@ -51,7 +63,13 @@ export const AuthProvider = ({ children }) => {
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+    setTheme((prev) => {
+      const next = prev === 'dark' ? 'light' : 'dark';
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('vector_theme', next);
+      }
+      return next;
+    });
   };
 
   const switchRole = (newRole) => {

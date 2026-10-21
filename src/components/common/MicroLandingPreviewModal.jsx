@@ -335,15 +335,15 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
   return (
     <Portal>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto">
-        <div className="w-full max-w-6xl rounded-3xl bg-zinc-950 border border-[#D4FF00]/40 shadow-2xl overflow-hidden flex flex-col lg:flex-row max-h-[94vh] my-auto animate-scale-up">
+        <div className="w-full max-w-6xl rounded-3xl bg-[var(--bg-panel)] border border-neon/40 shadow-2xl overflow-hidden flex flex-col lg:flex-row max-h-[94vh] my-auto animate-scale-up text-[var(--text-main)]">
         
         {/* Left Column: Phone Mockup Frame (Sleek Dynamic Island Pro) */}
-        <div className="w-full lg:w-[380px] bg-zinc-900/60 p-4 sm:p-5 flex flex-col items-center justify-center border-b lg:border-b-0 lg:border-r border-zinc-800 relative shrink-0">
+        <div className="w-full lg:w-[380px] bg-[var(--bg-card)] p-4 sm:p-5 flex flex-col items-center justify-center border-b lg:border-b-0 lg:border-r border-[var(--border-color)] relative shrink-0">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider">
+            <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider font-bold">
               Previsualización Móvil en Vivo
             </span>
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           </div>
 
           {/* Smartphone Frame (Optimized viewport) */}
@@ -368,13 +368,13 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
         </div>
 
         {/* Right Column: Studio Tabs & Customization Editor */}
-        <div className="flex-1 p-4 sm:p-6 flex flex-col justify-between overflow-y-auto space-y-4">
+        <div className="flex-1 p-4 sm:p-6 flex flex-col justify-between overflow-y-auto space-y-4 bg-[var(--bg-panel)]">
           <div className="space-y-4">
             
             {/* Modal Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)]">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] flex items-center justify-center overflow-hidden shrink-0">
                   {customData.logo ? (
                     <img src={customData.logo} alt="Logo" className="w-full h-full object-contain p-0.5" />
                   ) : (
@@ -382,10 +382,10 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
                   )}
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white leading-tight">
+                  <h3 className="text-base font-bold text-[var(--text-main)] leading-tight">
                     {customData.name || tenant.name}
                   </h3>
-                  <span className="text-[10px] text-[#D4FF00] font-mono font-bold">
+                  <span className="text-[10px] text-lime-700 dark:text-neon font-mono font-bold">
                     Micro-Landing Studio
                   </span>
                 </div>
@@ -394,21 +394,21 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
               <button
                 type="button"
                 onClick={onClose}
-                className="p-2 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white transition-colors"
+                className="p-2 rounded-xl bg-[var(--bg-card-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)] transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Main Tabs (Personalizar | QR con Logo | Enlace & Info) */}
-            <div className="grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-zinc-900 border border-zinc-800 text-xs font-mono">
+            <div className="grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-xs font-mono">
               <button
                 type="button"
                 onClick={() => setActiveTab('customize')}
                 className={`py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-all ${
                   activeTab === 'customize'
-                    ? 'bg-[#D4FF00] text-black font-bold shadow-md'
-                    : 'text-zinc-400 hover:text-white'
+                    ? 'bg-neon text-black font-bold shadow-md'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                 }`}
               >
                 <Sliders className="w-3.5 h-3.5" />
@@ -420,8 +420,8 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
                 onClick={() => setActiveTab('qr')}
                 className={`py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-all ${
                   activeTab === 'qr'
-                    ? 'bg-[#D4FF00] text-black font-bold shadow-md'
-                    : 'text-zinc-400 hover:text-white'
+                    ? 'bg-neon text-black font-bold shadow-md'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                 }`}
               >
                 <QrCode className="w-3.5 h-3.5" />
@@ -433,8 +433,8 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
                 onClick={() => setActiveTab('overview')}
                 className={`py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-all ${
                   activeTab === 'overview'
-                    ? 'bg-[#D4FF00] text-black font-bold shadow-md'
-                    : 'text-zinc-400 hover:text-white'
+                    ? 'bg-neon text-black font-bold shadow-md'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                 }`}
               >
                 <Globe className="w-3.5 h-3.5" />
@@ -447,14 +447,14 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
               <div className="space-y-4 animate-fadeIn">
                 
                 {/* Sub-section Selector (Servicios & Promos | Marca & Logo | Contacto & Horarios) */}
-                <div className="flex items-center gap-1.5 border-b border-zinc-800 pb-2 text-[11px] font-mono">
+                <div className="flex items-center gap-1.5 border-b border-[var(--border-color)] pb-2 text-[11px] font-mono">
                   <button
                     type="button"
                     onClick={() => setActiveSubSection('services')}
                     className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
                       activeSubSection === 'services'
-                        ? 'bg-[#D4FF00]/15 text-[#D4FF00] border border-[#D4FF00]/30 font-bold'
-                        : 'text-zinc-400 hover:text-white'
+                        ? 'bg-neon/15 text-lime-700 dark:text-neon border border-neon/30 font-bold'
+                        : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                     }`}
                   >
                     <Sparkles className="w-3.5 h-3.5" />
@@ -466,8 +466,8 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
                     onClick={() => setActiveSubSection('brand')}
                     className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
                       activeSubSection === 'brand'
-                        ? 'bg-[#D4FF00]/15 text-[#D4FF00] border border-[#D4FF00]/30 font-bold'
-                        : 'text-zinc-400 hover:text-white'
+                        ? 'bg-neon/15 text-lime-700 dark:text-neon border border-neon/30 font-bold'
+                        : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                     }`}
                   >
                     <Upload className="w-3.5 h-3.5" />
@@ -479,8 +479,8 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
                     onClick={() => setActiveSubSection('contact')}
                     className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
                       activeSubSection === 'contact'
-                        ? 'bg-[#D4FF00]/15 text-[#D4FF00] border border-[#D4FF00]/30 font-bold'
-                        : 'text-zinc-400 hover:text-white'
+                        ? 'bg-neon/15 text-lime-700 dark:text-neon border border-neon/30 font-bold'
+                        : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                     }`}
                   >
                     <Clock className="w-3.5 h-3.5" />
@@ -488,16 +488,16 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
                   </button>
                 </div>
 
-                {/* SUB-SECTION 1: SERVICES & PROMOTIONS (WHERE THE USER ASKED TO EDIT) */}
+                {/* SUB-SECTION 1: SERVICES & PROMOTIONS */}
                 {activeSubSection === 'services' && (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
-                          <Sparkles className="w-3.5 h-3.5 text-[#D4FF00]" />
+                        <h4 className="text-xs font-bold text-[var(--text-main)] flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-lime-700 dark:text-neon" />
                           <span>Editor de Servicios & Ofertas Destacadas</span>
                         </h4>
-                        <p className="text-[10.5px] text-zinc-400">
+                        <p className="text-[10.5px] text-[var(--text-muted)]">
                           Edita los títulos, descripciones y badges promocionales que se ven en el teléfono.
                         </p>
                       </div>
@@ -505,7 +505,7 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
                       <button
                         type="button"
                         onClick={handleAddService}
-                        className="py-1.5 px-3 rounded-xl bg-[#D4FF00]/10 hover:bg-[#D4FF00]/20 text-[#D4FF00] border border-[#D4FF00]/30 text-xs font-mono font-bold flex items-center gap-1 transition-colors"
+                        className="py-1.5 px-3 rounded-xl bg-neon/10 hover:bg-neon/20 text-lime-700 dark:text-neon border border-neon/30 text-xs font-mono font-bold flex items-center gap-1 transition-colors"
                       >
                         <Plus className="w-3.5 h-3.5" />
                         <span>Agregar Oferta</span>
@@ -516,16 +516,16 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
                       {customData.services?.map((srv, idx) => (
                         <div
                           key={idx}
-                          className="p-3 rounded-2xl bg-zinc-900/80 border border-zinc-800 space-y-2 relative group hover:border-zinc-700 transition-colors"
+                          className="p-3 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-2 relative group hover:border-neon/40 transition-colors"
                         >
                           <div className="flex items-center justify-between gap-2">
-                            <span className="text-[10px] font-mono text-[#D4FF00] font-bold">
+                            <span className="text-[10px] font-mono text-lime-700 dark:text-neon font-bold">
                               Oferta #{idx + 1}
                             </span>
                             <button
                               type="button"
                               onClick={() => handleRemoveService(idx)}
-                              className="text-zinc-500 hover:text-red-400 p-1 transition-colors"
+                              className="text-[var(--text-muted)] hover:text-red-500 p-1 transition-colors"
                               title="Eliminar este servicio"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -534,7 +534,7 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
 
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div>
-                              <label className="text-[9.5px] font-mono text-zinc-400 block mb-0.5">
+                              <label className="text-[9.5px] font-mono text-[var(--text-muted)] block mb-0.5">
                                 Título del Servicio
                               </label>
                               <input
@@ -542,12 +542,12 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
                                 value={srv.title}
                                 onChange={(e) => handleUpdateService(idx, 'title', e.target.value)}
                                 placeholder="ej. Limpieza Ultrasónica"
-                                className="w-full p-2 rounded-xl bg-black border border-zinc-800 text-white text-xs focus:border-[#D4FF00] outline-none"
+                                className="w-full p-2 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-main)] text-xs focus:border-neon outline-none"
                               />
                             </div>
 
                             <div>
-                              <label className="text-[9.5px] font-mono text-zinc-400 block mb-0.5">
+                              <label className="text-[9.5px] font-mono text-[var(--text-muted)] block mb-0.5">
                                 Badge / Promoción
                               </label>
                               <div className="flex items-center gap-1.5">
@@ -556,12 +556,12 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
                                   value={srv.badge || ''}
                                   onChange={(e) => handleUpdateService(idx, 'badge', e.target.value)}
                                   placeholder="ej. MÁS SOLICITADO, -20%"
-                                  className="flex-1 p-2 rounded-xl bg-black border border-zinc-800 text-white text-xs font-mono focus:border-[#D4FF00] outline-none"
+                                  className="flex-1 p-2 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-main)] text-xs font-mono focus:border-neon outline-none"
                                 />
                                 <select
                                   value={srv.tone || 'neon'}
                                   onChange={(e) => handleUpdateService(idx, 'tone', e.target.value)}
-                                  className="p-2 rounded-xl bg-black border border-zinc-800 text-[11px] text-zinc-300 font-mono outline-none"
+                                  className="p-2 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[11px] text-[var(--text-main)] font-mono outline-none"
                                 >
                                   <option value="neon">Neón</option>
                                   <option value="emerald">Verde</option>
@@ -572,7 +572,7 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
                           </div>
 
                           <div>
-                            <label className="text-[9.5px] font-mono text-zinc-400 block mb-0.5">
+                            <label className="text-[9.5px] font-mono text-[var(--text-muted)] block mb-0.5">
                               Descripción Corta
                             </label>
                             <input
@@ -580,7 +580,7 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
                               value={srv.desc}
                               onChange={(e) => handleUpdateService(idx, 'desc', e.target.value)}
                               placeholder="ej. Profilaxis profunda con ultrasonido y flúor"
-                              className="w-full p-2 rounded-xl bg-black border border-zinc-800 text-white text-xs focus:border-[#D4FF00] outline-none"
+                              className="w-full p-2 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-main)] text-xs focus:border-neon outline-none"
                             />
                           </div>
                         </div>
@@ -592,18 +592,17 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
                 {/* SUB-SECTION 2: BRAND & LOGO */}
                 {activeSubSection === 'brand' && (
                   <div className="space-y-3">
-                    {/* Logo Upload Box (PNG/JPG to Base64) */}
-                    <div className="p-3.5 rounded-2xl bg-zinc-900/70 border border-zinc-800 space-y-2">
+                    <div className="p-3.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-2">
                       <div className="flex items-center justify-between">
-                        <label className="text-[11px] font-mono font-bold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
-                          <Upload className="w-3.5 h-3.5 text-[#D4FF00]" />
+                        <label className="text-[11px] font-mono font-bold text-[var(--text-main)] uppercase tracking-wider flex items-center gap-1.5">
+                          <Upload className="w-3.5 h-3.5 text-lime-700 dark:text-neon" />
                           <span>Logo Oficial (.PNG transparente recomendado)</span>
                         </label>
-                        <span className="text-[10px] text-zinc-500 font-mono">Max 2.5MB</span>
+                        <span className="text-[10px] text-[var(--text-muted)] font-mono">Max 2.5MB</span>
                       </div>
 
                       <div className="flex items-center gap-3">
-                        <div className="w-14 h-14 rounded-2xl bg-black border-2 border-dashed border-zinc-700 flex items-center justify-center overflow-hidden shrink-0">
+                        <div className="w-14 h-14 rounded-2xl bg-[var(--bg-card-subtle)] border-2 border-dashed border-[var(--border-color)] flex items-center justify-center overflow-hidden shrink-0">
                           {customData.logo ? (
                             <img src={customData.logo} alt="Logo preview" className="w-full h-full object-contain p-1" />
                           ) : (
@@ -612,8 +611,8 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
                         </div>
 
                         <div className="flex-1 flex items-center gap-2">
-                          <label className="flex-1 py-2 px-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-mono text-xs flex items-center justify-center gap-1.5 cursor-pointer border border-zinc-700 transition-colors">
-                            <Upload className="w-3.5 h-3.5 text-[#D4FF00]" />
+                          <label className="flex-1 py-2 px-3 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-[var(--text-main)] font-mono text-xs flex items-center justify-center gap-1.5 cursor-pointer border border-[var(--border-color)] transition-colors font-bold">
+                            <Upload className="w-3.5 h-3.5 text-lime-700 dark:text-neon" />
                             <span>{customData.logo ? 'Cambiar Logo' : 'Subir Archivo PNG'}</span>
                             <input
                               type="file"
@@ -627,7 +626,7 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
                             <button
                               type="button"
                               onClick={handleRemoveLogo}
-                              className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 transition-colors"
+                              className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/30 transition-colors"
                               title="Remover logo personalizado"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -638,7 +637,7 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
                     </div>
 
                     <div>
-                      <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">
+                      <label className="text-[10px] font-mono text-[var(--text-muted)] uppercase block mb-1">
                         Nombre Comercial del Negocio
                       </label>
                       <input
@@ -646,12 +645,12 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
                         value={customData.name}
                         onChange={(e) => handleUpdateField('name', e.target.value)}
                         placeholder="Nombre de tu negocio"
-                        className="w-full p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white text-xs focus:border-[#D4FF00] outline-none"
+                        className="w-full p-2.5 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-main)] text-xs focus:border-neon outline-none"
                       />
                     </div>
 
                     <div>
-                      <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">
+                      <label className="text-[10px] font-mono text-[var(--text-muted)] uppercase block mb-1">
                         Eslogan o Propuesta de Valor (Texto Superior)
                       </label>
                       <textarea
@@ -659,18 +658,18 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
                         value={customData.tagline}
                         onChange={(e) => handleUpdateField('tagline', e.target.value)}
                         placeholder="Describe en una frase atractiva lo que ofreces..."
-                        className="w-full p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white text-xs focus:border-[#D4FF00] outline-none resize-none"
+                        className="w-full p-2.5 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-main)] text-xs focus:border-neon outline-none resize-none"
                       />
                     </div>
                   </div>
                 )}
 
-                {/* SUB-SECTION 3: CONTACT & HOURS (WHERE THE USER ASKED FOR UBICACIÓN & HORARIOS) */}
+                {/* SUB-SECTION 3: CONTACT & HOURS */}
                 {activeSubSection === 'contact' && (
                   <div className="space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">
+                        <label className="text-[10px] font-mono text-[var(--text-muted)] uppercase block mb-1">
                           Teléfono WhatsApp (10 Dígitos)
                         </label>
                         <input
@@ -678,12 +677,12 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
                           value={customData.phone}
                           onChange={(e) => handleUpdateField('phone', e.target.value)}
                           placeholder="+52 55 1234 5678"
-                          className="w-full p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white text-xs font-mono focus:border-[#D4FF00] outline-none"
+                          className="w-full p-2.5 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-main)] text-xs font-mono focus:border-neon outline-none"
                         />
                       </div>
 
                       <div>
-                        <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">
+                        <label className="text-[10px] font-mono text-[var(--text-muted)] uppercase block mb-1">
                           Dirección Física (Enlace a Google Maps)
                         </label>
                         <input
@@ -691,14 +690,14 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
                           value={customData.address}
                           onChange={(e) => handleUpdateField('address', e.target.value)}
                           placeholder="Calle, Número, Colonia, Ciudad"
-                          className="w-full p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white text-xs focus:border-[#D4FF00] outline-none"
+                          className="w-full p-2.5 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-main)] text-xs focus:border-neon outline-none"
                         />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">
+                        <label className="text-[10px] font-mono text-[var(--text-muted)] uppercase block mb-1">
                           Horario Entre Semana
                         </label>
                         <input
@@ -706,12 +705,12 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
                           value={customData.hoursWeek}
                           onChange={(e) => handleUpdateField('hoursWeek', e.target.value)}
                           placeholder="Lun–Vie: 09:00 a 19:00 hrs"
-                          className="w-full p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white text-xs font-mono focus:border-[#D4FF00] outline-none"
+                          className="w-full p-2.5 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-main)] text-xs font-mono focus:border-neon outline-none"
                         />
                       </div>
 
                       <div>
-                        <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">
+                        <label className="text-[10px] font-mono text-[var(--text-muted)] uppercase block mb-1">
                           Horario Fin de Semana
                         </label>
                         <input
@@ -719,46 +718,46 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
                           value={customData.hoursWeekend}
                           onChange={(e) => handleUpdateField('hoursWeekend', e.target.value)}
                           placeholder="Sáb: 09:00 a 14:00 hrs"
-                          className="w-full p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white text-xs font-mono focus:border-[#D4FF00] outline-none"
+                          className="w-full p-2.5 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-main)] text-xs font-mono focus:border-neon outline-none"
                         />
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-zinc-800/80">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-[var(--border-color)]">
                       <div>
                         <div className="flex items-center justify-between mb-1">
-                          <label className="text-[10px] font-mono text-zinc-400 uppercase block">
+                          <label className="text-[10px] font-mono text-[var(--text-muted)] uppercase block">
                             GA4 Measurement ID (Analítica Web)
                           </label>
-                          <span className="text-[9px] text-zinc-500 font-bold">$0 USD</span>
+                          <span className="text-[9px] text-[var(--text-muted)] font-bold">$0 USD</span>
                         </div>
                         <input
                           type="text"
                           value={customData.ga4MeasurementId || ''}
                           onChange={(e) => handleUpdateField('ga4MeasurementId', e.target.value)}
                           placeholder="G-XXXXXXXXXX"
-                          className="w-full p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white text-xs font-mono focus:border-[#D4FF00] outline-none"
+                          className="w-full p-2.5 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-main)] text-xs font-mono focus:border-neon outline-none"
                         />
-                        <span className="text-[9.5px] text-zinc-500 mt-0.5 block">
+                        <span className="text-[9.5px] text-[var(--text-muted)] mt-0.5 block">
                           Obtenlo en Google Analytics para medir visitas a la micro-landing.
                         </span>
                       </div>
 
                       <div>
                         <div className="flex items-center justify-between mb-1">
-                          <label className="text-[10px] font-mono text-zinc-400 uppercase block">
+                          <label className="text-[10px] font-mono text-[var(--text-muted)] uppercase block">
                             Meta Pixel ID (Para Meta Ads)
                           </label>
-                          <span className="text-[9px] text-[#D4FF00] font-bold">Recomendado</span>
+                          <span className="text-[9px] text-lime-700 dark:text-neon font-bold">Recomendado</span>
                         </div>
                         <input
                           type="text"
                           value={customData.metaPixelId || ''}
                           onChange={(e) => handleUpdateField('metaPixelId', e.target.value)}
                           placeholder="123456789012345"
-                          className="w-full p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white text-xs font-mono focus:border-[#D4FF00] outline-none"
+                          className="w-full p-2.5 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-main)] text-xs font-mono focus:border-neon outline-none"
                         />
-                        <span className="text-[9.5px] text-zinc-500 mt-0.5 block">
+                        <span className="text-[9.5px] text-[var(--text-muted)] mt-0.5 block">
                           Obtenlo en Meta Events Manager para medir conversiones de anuncios.
                         </span>
                       </div>
@@ -767,11 +766,11 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
                 )}
 
                 {/* Save and Apply Action */}
-                <div className="pt-2 border-t border-zinc-800 flex items-center gap-2">
+                <div className="pt-2 border-t border-[var(--border-color)] flex items-center gap-2">
                   <button
                     type="button"
                     onClick={handleSaveChanges}
-                    className="flex-1 py-2.5 px-4 rounded-xl bg-[#D4FF00] hover:bg-[#bce000] text-black font-black text-xs flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md"
+                    className="flex-1 py-2.5 px-4 rounded-xl bg-neon text-black font-black text-xs flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md"
                   >
                     <Save className="w-4 h-4" />
                     <span>{savedSuccess ? '¡Cambios Guardados con Éxito!' : 'Guardar y Aplicar Todo'}</span>
@@ -783,13 +782,13 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
             {/* TAB 2: QR CODE GENERATOR WITH CENTER LOGO */}
             {activeTab === 'qr' && (
               <div className="space-y-4 animate-fadeIn">
-                <div className="p-4 rounded-2xl bg-zinc-900/60 border border-white/5 space-y-3 font-mono text-xs text-center">
-                  <div className="flex items-center justify-center gap-2 text-white font-bold text-xs">
-                    <QrCode className="w-4 h-4 text-[#D4FF00]" />
+                <div className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-3 font-mono text-xs text-center">
+                  <div className="flex items-center justify-center gap-2 text-[var(--text-main)] font-bold text-xs">
+                    <QrCode className="w-4 h-4 text-lime-700 dark:text-neon" />
                     <span>Código QR con Logo Oficial</span>
                   </div>
 
-                  <p className="text-[11px] text-zinc-400 font-sans leading-relaxed">
+                  <p className="text-[11px] text-[var(--text-muted)] font-sans leading-relaxed">
                     Generado con corrección de error de alta densidad (Level H). Imprime este código para colocarlo en tu recepción, cartas de menú, empaques o tarjetas de presentación.
                   </p>
 
@@ -802,7 +801,7 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
                     <button
                       type="button"
                       onClick={handleDownloadQR}
-                      className="py-2.5 px-5 rounded-xl bg-[#D4FF00] hover:bg-[#bce000] text-black font-bold text-xs flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md"
+                      className="py-2.5 px-5 rounded-xl bg-neon text-black font-bold text-xs flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md"
                     >
                       <Download className="w-4 h-4" />
                       <span>Descargar QR en Alta Calidad (.PNG)</span>
@@ -815,23 +814,23 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
             {/* TAB 3: OVERVIEW & PUBLIC LINK */}
             {activeTab === 'overview' && (
               <div className="space-y-3.5 animate-fadeIn">
-                <p className="text-xs text-zinc-300 font-sans leading-relaxed">
+                <p className="text-xs text-[var(--text-main)] font-sans leading-relaxed">
                   Diseñada específicamente para tráfico directo desde <strong>Instagram Reels, TikTok y Meta Ads</strong> sin fricción de cookies ni tiempos lentos de carga web.
                 </p>
 
                 {/* Public Link Card */}
-                <div className="p-3.5 rounded-2xl bg-zinc-900 border border-zinc-800 space-y-2 font-mono text-xs">
-                  <span className="text-[10px] text-zinc-400 uppercase font-bold block">
+                <div className="p-3.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-2 font-mono text-xs">
+                  <span className="text-[10px] text-[var(--text-muted)] uppercase font-bold block">
                     Enlace Público Oficial (Link in Bio):
                   </span>
-                  <div className="p-2.5 rounded-xl bg-black border border-zinc-800 text-[#D4FF00] text-[11px] truncate select-all">
+                  <div className="p-2.5 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-lime-700 dark:text-neon font-bold text-[11px] truncate select-all">
                     {prodUrl}
                   </div>
                   <div className="flex items-center gap-2 pt-1">
                     <button
                       type="button"
                       onClick={handleCopyLink}
-                      className="flex-1 py-2 px-3 rounded-xl bg-[#D4FF00] text-black font-bold text-xs flex items-center justify-center gap-1.5 transition-transform active:scale-95"
+                      className="flex-1 py-2 px-3 rounded-xl bg-neon text-black font-bold text-xs flex items-center justify-center gap-1.5 transition-transform active:scale-95 shadow-sm"
                     >
                       {copiedLink ? <Check className="w-3.5 h-3.5 text-black" /> : <Copy className="w-3.5 h-3.5" />}
                       <span>{copiedLink ? '¡Enlace Copiado!' : 'Copiar Enlace'}</span>
@@ -840,7 +839,7 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
                       href={`/m/${tenant.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-2 rounded-xl bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-700"
+                      className="p-2 rounded-xl bg-[var(--bg-card-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)]"
                       title="Abrir en pestaña nueva"
                     >
                       <ExternalLink className="w-4 h-4" />
@@ -850,21 +849,20 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
               </div>
             )}
 
-            {/* COMMERCIAL UPSELL BANNER: Motivate Purchase of Full Official Website */}
-            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-purple-950/40 via-zinc-900 to-zinc-900 border border-purple-500/30 space-y-2 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl pointer-events-none" />
-              <div className="flex items-center gap-2 text-white font-bold text-xs">
-                <TrendingUp className="w-4 h-4 text-purple-400" />
+            {/* COMMERCIAL UPSELL BANNER */}
+            <div className="p-3.5 rounded-2xl bg-purple-500/5 border border-purple-500/30 space-y-2 relative overflow-hidden">
+              <div className="flex items-center gap-2 text-[var(--text-main)] font-bold text-xs">
+                <TrendingUp className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                 <span>¿Tu negocio necesita el siguiente nivel?</span>
               </div>
-              <p className="text-[10.5px] text-zinc-300 font-sans leading-relaxed">
+              <p className="text-[10.5px] text-[var(--text-muted)] font-sans leading-relaxed">
                 Tu micro-landing captura prospectos inmediatos de redes. Si necesitas <strong>posicionamiento SEO en Google, pasarela de pagos integrada y dominio propio (.com)</strong>, motívate a dar el salto a un Sitio Web Oficial con Vector Inside.
               </p>
               <a
                 href="https://vectorinside.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-purple-300 hover:text-white group"
+                className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-purple-600 dark:text-purple-300 hover:underline group"
               >
                 <span>Cotizar Sitio Web Corporativo en vectorinside.com</span>
                 <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
@@ -874,14 +872,14 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
           </div>
 
           {/* Modal Footer */}
-          <div className="pt-2.5 border-t border-zinc-800 flex items-center justify-between">
-            <span className="text-[10px] font-mono text-zinc-500">
+          <div className="pt-2.5 border-t border-[var(--border-color)] flex items-center justify-between">
+            <span className="text-[10px] font-mono text-[var(--text-muted)]">
               Almacenamiento local client-side • 0 consumo de servidor
             </span>
             <button
               type="button"
               onClick={onClose}
-              className="py-1.5 px-3 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white text-xs font-mono transition-colors"
+              className="py-1.5 px-3 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-main)] text-xs font-mono transition-colors border border-[var(--border-color)]"
             >
               Cerrar
             </button>

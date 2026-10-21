@@ -382,14 +382,14 @@ export const ContentPlanner = () => {
       </header>
 
       {/* Navigation Tabs (4 Core Pillars of Content Strategy) */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-dark-border">
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-[var(--border-color)]">
         <button
           type="button"
           onClick={() => setActiveTab('grid')}
           className={`px-4 py-2.5 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all ${
             activeTab === 'grid'
-              ? 'bg-brand-primary text-black shadow-neon-sm'
-              : 'bg-dark-base text-zinc-400 hover:text-white border border-dark-border'
+              ? 'bg-neon text-black shadow-[0_0_12px_var(--neon-glow)]'
+              : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)]'
           }`}
         >
           <LayoutGrid className="w-4 h-4" />
@@ -401,8 +401,8 @@ export const ContentPlanner = () => {
           onClick={() => setActiveTab('dna')}
           className={`px-4 py-2.5 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all ${
             activeTab === 'dna'
-              ? 'bg-brand-primary text-black shadow-neon-sm'
-              : 'bg-dark-base text-zinc-400 hover:text-white border border-dark-border'
+              ? 'bg-neon text-black shadow-[0_0_12px_var(--neon-glow)]'
+              : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)]'
           }`}
         >
           <Dna className="w-4 h-4" />
@@ -414,8 +414,8 @@ export const ContentPlanner = () => {
           onClick={() => setActiveTab('viral_lab')}
           className={`px-4 py-2.5 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all ${
             activeTab === 'viral_lab'
-              ? 'bg-brand-primary text-black shadow-neon-sm'
-              : 'bg-dark-base text-zinc-400 hover:text-white border border-dark-border'
+              ? 'bg-neon text-black shadow-[0_0_12px_var(--neon-glow)]'
+              : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)]'
           }`}
         >
           <Flame className="w-4 h-4" />
@@ -427,8 +427,8 @@ export const ContentPlanner = () => {
           onClick={() => setActiveTab('audit')}
           className={`px-4 py-2.5 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all ${
             activeTab === 'audit'
-              ? 'bg-brand-primary text-black shadow-neon-sm'
-              : 'bg-dark-base text-zinc-400 hover:text-white border border-dark-border'
+              ? 'bg-neon text-black shadow-[0_0_12px_var(--neon-glow)]'
+              : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)]'
           }`}
         >
           <Search className="w-4 h-4" />
@@ -442,30 +442,30 @@ export const ContentPlanner = () => {
       {activeTab === 'grid' && (
         <div className="space-y-6 animate-fade-in">
           {/* BANNER: OFERTA COMERCIAL VIGENTE */}
-          <div className="rounded-2xl bg-zinc-900/80 border-2 border-neon/50 p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-[0_0_20px_rgba(229,255,0,0.1)]">
+          <div className="rounded-2xl bg-[var(--bg-card)] border-2 border-neon/50 p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded bg-neon text-black">
                   OFERTA COMERCIAL DEL MES
                 </span>
-                <span className="text-xs font-mono text-zinc-400">
-                  Doc Activo: <strong className="text-white underline">{commercialOffer.docName}</strong>
+                <span className="text-xs font-mono text-[var(--text-muted)]">
+                  Doc Activo: <strong className="text-[var(--text-main)] underline font-bold">{commercialOffer.docName}</strong>
                 </span>
               </div>
-              <p className="text-xs text-white font-bold font-mono">
-                Gancho: <span className="text-neon">"{brandDna.leadMagnetHook}"</span>
+              <p className="text-xs text-[var(--text-main)] font-bold font-mono">
+                Gancho: <span className="text-lime-700 dark:text-neon font-black">"{brandDna.leadMagnetHook}"</span>
               </p>
-              <p className="text-[11px] text-zinc-400 font-mono">
-                CTA: <span className="text-cyan-400">{brandDna.leadMagnetCta}</span> • Vigencia: {commercialOffer.validity}
+              <p className="text-[11px] text-[var(--text-muted)] font-mono font-medium">
+                CTA: <span className="text-cyan-600 dark:text-cyan-400 font-bold">{brandDna.leadMagnetCta}</span> • Vigencia: {commercialOffer.validity}
               </p>
             </div>
 
             <button
               type="button"
               onClick={() => setShowOfferModal(true)}
-              className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-mono font-bold text-zinc-200 border border-white/10 transition-all shrink-0 flex items-center gap-1.5"
+              className="px-4 py-2 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-xs font-mono font-bold text-[var(--text-main)] border border-[var(--border-color)] transition-all shrink-0 flex items-center gap-1.5"
             >
-              <Sparkles className="w-3.5 h-3.5 text-neon" />
+              <Sparkles className="w-3.5 h-3.5 text-lime-700 dark:text-neon" />
               <span>Actualizar Oferta del Mes</span>
             </button>
           </div>
@@ -473,9 +473,9 @@ export const ContentPlanner = () => {
           {/* Social Networks Filter Bar & Status Bar */}
           <div className="space-y-3 pb-2">
             {/* Active Social Networks Selector (Customized per Client/Tenant) */}
-            <div className="flex flex-wrap items-center gap-2 p-2.5 rounded-xl bg-zinc-950/80 border border-white/10">
-              <span className="text-[11px] font-mono font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5 mr-1">
-                <Share2 className="w-3.5 h-3.5 text-neon" />
+            <div className="flex flex-wrap items-center gap-2 p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
+              <span className="text-[11px] font-mono font-bold text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-1.5 mr-1">
+                <Share2 className="w-3.5 h-3.5 text-lime-700 dark:text-neon" />
                 <span>Canal Activo:</span>
               </span>
 
@@ -484,8 +484,8 @@ export const ContentPlanner = () => {
                 onClick={() => setSelectedNetworkFilter('ALL')}
                 className={`text-xs font-mono px-3 py-1.5 rounded-lg transition-all font-bold ${
                   selectedNetworkFilter === 'ALL'
-                    ? 'bg-neon text-black shadow-neon-sm'
-                    : 'bg-zinc-900 text-zinc-400 hover:text-white border border-white/5'
+                    ? 'bg-neon text-black shadow-sm'
+                    : 'bg-[var(--bg-card-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)]'
                 }`}
               >
                 Todas las Redes ({connectedNetworks.length})
@@ -503,8 +503,8 @@ export const ContentPlanner = () => {
                     onClick={() => setSelectedNetworkFilter(netKey)}
                     className={`text-xs font-mono px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 font-bold border ${
                       isSelected
-                        ? 'bg-white text-black border-white shadow-md'
-                        : `${netMeta.badgeColor} hover:brightness-125`
+                        ? 'bg-neon text-black border-neon shadow-sm'
+                        : `${netMeta.badgeColor} hover:brightness-110`
                     }`}
                   >
                     <span>{netMeta.name}</span>
@@ -516,22 +516,22 @@ export const ContentPlanner = () => {
             {/* Approval Status Filter */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <span className="text-xs text-zinc-400 font-mono">Estado:</span>
+                <span className="text-xs text-[var(--text-muted)] font-mono font-medium">Estado:</span>
                 {['ALL', 'PENDING', 'APPROVED'].map((fil) => (
                   <button
                     key={fil}
                     onClick={() => setSelectedFilter(fil)}
-                    className={`text-xs font-mono px-3 py-1 rounded-lg transition-all ${
+                    className={`text-xs font-mono px-3 py-1 rounded-lg transition-all font-bold ${
                       selectedFilter === fil
-                        ? 'bg-zinc-800 text-white font-bold border border-zinc-700'
-                        : 'text-zinc-500 hover:text-zinc-300'
+                        ? 'bg-neon text-black shadow-sm'
+                        : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)]'
                     }`}
                   >
                     {fil === 'ALL' ? 'Todos' : fil === 'PENDING' ? 'Pendientes de Aprobación' : 'Aprobados y Programados'}
                   </button>
                 ))}
               </div>
-              <span className="text-xs font-mono text-zinc-400">
+              <span className="text-xs font-mono text-[var(--text-muted)] font-medium">
                 {filteredPosts.length} publicaciones mostradas
               </span>
             </div>
@@ -544,18 +544,18 @@ export const ContentPlanner = () => {
               const isPending = post.status === 'PENDIENTE_CLIENTE';
               const networkCatalog = SOCIAL_NETWORKS_CATALOG[post.network] || {
                 name: post.network || 'Red Social',
-                badgeColor: 'border-zinc-700 text-zinc-300 bg-zinc-800',
+                badgeColor: 'border-[var(--border-color)] text-[var(--text-muted)] bg-[var(--bg-card-subtle)]',
               };
 
               return (
                 <div
                   key={post.id}
-                  className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] overflow-hidden shadow-lg flex flex-col justify-between hover:border-white/20 transition-all"
+                  className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] overflow-hidden shadow-sm flex flex-col justify-between hover:border-neon/50 transition-all"
                 >
                   <div className="p-5 space-y-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-2">
-                        <span className="p-2 rounded-xl bg-zinc-800 text-neon border border-white/5">
+                        <span className="p-2 rounded-xl bg-[var(--bg-card-subtle)] text-lime-700 dark:text-neon border border-[var(--border-color)]">
                           <IconFormat className="w-4 h-4" />
                         </span>
                         <div>
@@ -563,11 +563,11 @@ export const ContentPlanner = () => {
                             <span className={`text-[9px] font-mono uppercase px-2 py-0.5 rounded font-black border ${networkCatalog.badgeColor}`}>
                               {networkCatalog.name}
                             </span>
-                            <span className="text-[10px] font-mono uppercase text-zinc-400 font-bold">
+                            <span className="text-[10px] font-mono uppercase text-[var(--text-muted)] font-bold">
                               {post.channel}
                             </span>
                           </div>
-                          <span className="text-xs font-mono font-bold text-white">
+                          <span className="text-xs font-mono font-bold text-[var(--text-main)]">
                             {post.publishDate}
                           </span>
                         </div>
@@ -576,46 +576,46 @@ export const ContentPlanner = () => {
                       <span
                         className={`text-[10px] font-mono px-2.5 py-1 rounded-full font-bold uppercase tracking-wider shrink-0 ${
                           isPending
-                            ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
-                            : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                            ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30'
+                            : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
                         }`}
                       >
                         {isPending ? 'Pendiente Cliente' : 'Aprobado'}
                       </span>
                     </div>
 
-                    <h4 className="text-base font-bold text-white font-sans">
+                    <h4 className="text-base font-bold text-[var(--text-main)] font-sans">
                       {post.title}
                     </h4>
 
                     {/* Hook Text Card */}
-                    <div className="p-3.5 rounded-xl bg-zinc-950 border border-neon/30 text-xs font-mono space-y-1">
-                      <span className="text-[10px] text-neon uppercase font-bold flex items-center gap-1">
-                        <Flame className="w-3 h-3 text-neon" />
+                    <div className="p-3.5 rounded-xl bg-[var(--bg-card-subtle)] border border-neon/40 text-xs font-mono space-y-1">
+                      <span className="text-[10px] text-lime-700 dark:text-neon uppercase font-bold flex items-center gap-1">
+                        <Flame className="w-3 h-3 text-lime-700 dark:text-neon" />
                         Gancho Viral (0-3s Hook)
                       </span>
-                      <p className="text-zinc-200 font-bold italic">
+                      <p className="text-[var(--text-main)] font-bold italic">
                         "{post.hookText}"
                       </p>
                     </div>
 
                     {/* Full Copy */}
                     <div className="space-y-1.5 text-xs font-sans">
-                      <span className="text-[10px] font-mono uppercase text-zinc-400 block font-bold">
+                      <span className="text-[10px] font-mono uppercase text-[var(--text-muted)] block font-bold">
                         Copy & CTA
                       </span>
-                      <p className="text-zinc-300 leading-relaxed bg-zinc-950/70 p-3 rounded-xl border border-white/5 font-mono text-[11px]">
+                      <p className="text-[var(--text-main)] leading-relaxed bg-[var(--bg-card-subtle)] p-3 rounded-xl border border-[var(--border-color)] font-mono text-[11px]">
                         {post.copy}
                       </p>
-                      <p className="text-[11px] font-mono text-blue-400">
+                      <p className="text-[11px] font-mono text-blue-600 dark:text-blue-400 font-semibold">
                         {post.hashtags}
                       </p>
                     </div>
                   </div>
 
-                  <div className="p-4 border-t border-[var(--border-color)] bg-zinc-900/60 flex items-center justify-between">
-                    <span className="text-[11px] font-mono text-zinc-400 flex items-center gap-1.5">
-                      <Eye className="w-3.5 h-3.5 text-zinc-500" />
+                  <div className="p-4 border-t border-[var(--border-color)] bg-[var(--bg-card)] flex items-center justify-between">
+                    <span className="text-[11px] font-mono text-[var(--text-muted)] flex items-center gap-1.5">
+                      <Eye className="w-3.5 h-3.5 text-[var(--text-muted)]" />
                       <span>{post.estimatedReach}</span>
                     </span>
 
@@ -629,7 +629,7 @@ export const ContentPlanner = () => {
                         <span>Aprobar Publicación</span>
                       </button>
                     ) : (
-                      <span className="text-xs font-mono text-emerald-400 flex items-center gap-1">
+                      <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
                         <CheckCircle2 className="w-3.5 h-3.5" /> Programado
                       </span>
                     )}
@@ -645,17 +645,17 @@ export const ContentPlanner = () => {
       {/* TAB 2: PLANTILLA DE ADN DE NEGOCIO (IDEA 7)                               */}
       {/* ========================================================================= */}
       {activeTab === 'dna' && (
-        <div className="rounded-3xl bg-dark-surface border border-dark-border p-6 sm:p-8 space-y-6 animate-fade-in">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-dark-border">
+        <div className="rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-6 sm:p-8 space-y-6 animate-fade-in">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[var(--border-color)]">
             <div className="flex items-center gap-3">
-              <span className="p-3 rounded-2xl bg-brand-primary/10 text-brand-primary border border-brand-primary/30">
+              <span className="p-3 rounded-2xl bg-neon/15 text-lime-700 dark:text-neon border border-neon/30">
                 <Dna className="w-6 h-6" />
               </span>
               <div>
-                <h3 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                <h3 className="text-xl font-bold text-[var(--text-main)] tracking-tight flex items-center gap-2">
                   Plantilla de ADN de Negocio (Brand DNA Canvas)
                 </h3>
-                <p className="text-xs text-zinc-400 font-mono">
+                <p className="text-xs text-[var(--text-muted)] font-mono">
                   Single Source of Truth para la identidad, tono de voz y blindaje de la IA (ADR-002 §2.7)
                 </p>
               </div>
@@ -665,15 +665,15 @@ export const ContentPlanner = () => {
               <button
                 type="button"
                 onClick={handleCopyBrandDna}
-                className="px-3.5 py-2 rounded-xl bg-dark-base hover:bg-zinc-800 text-zinc-300 text-xs font-mono border border-dark-border flex items-center gap-1.5 transition-colors"
+                className="px-3.5 py-2 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-[var(--text-main)] text-xs font-mono border border-[var(--border-color)] flex items-center gap-1.5 transition-colors font-bold"
               >
-                {copiedCanvas ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                {copiedCanvas ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copiedCanvas ? '¡Copiado!' : 'Copiar JSON'}</span>
               </button>
               <button
                 type="button"
                 onClick={handleSaveBrandDna}
-                className="px-4 py-2 rounded-xl bg-brand-primary text-black font-bold text-xs font-mono shadow-neon-sm hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-1.5"
+                className="px-4 py-2 rounded-xl bg-neon text-black font-bold text-xs font-mono shadow-[0_0_12px_var(--neon-glow)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-1.5"
               >
                 <ShieldCheck className="w-4 h-4" />
                 <span>Sincronizar con Memoria RAG</span>
@@ -684,40 +684,40 @@ export const ContentPlanner = () => {
           {/* Form Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-mono text-xs">
             {/* Arquetipo */}
-            <div className="p-5 rounded-2xl bg-dark-base border border-dark-border space-y-2">
-              <span className="text-[10px] text-brand-primary font-bold uppercase tracking-wider block">
+            <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-2">
+              <span className="text-[10px] text-lime-700 dark:text-neon font-bold uppercase tracking-wider block">
                 1. Arquetipo de Marca
               </span>
               <input
                 type="text"
                 value={brandDna.archetype}
                 onChange={(e) => setBrandDna({ ...brandDna, archetype: e.target.value })}
-                className="w-full bg-dark-elevated border border-dark-border rounded-xl p-3 text-white focus:border-brand-primary outline-none"
+                className="w-full bg-[var(--bg-card-subtle)] border border-[var(--border-color)] rounded-xl p-3 text-[var(--text-main)] focus:border-neon outline-none font-sans text-xs"
               />
-              <p className="text-[10px] text-zinc-500 font-sans">
+              <p className="text-[10px] text-[var(--text-muted)] font-sans">
                 Define la postura psicológica: La Autoridad Confiable, El Mentor Enérgico, El Amigo Rebelde.
               </p>
             </div>
 
             {/* Tono de Voz */}
-            <div className="p-5 rounded-2xl bg-dark-base border border-dark-border space-y-2">
-              <span className="text-[10px] text-brand-primary font-bold uppercase tracking-wider block">
+            <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-2">
+              <span className="text-[10px] text-lime-700 dark:text-neon font-bold uppercase tracking-wider block">
                 2. Tono de Voz & Adjetivos Clave
               </span>
               <input
                 type="text"
                 value={brandDna.tone}
                 onChange={(e) => setBrandDna({ ...brandDna, tone: e.target.value })}
-                className="w-full bg-dark-elevated border border-dark-border rounded-xl p-3 text-white focus:border-brand-primary outline-none"
+                className="w-full bg-[var(--bg-card-subtle)] border border-[var(--border-color)] rounded-xl p-3 text-[var(--text-main)] focus:border-neon outline-none font-sans text-xs"
               />
-              <p className="text-[10px] text-zinc-500 font-sans">
+              <p className="text-[10px] text-[var(--text-muted)] font-sans">
                 Estilo de redacción en DMs, WhatsApp y guiones de Reels.
               </p>
             </div>
 
             {/* Palabras Tabú / Glosario Prohibido */}
-            <div className="p-5 rounded-2xl bg-dark-base border border-red-500/30 space-y-2 bg-red-950/5">
-              <span className="text-[10px] text-red-400 font-bold uppercase tracking-wider block flex items-center gap-1.5">
+            <div className="p-5 rounded-2xl bg-red-500/5 border border-red-500/30 space-y-2">
+              <span className="text-[10px] text-red-600 dark:text-red-400 font-bold uppercase tracking-wider block flex items-center gap-1.5">
                 <AlertTriangle className="w-3.5 h-3.5" />
                 3. Glosario Prohibido (Palabras Tabú)
               </span>
@@ -725,32 +725,32 @@ export const ContentPlanner = () => {
                 rows={3}
                 value={brandDna.tabooWords}
                 onChange={(e) => setBrandDna({ ...brandDna, tabooWords: e.target.value })}
-                className="w-full bg-dark-elevated border border-dark-border rounded-xl p-3 text-zinc-200 focus:border-red-400 outline-none resize-none"
+                className="w-full bg-[var(--bg-card-subtle)] border border-red-500/30 rounded-xl p-3 text-[var(--text-main)] focus:border-red-400 outline-none resize-none font-sans text-xs"
               />
-              <p className="text-[10px] text-zinc-500 font-sans">
+              <p className="text-[10px] text-[var(--text-muted)] font-sans">
                 Palabras que el bot o los guiones tienen ESTRICTAMENTE prohibido pronunciar.
               </p>
             </div>
 
             {/* Dolores Primarios del ICP */}
-            <div className="p-5 rounded-2xl bg-dark-base border border-dark-border space-y-2">
-              <span className="text-[10px] text-brand-primary font-bold uppercase tracking-wider block">
+            <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-2">
+              <span className="text-[10px] text-lime-700 dark:text-neon font-bold uppercase tracking-wider block">
                 4. Dolores Agudos del Cliente Ideal (ICP)
               </span>
               <textarea
                 rows={3}
                 value={brandDna.icpPains}
                 onChange={(e) => setBrandDna({ ...brandDna, icpPains: e.target.value })}
-                className="w-full bg-dark-elevated border border-dark-border rounded-xl p-3 text-zinc-200 focus:border-brand-primary outline-none resize-none"
+                className="w-full bg-[var(--bg-card-subtle)] border border-[var(--border-color)] rounded-xl p-3 text-[var(--text-main)] focus:border-neon outline-none resize-none font-sans text-xs"
               />
-              <p className="text-[10px] text-zinc-500 font-sans">
+              <p className="text-[10px] text-[var(--text-muted)] font-sans">
                 Las motivaciones emocionales profundas que impulsan la decisión de agendar.
               </p>
             </div>
 
             {/* Oferta Gancho Irresistible */}
-            <div className="p-5 rounded-2xl bg-dark-base border border-brand-primary/40 space-y-2 md:col-span-2 bg-brand-primary/5">
-              <span className="text-[10px] text-brand-primary font-bold uppercase tracking-wider block flex items-center gap-1.5">
+            <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-neon/40 space-y-2 md:col-span-2">
+              <span className="text-[10px] text-lime-700 dark:text-neon font-bold uppercase tracking-wider block flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5" />
                 5. Oferta Gancho Irresistible (Lead Magnet Activo)
               </span>
@@ -760,14 +760,14 @@ export const ContentPlanner = () => {
                   value={brandDna.leadMagnetHook}
                   onChange={(e) => setBrandDna({ ...brandDna, leadMagnetHook: e.target.value })}
                   placeholder="Gancho de la oferta..."
-                  className="w-full bg-dark-elevated border border-dark-border rounded-xl p-3 text-white focus:border-brand-primary outline-none"
+                  className="w-full bg-[var(--bg-card-subtle)] border border-[var(--border-color)] rounded-xl p-3 text-[var(--text-main)] focus:border-neon outline-none font-sans text-xs"
                 />
                 <input
                   type="text"
                   value={brandDna.leadMagnetCta}
                   onChange={(e) => setBrandDna({ ...brandDna, leadMagnetCta: e.target.value })}
                   placeholder="Call to Action con palabra clave..."
-                  className="w-full bg-dark-elevated border border-dark-border rounded-xl p-3 text-white focus:border-brand-primary outline-none"
+                  className="w-full bg-[var(--bg-card-subtle)] border border-[var(--border-color)] rounded-xl p-3 text-[var(--text-main)] focus:border-neon outline-none font-sans text-xs"
                 />
               </div>
             </div>
@@ -780,17 +780,17 @@ export const ContentPlanner = () => {
       {/* ========================================================================= */}
       {activeTab === 'viral_lab' && (
         <div className="space-y-6 animate-fade-in">
-          <div className="p-6 rounded-3xl bg-dark-surface border border-dark-border flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="p-6 rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
-                <span className="p-2 rounded-xl bg-brand-primary/10 text-brand-primary border border-brand-primary/30">
+                <span className="p-2 rounded-xl bg-neon/15 text-lime-700 dark:text-neon border border-neon/30">
                   <Flame className="w-5 h-5" />
                 </span>
                 <div>
-                  <h3 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                  <h3 className="text-xl font-bold text-[var(--text-main)] tracking-tight flex items-center gap-2">
                     Laboratorio de Deconstrucción & Replicación Viral (DeepSeek R1)
                   </h3>
-                  <p className="text-xs text-zinc-400 font-mono">
+                  <p className="text-xs text-[var(--text-muted)] font-mono">
                     Análisis algorítmico de los reels que despegaron y generación de fórmulas replicables (ADR-004 §2.4)
                   </p>
                 </div>
@@ -807,56 +807,56 @@ export const ContentPlanner = () => {
             {viralReels.map((reel) => (
               <div
                 key={reel.id}
-                className="rounded-2xl bg-dark-surface border border-dark-border p-6 space-y-5 shadow-lg hover:border-brand-primary/40 transition-all flex flex-col justify-between"
+                className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] p-6 space-y-5 shadow-sm hover:border-neon/40 transition-all flex flex-col justify-between"
               >
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-bold uppercase">
+                    <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-bold uppercase">
                       Viral Outlier Confirmado
                     </span>
-                    <span className="text-xs font-mono text-zinc-400">{reel.platform}</span>
+                    <span className="text-xs font-mono text-[var(--text-muted)]">{reel.platform}</span>
                   </div>
 
-                  <h4 className="text-base font-bold text-white font-sans">
+                  <h4 className="text-base font-bold text-[var(--text-main)] font-sans">
                     "{reel.title}"
                   </h4>
 
                   {/* Telemetry Metrics */}
                   <div className="grid grid-cols-3 gap-2 font-mono text-xs">
-                    <div className="p-3 rounded-xl bg-dark-base border border-dark-border">
-                      <span className="text-[10px] text-zinc-500 block">Vistas</span>
-                      <span className="text-sm font-bold text-white">{reel.views}</span>
+                    <div className="p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)]">
+                      <span className="text-[10px] text-[var(--text-muted)] block">Vistas</span>
+                      <span className="text-sm font-bold text-[var(--text-main)]">{reel.views}</span>
                     </div>
-                    <div className="p-3 rounded-xl bg-dark-base border border-dark-border">
-                      <span className="text-[10px] text-zinc-500 block">Hook Rate</span>
-                      <span className="text-sm font-bold text-brand-primary">{reel.hookRate}</span>
+                    <div className="p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)]">
+                      <span className="text-[10px] text-[var(--text-muted)] block">Hook Rate</span>
+                      <span className="text-sm font-bold text-lime-700 dark:text-neon">{reel.hookRate}</span>
                     </div>
-                    <div className="p-3 rounded-xl bg-dark-base border border-dark-border">
-                      <span className="text-[10px] text-zinc-500 block">DMs CAPI</span>
-                      <span className="text-sm font-bold text-emerald-400">{reel.dmsGenerated}</span>
+                    <div className="p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)]">
+                      <span className="text-[10px] text-[var(--text-muted)] block">DMs CAPI</span>
+                      <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{reel.dmsGenerated}</span>
                     </div>
                   </div>
 
                   {/* DeepSeek R1 Reverse Engineering Card */}
-                  <div className="p-4 rounded-2xl bg-dark-elevated border border-brand-primary/30 space-y-2 text-xs font-mono">
-                    <span className="text-[10px] text-brand-primary font-bold uppercase flex items-center gap-1.5">
+                  <div className="p-4 rounded-2xl bg-[var(--bg-card-subtle)] border border-neon/30 space-y-2 text-xs font-mono">
+                    <span className="text-[10px] text-lime-700 dark:text-neon font-bold uppercase flex items-center gap-1.5">
                       <Bot className="w-3.5 h-3.5" />
                       Deconstrucción Algorítmica (Por qué funcionó):
                     </span>
-                    <p className="text-zinc-300 font-sans text-xs leading-relaxed">
+                    <p className="text-[var(--text-main)] font-sans text-xs leading-relaxed">
                       {reel.whyItWorked}
                     </p>
-                    <div className="pt-2 border-t border-dark-border text-[11px] text-zinc-400">
-                      <span>Disparador: <strong>{reel.psychologicalTrigger}</strong></span>
+                    <div className="pt-2 border-t border-[var(--border-color)] text-[11px] text-[var(--text-muted)]">
+                      <span>Disparador: <strong className="text-[var(--text-main)]">{reel.psychologicalTrigger}</strong></span>
                     </div>
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-dark-border">
+                <div className="pt-4 border-t border-[var(--border-color)]">
                   <button
                     type="button"
                     onClick={() => handleReplicateViralReel(reel)}
-                    className="w-full py-3 px-4 rounded-xl bg-brand-primary text-black font-bold text-xs font-mono shadow-neon-sm hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+                    className="w-full py-3 px-4 rounded-xl bg-neon text-black font-bold text-xs font-mono shadow-[0_0_12px_var(--neon-glow)] hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2"
                   >
                     <Sparkles className="w-4 h-4" />
                     <span>🧬 Replicar Fórmula en 3 Nuevos Guiones</span>
@@ -873,16 +873,16 @@ export const ContentPlanner = () => {
       {/* ========================================================================= */}
       {activeTab === 'audit' && (
         <div className="space-y-6 animate-fade-in">
-          <div className="p-6 rounded-3xl bg-dark-surface border border-dark-border flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="p-6 rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <span className="p-2.5 rounded-2xl bg-brand-primary/10 text-brand-primary border border-brand-primary/30">
+              <span className="p-2.5 rounded-2xl bg-neon/15 text-lime-700 dark:text-neon border border-neon/30">
                 <Search className="w-6 h-6" />
               </span>
               <div>
-                <h3 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                <h3 className="text-xl font-bold text-[var(--text-main)] tracking-tight flex items-center gap-2">
                   Auditoría de Perfil Social: {profileAudit.handle}
                 </h3>
-                <p className="text-xs text-zinc-400 font-mono">
+                <p className="text-xs text-[var(--text-muted)] font-mono">
                   Optimización de Biografía, Enlace en Bio y Conversión a WhatsApp (ADR-006 §3.9)
                 </p>
               </div>
@@ -890,8 +890,8 @@ export const ContentPlanner = () => {
 
             <div className="flex items-center gap-3">
               <div className="text-right font-mono">
-                <span className="text-xs text-zinc-400 block">Health Score de Perfil:</span>
-                <span className="text-lg font-bold text-brand-primary">{profileAudit.score} / 100</span>
+                <span className="text-xs text-[var(--text-muted)] block">Health Score de Perfil:</span>
+                <span className="text-lg font-bold text-lime-700 dark:text-neon">{profileAudit.score} / 100</span>
               </div>
             </div>
           </div>
@@ -901,35 +901,35 @@ export const ContentPlanner = () => {
             {profileAudit.checks.map((chk) => (
               <div
                 key={chk.id}
-                className="p-5 rounded-2xl bg-dark-surface border border-dark-border space-y-3 font-mono text-xs"
+                className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-3 font-mono text-xs"
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-white text-sm flex items-center gap-2 font-sans">
+                  <span className="font-bold text-[var(--text-main)] text-sm flex items-center gap-2 font-sans">
                     {chk.status === 'PASSED' ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                     ) : (
-                      <AlertTriangle className="w-4 h-4 text-amber-400" />
+                      <AlertTriangle className="w-4 h-4 text-amber-500" />
                     )}
                     {chk.title}
                   </span>
                   <span
                     className={`text-[10px] px-2 py-0.5 rounded font-bold ${
                       chk.status === 'PASSED'
-                        ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                        : 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                        : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
                     }`}
                   >
                     {chk.status === 'PASSED' ? 'Optimizado' : 'Requiere Ajuste'}
                   </span>
                 </div>
 
-                <p className="text-zinc-300 font-sans text-xs">
+                <p className="text-[var(--text-main)] font-sans text-xs">
                   {chk.diagnosis}
                 </p>
 
-                <div className="p-3 rounded-xl bg-dark-base border border-dark-border text-[11px] text-zinc-400 space-y-1">
-                  <span className="text-brand-primary font-bold block">Recomendación IA:</span>
-                  <p>{chk.recommendation}</p>
+                <div className="p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[11px] text-[var(--text-muted)] space-y-1">
+                  <span className="text-lime-700 dark:text-neon font-bold block">Recomendación IA:</span>
+                  <p className="text-[var(--text-main)]">{chk.recommendation}</p>
                 </div>
               </div>
             ))}
@@ -946,53 +946,53 @@ export const ContentPlanner = () => {
               if (e.target === e.currentTarget) setShowOfferModal(false);
             }}
           >
-            <div className="w-full max-w-lg rounded-3xl bg-zinc-950 border border-neon/40 shadow-2xl p-6 sm:p-8 relative space-y-4 my-auto animate-scale-up">
+            <div className="w-full max-w-lg rounded-3xl bg-[var(--bg-panel)] border border-neon/40 shadow-2xl p-6 sm:p-8 relative space-y-4 my-auto animate-scale-up">
             <div className="space-y-1">
-              <span className="text-[10px] font-mono font-bold uppercase text-neon">
+              <span className="text-[10px] font-mono font-bold uppercase text-lime-700 dark:text-neon">
                 Sincronización con DeepSeek R1
               </span>
-              <h3 className="text-xl font-black text-white">
+              <h3 className="text-xl font-black text-[var(--text-main)]">
                 Editar Oferta Comercial del Mes
               </h3>
-              <p className="text-xs text-zinc-400 font-mono">
+              <p className="text-xs text-[var(--text-muted)] font-mono">
                 Al guardar, todas las nuevas ideas de contenido y llamadas a la acción se alinearán a esta oferta.
               </p>
             </div>
 
             <form onSubmit={handleUpdateCommercialOffer} className="space-y-3 font-mono text-xs">
               <div>
-                <label className="block text-zinc-300 font-bold mb-1">
+                <label className="block text-[var(--text-main)] font-bold mb-1">
                   Documento de Propuesta Comercial (.pdf, .docx, .md)
                 </label>
                 <input
                   type="text"
                   value={commercialOffer.docName}
                   onChange={(e) => setCommercialOffer({ ...commercialOffer, docName: e.target.value })}
-                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white focus:border-neon outline-none"
+                  className="w-full bg-[var(--bg-card-subtle)] border border-[var(--border-color)] rounded-xl p-3 text-[var(--text-main)] focus:border-neon outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-zinc-300 font-bold mb-1">
+                <label className="block text-[var(--text-main)] font-bold mb-1">
                   Gancho Comercial del Mes (Hook)
                 </label>
                 <textarea
                   rows={2}
                   value={brandDna.leadMagnetHook}
                   onChange={(e) => setBrandDna({ ...brandDna, leadMagnetHook: e.target.value })}
-                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white focus:border-neon outline-none resize-none"
+                  className="w-full bg-[var(--bg-card-subtle)] border border-[var(--border-color)] rounded-xl p-3 text-[var(--text-main)] focus:border-neon outline-none resize-none"
                 />
               </div>
 
               <div>
-                <label className="block text-zinc-300 font-bold mb-1">
+                <label className="block text-[var(--text-main)] font-bold mb-1">
                   Llamado a la Acción (CTA) & Palabra Clave
                 </label>
                 <input
                   type="text"
                   value={brandDna.leadMagnetCta}
                   onChange={(e) => setBrandDna({ ...brandDna, leadMagnetCta: e.target.value })}
-                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white focus:border-neon outline-none"
+                  className="w-full bg-[var(--bg-card-subtle)] border border-[var(--border-color)] rounded-xl p-3 text-[var(--text-main)] focus:border-neon outline-none"
                 />
               </div>
 
@@ -1000,7 +1000,7 @@ export const ContentPlanner = () => {
                 <button
                   type="button"
                   onClick={() => setShowOfferModal(false)}
-                  className="px-4 py-2 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white"
+                  className="px-4 py-2 rounded-xl bg-[var(--bg-card-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)] font-bold"
                 >
                   Cancelar
                 </button>
