@@ -1,0 +1,26 @@
+{
+  "manual_version": "1.0",
+  "documented_on": "2026-10-21",
+  "prototype_fixture_date": "2026-10-13",
+  "branch": "UX/UI",
+  "base_commit": "1507f21ec7d0ebc892a28048de8bc40c2799d099",
+  "hash_algorithm": "sha256",
+  "prototype_files": {
+    "prototypes/vector-comunity/dist/app.js": "8324af84b9757cd73b259f7ab82824a004fa2c8b818099c6ad9a1d9d10756ca6",
+    "prototypes/vector-comunity/dist/assets/vector-isotype.png": "5781ea4ae1852959120c4e97d5ffd0a2dc8ad905317dedeac929ba5cfaeff6fc",
+    "prototypes/vector-comunity/dist/assets/vector-logo-light.png": "0f1c4fdb8aea0db003e989f1d2a006773fd08fb29f16470cac4f19b70731d6bd",
+    "prototypes/vector-comunity/dist/assets/vector-logo-white.png": "cb6db99d6c4bee8c5572016a2b235d1b805016c63c154e1f71fe055bec62cfdd",
+    "prototypes/vector-comunity/dist/assets/vector-wolf.png": "5095f7be189561e0af30d51cfdb9973c12d8000ab76e2c767597d2bcb1b1de94",
+    "prototypes/vector-comunity/dist/index.html": "c0090e4dc0e2ff8d34b39431b6bfad69b36f921b9b4d7e2f31a4e9c295bdde3f",
+    "prototypes/vector-comunity/dist/styles.css": "a6e9459dae9faac1e48aa52df5d3c010ca28484935b9971c38916065414686dd"
+  },
+  "diagrams": [
+    "docs/ux-ui/diagrams/00-estados-contenido.mmd",
+    "docs/ux-ui/diagrams/01-carriles-operativos.mmd",
+    "docs/ux-ui/diagrams/02-carriles-usuarios-editorial.mmd",
+    "docs/ux-ui/diagrams/03-dependencias.mmd",
+    "docs/ux-ui/diagrams/04-carriles-contacto.mmd",
+    "docs/ux-ui/diagrams/05-arquitectura-actual.mmd",
+    "docs/ux-ui/diagrams/06-arquitectura-propuesta.mmd"
+  ]
+}

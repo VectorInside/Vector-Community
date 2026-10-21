@@ -1,0 +1,23 @@
+sequenceDiagram
+  autonumber
+  participant U as Usuario o Administrador
+  participant UI as Conversaciones y ficha
+  participant ST as Estado local
+  participant R as Resultados
+  U->>UI: Abrir consulta de ejemplo
+  U->>UI: Preparar y editar respuesta
+  UI->>ST: Registrar mensaje saliente local
+  Note over UI,ST: No cambia contacted ni confirma entrega
+  U->>UI: Confirmar intercambio bidireccional
+  UI->>ST: contacted = true y evento de historial
+  U->>UI: Elegir etapa y siguiente paso
+  alt Sigue abierta y faltan responsable, accion o fecha
+    UI-->>U: Pedir completar campos
+  else Perdido sin motivo o cierre sin fecha
+    UI-->>U: Pedir evidencia requerida
+  else Campos suficientes para demo
+    UI->>ST: Guardar seguimiento, valor y etapa
+    ST-->>R: Recalcular cohorte comercial
+    R-->>U: Mostrar metricas, fuente y limites
+  end
+  Note over ST,R: Ganado no implica cobro ni nueva atribucion automatica

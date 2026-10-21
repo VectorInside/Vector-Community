@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="VECTOR COMUNITY: prototipo local de marketing, conversaciones y resultados comerciales de Vector Inside.">
+<title>VECTOR COMUNITY · Centro de mando</title>
+<link rel="icon" href="assets/vector-isotype.png"><link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Ir al contenido</a>
+<aside class="sidebar" id="sidebar">
+<button class="icon-button sidebar-close" id="sidebar-close" aria-label="Cerrar navegación"><span data-icon="close"></span></button>
+<a href="#overview" class="brand" data-view="overview"><img src="assets/vector-logo-white.png" alt="Vector Inside"><span>COMUNITY <small>MARKETING COMMAND CENTER</small></span></a>
+<div class="workspace"><span class="workspace-icon">VI</span><div><strong>Vector Inside</strong><small>Espacio de demostración</small></div><span class="online-dot" aria-hidden="true"></span></div>
+<nav id="navigation" aria-label="Módulos"></nav>
+<div class="sidebar-bottom"><button class="nav-item" data-view="guide"><span class="icon" data-icon="book"></span>Guía de medición<span class="new-pill">13 fuentes</span></button><div class="sidebar-note">DE LA PRESENCIA A LA VENTA<br><span>Cada contacto tiene un siguiente paso.</span></div></div>
+</aside>
+<div class="app-shell">
+<header class="topbar"><div class="top-left"><button class="icon-button mobile-menu" id="menu-button" aria-controls="sidebar" aria-label="Abrir navegación" aria-expanded="false"><span data-icon="menu"></span></button><span class="breadcrumb" id="breadcrumb">Operación / Centro de mando</span></div><div class="top-actions"><button class="search-trigger" id="search-trigger"><span data-icon="search"></span><span>Buscar un contacto, campaña…</span><kbd>⌘ K</kbd></button><button class="icon-button" id="theme-button" aria-label="Cambiar tema"><span data-icon="sun"></span></button><button class="icon-button notification-button" id="notifications-button" aria-label="Ver pendientes"><span data-icon="bell"></span><b id="pending-dot"></b></button><label class="role-control"><span class="sr-only">Perfil de exploración</span><select id="role-select"><option value="admin">Administrador</option><option value="user">Usuario</option></select></label><span class="avatar" id="avatar">KV</span></div></header>
+<div class="demo-bar"><span><span class="demo-dot"></span>PROTOTIPO INTERACTIVO <span class="demo-explanation">· Datos ficticios · Sin conexiones ni envíos reales</span></span><button id="demo-info">Cómo explorar <span aria-hidden="true">↗</span></button></div>
+<main id="main" tabindex="-1"></main>
+<footer class="app-footer"><span>VECTOR INSIDE / DIRECCIÓN · CONTENIDO · CONVERSACIÓN · RESULTADO</span><span>Prototipo local · MXN · Ciudad de México</span></footer>
+</div>
+<dialog id="dialog" aria-labelledby="dialog-title"><div class="dialog-top"><div><p class="eyebrow" id="dialog-eyebrow">VECTOR COMUNITY</p><h2 id="dialog-title"></h2></div><button class="icon-button" id="dialog-close" aria-label="Cerrar ventana"><span data-icon="close"></span></button></div><div id="dialog-body"></div></dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+<script src="app.js"></script>
+</body></html>

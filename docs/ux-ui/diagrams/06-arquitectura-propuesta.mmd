@@ -1,0 +1,56 @@
+flowchart TB
+  subgraph CLIENT["Carril experiencia - propuesta"]
+    ADMIN["Aplicacion Administrador"]
+    USER["Aplicacion Usuario"]
+    FORM["Formulario de captacion"]
+  end
+  subgraph SECURITY["Carril identidad y autorizacion - propuesta"]
+    IDP["Identidad y sesion verificadas"]
+    AUTH["Membresia, organizacion y permiso por accion"]
+    IDP --> AUTH
+  end
+  subgraph CORE["Carril API modular - propuesta"]
+    API["Validacion, contratos e idempotencia"]
+    MODULE["Campanas, contenido, aprobaciones, CRM y tareas"]
+    MET["Reconciliacion, atribucion y consultas"]
+    API --> MODULE --> MET
+  end
+  subgraph DATA["Carril datos - propuesta"]
+    DB[("Base relacional y auditoria")]
+    OBJ[("Archivos privados y versiones")]
+    OUT[("Outbox transaccional")]
+  end
+  subgraph ASYNC["Carril procesamiento - propuesta"]
+    QUEUE["Cola, reintentos y errores recuperables"]
+    WORK["Importacion, sincronizacion y notificaciones"]
+    QUEUE --> WORK
+  end
+  subgraph PROVIDER["Carril proveedores - propuesta"]
+    META["Meta y mensajeria autorizadas"]
+    GOOGLE["GA4, Search Console y Business Profile"]
+    HOOK["Webhooks verificados y deduplicados"]
+  end
+  subgraph OPS["Carril operacion y gobierno - propuesta"]
+    OBS["Logs, metricas, alertas y trazabilidad"]
+    BACK["Backups y restauracion probada"]
+    DEC["Aprobacion humana de acciones externas"]
+  end
+  ADMIN --> IDP
+  USER --> IDP
+  AUTH --> API
+  FORM -->|Validacion publica y limites| API
+  MODULE --> DB
+  MODULE --> OBJ
+  MODULE --> OUT
+  MET --> DB
+  OUT --> QUEUE
+  WORK --> DB
+  WORK --> META
+  WORK --> GOOGLE
+  META --> HOOK
+  GOOGLE -.->|Cuando la API lo soporte| HOOK
+  HOOK --> API
+  API --> OBS
+  WORK --> OBS
+  DB --> BACK
+  DEC -.-> MODULE

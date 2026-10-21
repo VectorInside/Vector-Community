@@ -1,0 +1,30 @@
+flowchart TB
+  subgraph ADMIN["Carril Administrador - preparar y organizar"]
+    direction LR
+    A1["Definir oferta y publico"] --> A2["Crear campana"] --> A3["Preparar pieza y solicitar revision"]
+    A4["Editar nueva version"]
+    A5["Registrar publicacion manual con enlace"]
+  end
+  subgraph USER["Carril Usuario - aportar contexto y decidir"]
+    direction LR
+    U1["Revisar version exacta"] --> U2{"Aprobar o pedir cambios"}
+    U3["Consultar evidencia y proponer mejora"]
+  end
+  subgraph BOTH["Carril colaborativo - Administrador o Usuario"]
+    direction LR
+    C1["Registrar consulta ficticia"] --> C2["Preparar respuesta local"] --> C3["Confirmar intercambio solo si corresponde"] --> C4["Guardar responsable y siguiente accion"]
+    C5["Registrar calificacion o cierre"]
+  end
+  subgraph SYSTEM["Carril sistema local - guardar y mostrar"]
+    direction LR
+    S1["Persistir estado en navegador"] --> S2["Calcular cohorte CRM"] --> S3["Mostrar resultados y limites"] --> S4["Crear tarea de mejora"]
+  end
+  A3 --> U1
+  U2 -->|Cambios| A4
+  A4 --> A3
+  U2 -->|Aprobada| A5
+  A5 -.->|Relacion de negocio, no captura automatica| C1
+  C4 --> C5 --> S1
+  A5 --> S1
+  S3 --> U3 --> S4
+  S4 --> A1

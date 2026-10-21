@@ -1,0 +1,35 @@
+flowchart LR
+  subgraph PEOPLE["Carril personas"]
+    A["Administrador demo"]
+    U["Usuario demo"]
+  end
+  subgraph BROWSER["Carril navegador - implementado"]
+    UI["index.html y styles.css"]
+    EV["Eventos y formularios app.js"]
+    STATE["state y seed"]
+    CALC["aggregate y reglas locales"]
+    VIEW["Vistas, dialogos y reportes"]
+    UI --> EV --> STATE --> CALC --> VIEW
+    VIEW --> UI
+  end
+  subgraph LOCAL["Carril almacenamiento del navegador"]
+    LS[("localStorage - esquema 2")]
+    FILE["CSV descargado en el equipo"]
+  end
+  subgraph HOST["Carril servidor local - archivos"]
+    HTTP["Python http.server en loopback"]
+    DIST["HTML, CSS, JS y assets"]
+    HTTP --> DIST
+  end
+  subgraph EXT["Carril externo - recursos de lectura"]
+    FONT["Google Fonts opcional"]
+    DOC["Documentacion oficial por enlaces"]
+    APIS["Meta y Google APIs - no conectadas"]
+  end
+  A --> UI
+  U --> UI
+  DIST -->|GET de archivos| UI
+  STATE <-->|Guardar y recuperar| LS
+  VIEW -->|Exportacion| FILE
+  UI -.->|Tipografia| FONT
+  VIEW -.->|Abrir fuente| DOC

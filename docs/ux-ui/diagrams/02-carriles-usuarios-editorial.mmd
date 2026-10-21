@@ -1,0 +1,22 @@
+sequenceDiagram
+  autonumber
+  participant A as Administrador
+  participant S as Sistema local
+  participant U as Usuario
+  A->>S: Crear pieza en Borrador v1
+  A->>S: Solicitar revision
+  S-->>U: Mostrar texto, CTA, campana y version
+  alt Solicita cambios
+    U->>S: Guardar comentario sobre v1
+    S-->>A: Borrador sin aprobacion
+    A->>S: Editar y guardar v2
+    S->>S: Conservar snapshot y limpiar aprobacion
+    A->>S: Solicitar revision de v2
+    S-->>U: Mostrar nueva version
+  end
+  U->>S: Aprobar version exacta
+  S->>S: Guardar perfil, fecha demo y numero de version
+  S-->>A: Pieza Aprobada
+  A->>S: Registrar enlace y fecha de publicacion manual
+  S-->>A: Estado Publicado en demo
+  Note over A,U: Ningun mensaje del diagrama publica contenido en Meta

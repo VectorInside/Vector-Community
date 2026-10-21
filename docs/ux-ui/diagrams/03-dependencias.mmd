@@ -1,0 +1,22 @@
+flowchart LR
+  P["Perfil y oferta"] --> C["Campanas"]
+  C --> E["Contenido y versiones"]
+  E --> A["Revision y aprobacion"]
+  C --> O["Origen de contactos"]
+  O --> CRM["CRM y seguimiento"]
+  CRM --> Q["Calificacion y cierre"]
+  C --> G["Gasto reconciliado"]
+  Q --> R["Resultados comerciales"]
+  G --> R
+  R --> L["Hipotesis y tareas"]
+  L --> C
+  subgraph NEXT["Base requerida para produccion - propuesta"]
+    I["Identidad y membresias"] --> D["Datos persistentes y autorizacion"]
+    D --> F["Captacion e importacion idempotentes"]
+    F --> T["Atribucion verificable"]
+    T --> V["Piloto con totales reconciliados"]
+  end
+  D -.-> CRM
+  D -.-> E
+  F -.-> O
+  T -.-> R

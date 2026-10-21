@@ -1,0 +1,10 @@
+stateDiagram-v2
+  [*] --> Borrador: Crear pieza v1
+  Borrador --> Revision: Administrador solicita revision
+  Revision --> Aprobado: Usuario o Administrador aprueba version
+  Revision --> Borrador: Solicitar cambios y guardar comentario
+  Aprobado --> Publicado: Administrador registra enlace y fecha
+  Borrador --> Borrador: Editar y guardar version mas uno
+  Revision --> Borrador: Editar y guardar version mas uno
+  Aprobado --> Borrador: Editar invalida aprobacion
+  Publicado --> Borrador: Nueva version local, no retira publicacion
