@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { INITIAL_TENANTS_DATA } from '@/utils/constants';
 import {
@@ -231,7 +232,14 @@ export default function MicroLandingPage() {
         <div className="flex items-center gap-2 min-w-0">
           <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
             {customData.logo ? (
-              <img src={customData.logo} alt="Logo" className="w-full h-full object-contain p-0.5" />
+              <Image
+                src={customData.logo}
+                alt="Logo"
+                width={32}
+                height={32}
+                unoptimized
+                className="w-full h-full object-contain p-0.5"
+              />
             ) : (
               <span className="text-lg">{baseTenant.avatar || '🏢'}</span>
             )}
@@ -272,9 +280,12 @@ export default function MicroLandingPage() {
         <div className="rounded-3xl bg-zinc-900/60 border border-white/10 overflow-hidden shadow-2xl relative">
           {/* Cover Photo */}
           <div className="h-28 sm:h-32 w-full relative overflow-hidden">
-            <img
+            <Image
               src={customData.cover || baseTheme.cover}
               alt={customData.name}
+              width={450}
+              height={140}
+              unoptimized
               className="w-full h-full object-cover brightness-[0.75]"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/40 to-transparent" />
@@ -286,9 +297,12 @@ export default function MicroLandingPage() {
             <div className="relative -mt-10 mb-2 inline-block">
               <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-zinc-950 border-2 border-[#D4FF00]/80 p-1 shadow-[0_0_20px_rgba(212,255,0,0.35)] flex items-center justify-center overflow-hidden">
                 {customData.logo ? (
-                  <img
+                  <Image
                     src={customData.logo}
                     alt="Logo Personalizado"
+                    width={80}
+                    height={80}
+                    unoptimized
                     className="w-full h-full object-contain rounded-xl"
                   />
                 ) : (

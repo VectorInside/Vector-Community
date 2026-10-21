@@ -187,7 +187,7 @@ export const HeroSection = ({ onOpenTrial, lang = 'es' }) => {
             <button
               type="button"
               onClick={onOpenTrial}
-              className="px-7 py-3.5 rounded-xl bg-gradient-to-r from-neon via-[#D9EA00] to-cyan-400 text-black font-mono font-black text-xs sm:text-sm uppercase tracking-wider hover:brightness-110 transition-all duration-200 shadow-[0_0_30px_rgba(231,249,0,0.5)] flex items-center justify-center gap-2 group active:scale-95 whitespace-nowrap shrink-0 border border-white/40"
+              className="px-7 py-3.5 rounded-xl bg-neon text-black font-sans font-black text-xs sm:text-sm uppercase tracking-wider hover:brightness-110 transition-all duration-200 shadow-[0_0_25px_var(--neon-glow)] flex items-center justify-center gap-2 group active:scale-95 whitespace-nowrap shrink-0 border border-white/20"
             >
               <Sparkles className="w-4 h-4 text-black shrink-0" />
               <span className="whitespace-nowrap">{t.ctaPrimary}</span>
@@ -196,15 +196,15 @@ export const HeroSection = ({ onOpenTrial, lang = 'es' }) => {
 
             <a
               href="#realtime-demo"
-              className="px-6 py-3.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-100 font-mono font-bold text-xs sm:text-sm border border-cyan-500/30 hover:border-cyan-400/60 shadow-[0_0_20px_rgba(0,240,255,0.15)] transition-all flex items-center justify-center gap-2 backdrop-blur-md whitespace-nowrap shrink-0 active:scale-95"
+              className="px-6 py-3.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-100 font-sans font-semibold text-xs sm:text-sm border border-[var(--border-color)] hover:border-neon shadow-sm transition-all flex items-center justify-center gap-2 backdrop-blur-md whitespace-nowrap shrink-0 active:scale-95"
             >
-              <Play className="w-3.5 h-3.5 text-cyan-400 fill-cyan-400 shrink-0" />
+              <Play className="w-3.5 h-3.5 text-neon fill-neon shrink-0" />
               <span className="whitespace-nowrap">{t.ctaSecondary}</span>
             </a>
 
             <Link
               href="/login"
-              className="px-5 py-3.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 hover:text-white font-mono text-xs sm:text-sm font-semibold border border-white/10 hover:border-cyan-500/40 shadow-sm transition-all flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 active:scale-95"
+              className="px-5 py-3.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 hover:text-white font-sans text-xs sm:text-sm font-semibold border border-[var(--border-color)] hover:border-neon shadow-sm transition-all flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 active:scale-95"
             >
               <span className="whitespace-nowrap">Iniciar Sesión</span>
               <ArrowRight className="w-3.5 h-3.5 shrink-0" />
@@ -290,31 +290,31 @@ export const HeroSection = ({ onOpenTrial, lang = 'es' }) => {
               </div>
             </div>
 
-            {/* Lobo Vectorial Sentinel Banner (Bloque 13.9 Manual Maestro) */}
+            {/* Lobo Vectorial Sentinel Banner */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 rounded-2xl bg-zinc-900/70 border border-white/10 backdrop-blur-md">
               <div className="flex items-center gap-3">
                 <VectorLobo size={38} showStatus={true} status="active" />
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-neon">
-                      Sentinela Inteligente • Lobo Vectorial
+                    <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-neon">
+                      Asistencia Inteligente • Lobo Vectorial
                     </span>
-                    <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-cognitive/10 text-cognitive border border-cognitive/20 hidden sm:inline">
-                      Bloque 13.9 Símbolo Vivo
+                    <span className="text-[9px] font-sans px-2 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/30 hidden sm:inline">
+                      Moderación 24/7 Activa
                     </span>
                   </div>
                   <p className="text-xs text-zinc-300 font-sans italic">
-                    "Detecto fricción en tu sistema. Empecemos por el núcleo."
+                    "Detecto oportunidades comerciales en tus conversaciones. Empecemos por la atención."
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3 text-[11px] font-mono text-zinc-400 shrink-0">
+              <div className="flex items-center gap-3 text-[11px] font-sans text-zinc-400 shrink-0">
                 <span className="flex items-center gap-1.5 text-zinc-300">
                   <span className="w-2 h-2 rounded-full bg-neon animate-pulse" />
-                  IFV: <strong className="text-neon font-black">48/50</strong>
+                  Puntaje de Atención: <strong className="text-neon font-black">98/100</strong>
                 </span>
                 <span className="text-zinc-700">|</span>
-                <span className="text-cognitive font-semibold">Telemetría RLS Activa</span>
+                <span className="text-blue-400 font-semibold">Meta CAPI Conectado</span>
               </div>
             </div>
 

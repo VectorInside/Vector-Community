@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
@@ -177,9 +178,12 @@ export default function LoginPage() {
                   >
                     <div className="relative shrink-0">
                       <div className="h-10 w-10 rounded-xl overflow-hidden border border-white/10 group-hover:border-white/30 transition-colors">
-                        <img
+                        <Image
                           src={usr.avatar}
                           alt={usr.name}
+                          width={40}
+                          height={40}
+                          unoptimized
                           className="h-full w-full object-cover"
                         />
                       </div>

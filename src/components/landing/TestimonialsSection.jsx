@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { Star, TrendingUp } from 'lucide-react';
 import { LANDING_TRANSLATIONS } from './landingTranslations';
 
@@ -62,7 +63,14 @@ export const TestimonialsSection = ({ lang = 'es' }) => {
               {/* Author Footer */}
               <div className="pt-4 border-t border-white/10 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl overflow-hidden border border-white/15 shrink-0">
-                  <img src={item.avatar} alt={item.author} className="w-full h-full object-cover" />
+                  <Image
+                    src={item.avatar}
+                    alt={item.author}
+                    width={40}
+                    height={40}
+                    unoptimized
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <div className="min-w-0">
                   <h4 className="text-xs font-bold text-white font-mono truncate">

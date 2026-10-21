@@ -1,15 +1,15 @@
 # 📐 Documento de Diseño de Sistema (SDD) — Vector Community
 
 - **Sistema:** Vector Community OS ("La Puerta Trasera")
-- **Versión:** 3.0 (Universal Business Taxonomy & Meta Intelligence Edition)
+- **Versión:** 4.0 (Unified UX/UI Operational Taxonomy & Backend Readiness Edition)
 - **Organización:** Vector Inside Operations
-- **ADRs Asociados:** [ADR-001](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_001_MASTER_ARCHITECTURE_AND_BUSINESS_RULES.md), [ADR-002](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_002_UNIVERSAL_BUSINESS_TAXONOMY_AND_RAG_PILLARS.md), [ADR-003](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_003_META_GRAPH_INTELLIGENCE_AND_HITL_TRIAGE.md), [ADR-008](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_008_PAY_PER_QUALIFIED_LEAD_STATE_MACHINE_AND_KANBAN_TRIAGE.md), [ADR-009](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_009_DUAL_THEME_DESIGN_SYSTEM_RULES.md)
+- **ADRs Asociados:** [ADR-001](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_001_MASTER_ARCHITECTURE_AND_BUSINESS_RULES.md), [ADR-002](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_002_UNIVERSAL_BUSINESS_TAXONOMY_AND_RAG_PILLARS.md), [ADR-003](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_003_META_GRAPH_INTELLIGENCE_AND_HITL_TRIAGE.md), [ADR-008](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_008_PAY_PER_QUALIFIED_LEAD_STATE_MACHINE_AND_KANBAN_TRIAGE.md), [ADR-009](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_009_DUAL_THEME_DESIGN_SYSTEM_RULES.md), [ADR-010](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_010_MICRO_LANDING_TELEMETRY_AND_DYNAMIC_MASTER_AGENDA.md), [ADR-011](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_011_UX_UI_BRAND_AND_OPERATIONAL_TAXONOMY.md)
 
 ---
 
 ## 1. Introducción y Alcance
 
-Este documento especifica la arquitectura técnica, diagramas de flujo, modelos de datos, protocolos de seguridad, taxonomía de giros comerciales y diseño de interfaz para **Vector Community**, el motor de gestión de comunidad autónoma, performance marketing, análisis en Meta Graph y gobernanza Human-in-the-Loop (HITL).
+Este documento especifica la arquitectura técnica, diagramas de flujo, modelos de datos, protocolos de seguridad, taxonomía de giros comerciales, diseño de interfaz y **contratos de backend para cada uno de los 12 módulos operativos** para **Vector Community**, garantizando que el pulido de vistas no altere ni reduzca la complejidad de las reglas de negocio del sistema.
 
 ---
 
@@ -17,13 +17,28 @@ Este documento especifica la arquitectura técnica, diagramas de flujo, modelos 
 
 ```mermaid
 graph TD
-    subgraph ClientTier["🌐 Capa de Interfaz (Frontend Next.js 14)"]
-        UI_ADM[Centro de Mando / Auditoría Multi-Tenant]
-        UI_HITL[Bandeja HITL & Triage con Radiografía de Clientes]
-        UI_META[Meta Graph Hub: Posts, Reels & Comentarios en Vivo]
-        UI_AGENDA[Master Agenda Google Calendar Sync]
-        UI_PERF[Soberanía Financiera & Atribución CAPI]
-        UI_RAG[Configurador RAG, Taxonomía de Giros & 1-Click Briefing]
+    subgraph ClientTier["🌐 Capa de Interfaz Unificada (12 Módulos Next.js 14)"]
+        subgraph Ops["💼 Operación"]
+            UI_CMD["Centro de Mando (/dashboard)"]
+            UI_CONT["Contactabilidad (/contactability)"]
+            UI_CAMP["Campañas (/campaigns)"]
+            UI_PLAN["Estudio de Contenido (/planner)"]
+            UI_INBOX["Conversaciones (/inbox)"]
+            UI_CRM["Prospectos y CRM (/crm)"]
+        end
+        subgraph Intel["📊 Inteligencia"]
+            UI_RES["Resultados & ROAS (/results)"]
+            UI_LAB["Pruebas & Lab Agentes (/lab)"]
+        end
+        subgraph Admin["⚙️ Administración"]
+            UI_PROF["Perfil de Marca (/profile)"]
+            UI_CONN["Conexiones & RAG (/connections)"]
+            UI_TEAM["Equipo & Auditoría (/team)"]
+        end
+        subgraph Public["🌍 Canales Públicos"]
+            UI_PUB_M["Micro-Landings Dinámicas (/m/[slug])"]
+            UI_PUB_LAND["Landing Institucional (/landing)"]
+        end
     end
 
     subgraph ApiGateway["🛡️ Seguridad & Proxy Inverso"]
@@ -199,18 +214,19 @@ api.interceptors.request.use((config) => {
 
 ## 6. Arquitectura del Sistema de Diseño Dual-Theme (Modo Oscuro & Modo Claro)
 
-La experiencia de usuario de **Vector Community** implementa un motor de diseño dual sincronizado mediante tokens CSS (`src/styles/globals.css`) y clases utilitarias de Tailwind (`darkMode: 'class'`), normado formalmente en [ADR-009](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_009_DUAL_THEME_DESIGN_SYSTEM_RULES.md):
+La experiencia de usuario de **Vector Community** implementa un motor de diseño dual sincronizado mediante tokens CSS (`src/styles/globals.css`) y clases utilitarias de Tailwind (`darkMode: 'class'`), normado formalmente en [ADR-009](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_009_DUAL_THEME_DESIGN_SYSTEM_RULES.md) y ratificado en [ADR-011](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_011_UX_UI_BRAND_AND_OPERATIONAL_TAXONOMY.md):
 
 ### 6.1. Principios de Contraste y Accesibilidad (WCAG AA/AAA)
 
 1. **Lienzo y Superficies:**
-   - **Modo Oscuro:** Lienzo `#000000` con superficies elevadas `#07080A` y `#0E0F13`.
-   - **Modo Claro:** Lienzo `#F8FAFC` (porcelana ejecutiva) con paneles `#FFFFFF` y bordes nítidos `#E2E8F0`.
-2. **Jerarquía Tipográfica Invertida:**
-   - Todo texto operativo utiliza emparejamiento semántico: `text-zinc-900 dark:text-white` para títulos primarios y `text-zinc-600 dark:text-zinc-400` para metadatos.
-3. **El Guardrail del Amarillo Vectorial (`#E7F900`):**
-   - **En Texto:** Queda prohibido el uso de `#E7F900` como texto plano sobre superficies claras (<1.4:1). El sistema mapea dinámicamente `.text-neon` a `--neon-text` (`#4D5600` en modo claro, superando 6.5:1 de contraste AAA).
-   - **En Botones y Badges:** Conserva el Amarillo Vectorial `#E7F900` con tipografía negra (`bg-neon text-black`), alcanzando un contraste supremo de **15.2:1** en ambos modos.
+   - **Modo Oscuro:** Lienzo `#101114` con superficies elevadas `#191A1F` y `#202127`, bordes `#303139`.
+   - **Modo Claro:** Lienzo `#F5F5F8` (porcelana ejecutiva) con paneles `#FFFFFF` y bordes nítidos `#E2E3EA`.
+2. **Jerarquía Tipográfica:**
+   - Tipografía principal de interfaz en **Inter** y títulos de alta personalidad en **Montserrat**.
+   - Emparejamiento semántico: `text-zinc-900 dark:text-white` para títulos primarios y `text-zinc-600 dark:text-zinc-400` para metadatos.
+3. **El Guardrail de la Lima Vectorial (`#C3F400`):**
+   - **En Texto:** Queda prohibido el uso de `#C3F400` como texto plano sobre superficies claras. El sistema mapea dinámicamente `.text-neon` a `--neon-text` (`#506500` en modo claro, superando 6.5:1 de contraste AAA).
+   - **En Botones y Badges:** Conserva el Amarillo/Lima Vectorial `#C3F400` con tipografía negra (`bg-lime-action text-black`), alcanzando un contraste supremo de **14.8:1** en ambos modos.
 
 ---
 
@@ -235,4 +251,37 @@ La experiencia de usuario de **Vector Community** implementa un motor de diseño
 - **GIVEN:** Un tenant configurado con sitio web activo (`has_website = true`).
 - **WHEN:** El sub-bot analista detecta un costo por clic bajo (adquisición eficiente), volumen alto de visitas y una tasa de clic a WhatsApp menor al 3%.
 - **THEN:** Dispara una alerta de consultoría en el panel del Lobo Vectorial: *"Fricción en Página Web detectada: Alto tráfico con baja conversión hacia mensajería"*, recomendando optimización de velocidad y botón flotante.
+
+---
+
+## 8. Matriz de Contratos de Backend por Módulo de Negocio (Directiva "No Planchar Reglas de Negocio")
+
+Para garantizar que el pulido de vistas no elimine ningún cimiento del backend, cada uno de los 12 módulos de la interfaz queda blindado con sus correspondientes contratos técnicos, tablas de base de datos y eventos asíncronos:
+
+| Módulo Frontend (Ruta) | Microservicio / Endpoints Backend | Tablas PostgreSQL (RLS Activo) | Eventos Redis / Asíncronos | Regla de Negocio Intocable |
+| :--- | :--- | :--- | :--- | :--- |
+| **1. Centro de Mando** (`/dashboard`) | `GET /api/v1/dashboard/overview`<br>`GET /api/v1/dashboard/tasks` | `tenants`, `hitl_alerts`, `leads`, `daily_aggregates` | `stream:kpi_updates` | Agrupa captaciones por cohorte de fecha de registro, no por fecha de cobro. |
+| **2. Contactabilidad** (`/contactability`) | `GET /api/v1/telemetry/funnel`<br>`GET /api/v1/telemetry/sla` | `contactability_logs`, `sla_tracking`, `meta_webhook_events` | `queue:sla_breach_alert` | Mide tiempo de primera respuesta humana (p90, promedio); detecta fugas de chat si respuesta > 15 min. |
+| **3. Campañas** (`/campaigns`) | `GET /api/v1/campaigns`<br>`POST /api/v1/campaigns` | `campaigns`, `ad_sets`, `creative_pieces` | `job:meta_ads_sync` | Toda campaña debe vincular presupuesto asignado, gasto real Meta Ads y piezas creativas aprobadas. |
+| **4. Estudio de Contenido** (`/planner`) | `GET /api/v1/content/posts`<br>`POST /api/v1/content/generate-copy` | `editorial_posts`, `copy_variants`, `brand_voice_rules` | `worker:deepseek_generation` | Las piezas transitan obligatoriamente: `Borrador` ➔ `Revisión` ➔ `Aprobado` ➔ `Programado` ➔ `Publicado`. |
+| **5. Conversaciones** (`/inbox`) | `GET /api/v1/conversations`<br>`POST /api/v1/conversations/{id}/messages` | `conversations`, `chat_messages`, `leads` | `webhook:whatsapp_incoming` | El operador puede intervenir en tiempo real pausando el bot; ninguna respuesta ficticia se marca como enviada. |
+| **6. Prospectos y CRM** (`/crm`) | `GET /api/v1/leads/kanban`<br>`POST /api/v1/leads/{id}/pre-cita` | `leads`, `hitl_alerts`, `appointments`, `billing_ledger` | `queue:calendar_sync`<br>`queue:meta_capi_lead` | Validación booleana acumulativa de 4 requisitos para mutar a `BILLABLE_LEAD`. Dictamen Pre-Cita en 1 clic. |
+| **7. Resultados** (`/results`) | `GET /api/v1/finance/roas`<br>`GET /api/v1/finance/reconciliation` | `ad_spend_reconciliation`, `billing_ledger`, `transactions` | `job:daily_finance_audit` | Separación matemática estricta: `Venta Ganada` (facturada) vs. `Pipeline Estimado`. Prohibido mostrar $0 si el dato no existe. |
+| **8. Pruebas y Lab** (`/lab`) | `GET /api/v1/lab/experiments`<br>`POST /api/v1/lab/orchestrate` | `experiments`, `agent_eval_metrics`, `creative_fatigue_logs` | `stream:agent_trace` | Detección algorítmica de fatiga creativa: si Hook Rate (3s) < 20% durante 3 días, enciende alerta automática. |
+| **9. Perfil de Marca** (`/profile`) | `GET /api/v1/brand/profile`<br>`PUT /api/v1/brand/profile` | `tenants`, `brand_dna`, `sla_policies` | `cache:purge_tenant_dna` | Política de SLA de respuesta y propósito de marca inyectados como System Prompt base para todos los sub-agentes. |
+| **10. Conexiones y Datos** (`/connections`) | `GET /api/v1/integrations/health`<br>`POST /api/v1/rag/documents` | `integration_tokens`, `rag_documents`, `rag_embeddings` | `queue:embedding_chunking` | Verificación de token SHA-256 de Meta CAPI, GA4 Measurement Protocol y vectorización en `pgvector`. |
+| **11. Equipo y Control** (`/team`) | `GET /api/v1/team/members`<br>`POST /api/v1/team/roles` | `organization_members`, `audit_trail_logs`, `billing_rules` | `stream:audit_events` | Bitácora append-only de auditoría forense para cada cambio de estado, aprobación HITL y regla de precios. |
+| **12. Canales Públicos** (`/m/[slug]`, `/landing`) | `GET /api/v1/public/landing/{slug}`<br>`POST /api/v1/public/leads` | `microlandings`, `leads`, `pageview_telemetry` | `worker:capi_pageview_dispatch` | Captación de prospecto con micro-agendamiento directo, telemetría sin cookies y aislamiento de layout. |
+
+---
+
+## 9. Checklist de Readiness para Construcción de Backends por Módulo
+
+Al terminar el pulido visual y de vistas de cada sección, el equipo de backend podrá construir cada microservicio o endpoint siguiendo este checklist de preparación determinista:
+
+1. **DTOs y Tipos de Datos:** Cada vista en Next.js cuenta con un archivo TypeScript / JSDoc con los esquemas de entrada y salida exactos consumidos por el componente.
+2. **Encabezado Multitenant Obligatorio:** Toda llamada HTTP inyecta `X-Tenant-ID` verificado contra el `activeTenantId` de `AuthContext.jsx`.
+3. **Manejo de Estados de Red:** Cada componente soporta los 4 estados canónicos: `loading` (esqueleto animado), `empty` (estado vacío con siguiente paso útil), `error` (mensaje de error específico sin recargar) y `success`.
+4. **Respeto a la Máquina de Estados:** Ninguna vista fuerza transiciones prohibidas (ej. pasar un lead directamente de `Nuevo` a `Ganado` sin haber pasado por `Calificado` y haber dictaminado la pre-cita).
+5. **Trazabilidad y Auditoría:** Toda mutación generada desde la interfaz envía el usuario autenticado (`authorId` / `role`) para su inserción en `audit_trail_logs`.
 

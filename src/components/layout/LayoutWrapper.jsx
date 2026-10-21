@@ -17,7 +17,7 @@ export const LayoutWrapper = ({ children }) => {
 
   if (isStandalonePage) {
     return (
-      <div className="min-h-screen bg-[var(--bg-base)] text-[var(--text-main)] selection:bg-[#E7F900] selection:text-black">
+      <div className="min-h-screen bg-[var(--bg-base)] text-[var(--text-main)] selection:bg-[#c3f400] selection:text-black">
         <GeneralModal />
         {children}
       </div>
@@ -25,7 +25,7 @@ export const LayoutWrapper = ({ children }) => {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden selection:bg-[#E7F900] selection:text-black">
+    <div className="flex h-screen overflow-hidden selection:bg-[#c3f400] selection:text-black">
       <GeneralModal />
       <Sidebar />
       <div className="flex-1 flex flex-col h-full overflow-hidden">
