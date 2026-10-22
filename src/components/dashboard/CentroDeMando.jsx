@@ -35,6 +35,9 @@ import {
   Users,
   ChevronRight,
   Zap,
+  CalendarDays,
+  Megaphone,
+  MessageSquare,
 } from 'lucide-react';
 import { VectorLobo } from '@/components/common/VectorLobo';
 import { MicroLandingPreviewModal } from '@/components/common/MicroLandingPreviewModal';
@@ -58,6 +61,9 @@ const CATEGORY_PILLS = [
 export const CentroDeMando = () => {
   const router = useRouter();
   const {
+    role,
+    isAdmin,
+    isClient,
     activeTenant,
     activeTenantKey,
     switchTenantContext,
@@ -78,18 +84,26 @@ export const CentroDeMando = () => {
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'active' | 'paused'
   const [categoryFilter, setCategoryFilter] = useState('all');
 
-  // Calculate Global Pay-Per-Lead Business Metrics
-  const tenantsList = Object.values(tenantsData);
-  const totalBilledLeads = tenantsList.reduce((sum, t) => sum + (t.billedLeadsMonth || 0), 0);
-  const totalRevenueMXN = tenantsList.reduce(
-    (sum, t) => sum + (t.billedLeadsMonth || 0) * (t.leadPriceMXN || 350),
-    0
-  );
-  const agencyRevenueMXN = Math.round(totalRevenueMXN * 0.7);
-  const totalRetainedDeposits = tenantsList.reduce(
-    (sum, t) => sum + (t.retainedDepositMXN || 15000),
-    0
-  );
+  // Calculate Global Pay-Per-Lead Business Metrics (Memoized for render performance)
+  const tenantsList = useMemo(() => Object.values(tenantsData || {}), [tenantsData]);
+  const { totalBilledLeads, totalRevenueMXN, agencyRevenueMXN, totalRetainedDeposits } = useMemo(() => {
+    const billed = tenantsList.reduce((sum, t) => sum + (t.billedLeadsMonth || 0), 0);
+    const rev = tenantsList.reduce(
+      (sum, t) => sum + (t.billedLeadsMonth || 0) * (t.leadPriceMXN || 350),
+      0
+    );
+    const agency = Math.round(rev * 0.7);
+    const deposits = tenantsList.reduce(
+      (sum, t) => sum + (t.retainedDepositMXN || 15000),
+      0
+    );
+    return {
+      totalBilledLeads: billed,
+      totalRevenueMXN: rev,
+      agencyRevenueMXN: agency,
+      totalRetainedDeposits: deposits,
+    };
+  }, [tenantsList]);
 
   // Active drawer tenant object synchronized with live tenantsData
   const drawerTenant = drawerTenantId ? tenantsData[drawerTenantId] || null : null;
@@ -154,35 +168,88 @@ export const CentroDeMando = () => {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 block animate-fade-in space-y-8">
-      {/* Header Unificado: Sin Selectores Redundantes */}
+      {/* Header Adaptable: Vista de Agencia vs Vista de Dueño de Negocio */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border-color)] pb-4 gap-4">
-        <div>
-          <h2 className="text-3xl font-heading font-black uppercase tracking-tight text-[var(--text-main)]">
-            Centro de <span className="text-neon">Mando</span>
-          </h2>
-          <p className="text-xs font-mono text-[var(--text-muted)] mt-1">
-            Supervisión multi-negocio, Gobernanza y 5 Reglas Estrictas, Telemetría Web y Facturación Pay-Per-Lead.
-          </p>
-        </div>
+        {isClient ? (
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-neon font-extrabold bg-neon/10 px-2.5 py-0.5 rounded border border-neon/20">
+                PANEL DEL NEGOCIO
+              </span>
+              <span className="text-xs text-[var(--text-muted)] font-mono">
+                {activeTenant?.giro}
+              </span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-heading font-black uppercase tracking-tight text-[var(--text-main)] flex items-center gap-2.5">
+              <span>{activeTenant?.avatar}</span>
+              <span>{activeTenant?.name}</span>
+            </h2>
+            <p className="text-xs font-mono text-[var(--text-muted)] mt-1">
+              Supervisión de captación en tiempo real, citas agendadas, contenido editorial y ventas ganadas.
+            </p>
+          </div>
+        ) : (
+          <div>
+            <h2 className="text-3xl font-heading font-black uppercase tracking-tight text-[var(--text-main)]">
+              Centro de <span className="text-neon">Mando</span>
+            </h2>
+            <p className="text-xs font-mono text-[var(--text-muted)] mt-1">
+              Supervisión multi-negocio, Gobernanza y 5 Reglas Estrictas, Telemetría Web y Facturación Pay-Per-Lead.
+            </p>
+          </div>
+        )}
 
         {/* Global Ecosistema Health Badge + Action */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="px-3.5 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-2.5 shadow-sm">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-xs font-mono text-[var(--text-muted)]">
-              <strong className="text-[var(--text-main)] font-bold">{tenantsList.length} Negocios</strong> en Ecosistema
-            </span>
-          </div>
+        {isClient ? (
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="px-3 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-2 shadow-sm">
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  activeTenant?.isAiActive ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'
+                }`}
+              />
+              <span className="text-xs font-mono text-[var(--text-muted)]">
+                {activeTenant?.isAiActive ? 'IA Asistente Operativa' : 'IA en Pausa (Atención Manual)'}
+              </span>
+            </div>
 
-          <button
-            type="button"
-            onClick={() => router.push('/config?tab=rag&mode=wizard')}
-            className="text-xs bg-neon text-black font-mono font-black uppercase px-4 py-2 rounded-xl flex items-center gap-1.5 hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_15px_var(--neon-glow)] active:scale-95"
-          >
-            <Plus className="w-3.5 h-3.5 stroke-[3]" />
-            <span>Alta Nuevo Negocio</span>
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={() => setPreviewTenant(activeTenant)}
+              className="text-xs bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon text-[var(--text-main)] hover:text-neon font-mono font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition-all shadow-sm min-h-[40px]"
+            >
+              <Smartphone className="w-3.5 h-3.5" />
+              <span>Ver Micro-Landing</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => router.push('/inbox')}
+              className="text-xs bg-neon text-black font-mono font-black uppercase px-4 py-2 rounded-xl flex items-center gap-1.5 hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_15px_var(--neon-glow)] active:scale-95 min-h-[40px]"
+            >
+              <MessageSquare className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span>Bandeja (3)</span>
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="px-3.5 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-2.5 shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-xs font-mono text-[var(--text-muted)]">
+                <strong className="text-[var(--text-main)] font-bold">{tenantsList.length} Negocios</strong> en Ecosistema
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => router.push('/config?tab=rag&mode=wizard')}
+              className="text-xs bg-neon text-black font-mono font-black uppercase px-4 py-2 rounded-xl flex items-center gap-1.5 hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_15px_var(--neon-glow)] active:scale-95 min-h-[40px]"
+            >
+              <Plus className="w-3.5 h-3.5 stroke-[3]" />
+              <span>Alta Nuevo Negocio</span>
+            </button>
+          </div>
+        )}
       </header>
 
       {/* Official UX/UI Hero Panel: Direccion Clara / Accion Concreta */}
@@ -308,7 +375,7 @@ export const CentroDeMando = () => {
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-heading font-black text-[var(--text-main)]">8</span>
-            <span className="text-xs font-sans text-neon font-bold">BILLABLE_LEAD</span>
+            <span className="text-xs font-sans text-neon font-bold">Leads Calificados</span>
           </div>
           <p className="text-[11px] text-[var(--text-muted)] font-sans">
             $224,000 MXN en valor de pipeline
@@ -349,7 +416,7 @@ export const CentroDeMando = () => {
               <span>Gobernanza & 5 Reglas Estrictas de Negocio</span>
             </h3>
             <p className="text-xs text-[var(--text-muted)] font-mono mt-0.5">
-              Supervisión de cumplimiento arquitectónico en tiempo real según ADR-001 al ADR-008.
+              Supervisión de calidad, tiempos de atención y reglas comerciales en tiempo real.
             </p>
           </div>
           <button
@@ -399,299 +466,557 @@ export const CentroDeMando = () => {
         </div>
       </div>
 
-      {/* KPI Stats Grid & Resumen Financiero Global */}
-      <div className="vector-bg-panel vector-border p-5 rounded-2xl space-y-4">
-        <div className="flex justify-between items-center border-b border-[var(--border-color)] pb-3">
-          <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-[var(--text-main)] flex items-center gap-1.5">
-            <DollarSign className="w-3.5 h-3.5 text-neon" />
-            <span>Economía Pay-Per-Lead (Ecosistema Global)</span>
-          </h4>
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neon/10 text-neon border border-neon/30">
-            Split 70% Agencia / 30% Plataforma
-          </span>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="p-3 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)]">
-            <p className="text-[9px] font-mono text-[var(--text-muted)] font-bold uppercase">Total Leads Facturados</p>
-            <p className="text-2xl font-black text-[var(--text-main)] font-mono mt-1">{totalBilledLeads}</p>
-          </div>
-          <div className="p-3 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)]">
-            <p className="text-[9px] font-mono text-[var(--text-muted)] font-bold uppercase">Facturación Bruta</p>
-            <p className="text-xl font-black text-neon font-mono mt-1" suppressHydrationWarning>
-              ${formatNumber(totalRevenueMXN)} MXN
-            </p>
-          </div>
-          <div className="p-3 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)]">
-            <p className="text-[9px] font-mono text-[var(--text-muted)] font-bold uppercase">Ingreso Agencia (70%)</p>
-            <p className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono mt-1" suppressHydrationWarning>
-              ${formatNumber(agencyRevenueMXN)} MXN
-            </p>
-          </div>
-          <div className="p-3 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)]">
-            <p className="text-[9px] font-mono text-[var(--text-muted)] font-bold uppercase">Custodia Depósitos</p>
-            <p className="text-xl font-black text-cyan-600 dark:text-cyan-400 font-mono mt-1" suppressHydrationWarning>
-              ${formatNumber(totalRetainedDeposits)} MXN
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* ===================================================================== */}
-      {/* DECK DE GESTIÓN DE NEGOCIOS (BUSINESS COMMAND CARDS + FILTROS)        */}
+      {/* SECCIÓN PRINCIPAL: ADAPTADA SEGÚN ROL (CLIENTE 1:1 vs AGENCIA ADMIN)   */}
       {/* ===================================================================== */}
-      <div className="space-y-4">
-        {/* Title, Search & Filters Bar */}
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-          <div>
-            <h3 className="text-base font-bold uppercase tracking-wider flex items-center gap-2 text-[var(--text-main)]">
-              <Building2 className="w-5 h-5 text-neon" />
-              <span>Deck de Negocios & Administración 1-Click</span>
-            </h3>
-            <p className="text-xs text-[var(--text-muted)] font-mono mt-0.5">
-              Supervisión de cada cliente, control de Kill-Switch de IA, tarifas y acceso a herramientas operativas.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
-            {/* Search Input */}
-            <div className="relative flex-1 sm:w-64">
-              <Search className="w-3.5 h-3.5 text-[var(--text-muted)] absolute left-3 top-2.5" />
-              <input
-                type="text"
-                placeholder="Buscar negocio o giro..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] focus:border-neon rounded-xl pl-8 pr-7 py-1.5 text-xs text-[var(--text-main)] font-mono placeholder-[var(--text-muted)] outline-none transition-colors"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-2.5 top-2 text-[var(--text-muted)] hover:text-[var(--text-main)]"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-
-            {/* AI Status Filter Tabs */}
-            <div className="flex items-center bg-[var(--bg-card)] p-1 rounded-xl border border-[var(--border-color)] text-[10px] font-mono">
-              <button
-                type="button"
-                onClick={() => setStatusFilter('all')}
-                className={`px-2.5 py-1 rounded-lg transition-all ${
-                  statusFilter === 'all'
-                    ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white font-bold'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
-                }`}
-              >
-                Todos ({tenantsList.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setStatusFilter('active')}
-                className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 ${
-                  statusFilter === 'active'
-                    ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/30'
-                    : 'text-[var(--text-muted)] hover:text-emerald-600 dark:hover:text-emerald-400'
-                }`}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                IA Activa ({tenantsList.filter((t) => t.isAiActive).length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setStatusFilter('paused')}
-                className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 ${
-                  statusFilter === 'paused'
-                    ? 'bg-red-500/20 text-red-600 dark:text-red-400 font-bold border border-red-500/30'
-                    : 'text-[var(--text-muted)] hover:text-red-600 dark:hover:text-red-400'
-                }`}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                Pausado ({tenantsList.filter((t) => !t.isAiActive).length})
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Category Pills Bar */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 text-[11px] font-mono">
-          {CATEGORY_PILLS.map((cat) => (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => setCategoryFilter(cat.id)}
-              className={`px-3 py-1 rounded-full whitespace-nowrap transition-all border flex items-center gap-1.5 ${
-                categoryFilter === cat.id
-                  ? 'bg-neon text-black font-bold border-neon shadow-[0_0_12px_rgba(231,249,0,0.3)]'
-                  : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] border-[var(--border-color)] hover:border-[var(--text-muted)]'
-              }`}
-            >
-              <span>{cat.icon}</span>
-              <span>{cat.label}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Interactive Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredTenants.map((t) => {
-            const isSelected = activeTenantKey === t.id;
-            const monthlyBilling = (t.billedLeadsMonth || 0) * (t.leadPriceMXN || 350);
-
-            return (
-              <div
-                key={t.id}
-                className={`rounded-2xl p-5 border transition-all duration-200 relative flex flex-col justify-between group ${
-                  isSelected
-                    ? 'bg-[var(--bg-panel)] border-neon shadow-[0_0_25px_rgba(231,249,0,0.15)] ring-2 ring-neon/60'
-                    : t.isAiActive
-                    ? 'bg-[var(--bg-card)] border-[var(--border-color)] hover:border-neon/40 hover:shadow-lg'
-                    : 'bg-red-950/15 border-red-500/40 shadow-[0_0_15px_rgba(239,68,68,0.1)]'
-                }`}
-              >
-                {/* Card Top: Identity & Kill-Switch Toggle */}
-                <div className="space-y-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] flex items-center justify-center text-2xl shrink-0 shadow-sm">
-                        {t.avatar}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <h4 className="text-sm font-bold text-[var(--text-main)] font-sans group-hover:text-neon transition-colors">
-                            {t.name}
-                          </h4>
-                          {isSelected && (
-                            <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-neon/15 text-neon border border-neon/30 font-bold shrink-0">
-                              ACTIVO
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-[11px] font-mono text-[var(--text-muted)] block line-clamp-1 font-medium">
-                          {t.giro}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Kill-Switch Button */}
-                    <button
-                      type="button"
-                      onClick={() => toggleTenantAi(t.id)}
-                      className={`text-[9px] font-mono font-bold px-2 py-1 rounded-lg border flex items-center gap-1 transition-all shrink-0 ${
-                        t.isAiActive
-                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/40'
-                          : 'bg-red-500 text-white border-red-400 animate-pulse'
-                      }`}
-                      title={t.isAiActive ? 'Clic para Pausar IA (Takeover Humano)' : 'Clic para Reactivar IA'}
-                    >
-                      <Power className="w-3 h-3" />
-                      <span>{t.isAiActive ? 'IA ACTIVA' : 'PAUSADO'}</span>
-                    </button>
-                  </div>
-
-                  {/* Presence & Tracking Tags */}
-                  <div className="flex items-center gap-2 pt-1 font-mono text-[10px]">
-                    {t.hasWebsite ? (
-                      <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/30 rounded flex items-center gap-1">
-                        <Globe className="w-3 h-3" />
-                        <span>Web + GA4</span>
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded flex items-center gap-1">
-                        <Smartphone className="w-3 h-3" />
-                        <span>Micro-Landing</span>
-                      </span>
-                    )}
-
-                    <span className="px-2 py-0.5 bg-[var(--bg-card-subtle)] text-[var(--text-muted)] border border-[var(--border-color)] rounded font-medium">
-                      MER: {t.mer || '5.2x'}
-                    </span>
-                  </div>
-
-                  {/* Micro-Metrics Grid (3-column financial & leads snapshot) */}
-                  <div className="grid grid-cols-3 gap-2 p-2.5 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] font-mono text-center">
-                    <div>
-                      <span className="text-[9px] text-[var(--text-muted)] font-bold uppercase block">Leads Mes</span>
-                      <span className="text-xs font-bold text-[var(--text-main)] mt-0.5 block">{t.billedLeadsMonth || 0}</span>
+      {isClient ? (
+        /* ===================================================================== */
+        /* VISTA EXCLUSIVA DEL DUEÑO DEL NEGOCIO (ZERO LEAKAGE DE OTRAS EMPRESAS) */
+        /* ===================================================================== */
+        <div className="space-y-6">
+          {/* Fila 1: Grid de 2 Columnas - Citas Agendadas (CRM) y Contenido en Revisión */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 font-sans">
+            {/* 1. Próximas Citas & Oportunidades en Agenda */}
+            <div className="rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-5 space-y-4 shadow-sm flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="p-2 rounded-xl bg-neon/15 text-neon border border-neon/30">
+                      <Users className="w-4 h-4" />
                     </div>
                     <div>
-                      <span className="text-[9px] text-[var(--text-muted)] font-bold uppercase block">Tarifa Lead</span>
-                      <span className="text-xs font-bold text-neon mt-0.5 block">${t.leadPriceMXN || 350}</span>
-                    </div>
-                    <div>
-                      <span className="text-[9px] text-[var(--text-muted)] font-bold uppercase block">Facturación</span>
-                      <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 block" suppressHydrationWarning>
-                        ${formatNumber(monthlyBilling)}
-                      </span>
+                      <h3 className="text-sm font-bold text-[var(--text-main)]">
+                        Citas Agendadas & Prospectos Calificados
+                      </h3>
+                      <p className="text-[11px] text-[var(--text-muted)] font-mono">
+                        8 prospectos en tu pipeline comercial ($224,000 MXN)
+                      </p>
                     </div>
                   </div>
-                </div>
-
-                {/* Card Action Buttons (Administrar, Landing, Fijar Activo) */}
-                <div className="pt-4 border-t border-[var(--border-color)] flex items-center justify-between gap-2 mt-4 font-mono text-xs">
-                  <div className="flex items-center gap-1.5">
-                    {/* Botón Administrar (Abre Drawer de Gestión) */}
-                    <button
-                      type="button"
-                      onClick={() => setDrawerTenantId(t.id)}
-                      className="px-3 py-1.5 rounded-xl bg-neon/15 hover:bg-neon hover:text-black text-neon border border-neon/40 font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
-                    >
-                      <Sliders className="w-3.5 h-3.5" />
-                      <span>Administrar</span>
-                    </button>
-
-                    {/* Botón Ver Landing */}
-                    <button
-                      type="button"
-                      onClick={() => setPreviewTenant(t)}
-                      className="p-1.5 rounded-xl bg-[var(--bg-base)] hover:bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
-                      title="Ver Micro-Landing Móvil"
-                    >
-                      <Smartphone className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-
-                  {/* Botón Fijar como Activo en Sesión */}
                   <button
                     type="button"
-                    onClick={() => handleQuickActivateTenant(t.id)}
-                    disabled={isSelected}
-                    className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-bold transition-all flex items-center gap-1 ${
-                      isSelected
-                        ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-[var(--border-color)] cursor-default'
-                        : 'bg-[var(--bg-base)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] border-[var(--border-color)] hover:border-neon'
+                    onClick={() => router.push('/crm')}
+                    className="text-xs font-mono text-neon hover:underline flex items-center gap-1 font-bold"
+                  >
+                    <span>Ver Kanban</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <div className="space-y-2.5 mt-3">
+                  {/* Lead 1 */}
+                  <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-between gap-3 hover:border-neon/40 transition-colors">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-500 flex items-center justify-center font-bold text-xs shrink-0 font-mono">
+                        MG
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-bold text-[var(--text-main)] truncate">Lic. Mariana Garza</p>
+                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/30">
+                            Cita Confirmada
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-[var(--text-muted)] font-mono truncate">
+                          Mañana 11:30 hrs · Valor: $35,000 MXN · CAPI Verificado
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => router.push('/inbox')}
+                      className="px-2.5 py-1.5 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] hover:border-neon text-[10px] font-mono text-neon font-bold shrink-0"
+                    >
+                      Chat
+                    </button>
+                  </div>
+
+                  {/* Lead 2 */}
+                  <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-between gap-3 hover:border-neon/40 transition-colors">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-9 h-9 rounded-xl bg-neon/15 border border-neon/30 text-neon flex items-center justify-center font-bold text-xs shrink-0 font-mono">
+                        HV
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-bold text-[var(--text-main)] truncate">Dr. Héctor Valdés</p>
+                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-neon/15 text-neon font-bold border border-neon/30">
+                            Dictamen Aprobado
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-[var(--text-muted)] font-mono truncate">
+                          Presupuesto enviado · Valor: $48,000 MXN · Pre-Cita
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => router.push('/crm')}
+                      className="px-2.5 py-1.5 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] hover:border-neon text-[10px] font-mono text-neon font-bold shrink-0"
+                    >
+                      Ficha
+                    </button>
+                  </div>
+
+                  {/* Lead 3 */}
+                  <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-between gap-3 hover:border-neon/40 transition-colors">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-500 flex items-center justify-center font-bold text-xs shrink-0 font-mono">
+                        CS
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-bold text-[var(--text-main)] truncate">Ing. Carlos Soto</p>
+                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-500 font-bold border border-amber-500/30">
+                            Por Agendar
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-[var(--text-muted)] font-mono truncate">
+                          Interés en catálogo · Dudas resueltas por IA
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => router.push('/inbox')}
+                      className="px-2.5 py-1.5 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] hover:border-neon text-[10px] font-mono text-neon font-bold shrink-0"
+                    >
+                      Contactar
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-[var(--border-color)] flex items-center justify-between text-xs font-mono">
+                <span className="text-[var(--text-muted)]">Tasa de Asistencia Pre-Cita:</span>
+                <span className="font-bold text-emerald-500">92.4% (Garantía Activa)</span>
+              </div>
+            </div>
+
+            {/* 2. Contenido Editorial de la Semana (Parrilla) */}
+            <div className="rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-5 space-y-4 shadow-sm flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="p-2 rounded-xl bg-purple-500/15 text-purple-400 border border-purple-500/30">
+                      <CalendarDays className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-[var(--text-main)]">
+                        Estudio de Contenido & Redes
+                      </h3>
+                      <p className="text-[11px] text-[var(--text-muted)] font-mono">
+                        2 piezas esperan tu aprobación editorial
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => router.push('/planner')}
+                    className="text-xs font-mono text-neon hover:underline flex items-center gap-1 font-bold"
+                  >
+                    <span>Ver Calendario</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <div className="space-y-2.5 mt-3">
+                  {/* Post 1 */}
+                  <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-amber-500/30 flex items-center justify-between gap-3">
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-500 border border-amber-500/30">
+                          Por Aprobar
+                        </span>
+                        <span className="text-[10px] text-[var(--text-muted)] font-mono">Reel · Meta & TikTok</span>
+                      </div>
+                      <p className="text-xs font-bold text-[var(--text-main)] line-clamp-1">
+                        "3 Señales de que necesitas una valoración antes de que sea tarde"
+                      </p>
+                      <p className="text-[10px] text-[var(--text-muted)] font-sans line-clamp-1">
+                        Guión generado con gancho de 3 segundos y llamado directo a WhatsApp.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => router.push('/planner')}
+                      className="px-3 py-1.5 rounded-xl bg-neon text-black text-[10px] font-mono font-black uppercase shrink-0 hover:bg-[var(--neon-hover)] transition-all shadow-sm active:scale-95"
+                    >
+                      Revisar
+                    </button>
+                  </div>
+
+                  {/* Post 2 */}
+                  <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-between gap-3">
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+                          Aprobado
+                        </span>
+                        <span className="text-[10px] text-[var(--text-muted)] font-mono">Carrusel · Instagram</span>
+                      </div>
+                      <p className="text-xs font-bold text-[var(--text-main)] line-clamp-1">
+                        "Transformación y Caso Clínico: Caso de Éxito"
+                      </p>
+                      <p className="text-[10px] text-[var(--text-muted)] font-mono">
+                        Programado: Viernes 24 Oct, 18:00 hrs
+                      </p>
+                    </div>
+                    <span className="text-emerald-500 font-mono text-xs font-bold shrink-0">✓ Listo</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-[var(--border-color)] flex items-center justify-between text-xs font-mono">
+                <span className="text-[var(--text-muted)]">Frecuencia Editorial Semanal:</span>
+                <span className="font-bold text-[var(--text-main)]">4 piezas programadas</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Fila 2: Rendimiento de Campañas Activas de su Empresa */}
+          <div className="rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-5 space-y-4 shadow-sm">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-[var(--border-color)] pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-cyan-500/15 text-cyan-400 border border-cyan-500/30">
+                  <Megaphone className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-[var(--text-main)]">
+                    Campañas de Publicidad Activas ({activeTenant?.name})
+                  </h3>
+                  <p className="text-[11px] text-[var(--text-muted)] font-mono">
+                    Meta Ads & Google CAPI · Presupuesto y Captación en tiempo real
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => router.push('/campaigns')}
+                className="text-xs font-mono text-neon hover:underline flex items-center gap-1 font-bold"
+              >
+                <span>Ver Métricas de Campaña</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono">
+              <div className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1">
+                <span className="text-[10px] text-[var(--text-muted)] uppercase">Inversión Devengada Mes</span>
+                <p className="text-xl font-bold text-[var(--text-main)]">$12,450 MXN</p>
+                <span className="text-[10px] text-emerald-500 font-bold">ROAS Estimado: 4.2x</span>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1">
+                <span className="text-[10px] text-[var(--text-muted)] uppercase">Contactos Directos Captados</span>
+                <p className="text-xl font-bold text-neon">18 Leads</p>
+                <span className="text-[10px] text-[var(--text-muted)]">Costo por Lead: $350 MXN</span>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1">
+                <span className="text-[10px] text-[var(--text-muted)] uppercase">Canal Más Efectivo</span>
+                <p className="text-xl font-bold text-cyan-400">WhatsApp Direct</p>
+                <span className="text-[10px] text-[var(--text-muted)]">68% de conversiones a cita</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* ===================================================================== */
+        /* VISTA EXCLUSIVA ADMINISTRADOR AGENCIA (MULTI-TENANT DECK + FINANZAS)   */
+        /* ===================================================================== */
+        <>
+          {/* KPI Stats Grid & Resumen Financiero Global */}
+          <div className="vector-bg-panel vector-border p-5 rounded-2xl space-y-4">
+            <div className="flex justify-between items-center border-b border-[var(--border-color)] pb-3">
+              <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-[var(--text-main)] flex items-center gap-1.5">
+                <DollarSign className="w-3.5 h-3.5 text-neon" />
+                <span>Economía Pay-Per-Lead (Ecosistema Global)</span>
+              </h4>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neon/10 text-neon border border-neon/30">
+                Split 70% Agencia / 30% Plataforma
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="p-3 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)]">
+                <p className="text-[9px] font-mono text-[var(--text-muted)] font-bold uppercase">Total Leads Facturados</p>
+                <p className="text-2xl font-black text-[var(--text-main)] font-mono mt-1">{totalBilledLeads}</p>
+              </div>
+              <div className="p-3 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)]">
+                <p className="text-[9px] font-mono text-[var(--text-muted)] font-bold uppercase">Facturación Bruta</p>
+                <p className="text-xl font-black text-neon font-mono mt-1" suppressHydrationWarning>
+                  ${formatNumber(totalRevenueMXN)} MXN
+                </p>
+              </div>
+              <div className="p-3 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)]">
+                <p className="text-[9px] font-mono text-[var(--text-muted)] font-bold uppercase">Ingreso Agencia (70%)</p>
+                <p className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono mt-1" suppressHydrationWarning>
+                  ${formatNumber(agencyRevenueMXN)} MXN
+                </p>
+              </div>
+              <div className="p-3 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)]">
+                <p className="text-[9px] font-mono text-[var(--text-muted)] font-bold uppercase">Custodia Depósitos</p>
+                <p className="text-xl font-black text-cyan-600 dark:text-cyan-400 font-mono mt-1" suppressHydrationWarning>
+                  ${formatNumber(totalRetainedDeposits)} MXN
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* DECK DE GESTIÓN DE NEGOCIOS (BUSINESS COMMAND CARDS + FILTROS) */}
+          <div className="space-y-4">
+            {/* Title, Search & Filters Bar */}
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+              <div>
+                <h3 className="text-base font-bold uppercase tracking-wider flex items-center gap-2 text-[var(--text-main)]">
+                  <Building2 className="w-5 h-5 text-neon" />
+                  <span>Deck de Negocios & Administración 1-Click</span>
+                </h3>
+                <p className="text-xs text-[var(--text-muted)] font-mono mt-0.5">
+                  Supervisión de cada cliente, control de Kill-Switch de IA, tarifas y acceso a herramientas operativas.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+                {/* Search Input */}
+                <div className="relative flex-1 sm:w-64">
+                  <Search className="w-3.5 h-3.5 text-[var(--text-muted)] absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    placeholder="Buscar negocio o giro..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] focus:border-neon rounded-xl pl-8 pr-7 py-1.5 text-xs text-[var(--text-main)] font-mono placeholder-[var(--text-muted)] outline-none transition-colors"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-2.5 top-2 text-[var(--text-muted)] hover:text-[var(--text-main)]"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* AI Status Filter Tabs */}
+                <div className="flex items-center bg-[var(--bg-card)] p-1 rounded-xl border border-[var(--border-color)] text-[10px] font-mono">
+                  <button
+                    type="button"
+                    onClick={() => setStatusFilter('all')}
+                    className={`px-2.5 py-1 rounded-lg transition-all ${
+                      statusFilter === 'all'
+                        ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white font-bold'
+                        : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                     }`}
                   >
-                    <span>{isSelected ? 'Activo' : 'Seleccionar'}</span>
-                    {!isSelected && <ChevronRight className="w-3 h-3 text-[var(--text-muted)]" />}
+                    Todos ({tenantsList.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStatusFilter('active')}
+                    className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 ${
+                      statusFilter === 'active'
+                        ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/30'
+                        : 'text-[var(--text-muted)] hover:text-emerald-600 dark:hover:text-emerald-400'
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    IA Activa ({tenantsList.filter((t) => t.isAiActive).length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStatusFilter('paused')}
+                    className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 ${
+                      statusFilter === 'paused'
+                        ? 'bg-red-500/20 text-red-600 dark:text-red-400 font-bold border border-red-500/30'
+                        : 'text-[var(--text-muted)] hover:text-red-600 dark:hover:text-red-400'
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                    Pausado ({tenantsList.filter((t) => !t.isAiActive).length})
                   </button>
                 </div>
               </div>
-            );
-          })}
-        </div>
+            </div>
 
-        {filteredTenants.length === 0 && (
-          <div className="p-12 text-center rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-3 font-mono">
-            <Building2 className="w-10 h-10 text-[var(--text-muted)] mx-auto" />
-            <p className="text-sm text-[var(--text-main)] font-bold">No se encontraron negocios con esos filtros.</p>
-            <button
-              type="button"
-              onClick={() => {
-                setSearchQuery('');
-                setStatusFilter('all');
-                setCategoryFilter('all');
-              }}
-              className="text-xs text-neon underline"
-            >
-              Restablecer filtros
-            </button>
+            {/* Category Pills Bar */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 text-[11px] font-mono">
+              {CATEGORY_PILLS.map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setCategoryFilter(cat.id)}
+                  className={`px-3 py-1 rounded-full whitespace-nowrap transition-all border flex items-center gap-1.5 ${
+                    categoryFilter === cat.id
+                      ? 'bg-neon text-black font-bold border-neon shadow-[0_0_12px_rgba(231,249,0,0.3)]'
+                      : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] border-[var(--border-color)] hover:border-[var(--text-muted)]'
+                  }`}
+                >
+                  <span>{cat.icon}</span>
+                  <span>{cat.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Interactive Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredTenants.map((t) => {
+                const isSelected = activeTenantKey === t.id;
+                const monthlyBilling = (t.billedLeadsMonth || 0) * (t.leadPriceMXN || 350);
+
+                return (
+                  <div
+                    key={t.id}
+                    className={`rounded-2xl p-5 border transition-all duration-200 relative flex flex-col justify-between group ${
+                      isSelected
+                        ? 'bg-[var(--bg-panel)] border-neon shadow-[0_0_25px_rgba(231,249,0,0.15)] ring-2 ring-neon/60'
+                        : t.isAiActive
+                        ? 'bg-[var(--bg-card)] border-[var(--border-color)] hover:border-neon/40 hover:shadow-lg'
+                        : 'bg-red-950/15 border-red-500/40 shadow-[0_0_15px_rgba(239,68,68,0.1)]'
+                    }`}
+                  >
+                    {/* Card Top: Identity & Kill-Switch Toggle */}
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-11 h-11 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] flex items-center justify-center text-2xl shrink-0 shadow-sm">
+                            {t.avatar}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <h4 className="text-sm font-bold text-[var(--text-main)] font-sans group-hover:text-neon transition-colors">
+                                {t.name}
+                              </h4>
+                              {isSelected && (
+                                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-neon/15 text-neon border border-neon/30 font-bold shrink-0">
+                                  ACTIVO
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[11px] font-mono text-[var(--text-muted)] block line-clamp-1 font-medium">
+                              {t.giro}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Kill-Switch Button */}
+                        <button
+                          type="button"
+                          onClick={() => toggleTenantAi(t.id)}
+                          className={`text-[9px] font-mono font-bold px-2 py-1 rounded-lg border flex items-center gap-1 transition-all shrink-0 ${
+                            t.isAiActive
+                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/40'
+                              : 'bg-red-500 text-white border-red-400 animate-pulse'
+                          }`}
+                          title={t.isAiActive ? 'Clic para Pausar IA (Takeover Humano)' : 'Clic para Reactivar IA'}
+                        >
+                          <Power className="w-3 h-3" />
+                          <span>{t.isAiActive ? 'IA ACTIVA' : 'PAUSADO'}</span>
+                        </button>
+                      </div>
+
+                      {/* Presence & Tracking Tags */}
+                      <div className="flex items-center gap-2 pt-1 font-mono text-[10px]">
+                        {t.hasWebsite ? (
+                          <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/30 rounded flex items-center gap-1">
+                            <Globe className="w-3 h-3" />
+                            <span>Web + GA4</span>
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded flex items-center gap-1">
+                            <Smartphone className="w-3 h-3" />
+                            <span>Micro-Landing</span>
+                          </span>
+                        )}
+
+                        <span className="px-2 py-0.5 bg-[var(--bg-card-subtle)] text-[var(--text-muted)] border border-[var(--border-color)] rounded font-medium">
+                          MER: {t.mer || '5.2x'}
+                        </span>
+                      </div>
+
+                      {/* Micro-Metrics Grid (3-column financial & leads snapshot) */}
+                      <div className="grid grid-cols-3 gap-2 p-2.5 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] font-mono text-center">
+                        <div>
+                          <span className="text-[9px] text-[var(--text-muted)] font-bold uppercase block">Leads Mes</span>
+                          <span className="text-xs font-bold text-[var(--text-main)] mt-0.5 block">{t.billedLeadsMonth || 0}</span>
+                        </div>
+                        <div>
+                          <span className="text-[9px] text-[var(--text-muted)] font-bold uppercase block">Tarifa Lead</span>
+                          <span className="text-xs font-bold text-neon mt-0.5 block">${t.leadPriceMXN || 350}</span>
+                        </div>
+                        <div>
+                          <span className="text-[9px] text-[var(--text-muted)] font-bold uppercase block">Facturación</span>
+                          <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 block" suppressHydrationWarning>
+                            ${formatNumber(monthlyBilling)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Card Action Buttons (Administrar, Landing, Fijar Activo) */}
+                    <div className="pt-4 border-t border-[var(--border-color)] flex items-center justify-between gap-2 mt-4 font-mono text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setDrawerTenantId(t.id)}
+                          className="px-3 py-1.5 rounded-xl bg-neon/15 hover:bg-neon hover:text-black text-neon border border-neon/40 font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                        >
+                          <Sliders className="w-3.5 h-3.5" />
+                          <span>Administrar</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setPreviewTenant(t)}
+                          className="p-1.5 rounded-xl bg-[var(--bg-base)] hover:bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
+                          title="Ver Micro-Landing Móvil"
+                        >
+                          <Smartphone className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleQuickActivateTenant(t.id)}
+                        disabled={isSelected}
+                        className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-bold transition-all flex items-center gap-1 ${
+                          isSelected
+                            ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-[var(--border-color)] cursor-default'
+                            : 'bg-[var(--bg-base)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] border-[var(--border-color)] hover:border-neon'
+                        }`}
+                      >
+                        <span>{isSelected ? 'Activo' : 'Seleccionar'}</span>
+                        {!isSelected && <ChevronRight className="w-3 h-3 text-[var(--text-muted)]" />}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {filteredTenants.length === 0 && (
+              <div className="p-12 text-center rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-3 font-mono">
+                <Building2 className="w-10 h-10 text-[var(--text-muted)] mx-auto" />
+                <p className="text-sm text-[var(--text-main)] font-bold">No se encontraron negocios con esos filtros.</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setStatusFilter('all');
+                    setCategoryFilter('all');
+                  }}
+                  className="text-xs text-neon underline"
+                >
+                  Restablecer filtros
+                </button>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </>
+      )}
 
       {/* ===================================================================== */}
       {/* DRAWER DE GESTIÓN RÁPIDA DE NEGOCIO (PANEL LATERAL 1-CLICK)          */}

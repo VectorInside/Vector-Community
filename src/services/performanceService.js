@@ -1,9 +1,12 @@
-import api from './api';
+import api, { isBackendAvailable } from './api';
 import { INITIAL_PERFORMANCE_METRICS } from '@/utils/mockData';
 
 export const performanceService = {
   // Get performance metrics (ROAS, CAC, Hook Rate, Hold Rate, Spend vs Revenue)
   async getPerformanceMetrics(tenantId) {
+    if (!isBackendAvailable) {
+      return INITIAL_PERFORMANCE_METRICS[tenantId] || INITIAL_PERFORMANCE_METRICS['tenant-mex-001'];
+    }
     try {
       const response = await api.get('/performance');
       return response.data;
@@ -15,6 +18,10 @@ export const performanceService = {
 
   // Get live CAPI attribution logs
   async getCapiAttributionLogs(tenantId) {
+    if (!isBackendAvailable) {
+      const tenantData = INITIAL_PERFORMANCE_METRICS[tenantId] || INITIAL_PERFORMANCE_METRICS['tenant-mex-001'];
+      return tenantData.capiLogs || [];
+    }
     try {
       const response = await api.get('/performance/capi-stream');
       return response.data;

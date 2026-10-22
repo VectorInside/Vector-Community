@@ -597,7 +597,7 @@ export const ConversacionesInbox = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-mono uppercase font-bold text-[var(--text-main)] flex items-center gap-1.5">
                       <ShieldCheck className="w-3.5 h-3.5 text-lime-400" />
-                      4 Requisitos BILLABLE_LEAD
+                      4 Requisitos de Calificación
                     </span>
                     <span className="text-[9px] font-mono text-lime-400">
                       {Object.values(activeThread.qualification).filter(Boolean).length}/4

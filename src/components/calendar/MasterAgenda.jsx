@@ -492,7 +492,7 @@ export const MasterAgenda = () => {
   const estimatedDayRevenue = dayAppointments.reduce((acc, curr) => acc + (curr.estimatedValue || 1200), 0);
 
   return (
-    <div className="space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 block animate-fade-in space-y-6 max-w-7xl mx-auto font-sans">
       {/* ========================================================================= */}
       {/* 1. TOP HERO: GOOGLE CALENDAR 2-WAY SYNC BANNER                            */}
       {/* ========================================================================= */}

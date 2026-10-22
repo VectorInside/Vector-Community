@@ -1,9 +1,12 @@
-import api from './api';
+import api, { isBackendAvailable } from './api';
 import { INITIAL_HITL_ALERTS } from '@/utils/mockData';
 
 export const hitlService = {
   // Get all HITL inbox alerts
   async getAlerts(tenantId) {
+    if (!isBackendAvailable) {
+      return INITIAL_HITL_ALERTS.filter((a) => !tenantId || a.tenantId === tenantId);
+    }
     try {
       const response = await api.get('/alerts');
       return response.data;

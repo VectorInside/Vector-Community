@@ -134,33 +134,34 @@ export const PerformanceDashboard = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fadeIn">
-      {/* Top Banner */}
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-dark-surface via-dark-elevated to-dark-surface border border-dark-border flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="p-4 sm:p-6 lg:p-8 block animate-fade-in space-y-6 max-w-7xl mx-auto font-sans">
+      {/* Header Contextual Homologado */}
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border-color)] pb-4 gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="p-2 rounded-xl bg-brand-primary/10 text-brand-primary border border-brand-primary/30">
-              <BarChart2 className="w-5 h-5" />
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-neon font-bold bg-neon/10 px-2 py-0.5 rounded border border-neon/20">
+              OPERACIÓN / CONTACTABILIDAD & TIEMPOS
             </span>
-            <div>
-              <h2 className="text-xl font-heading font-black text-[var(--text-main)] tracking-tight flex items-center gap-2">
-                Contactabilidad & Tiempos de Respuesta
-              </h2>
-              <p className="text-xs sm:text-sm font-sans text-[var(--text-muted)] mt-0.5">
-                Embudo de captación comercial, velocidad de atención y tasa de respuesta en &lt; 15 min para{' '}
-                <strong className="text-[var(--text-main)] font-semibold">{activeTenant?.name}</strong>
-              </p>
-            </div>
+            <span className="text-xs text-[var(--text-muted)] font-mono">
+              Embudo Comercial & Tráfico
+            </span>
           </div>
+          <h1 className="text-2xl sm:text-3xl font-heading font-black text-[var(--text-main)]">
+            Contactabilidad & Tiempos de <span className="text-neon">Respuesta</span>
+          </h1>
+          <p className="text-xs text-[var(--text-muted)] font-sans mt-0.5 max-w-2xl">
+            Embudo de captación comercial, velocidad de atención y tasa de respuesta en &lt; 15 min para{' '}
+            <strong className="text-[var(--text-main)] font-semibold">{activeTenant?.name || 'Clínica Odontológica Integral'}</strong>.
+          </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0">
           <button
             type="button"
             onClick={() => setShowMicroLandingModal(true)}
-            className="px-3.5 py-2 rounded-xl bg-dark-base hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] text-xs font-sans font-bold border border-dark-border flex items-center gap-2 transition-all hover:border-brand-primary shadow-sm"
+            className="px-3.5 py-2.5 rounded-xl bg-[var(--bg-panel)] hover:bg-[var(--bg-card)] text-[var(--text-main)] text-xs font-mono font-bold border border-[var(--border-color)] flex items-center gap-2 transition-all hover:border-neon shadow-sm min-h-[44px]"
           >
-            <Smartphone className="w-4 h-4 text-brand-primary" />
+            <Smartphone className="w-4 h-4 text-neon" />
             <span>Ver Micro-Landing</span>
           </button>
 
@@ -170,11 +171,12 @@ export const PerformanceDashboard = () => {
             icon={Send}
             loading={isSendingSignal}
             onClick={handleEmitCapiTest}
+            className="min-h-[44px]"
           >
             Emitir CAPI Test Event
           </Button>
         </div>
-      </div>
+      </header>
 
       {/* Navigation Sub-Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-dark-border font-sans">
@@ -235,7 +237,7 @@ export const PerformanceDashboard = () => {
                     {activeTenant?.hasWebsite ? 'Sitio Web Oficial Sincronizado' : 'Ecosistema Directo a WhatsApp'}
                   </span>
                   <Badge variant={activeTenant?.hasWebsite ? 'info' : 'success'} size="xs">
-                    {activeTenant?.hasWebsite ? 'GA4 Measurement API ($0 USD)' : 'CAPI Messaging Only'}
+                    {activeTenant?.hasWebsite ? 'Google Analytics 4' : 'Atención Directa por WhatsApp'}
                   </Badge>
                 </div>
                 <p className="text-[var(--text-muted)] text-xs mt-0.5 font-sans">
@@ -248,15 +250,15 @@ export const PerformanceDashboard = () => {
                   >
                     {activeTenant?.websiteUrl || `app.vectorinside.com/m/${activeTenant?.id}`}
                   </a>{' '}
-                  • GA4 ID: <code className="text-white">{activeTenant?.ga4MeasurementId || 'N/A (Micro-Landing)'}</code>
+                  • ID de Medición: <code className="text-white">{activeTenant?.ga4MeasurementId || 'N/A (Micro-Landing)'}</code>
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-[10px] text-zinc-500">Pixel ID:</span>
+              <span className="text-[10px] text-zinc-500">Pixel de Meta:</span>
               <code className="text-white bg-dark-base px-2 py-1 rounded border border-dark-border text-[11px]">
-                {activeTenant?.metaPixelId || 'CAPI Server-Side'}
+                {activeTenant?.metaPixelId || 'Conectado Vía Servidor'}
               </code>
             </div>
           </div>
@@ -270,7 +272,7 @@ export const PerformanceDashboard = () => {
               change="+18.4%"
               isPositive={true}
               icon={Users}
-              badgeText="GA4 TRACKING"
+              badgeText="ANALÍTICA WEB"
               accentColor="blue"
             />
 
@@ -309,7 +311,7 @@ export const PerformanceDashboard = () => {
           </div>
 
           {/* ========================================================================= */}
-          {/* ALERTA ALGORÍTMICA DE FRICCIÓN WEB (ADR-001 & ADR-008)                   */}
+          {/* ALERTA ALGORÍTMICA DE FRICCIÓN WEB                                       */}
           {/* ========================================================================= */}
           {activeTenant?.frictionAlert && (
             <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-amber-950/40 via-dark-surface to-red-950/20 border-2 border-amber-500/50 shadow-[0_0_25px_rgba(245,158,11,0.15)] space-y-4 animate-fade-in">
@@ -321,10 +323,10 @@ export const PerformanceDashboard = () => {
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono">
-                        Alerta Algorítmica: Fricción en Sitio Web Detectada
+                        Alerta de Conversión: Oportunidad de Mejora en Sitio Web
                       </h3>
                       <span className="px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-mono text-[10px] font-bold">
-                        ADR-001 §2.6
+                        Optimización Web
                       </span>
                     </div>
                     <p className="text-xs text-amber-200/90 mt-0.5">
@@ -342,7 +344,7 @@ export const PerformanceDashboard = () => {
                 <div className="flex items-start gap-2 text-zinc-300">
                   <Lightbulb className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                   <span>
-                    <strong className="text-white">Diagnóstico Prescriptivo:</strong> Aumentar contraste del botón flotante de WhatsApp (Color Hex <code className="text-emerald-400 font-mono">#25D366</code>), verificar evento <code className="text-brand-primary font-mono">Contact_WhatsApp</code> en Meta Pixel y optimizar tiempo de carga en móvil (LCP &lt; 2.2s).
+                    <strong className="text-white">Diagnóstico Comercial:</strong> Aumentar el contraste del botón flotante de WhatsApp, asegurar que el enlace abra directamente la conversación en móvil y optimizar la velocidad de carga (menos de 2.2s).
                   </span>
                 </div>
                 <a
@@ -363,13 +365,13 @@ export const PerformanceDashboard = () => {
             <div className="flex items-center justify-between pb-3 border-b border-dark-border">
               <div>
                 <h3 className="text-base font-bold text-[var(--text-main)]">
-                  Embudo de Conversión Web Paso a Paso (Funnel Telemetry)
+                  Embudo de Conversión Web Paso a Paso
                 </h3>
                 <p className="text-xs text-[var(--text-muted)]">
                   Identificación exacta del punto de fuga de visitantes antes de iniciar el chat con el bot
                 </p>
               </div>
-              <Badge variant="neon" size="xs">GA4 Enhanced Measurement</Badge>
+              <Badge variant="neon" size="xs">Medición Web</Badge>
             </div>
 
             <div className="space-y-3 font-mono text-xs">
@@ -387,7 +389,7 @@ export const PerformanceDashboard = () => {
               {/* Step 2 */}
               <div>
                 <div className="flex items-center justify-between text-[11px] mb-1">
-                  <span className="text-zinc-300">2. Carga Completa del Sitio Web (Sesiones GA4)</span>
+                  <span className="text-zinc-300">2. Carga Completa del Sitio Web (Visitas)</span>
                   <span className="text-white font-bold">3,420 sesiones (71.2%)</span>
                 </div>
                 <div className="w-full h-3 rounded-full bg-dark-base overflow-hidden">
@@ -398,7 +400,7 @@ export const PerformanceDashboard = () => {
               {/* Step 3 */}
               <div>
                 <div className="flex items-center justify-between text-[11px] mb-1">
-                  <span className="text-zinc-300">3. Lectura de Propuesta / Scroll &gt; 50%</span>
+                  <span className="text-zinc-300">3. Lectura de Propuesta Comercial (Scroll &gt; 50%)</span>
                   <span className="text-white font-bold">2,188 usuarios (45.5%)</span>
                 </div>
                 <div className="w-full h-3 rounded-full bg-dark-base overflow-hidden">
@@ -411,7 +413,7 @@ export const PerformanceDashboard = () => {
                 <div className="flex items-center justify-between text-[11px] mb-1">
                   <span className="text-amber-300 font-bold flex items-center gap-1.5">
                     <AlertTriangle className="w-3.5 h-3.5" />
-                    4. Clic en Botón Flotante de WhatsApp (Punto de Fricción)
+                    4. Clic en Botón de WhatsApp (Punto de Fuga Principal)
                   </span>
                   <span className="text-amber-300 font-bold">48 clics (1.4% ⚠️ Fuga del 98.6%)</span>
                 </div>
@@ -423,7 +425,7 @@ export const PerformanceDashboard = () => {
               {/* Step 5 */}
               <div>
                 <div className="flex items-center justify-between text-[11px] mb-1">
-                  <span className="text-emerald-400 font-bold">5. Conversación Iniciada & Calificada por IA</span>
+                  <span className="text-emerald-400 font-bold">5. Conversaciones Iniciadas y Atendidas por IA</span>
                   <span className="text-emerald-400 font-bold">44 leads (91.6% de los que dieron clic)</span>
                 </div>
                 <div className="w-full h-3 rounded-full bg-dark-base overflow-hidden">
@@ -521,13 +523,13 @@ export const PerformanceDashboard = () => {
             />
 
             <StatCard
-              title="Meta CAPI Sync Rate"
+              title="Sincronización con Meta Ads"
               value={`${summary.capiSyncRate}%`}
-              subvalue="Event Quality: 9.8/10"
+              subvalue="Calidad de Registro: 9.8/10"
               change="+1.2%"
               isPositive={true}
               icon={ShieldCheck}
-              badgeText="SERVER-SIDE"
+              badgeText="EN TIEMPO REAL"
               accentColor="amber"
             />
           </div>
@@ -540,7 +542,7 @@ export const PerformanceDashboard = () => {
                   Curva de Atribución y Hook Rate
                 </h3>
                 <p className="text-xs text-[var(--text-muted)]">
-                  Ingresos atribuidos por el backend de Vector Inside vs Gasto Diario en Meta Ads
+                  Ingresos atribuidos por el sistema de Vector Inside vs Gasto Diario en Meta Ads
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -579,7 +581,7 @@ export const PerformanceDashboard = () => {
                   <Area
                     type="monotone"
                     dataKey="revenue"
-                    name="Ingreso Backend ($ USD)"
+                    name="Ingreso Atribuido ($ USD)"
                     stroke="#D4FF00"
                     strokeWidth={2.5}
                     fillOpacity={1}
@@ -588,7 +590,7 @@ export const PerformanceDashboard = () => {
                   <Area
                     type="monotone"
                     dataKey="spend"
-                    name="Gasto AdSet ($ USD)"
+                    name="Gasto Publicitario ($ USD)"
                     stroke="#3B82F6"
                     strokeWidth={2}
                     fillOpacity={1}
@@ -605,11 +607,11 @@ export const PerformanceDashboard = () => {
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 <h3 className="text-sm font-bold text-white uppercase font-mono tracking-wider">
-                  Server-Side CAPI Telemetry Stream
+                  Registro de Conversiones en Tiempo Real
                 </h3>
               </div>
               <span className="text-xs text-zinc-500 font-mono">
-                Handshake con Meta Conversions API
+                Conexión en Vivo con Meta Ads
               </span>
             </div>
 
@@ -617,11 +619,11 @@ export const PerformanceDashboard = () => {
               <table className="w-full text-left text-xs font-mono">
                 <thead>
                   <tr className="border-b border-dark-border text-zinc-500 uppercase text-[10px]">
-                    <th className="py-2.5 px-3">Evento CAPI</th>
-                    <th className="py-2.5 px-3">Timestamp</th>
-                    <th className="py-2.5 px-3">Valor Evento</th>
-                    <th className="py-2.5 px-3">Estado de Match</th>
-                    <th className="py-2.5 px-3">Fuente de Señal</th>
+                    <th className="py-2.5 px-3">Evento Comercial</th>
+                    <th className="py-2.5 px-3">Fecha y Hora</th>
+                    <th className="py-2.5 px-3">Valor Atribuido</th>
+                    <th className="py-2.5 px-3">Estado de Validación</th>
+                    <th className="py-2.5 px-3">Canal de Origen</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-dark-border/60 text-[var(--text-main)]">

@@ -656,7 +656,7 @@ export const ContentPlanner = () => {
                   Plantilla de ADN de Negocio (Brand DNA Canvas)
                 </h3>
                 <p className="text-xs text-[var(--text-muted)] font-mono">
-                  Single Source of Truth para la identidad, tono de voz y blindaje de la IA (ADR-002 §2.7)
+                  Directrices maestras de identidad, tono de voz y personalidad de la marca
                 </p>
               </div>
             </div>
@@ -791,7 +791,7 @@ export const ContentPlanner = () => {
                     Laboratorio de Deconstrucción & Replicación Viral (DeepSeek R1)
                   </h3>
                   <p className="text-xs text-[var(--text-muted)] font-mono">
-                    Análisis algorítmico de los reels que despegaron y generación de fórmulas replicables (ADR-004 §2.4)
+                    Análisis de los videos con mayor alcance y generación de fórmulas de contenido replicables
                   </p>
                 </div>
               </div>
@@ -883,7 +883,7 @@ export const ContentPlanner = () => {
                   Auditoría de Perfil Social: {profileAudit.handle}
                 </h3>
                 <p className="text-xs text-[var(--text-muted)] font-mono">
-                  Optimización de Biografía, Enlace en Bio y Conversión a WhatsApp (ADR-006 §3.9)
+                  Optimización de biografía, enlaces y conversión directa hacia WhatsApp
                 </p>
               </div>
             </div>

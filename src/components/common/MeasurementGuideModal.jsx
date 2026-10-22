@@ -158,7 +158,7 @@ export const MeasurementGuideModal = ({ isOpen, onClose, initialMetricId = null 
 
                 <div className="pt-2 border-t border-[var(--border-color)] flex items-center justify-between text-[11px] text-[var(--text-faint)]">
                   <span>Manual Operativo Vector Inside · Versión 1.0 (Octubre 2026)</span>
-                  <span className="font-mono">Normado en ADR-011</span>
+                  <span className="font-mono">Estándar Homologado de Medición</span>
                 </div>
               </>
             ) : (

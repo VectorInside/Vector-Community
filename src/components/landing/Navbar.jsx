@@ -127,28 +127,18 @@ export const Navbar = ({ onOpenTrial, lang = 'es', onToggleLang }) => {
             </button>
           </div>
 
-          {/* Mobile & Tablet Right Controls (< lg) */}
-          <div className="flex lg:hidden items-center gap-1.5 sm:gap-2">
+          {/* Mobile Right Controls (< lg) */}
+          <div className="flex lg:hidden items-center gap-2">
             {/* Mobile Language Switcher */}
             <button
               type="button"
               onClick={onToggleLang}
-              className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-xl bg-zinc-900 border border-white/10 text-[11px] font-mono font-bold text-neon hover:border-neon transition-colors"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-zinc-900 border border-white/10 text-[11px] font-mono font-bold text-neon hover:border-neon transition-colors"
               title="Cambiar Idioma / Switch Language"
               aria-label="Toggle language"
             >
               <Globe className="w-3 h-3 text-neon shrink-0" />
               <span>{lang.toUpperCase()}</span>
-            </button>
-
-            {/* Quick Tablet CTA */}
-            <button
-              type="button"
-              onClick={onOpenTrial}
-              className="hidden sm:inline-flex items-center gap-1 text-[11px] font-mono font-black bg-neon text-black px-3 py-1.5 rounded-xl hover:bg-[#d9f200] transition-all shadow-sm shrink-0"
-            >
-              <span>{t.startTrial}</span>
-              <ArrowRight className="w-3 h-3 shrink-0" />
             </button>
 
             {/* Hamburger Button */}

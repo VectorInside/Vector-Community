@@ -40,6 +40,8 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
   const toggleSidebarCollapse = () => {
     setIsSidebarCollapsed((prev) => {
       const next = !prev;
@@ -49,6 +51,9 @@ export const AuthProvider = ({ children }) => {
       return next;
     });
   };
+
+  const toggleMobileSidebar = () => setIsMobileSidebarOpen((prev) => !prev);
+  const closeMobileSidebar = () => setIsMobileSidebarOpen(false);
 
   // Sync theme with document class
   useEffect(() => {
@@ -79,7 +84,28 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const [tenantsData, setTenantsData] = useState(INITIAL_TENANTS_DATA);
+  const [tenantsData, setTenantsData] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('vector_tenants_data');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          // Merge to ensure default mock tenants have updated schema fields
+          return { ...INITIAL_TENANTS_DATA, ...parsed };
+        }
+      } catch (e) {}
+    }
+    return INITIAL_TENANTS_DATA;
+  });
+
+  // Keep localStorage synchronized
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('vector_tenants_data', JSON.stringify(tenantsData));
+      } catch (e) {}
+    }
+  }, [tenantsData]);
 
   const switchTenantContext = (tenantKey) => {
     if (tenantsData[tenantKey]) {
@@ -120,18 +146,64 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
-  const triggerModal = (title, bodyHtml, onAction = null, actionText = 'Confirmar Acción') => {
+  const toggleTenantMicroLanding = (tenantKey, newStatus, trialDays = 90) => {
+    setTenantsData((prev) => {
+      const target = prev[tenantKey];
+      if (!target) return prev;
+      const isEnabled = newStatus === 'trial' || newStatus === 'active';
+      return {
+        ...prev,
+        [tenantKey]: {
+          ...target,
+          microLandingEnabled: isEnabled,
+          microLandingStatus: newStatus,
+          microLandingTrialDaysLeft:
+            newStatus === 'trial'
+              ? (trialDays !== undefined ? trialDays : (target.microLandingTrialDaysLeft || 90))
+              : (target.microLandingTrialDaysLeft || 0),
+        },
+      };
+    });
+  };
+
+  const registerTenant = (newTenant) => {
+    setTenantsData((prev) => ({
+      ...prev,
+      [newTenant.id]: newTenant,
+    }));
+  };
+
+  const deleteTenant = (tenantId) => {
+    if (!tenantId) return;
+    setTenantsData((prev) => {
+      const updated = { ...prev };
+      delete updated[tenantId];
+      return updated;
+    });
+
+    // Si el tenant eliminado era el activo, cambiar automáticamente al primero disponible
+    setActiveTenantKey((currKey) => {
+      if (currKey === tenantId) {
+        const remainingKeys = Object.keys(tenantsData).filter((k) => k !== tenantId);
+        return remainingKeys[0] || 'dental';
+      }
+      return currKey;
+    });
+  };
+
+  const triggerModal = (title, bodyHtml, onAction = null, actionText = 'Confirmar Acción', variant = 'default') => {
     setModal({
       isOpen: true,
       title,
       bodyHtml,
       actionText,
       onAction,
+      variant,
     });
   };
 
   const closeModal = () => {
-    setModal((prev) => ({ ...prev, isOpen: false, onAction: null }));
+    setModal((prev) => ({ ...prev, isOpen: false, onAction: null, variant: 'default' }));
   };
 
   const executeModalAction = () => {
@@ -161,12 +233,18 @@ export const AuthProvider = ({ children }) => {
         switchTenantContext,
         toggleTenantAi,
         updateTenantPolicy,
+        toggleTenantMicroLanding,
+        registerTenant,
+        deleteTenant,
         modal,
         triggerModal,
         closeModal,
         executeModalAction,
         isSidebarCollapsed,
         toggleSidebarCollapse,
+        isMobileSidebarOpen,
+        toggleMobileSidebar,
+        closeMobileSidebar,
       }}
     >
       {children}

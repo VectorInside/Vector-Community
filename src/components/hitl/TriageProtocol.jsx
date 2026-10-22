@@ -77,7 +77,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
       email: 'ana.martinez@gmail.com',
       channel: 'WhatsApp Business API',
       leadState: LEAD_STATUS_ENUM.BILLABLE_LEAD,
-      status: 'Calificado / BILLABLE_LEAD',
+      status: 'Calificado (Listo para Venta)',
       statusType: 'success',
       avatar: '👩🏻',
       potentialTicket: '$28,000 MXN',
@@ -143,7 +143,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
         {
           id: 4,
           sender: 'Lobo Vectorial Sentinel',
-          text: '⚡ Transición a BILLABLE_LEAD: 4/4 Criterios validados. Despacho S2S Meta CAPI emitido & evento $350 MXN generado en ledger.',
+          text: '⚡ Prospecto Calificado: 4/4 Criterios completados. Evento de conversión sincronizado con Meta Ads y registrado en la cuenta.',
           isWarning: true,
           time: '11:44 AM',
         },
@@ -208,7 +208,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
       email: 'r.elizondo@logistica.com.mx',
       channel: 'LinkedIn B2B Ads / WhatsApp',
       leadState: LEAD_STATUS_ENUM.BILLABLE_LEAD,
-      status: 'Calificado / BILLABLE_LEAD',
+      status: 'Calificado (Listo para Venta)',
       statusType: 'b2b',
       avatar: '👔',
       potentialTicket: '$50,000 USD / Anual',
@@ -594,7 +594,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
       [leadKey]: {
         ...prev[leadKey],
         leadState: LEAD_STATUS_ENUM.BILLABLE_LEAD,
-        status: 'Calificado / BILLABLE_LEAD',
+        status: 'Calificado (Listo para Venta)',
         statusType: 'success',
         billingAmount: 350.0,
         billingStatus: 'PENDING_INVOICE',
@@ -864,7 +864,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
                 title="Inspeccionar Evento Meta CAPI"
               >
                 <Hash className="w-3 h-3 shrink-0" />
-                <span className="truncate">CAPI Hash</span>
+                <span className="truncate">Validación Meta</span>
               </button>
             )}
           </div>

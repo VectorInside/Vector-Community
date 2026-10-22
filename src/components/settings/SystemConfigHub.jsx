@@ -34,7 +34,7 @@ export const SystemConfigHub = ({ initialTab = 'rag', initialMode = 'list' }) =>
   }, [initialTab]);
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 block animate-fade-in space-y-6">
+    <div className="w-full p-4 sm:p-6 lg:p-8 block animate-fade-in space-y-6">
       {/* Header Contextual Homologado: Sin Selectores Duplicados */}
       {adminMode === 'wizard' ? (
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-[var(--border-color)] pb-4 gap-4">
@@ -53,7 +53,7 @@ export const SystemConfigHub = ({ initialTab = 'rag', initialMode = 'list' }) =>
               </div>
             </div>
             <p className="text-xs font-mono text-[var(--text-muted)] mt-1.5">
-              Configura los datos del negocio, asigna su giro comercial (16 verticales oficiales) e indexa los 4 pilares RAG con aislamiento RLS.
+              Configura los datos del negocio, asigna su giro comercial (16 verticales oficiales) e indexa la base de conocimiento con total privacidad por empresa.
             </p>
           </div>
 
@@ -89,7 +89,7 @@ export const SystemConfigHub = ({ initialTab = 'rag', initialMode = 'list' }) =>
             <div className="px-3.5 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-2.5 shadow-sm">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-xs font-mono text-[var(--text-muted)]">
-                <strong className="text-[var(--text-main)] font-bold">{Object.keys(tenantsData || {}).length} Tenants</strong> Aislados RLS
+                <strong className="text-[var(--text-main)] font-bold">{Object.keys(tenantsData || {}).length} Negocios</strong> Registrados
               </span>
             </div>
 
@@ -158,6 +158,7 @@ export const SystemConfigHub = ({ initialTab = 'rag', initialMode = 'list' }) =>
           <RAGWizard
             externalAdminViewMode={adminMode}
             onAdminViewModeChange={setAdminMode}
+            hideHeader={true}
           />
         )}
         {activeTab === 'subbots' && <SubBotsConfig />}

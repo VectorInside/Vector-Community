@@ -21,6 +21,7 @@ import {
   PanelLeftOpen,
   Shield,
   UserCheck,
+  X,
 } from 'lucide-react';
 import { VectorInsideLogo } from '@/components/common/VectorInsideLogo';
 import { getNavigationForRole } from '@/utils/modulesRegistry';
@@ -50,6 +51,8 @@ export const Sidebar = () => {
     switchRole,
     isSidebarCollapsed,
     toggleSidebarCollapse,
+    isMobileSidebarOpen,
+    closeMobileSidebar,
   } = useAuth();
 
   const [isGuideOpen, setIsGuideOpen] = useState(false);
@@ -58,11 +61,7 @@ export const Sidebar = () => {
 
   const handleRoleChange = (newRole) => {
     switchRole(newRole);
-    if (newRole === 'client') {
-      router.push('/results');
-    } else {
-      router.push('/dashboard');
-    }
+    router.push('/dashboard');
   };
 
   const isLinkActive = (mod) => {
@@ -73,25 +72,46 @@ export const Sidebar = () => {
 
   return (
     <>
-      <aside
-        className={`vector-bg-panel vector-border border-r flex flex-col h-screen z-20 shrink-0 select-none transition-all duration-300 ease-in-out overflow-x-hidden ${
-          isSidebarCollapsed ? 'w-20' : 'w-64'
+      {/* Mobile Backdrop Overlay */}
+      <div
+        className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
+          isMobileSidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
+        onClick={closeMobileSidebar}
+        aria-hidden="true"
+      />
+
+      <aside
+        className={`vector-bg-panel vector-border border-r flex flex-col h-screen select-none transition-all duration-300 ease-in-out overflow-x-hidden
+          fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw]
+          ${isMobileSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}
+          lg:static lg:translate-x-0 lg:z-20
+          ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-64'}
+        `}
       >
         {/* Brand Header */}
         {isSidebarCollapsed ? (
           <>
-            <div className="h-16 px-2 border-b border-[var(--border-color)] flex items-center justify-center shrink-0">
+            <div className="h-16 px-2 border-b border-[var(--border-color)] flex items-center justify-between lg:justify-center shrink-0">
               <Link
                 href="/dashboard"
+                onClick={closeMobileSidebar}
                 className="transition-transform hover:scale-110 flex items-center justify-center"
                 title="Vector Inside Community OS"
               >
                 <VectorInsideLogo variant="isotype" size="sm" />
               </Link>
+              <button
+                type="button"
+                onClick={closeMobileSidebar}
+                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] lg:hidden"
+                aria-label="Cerrar navegación"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            <div className="p-2 border-b border-[var(--border-color)] bg-[var(--bg-card)]/40 flex justify-center shrink-0">
+            <div className="p-2 border-b border-[var(--border-color)] bg-[var(--bg-card)]/40 hidden lg:flex justify-center shrink-0">
               <button
                 type="button"
                 onClick={toggleSidebarCollapse}
@@ -106,20 +126,31 @@ export const Sidebar = () => {
           <div className="h-16 px-3.5 border-b border-[var(--border-color)] flex items-center justify-between shrink-0 gap-2">
             <Link
               href="/dashboard"
+              onClick={closeMobileSidebar}
               className="transition-transform hover:scale-102 flex items-center min-w-0 overflow-hidden"
               title="Vector Inside Community OS"
             >
               <VectorInsideLogo variant="official" size="sm" showCommunity={true} />
             </Link>
 
-            <button
-              type="button"
-              onClick={toggleSidebarCollapse}
-              title="Minimizar barra de navegación"
-              className="p-1.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-lime-400 text-[var(--text-muted)] hover:text-lime-400 transition-all shrink-0 flex items-center justify-center"
-            >
-              <PanelLeftClose className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={toggleSidebarCollapse}
+                title="Minimizar barra de navegación"
+                className="hidden lg:flex p-1.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-lime-400 text-[var(--text-muted)] hover:text-lime-400 transition-all shrink-0 items-center justify-center"
+              >
+                <PanelLeftClose className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={closeMobileSidebar}
+                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] lg:hidden flex items-center justify-center"
+                aria-label="Cerrar navegación"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         )}
 
@@ -183,6 +214,7 @@ export const Sidebar = () => {
                   <Link
                     key={mod.id}
                     href={mod.path}
+                    onClick={closeMobileSidebar}
                     title={mod.label}
                     className={`w-full flex items-center rounded-xl transition-all relative ${
                       isSidebarCollapsed ? 'justify-center p-3' : 'gap-3 px-3 py-2.5'

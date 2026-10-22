@@ -1,10 +1,11 @@
-import api from './api';
+import api, { isBackendAvailable } from './api';
 import { INITIAL_TENANTS } from '@/utils/constants';
 import { INITIAL_VERTICAL_CONFIGS } from '@/utils/mockData';
 
 export const tenantService = {
   // Get all tenants
   async getTenants() {
+    if (!isBackendAvailable) return INITIAL_TENANTS;
     try {
       const response = await api.get('/tenants');
       return response.data;
@@ -16,6 +17,9 @@ export const tenantService = {
 
   // Get tenant by ID
   async getTenantById(id) {
+    if (!isBackendAvailable) {
+      return INITIAL_TENANTS.find((t) => t.id === id) || INITIAL_TENANTS[0];
+    }
     try {
       const response = await api.get(`/tenants/${id}`);
       return response.data;
@@ -27,6 +31,9 @@ export const tenantService = {
 
   // Get tenant vertical configuration
   async getVerticalConfig(tenantId) {
+    if (!isBackendAvailable) {
+      return INITIAL_VERTICAL_CONFIGS[tenantId] || INITIAL_VERTICAL_CONFIGS['tenant-mex-001'];
+    }
     try {
       const response = await api.get(`/tenants/${tenantId}/config`);
       return response.data;

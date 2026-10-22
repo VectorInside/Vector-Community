@@ -66,6 +66,12 @@ export const useSSE = (tenantId, onNewAlert) => {
   useEffect(() => {
     if (!tenantId) return;
 
+    // In frontend-only prototype/preview mode without backend, keep simulated SSE mode active
+    if (process.env.NEXT_PUBLIC_ENABLE_BACKEND !== 'true') {
+      setIsConnected(true);
+      return;
+    }
+
     const sseBaseUrl = process.env.NEXT_PUBLIC_SSE_URL || `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1'}/alerts/stream`;
     const fullUrl = `${sseBaseUrl}?tenantId=${tenantId}`;
 

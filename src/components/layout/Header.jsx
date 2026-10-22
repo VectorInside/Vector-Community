@@ -16,6 +16,7 @@ import {
   Moon,
   Bell,
   Sparkles,
+  Menu,
 } from 'lucide-react';
 import { findModuleByPath } from '@/utils/modulesRegistry';
 
@@ -31,6 +32,7 @@ export const Header = () => {
     tenantsData,
     theme,
     toggleTheme,
+    toggleMobileSidebar,
   } = useAuth();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -81,17 +83,28 @@ export const Header = () => {
   };
 
   return (
-    <header className="w-full bg-[var(--bg-panel)] border-b border-[var(--border-color)] px-4 sm:px-6 py-2.5 flex flex-col gap-1.5 z-40 shrink-0 select-none">
-      <div className="flex items-center justify-between gap-4">
-        {/* Left Section: Breadcrumb + Business Switcher */}
-        <div className="flex items-center gap-3 relative" ref={popoverRef}>
+    <header className="w-full bg-[var(--bg-panel)] border-b border-[var(--border-color)] px-3 sm:px-6 py-2.5 flex flex-col gap-1.5 z-40 shrink-0 select-none">
+      <div className="flex items-center justify-between gap-3 min-w-0">
+        {/* Left Section: Mobile Menu + Breadcrumb + Business Switcher */}
+        <div className="flex items-center gap-2 sm:gap-3 relative min-w-0" ref={popoverRef}>
+          {/* Mobile Hamburger Toggle */}
+          <button
+            type="button"
+            onClick={toggleMobileSidebar}
+            className="p-1.5 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] text-[var(--text-main)] hover:border-lime-400 lg:hidden flex items-center justify-center shrink-0 transition-colors"
+            aria-label="Abrir menú de navegación"
+            title="Abrir menú"
+          >
+            <Menu className="w-4 h-4" />
+          </button>
+
           {/* Dynamic Breadcrumb from UX/UI Taxonomy */}
-          <div className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] font-mono">
-            <span className="uppercase text-[10px] tracking-wider font-semibold">
+          <div className="hidden sm:flex items-center gap-1.5 text-xs text-[var(--text-muted)] font-mono min-w-0">
+            <span className="uppercase text-[10px] tracking-wider font-semibold truncate">
               {activeModule ? activeModule.pillarTitle : 'Operación'}
             </span>
             <span className="text-[var(--text-faint)]">/</span>
-            <span className="text-[var(--text-main)] font-bold font-sans">
+            <span className="text-[var(--text-main)] font-bold font-sans truncate">
               {activeModule ? activeModule.label : 'Centro de Mando'}
             </span>
           </div>
@@ -109,7 +122,7 @@ export const Header = () => {
                     ? 'border-lime-400 ring-1 ring-lime-400/40 shadow-sm text-[var(--text-main)]'
                     : 'border-[var(--border-color)] hover:border-lime-400 text-[var(--text-main)]'
                 }`}
-                title="Cambiar espacio de negocio (Aislamiento RLS)"
+                title="Cambiar espacio de negocio"
               >
                 <span className="text-sm leading-none">{activeTenant?.avatar || '🏢'}</span>
                 <span className="max-w-[120px] sm:max-w-[170px] truncate text-[var(--text-main)] font-semibold">
