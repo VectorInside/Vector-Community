@@ -291,34 +291,30 @@ export default function MicroLandingPage() {
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/30">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
               {activeTenantData?.microLandingStatus === 'suspended'
-                ? 'Servicio Pausado por Falta de Pago'
+                ? 'Página en Actualización Temporal'
                 : 'Micro-Landing Inactiva'}
             </span>
             <h1 className="text-xl font-bold text-white tracking-tight">
               {activeTenantData?.name || customData.name}
             </h1>
             <p className="text-xs text-white/60 leading-relaxed font-sans">
-              Esta micro-landing de captación y conversión se encuentra temporalmente deshabilitada desde el panel de control central.
+              Esta micro-landing de atención y captación se encuentra temporalmente en pausa por actualización de servicios.
             </p>
           </div>
 
           {/* Info Box */}
           <div className="p-4 rounded-2xl bg-black/40 border border-white/5 text-left space-y-2 text-xs font-mono">
             <div className="flex items-center justify-between text-white/40 text-[11px]">
-              <span>Cortesía 3 Meses:</span>
-              <span className="text-amber-400 font-bold">
-                {activeTenantData?.microLandingTrialDaysLeft > 0
-                  ? `${activeTenantData.microLandingTrialDaysLeft} días restantes`
-                  : 'Concluida (0 días)'}
-              </span>
+              <span>Estado del Servicio:</span>
+              <span className="text-amber-400 font-bold">En Pausa Temporal</span>
             </div>
             <div className="flex items-center justify-between text-white/40 text-[11px]">
-              <span>Costo Suscripción:</span>
-              <span className="text-white font-bold">$29 USD / mes</span>
+              <span>Canal de Atención:</span>
+              <span className="text-emerald-400 font-bold">WhatsApp Directo</span>
             </div>
             <div className="flex items-center justify-between text-white/40 text-[11px]">
-              <span>Estado en Panel:</span>
-              <span className="text-rose-400 font-bold">Inactiva (Bloqueo Admin)</span>
+              <span>Disponibilidad:</span>
+              <span className="text-white font-bold">Inmediata</span>
             </div>
           </div>
 
@@ -326,14 +322,14 @@ export default function MicroLandingPage() {
           <div className="space-y-3 pt-2">
             <a
               href={`https://wa.me/525588997711?text=${encodeURIComponent(
-                `Hola Vector Inside, soy el titular de "${activeTenantData?.name}" y deseo regularizar/reactivar mi servicio de Micro-Landing.`
+                `Hola Vector Inside, soy el titular de "${activeTenantData?.name}" y deseo información sobre los servicios.`
               )}`}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full py-3.5 px-4 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-black font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-500/10"
             >
               <MessageCircle className="w-4 h-4" />
-              <span>Reactivar Servicio vía WhatsApp</span>
+              <span>Contactar vía WhatsApp</span>
             </a>
 
             {activeTenantData?.websiteUrl && (

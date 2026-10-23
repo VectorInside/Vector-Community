@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { formatNumber } from '@/utils/formatters';
 import {
   Megaphone,
   Plus,
@@ -175,7 +176,7 @@ export const CampanasView = () => {
             Presupuesto Asignado
           </span>
           <p className="text-2xl font-heading font-black text-[var(--text-main)]">
-            ${totalBudget.toLocaleString()} <small className="text-xs font-mono text-[var(--text-faint)]">MXN</small>
+            ${formatNumber(totalBudget)} <small className="text-xs font-mono text-[var(--text-faint)]">MXN</small>
           </p>
           <span className="text-[10px] text-[var(--text-muted)] block">
             {campaigns.length} campañas configuradas
@@ -187,7 +188,7 @@ export const CampanasView = () => {
             Gasto Devengado
           </span>
           <p className="text-2xl font-heading font-black text-lime-400">
-            ${totalSpend.toLocaleString()} <small className="text-xs font-mono text-[var(--text-faint)]">MXN</small>
+            ${formatNumber(totalSpend)} <small className="text-xs font-mono text-[var(--text-faint)]">MXN</small>
           </p>
           <span className="text-[10px] text-[var(--text-muted)] block">
             {Math.round((totalSpend / totalBudget) * 100)}% del presupuesto ejecutado
@@ -302,11 +303,11 @@ export const CampanasView = () => {
               <div className="grid grid-cols-2 gap-2 text-xs font-mono pt-1">
                 <div>
                   <span className="text-[9px] text-[var(--text-faint)] block uppercase">Presupuesto</span>
-                  <span className="font-bold text-[var(--text-main)]">${camp.budget.toLocaleString()} MXN</span>
+                  <span className="font-bold text-[var(--text-main)]">${formatNumber(camp.budget)} MXN</span>
                 </div>
                 <div>
                   <span className="text-[9px] text-[var(--text-faint)] block uppercase">Gasto Real</span>
-                  <span className="font-bold text-lime-400">${camp.spend.toLocaleString()} MXN</span>
+                  <span className="font-bold text-lime-400">${formatNumber(camp.spend)} MXN</span>
                 </div>
               </div>
             </div>

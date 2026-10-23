@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }) => {
         setRole(savedRole);
       }
       const savedTenant = localStorage.getItem('vector_active_tenant_key');
-      if (savedTenant && INITIAL_TENANTS_DATA[savedTenant]) {
+      if (savedTenant) {
         setActiveTenantKey(savedTenant);
       }
       const savedCollapsed = localStorage.getItem('vector_sidebar_collapsed');
@@ -108,11 +108,9 @@ export const AuthProvider = ({ children }) => {
   }, [tenantsData]);
 
   const switchTenantContext = (tenantKey) => {
-    if (tenantsData[tenantKey]) {
-      setActiveTenantKey(tenantKey);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('vector_active_tenant_key', tenantKey);
-      }
+    setActiveTenantKey(tenantKey);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('vector_active_tenant_key', tenantKey);
     }
   };
 
@@ -166,11 +164,17 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
-  const registerTenant = (newTenant) => {
+  const registerTenant = (newTenant, makeActive = true) => {
     setTenantsData((prev) => ({
       ...prev,
       [newTenant.id]: newTenant,
     }));
+    if (makeActive && newTenant?.id) {
+      setActiveTenantKey(newTenant.id);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('vector_active_tenant_key', newTenant.id);
+      }
+    }
   };
 
   const deleteTenant = (tenantId) => {
@@ -213,7 +217,7 @@ export const AuthProvider = ({ children }) => {
     closeModal();
   };
 
-  const activeTenant = tenantsData[activeTenantKey] || tenantsData.dental;
+  const activeTenant = tenantsData[activeTenantKey] || Object.values(tenantsData)[0] || tenantsData.dental;
 
   const isAdmin = role === 'admin';
   const isClient = role === 'client';

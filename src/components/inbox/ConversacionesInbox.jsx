@@ -23,6 +23,7 @@ import {
   Plus,
 } from 'lucide-react';
 import { PreCitaDrawer } from '@/components/hitl/PreCitaDrawer';
+import { formatNumber } from '@/utils/formatters';
 import { MeasurementGuideModal } from '@/components/common/MeasurementGuideModal';
 
 const INITIAL_THREADS = [
@@ -578,7 +579,7 @@ export const ConversacionesInbox = () => {
                       Ticket Estimado
                     </span>
                     <span className="text-sm font-mono font-black text-lime-400">
-                      ${activeThread.potentialTicket.toLocaleString()} MXN
+                      ${formatNumber(activeThread.potentialTicket)} MXN
                     </span>
                   </div>
 

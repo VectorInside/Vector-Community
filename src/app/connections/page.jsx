@@ -7,8 +7,9 @@ import { SystemConfigHub } from '@/components/settings/SystemConfigHub';
 function ConnectionsContent() {
   const searchParams = useSearchParams();
   const mode = searchParams.get('mode') || 'list';
+  const tab = searchParams.get('tab') || 'rag';
 
-  return <SystemConfigHub initialTab="rag" initialMode={mode} />;
+  return <SystemConfigHub initialTab={tab} initialMode={mode} />;
 }
 
 export default function ConnectionsPage() {
