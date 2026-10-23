@@ -1,12 +1,14 @@
 import axios from 'axios';
 import { useTenantStore } from '@/hooks/useTenant';
 
+export const isBackendAvailable = process.env.NEXT_PUBLIC_ENABLE_BACKEND === 'true';
+
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1',
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000,
+  timeout: 5000,
 });
 
 api.interceptors.request.use((config) => {

@@ -84,7 +84,7 @@ export const BusinessPolicyEngine = () => {
             </h3>
           </div>
           <p className="text-xs font-mono text-[var(--text-muted)] mt-1.5">
-            Configuración global de umbrales para las 5 Reglas de Negocio Estrictas (ADR-001 al ADR-008) y Matriz de Precios Pay-Per-Lead.
+            Configuración de parámetros operativos, tiempos de respuesta y matriz de precios acordada por prospecto calificado.
           </p>
         </div>
 
@@ -402,12 +402,12 @@ export const BusinessPolicyEngine = () => {
             {isBillableLead ? (
               <>
                 <CheckCircle2 className="w-4 h-4 text-neon" />
-                <span>BILLABLE_LEAD (+$350 MXN)</span>
+                <span>Prospecto Calificado (+$350 MXN)</span>
               </>
             ) : (
               <>
                 <AlertTriangle className="w-4 h-4 text-[var(--text-muted)]" />
-                <span>NO FACTURABLE (Criterios Incompletos)</span>
+                <span>No Calificado (Criterios Incompletos)</span>
               </>
             )}
           </span>

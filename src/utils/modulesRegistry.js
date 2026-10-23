@@ -95,14 +95,14 @@ export const MODULE_PILLARS = [
         iconName: 'FlaskConical',
         description: 'Pruebas A/B de creativos, detección de fatiga y orquestación de agentes.',
         badgeKey: null,
-        adminOnly: false,
+        adminOnly: true,
       },
     ],
   },
   {
     id: 'administracion',
     label: 'ADMINISTRACIÓN',
-    adminOnly: true,
+    adminOnly: false,
     modules: [
       {
         id: 'profile',
@@ -112,7 +112,7 @@ export const MODULE_PILLARS = [
         iconName: 'Sparkles',
         description: 'Propuesta de valor, ADN de marca y objetivo de respuesta SLA.',
         badgeKey: null,
-        adminOnly: true,
+        adminOnly: false,
       },
       {
         id: 'connections',
@@ -184,9 +184,9 @@ export const MEASUREMENT_GUIDE_ITEMS = [
   },
   {
     id: 'lead_calificado',
-    title: 'Prospecto Calificado (BILLABLE_LEAD)',
-    formula: 'Verificación acumulativa de 4 requisitos: Identidad + Interés Producto + Dudas Resueltas + Cita/Contacto Aceptado.',
-    source: 'Máquina de Estados de Triaje (ADR-008)',
+    title: 'Prospecto Calificado (Lead Válido)',
+    formula: 'Verificación acumulativa de 4 requisitos: Identidad + Interés en Catálogo + Dudas Resueltas + Cita o Contacto Aceptado.',
+    source: 'Protocolo de Calificación y Triaje Vector',
     limitations: 'Requiere dictamen humano o cumplimiento booleano estricto; no califica consultas aisladas.',
     unit: 'Leads',
   },
@@ -253,10 +253,10 @@ export const MEASUREMENT_GUIDE_ITEMS = [
  */
 export const getNavigationForRole = (role) => {
   const isAdmin = role === 'admin';
-  return MODULE_PILLARS.filter((pillar) => !pillar.adminOnly || isAdmin).map((pillar) => ({
+  return MODULE_PILLARS.map((pillar) => ({
     ...pillar,
     modules: pillar.modules.filter((m) => !m.adminOnly || isAdmin),
-  }));
+  })).filter((pillar) => pillar.modules.length > 0 && (!pillar.adminOnly || isAdmin));
 };
 
 /**

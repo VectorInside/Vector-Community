@@ -76,14 +76,62 @@ export default function MicroLandingPage() {
   const params = useParams();
   const slug = params?.slug || 'dental';
 
-  // Base tenant data
-  const baseTenant =
-    INITIAL_TENANTS_DATA[slug] ||
-    Object.values(INITIAL_TENANTS_DATA).find(
-      (t) => t.id === slug || t.name.toLowerCase().includes(slug)
-    ) ||
-    INITIAL_TENANTS_DATA.dental;
+  // Active tenant data with local storage synchronization
+  const [activeTenantData, setActiveTenantData] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const savedTenants = localStorage.getItem('vector_tenants_data');
+        if (savedTenants) {
+          const parsed = JSON.parse(savedTenants);
+          const found =
+            parsed[slug] ||
+            Object.values(parsed).find(
+              (t) =>
+                t.id === slug ||
+                t.microLandingSlug === slug ||
+                (t.name && t.name.toLowerCase().includes(slug))
+            );
+          if (found) return found;
+        }
+      } catch (e) {}
+    }
+    return (
+      INITIAL_TENANTS_DATA[slug] ||
+      Object.values(INITIAL_TENANTS_DATA).find(
+        (t) =>
+          t.id === slug ||
+          t.microLandingSlug === slug ||
+          (t.name && t.name.toLowerCase().includes(slug))
+      ) ||
+      INITIAL_TENANTS_DATA.dental
+    );
+  });
 
+  useEffect(() => {
+    const checkTenantState = () => {
+      try {
+        const savedTenants = localStorage.getItem('vector_tenants_data');
+        if (savedTenants) {
+          const parsed = JSON.parse(savedTenants);
+          const found =
+            parsed[slug] ||
+            Object.values(parsed).find(
+              (t) =>
+                t.id === slug ||
+                t.microLandingSlug === slug ||
+                (t.name && t.name.toLowerCase().includes(slug))
+            );
+          if (found) setActiveTenantData(found);
+        }
+      } catch (e) {}
+    };
+
+    checkTenantState();
+    window.addEventListener('storage', checkTenantState);
+    return () => window.removeEventListener('storage', checkTenantState);
+  }, [slug]);
+
+  const baseTenant = activeTenantData;
   const baseTheme = TENANT_THEMES[baseTenant.id] || TENANT_THEMES.dental;
 
   // Real-time customizer state
@@ -221,6 +269,105 @@ export default function MicroLandingPage() {
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
     `${customData.name} ${customData.address}`
   )}`;
+
+  const isSuspendedOrDisabled =
+    activeTenantData?.microLandingEnabled === false ||
+    activeTenantData?.microLandingStatus === 'suspended' ||
+    activeTenantData?.microLandingStatus === 'disabled';
+
+  if (isSuspendedOrDisabled) {
+    return (
+      <div className="min-h-screen bg-[#07090D] text-white font-sans flex flex-col items-center justify-center selection:bg-[#D4FF00] selection:text-black antialiased relative px-4 py-12 overflow-x-hidden">
+        {/* Ambient Glow */}
+        <div className="fixed top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-amber-500/10 blur-[100px] pointer-events-none rounded-full" />
+
+        <div className="w-full max-w-md bg-[#0D1117] border border-amber-500/30 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl relative z-10 backdrop-blur-xl text-center">
+          {/* Avatar / Brand */}
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-3xl shadow-inner">
+            {activeTenantData?.avatar || '🏢'}
+          </div>
+
+          <div className="space-y-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+              {activeTenantData?.microLandingStatus === 'suspended'
+                ? 'Servicio Pausado por Falta de Pago'
+                : 'Micro-Landing Inactiva'}
+            </span>
+            <h1 className="text-xl font-bold text-white tracking-tight">
+              {activeTenantData?.name || customData.name}
+            </h1>
+            <p className="text-xs text-white/60 leading-relaxed font-sans">
+              Esta micro-landing de captación y conversión se encuentra temporalmente deshabilitada desde el panel de control central.
+            </p>
+          </div>
+
+          {/* Info Box */}
+          <div className="p-4 rounded-2xl bg-black/40 border border-white/5 text-left space-y-2 text-xs font-mono">
+            <div className="flex items-center justify-between text-white/40 text-[11px]">
+              <span>Cortesía 3 Meses:</span>
+              <span className="text-amber-400 font-bold">
+                {activeTenantData?.microLandingTrialDaysLeft > 0
+                  ? `${activeTenantData.microLandingTrialDaysLeft} días restantes`
+                  : 'Concluida (0 días)'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-white/40 text-[11px]">
+              <span>Costo Suscripción:</span>
+              <span className="text-white font-bold">$29 USD / mes</span>
+            </div>
+            <div className="flex items-center justify-between text-white/40 text-[11px]">
+              <span>Estado en Panel:</span>
+              <span className="text-rose-400 font-bold">Inactiva (Bloqueo Admin)</span>
+            </div>
+          </div>
+
+          {/* Action CTAs */}
+          <div className="space-y-3 pt-2">
+            <a
+              href={`https://wa.me/525588997711?text=${encodeURIComponent(
+                `Hola Vector Inside, soy el titular de "${activeTenantData?.name}" y deseo regularizar/reactivar mi servicio de Micro-Landing.`
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-3.5 px-4 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-black font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-500/10"
+            >
+              <MessageCircle className="w-4 h-4" />
+              <span>Reactivar Servicio vía WhatsApp</span>
+            </a>
+
+            {activeTenantData?.websiteUrl && (
+              <a
+                href={activeTenantData.websiteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-semibold text-xs flex items-center justify-center gap-2 transition-all"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Ir al Sitio Web Oficial</span>
+              </a>
+            )}
+
+            {activeTenantData?.phone && (
+              <a
+                href={`tel:${activeTenantData.phone}`}
+                className="w-full py-2.5 px-4 rounded-xl text-white/50 hover:text-white text-xs font-mono flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <Phone className="w-3.5 h-3.5" />
+                <span>Contacto directo: {activeTenantData.phone}</span>
+              </a>
+            )}
+          </div>
+
+          <div className="pt-2 border-t border-white/5">
+            <span className="text-[10px] text-white/30 font-mono">
+              Vector Inside • Plataforma de Adquisición & RAG
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#07090D] text-white font-sans flex flex-col items-center justify-start selection:bg-[#D4FF00] selection:text-black antialiased relative pb-24 overflow-x-hidden">

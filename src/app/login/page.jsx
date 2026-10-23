@@ -50,7 +50,7 @@ export default function LoginPage() {
     setAuthStage('Validando credenciales criptográficas...');
 
     setTimeout(() => {
-      setAuthStage('Sincronizando claves JWT & RLS de Tenant...');
+      setAuthStage('Cargando permisos y espacio de trabajo...');
     }, 400);
 
     setTimeout(() => {
@@ -63,12 +63,7 @@ export default function LoginPage() {
         });
       } catch (err) {}
 
-      const activeUser = DEMO_USERS.find((u) => u.id === selectedPersona);
-      if (activeUser?.role === USER_ROLES.CLIENT) {
-        router.push('/metrics');
-      } else {
-        router.push('/dashboard');
-      }
+      router.push('/dashboard');
     }, 850);
   };
 
@@ -288,15 +283,15 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Security & Cryptographic Footer Details */}
+          {/* Security & Access Details */}
           <div className="pt-3 border-t border-white/10 grid grid-cols-2 gap-2 text-[10px] font-mono text-zinc-400">
             <div className="flex items-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <span>Aislamiento RLS Activo</span>
+              <span>Conexión Segura & Privada</span>
             </div>
             <div className="flex items-center justify-end gap-1.5">
               <Server className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-              <span>PostgreSQL Cluster</span>
+              <span>Servidor en Línea</span>
             </div>
           </div>
         </div>

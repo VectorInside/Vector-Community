@@ -141,7 +141,7 @@ export const PreCitaDrawer = ({ isOpen, onClose, lead, onApproveAppointment, onO
               <div className="flex items-center gap-2">
                 <Flame className={`w-4 h-4 ${isBillable || approvedSuccess ? 'text-neon' : 'text-amber-500'}`} />
                 <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                  Estado: <strong className="text-zinc-900 dark:text-white">{approvedSuccess ? 'CITA APROBADA (BILLABLE_LEAD)' : lead.status}</strong>
+                  Estado: <strong className="text-zinc-900 dark:text-white">{approvedSuccess ? 'CITA APROBADA (PROSPECTO CALIFICADO)' : lead.status}</strong>
                 </span>
               </div>
               <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700">
@@ -256,7 +256,7 @@ export const PreCitaDrawer = ({ isOpen, onClose, lead, onApproveAppointment, onO
               <div className="flex items-center justify-between mb-3">
                 <span className="text-[11px] font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
                   <Lock className="w-3 h-3 text-neon" />
-                  Regla Booleana AND (4/4 Criterios BILLABLE_LEAD)
+                  Validación de Calidad (4/4 Criterios Cumplidos)
                 </span>
                 <span className="text-[10px] font-mono font-bold text-neon-text">
                   Valor: $350.00 MXN

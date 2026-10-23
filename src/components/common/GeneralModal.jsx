@@ -71,7 +71,11 @@ export const GeneralModal = () => {
                 <button
                   type="button"
                   onClick={executeModalAction}
-                  className="text-xs font-bold bg-neon text-black px-4 py-2 rounded-xl hover:bg-[var(--neon-hover)] transition-colors shadow-[0_0_15px_var(--neon-glow)] active:scale-95"
+                  className={`text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-md active:scale-95 ${
+                    modal.variant === 'danger'
+                      ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-[0_0_15px_rgba(244,63,94,0.4)]'
+                      : 'bg-neon text-black hover:bg-[var(--neon-hover)] shadow-[0_0_15px_var(--neon-glow)]'
+                  }`}
                 >
                   {modal.actionText || 'Confirmar'}
                 </button>

@@ -33,10 +33,10 @@ export const useTenant = () => {
   const tenants = useTenantStore((state) => state.tenants);
   const activeTenantId = useTenantStore((state) => state.activeTenantId);
   const setActiveTenantId = useTenantStore((state) => state.setActiveTenantId);
-  const getActiveTenant = useTenantStore((state) => state.getActiveTenant);
   const updateTenantHealth = useTenantStore((state) => state.updateTenantHealth);
-
-  const activeTenant = getActiveTenant();
+  const activeTenant = useTenantStore((state) =>
+    state.tenants.find((t) => t.id === state.activeTenantId) || state.tenants[0]
+  );
 
   return {
     tenants,

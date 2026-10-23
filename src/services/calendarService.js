@@ -1,9 +1,12 @@
-import api from './api';
+import api, { isBackendAvailable } from './api';
 import { INITIAL_CALENDAR_EVENTS } from '@/utils/mockData';
 
 export const calendarService = {
   // Get all appointments for the active tenant
   async getAppointments(tenantId) {
+    if (!isBackendAvailable) {
+      return INITIAL_CALENDAR_EVENTS.filter((e) => !tenantId || e.tenantId === tenantId);
+    }
     try {
       const response = await api.get('/appointments');
       return response.data;

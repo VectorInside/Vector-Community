@@ -215,7 +215,7 @@ export const OrchestrationView = () => {
         /* ========================================================================= */
         /* GRAFO PRINCIPAL DE ORQUESTACIÓN                                          */
         /* ========================================================================= */
-        <div className="flex flex-col items-center gap-6 py-4 max-w-6xl mx-auto">
+        <div className="flex flex-col items-center gap-6 py-4 w-full max-w-7xl 2xl:max-w-[96vw] mx-auto">
           {/* NODO 1: SUPERVISOR CENTRAL */}
           <div
             onClick={() => handleOpenInspector('supervisor')}
@@ -396,7 +396,7 @@ export const OrchestrationView = () => {
         /* ========================================================================= */
         /* VISTA MATRIZ DE FRECUENCIAS Y ESTRATEGIAS DE EFICIENCIA                    */
         /* ========================================================================= */
-        <div className="space-y-6 max-w-6xl mx-auto">
+        <div className="space-y-6 w-full max-w-7xl 2xl:max-w-[96vw] mx-auto">
           <div className="vector-bg-card vector-border rounded-2xl overflow-hidden p-6 space-y-4">
             <h3 className="text-lg font-heading font-black uppercase text-[var(--text-main)] flex items-center gap-2">
               <Clock className="w-5 h-5 text-neon" />
