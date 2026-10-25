@@ -1250,7 +1250,7 @@ export const MasterAgenda = () => {
                               className="p-1 rounded bg-[var(--bg-card)] hover:bg-blue-500/15 hover:text-blue-400 text-[var(--text-muted)] transition-colors"
                               title="Añadir a Google Calendar"
                             >
-                              <Calendar className="w-3 h-3" />
+                              <CalendarIcon className="w-3 h-3" />
                             </a>
 
                             <button
