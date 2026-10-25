@@ -37,7 +37,6 @@ import {
   Eye,
   Copy,
   Zap,
-  Bot,
   Layers,
   ShieldAlert,
 } from 'lucide-react';
@@ -210,25 +209,6 @@ export const PerfilMarcaView = () => {
     if (!tenantsData) return [];
     return Object.values(tenantsData);
   }, [tenantsData]);
-
-  // Simulación dinámica del mensaje de WhatsApp generado en vivo
-  const simulatedAiResponse = useMemo(() => {
-    const saludo =
-      toneOfVoice.toLowerCase().includes('enérgic') || toneOfVoice.toLowerCase().includes('motiv')
-        ? '¡Hola! Qué gusto saludarte con toda la energía 💪'
-        : toneOfVoice.toLowerCase().includes('hospital') || toneOfVoice.toLowerCase().includes('sofistic')
-        ? 'Buenas tardes, es un auténtico placer darte la bienvenida a nuestra mesa.'
-        : toneOfVoice.toLowerCase().includes('exclusiv') || toneOfVoice.toLowerCase().includes('formal')
-        ? 'Estimado cliente, reciba un cordial saludo de nuestro equipo de consultoría patrimonial.'
-        : '¡Hola! Es un placer saludarte y acompañarte en tu consulta.';
-
-    const oferta = offerHook ? ` Activa hoy tu beneficio especial: "${offerHook}".` : '';
-    const llamado = offerCta ? ` ${offerCta}` : ' ¿En qué fecha u horario te gustaría que te agendemos?';
-
-    return `${saludo} En ${activeTenant?.name || 'nuestro negocio'}, ${brandPurpose.slice(0, 140)}${
-      brandPurpose.length > 140 ? '...' : ''
-    }.${oferta}${llamado}`;
-  }, [activeTenant, brandPurpose, toneOfVoice, offerHook, offerCta]);
 
   return (
     <div className="w-full p-4 sm:p-6 lg:p-8 block animate-fade-in space-y-6 font-sans pb-28">
@@ -909,89 +889,15 @@ export const PerfilMarcaView = () => {
             </div>
           </div>
         </div>
-
         {/* =================================================================== */}
-        {/* SECCIÓN 6: SIMULADOR EN VIVO DE RESPUESTA DE IA EN WHATSAPP         */}
-        {/* =================================================================== */}
-        <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-4 shadow-sm">
-          <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
-            <div className="flex items-center gap-2">
-              <Bot className="w-4 h-4 text-neon" />
-              <h3 className="font-heading font-black text-sm text-[var(--text-main)] uppercase tracking-wide">
-                6. Simulador en Vivo de Respuesta de IA (WhatsApp)
-              </h3>
-            </div>
-            <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-bold">
-              Vista Previa en Tiempo Real
-            </span>
-          </div>
-
-          <div className="max-w-xl mx-auto rounded-2xl bg-[#0B141A] border border-[#222E35] overflow-hidden shadow-xl font-sans">
-            {/* Header de WhatsApp */}
-            <div className="bg-[#202C33] p-3 flex items-center justify-between text-white border-b border-[#2A3942]">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#111B21] border border-[#2A3942] flex items-center justify-center text-xl shrink-0">
-                  {customAvatar}
-                </div>
-                <div>
-                  <p className="font-bold text-sm text-[#E9EDEF] leading-tight">
-                    {activeTenant?.name}
-                  </p>
-                  <span className="text-[10px] text-[#8696A0] flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-                    En línea • IA Autónoma Vector
-                  </span>
-                </div>
-              </div>
-              <span className="text-[9px] font-mono text-[#00A884] bg-[#00A884]/15 px-2 py-0.5 rounded font-bold">
-                WhatsApp Cloud
-              </span>
-            </div>
-
-            {/* Cuerpo del Chat */}
-            <div className="p-4 space-y-3 bg-[#0B141A] text-xs">
-              {/* Mensaje del Prospecto */}
-              <div className="flex justify-start">
-                <div className="max-w-[80%] p-3 rounded-2xl rounded-tl-sm bg-[#202C33] text-[#E9EDEF] shadow-sm space-y-1">
-                  <p className="leading-relaxed">
-                    Hola buenas tardes, vi su anuncio en redes y me gustaría pedir informes de precios y cómo agendar.
-                  </p>
-                  <span className="text-[9px] text-[#8696A0] font-mono block text-right">
-                    12:04 p. m.
-                  </span>
-                </div>
-              </div>
-
-              {/* Mensaje generado por la IA en tiempo real */}
-              <div className="flex justify-end">
-                <div className="max-w-[85%] p-3 rounded-2xl rounded-tr-sm bg-[#005C4B] text-[#E9EDEF] shadow-sm space-y-1.5 border border-[#00A884]/30">
-                  <p className="leading-relaxed whitespace-pre-wrap">
-                    {simulatedAiResponse}
-                  </p>
-                  <div className="flex items-center justify-end gap-1 text-[9px] text-[#8696A0] font-mono">
-                    <span>12:04 p. m.</span>
-                    <Check className="w-3 h-3 text-[#53BDEB]" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Footer de WhatsApp */}
-            <div className="bg-[#202C33] px-3 py-2 text-[10px] text-[#8696A0] font-mono text-center border-t border-[#2A3942]">
-              SLA Configurado: Primera respuesta en menos de {slaTarget} minutos.
-            </div>
-          </div>
-        </div>
-
-        {/* =================================================================== */}
-        {/* SECCIÓN 7: CANALES OFICIALES CONECTADOS                             */}
+        {/* SECCIÓN 6: CANALES OFICIALES CONECTADOS                             */}
         {/* =================================================================== */}
         <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-3 shadow-sm">
           <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
             <div className="flex items-center gap-2">
               <Share2 className="w-4 h-4 text-neon" />
               <h3 className="font-heading font-black text-sm text-[var(--text-main)] uppercase tracking-wide">
-                7. Canales Oficiales del Negocio
+                6. Canales Oficiales del Negocio
               </h3>
             </div>
             <span className="text-[10px] font-mono text-[var(--text-muted)]">

@@ -35,6 +35,7 @@ import {
   CheckCheck,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { cleanConcept } from '@/utils/formatters';
 
 // Catálogo de Modelos LLM Soportados en Vector Inside (ADR-004)
 const AI_MODELS = [
@@ -190,10 +191,10 @@ export const SubBotsConfig = () => {
           systemPrompt: defaultPrompt,
           useCustomKeys: storedConfig?.useCustomKeys ?? false,
           apiKeys: {
-            deepseek: storedConfig?.apiKeys?.deepseek || '',
-            openai: storedConfig?.apiKeys?.openai || '',
-            anthropic: storedConfig?.apiKeys?.anthropic || '',
-            groq: storedConfig?.apiKeys?.groq || '',
+            deepseek: currentTenant?.apiKeys?.deepseek || storedConfig?.apiKeys?.deepseek || '',
+            openai: currentTenant?.apiKeys?.openai || storedConfig?.apiKeys?.openai || '',
+            anthropic: currentTenant?.apiKeys?.anthropic || storedConfig?.apiKeys?.anthropic || '',
+            groq: currentTenant?.apiKeys?.groq || storedConfig?.apiKeys?.groq || '',
           },
           calendar: {
             googleCalendarId: googleCalId,
@@ -265,7 +266,7 @@ export const SubBotsConfig = () => {
         activeModel: config.activeModel,
         temperature: config.temperature,
         systemPrompt: config.systemPrompt,
-        useCustomKeys: config.useCustomKeys,
+        useCustomKeys: Object.values(config.apiKeys || {}).some((k) => k && k.trim().length > 0),
         apiKeys: config.apiKeys,
         service_appointments: {
           googleCalendarId: config.calendar.googleCalendarId,
@@ -282,6 +283,7 @@ export const SubBotsConfig = () => {
           activeModel: config.activeModel,
           temperature: config.temperature,
           systemPrompt: config.systemPrompt,
+          apiKeys: config.apiKeys,
           calendarConfig: {
             ...currentTenant.calendarConfig,
             slotDurationMin: config.calendar.slotDurationMin,
@@ -757,9 +759,9 @@ export const SubBotsConfig = () => {
             </div>
           </div>
 
-          {/* MÓDULO 5: GESTOR DE API KEYS & PROVEEDORES (BYOK vs PLATAFORMA) */}
+          {/* MÓDULO 5: GESTOR DE API KEYS & PROVEEDORES POR NEGOCIO */}
           <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-5">
-            <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border-color)] pb-3">
               <div className="flex items-center gap-2">
                 <Key className="w-4 h-4 text-neon" />
                 <div>
@@ -767,60 +769,39 @@ export const SubBotsConfig = () => {
                     5. Proveedores de IA & Credenciales (API Keys)
                   </h3>
                   <p className="text-[11px] text-[var(--text-muted)] font-mono">
-                    Usa la API oficial de Vector Inside o ingresa tus propias llaves (BYOK)
+                    Configura las claves individuales de este negocio o usa la infraestructura oficial
                   </p>
                 </div>
               </div>
 
-              {/* Toggle de Modo BYOK */}
+              {/* Indicador de Estado Multi-tenant */}
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono text-[var(--text-muted)]">
-                  {config?.useCustomKeys ? 'BYOK (Llaves Propias)' : 'Oficial (Gestionada)'}
+                <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-neon/10 text-neon border border-neon/30 flex items-center gap-1.5 font-bold">
+                  <ShieldCheck className="w-3.5 h-3.5 text-neon" />
+                  {Object.values(config?.apiKeys || {}).some((k) => k && k.trim().length > 0)
+                    ? `${Object.values(config?.apiKeys || {}).filter((k) => k && k.trim().length > 0).length} Llaves Propias Asignadas`
+                    : 'Cuota Oficial Vector Inside'}
                 </span>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setConfig((prev) => ({ ...prev, useCustomKeys: !prev?.useCustomKeys }))
-                  }
-                  className={`w-10 h-5 rounded-full p-0.5 transition-colors duration-200 ease-in-out focus:outline-none ${
-                    config?.useCustomKeys ? 'bg-neon' : 'bg-[var(--border-color)]'
-                  }`}
-                >
-                  <div
-                    className={`w-4 h-4 rounded-full bg-black transition-transform duration-200 ease-in-out ${
-                      config?.useCustomKeys ? 'translate-x-5' : 'translate-x-0'
-                    }`}
-                  />
-                </button>
               </div>
             </div>
 
-            {/* Banner explicativo del modo activo */}
-            {!config?.useCustomKeys ? (
-              <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-300">
-                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />
-                  <span>
-                    <strong>Infraestructura Oficial Activa:</strong> No necesitas configurar API Keys. Vector Inside provee y gestiona el consumo de DeepSeek y Groq automáticamente.
-                  </span>
+            {/* Banner explicativo de aislamiento multi-tenant */}
+            <div className="p-3.5 rounded-xl bg-gradient-to-r from-[var(--bg-base)] to-[var(--bg-card)] border border-[var(--border-color)] text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-neon/10 border border-neon/30 flex items-center justify-center shrink-0 mt-0.5">
+                  <Key className="w-4 h-4 text-neon" />
                 </div>
-                <span className="text-[10px] font-mono font-bold bg-emerald-500/20 px-2 py-0.5 rounded text-emerald-500 shrink-0">
-                  Plug & Play
-                </span>
-              </div>
-            ) : (
-              <div className="p-3.5 rounded-xl bg-neon/10 border border-neon/30 text-xs flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2 text-neon">
-                  <Key className="w-4 h-4 shrink-0" />
-                  <span>
-                    <strong>Modo BYOK Habilitado:</strong> Los costos y llamadas a la API se debitarán directamente de tus cuentas en cada proveedor.
-                  </span>
+                <div className="space-y-0.5">
+                  <p className="text-[var(--text-main)] font-semibold text-xs">
+                    Credenciales asignadas a <span className="text-neon">{currentTenant?.name}</span>
+                  </p>
+                  <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
+                    Cada negocio puede tener sus propias API Keys. Si introduces la clave aquí, se guardará y facturará exclusivamente para este negocio.
+                    <strong className="text-[var(--text-main)]"> Si dejas un campo en blanco</strong>, el bot utilizará de inmediato la API oficial gestionada por Vector Inside.
+                  </p>
                 </div>
-                <span className="text-[10px] font-mono font-bold bg-neon/20 px-2 py-0.5 rounded text-neon shrink-0">
-                  BYOK Activo
-                </span>
               </div>
-            )}
+            </div>
 
             {/* Listado de Proveedores con Campos de API Key y Botón de Ping */}
             <div className="space-y-4">
@@ -831,9 +812,15 @@ export const SubBotsConfig = () => {
                     <span className="text-xs font-bold text-[var(--text-main)] font-mono">
                       DeepSeek API Key
                     </span>
-                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-neon/15 text-neon font-bold">
-                      Oficial
-                    </span>
+                    {config?.apiKeys?.deepseek?.trim() ? (
+                      <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30 flex items-center gap-1">
+                        <Check className="w-2.5 h-2.5" /> Clave de {currentTenant?.name}
+                      </span>
+                    ) : (
+                      <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-neon/15 text-neon font-bold border border-neon/30">
+                        Pool Vector Inside (Oficial)
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2 text-[10px] font-mono">
                     {pingStatus.deepseek.result === 'connected' && (
@@ -856,8 +843,7 @@ export const SubBotsConfig = () => {
                 <div className="relative">
                   <input
                     type={showKeys.deepseek ? 'text' : 'password'}
-                    placeholder={config?.useCustomKeys ? 'sk-••••••••••••••••••••••••••••••••' : 'Gestionada por la Plataforma (Predeterminada)'}
-                    disabled={!config?.useCustomKeys}
+                    placeholder="sk-•••••••••••••••••••••••••••••••• (Opcional: o deja vacío para usar Vector Inside)"
                     value={config?.apiKeys?.deepseek || ''}
                     onChange={(e) =>
                       setConfig({
@@ -865,20 +851,28 @@ export const SubBotsConfig = () => {
                         apiKeys: { ...config?.apiKeys, deepseek: e.target.value },
                       })
                     }
-                    className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl px-3.5 py-2 pr-10 text-xs text-[var(--text-main)] font-mono focus:border-neon focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl px-3.5 py-2 pr-10 text-xs text-[var(--text-main)] font-mono focus:border-neon focus:outline-none"
                   />
-                  {config?.useCustomKeys && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowKeys((prev) => ({ ...prev, deepseek: !prev.deepseek }))
-                      }
-                      className="absolute right-3 top-2.5 text-[var(--text-muted)] hover:text-[var(--text-main)]"
-                    >
-                      {showKeys.deepseek ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowKeys((prev) => ({ ...prev, deepseek: !prev.deepseek }))
+                    }
+                    className="absolute right-3 top-2.5 text-[var(--text-muted)] hover:text-[var(--text-main)]"
+                    title={showKeys.deepseek ? 'Ocultar clave' : 'Mostrar clave'}
+                  >
+                    {showKeys.deepseek ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
                 </div>
+                <p className="text-[10px] font-mono text-[var(--text-muted)]">
+                  {config?.apiKeys?.deepseek?.trim() ? (
+                    <span className="text-emerald-400 flex items-center gap-1">
+                      <Check className="w-3 h-3" /> Las llamadas a DeepSeek se facturarán y debitarán directamente de esta cuenta.
+                    </span>
+                  ) : (
+                    '💡 Campo vacío: Este negocio utiliza la infraestructura y cuota predeterminada de Vector Inside.'
+                  )}
+                </p>
               </div>
 
               {/* 2. OPENAI API KEY */}
@@ -888,9 +882,15 @@ export const SubBotsConfig = () => {
                     <span className="text-xs font-bold text-[var(--text-main)] font-mono">
                       OpenAI API Key (GPT-4o)
                     </span>
-                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 font-bold">
-                      Opcional
-                    </span>
+                    {config?.apiKeys?.openai?.trim() ? (
+                      <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30 flex items-center gap-1">
+                        <Check className="w-2.5 h-2.5" /> Clave de {currentTenant?.name}
+                      </span>
+                    ) : (
+                      <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-blue-500/15 text-blue-400 font-bold border border-blue-500/30">
+                        Opcional
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2 text-[10px] font-mono">
                     {pingStatus.openai.result === 'connected' && (
@@ -901,8 +901,8 @@ export const SubBotsConfig = () => {
                     <button
                       type="button"
                       onClick={() => handlePingTest('openai')}
-                      disabled={pingStatus.openai.loading || !config?.apiKeys?.openai}
-                      className="px-2 py-1 rounded bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-blue-400 text-[var(--text-muted)] hover:text-blue-400 text-[10px] font-bold transition-all flex items-center gap-1 disabled:opacity-50"
+                      disabled={pingStatus.openai.loading}
+                      className="px-2 py-1 rounded bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-blue-400 text-[var(--text-muted)] hover:text-blue-400 text-[10px] font-bold transition-all flex items-center gap-1"
                     >
                       <Zap className="w-3 h-3 text-blue-400" />
                       <span>{pingStatus.openai.loading ? 'Probando...' : 'Test Ping'}</span>
@@ -913,7 +913,7 @@ export const SubBotsConfig = () => {
                 <div className="relative">
                   <input
                     type={showKeys.openai ? 'text' : 'password'}
-                    placeholder="sk-proj-••••••••••••••••••••••••••••••••"
+                    placeholder="sk-proj-•••••••••••••••••••••••••••••••• (Opcional: ingresa clave de este negocio)"
                     value={config?.apiKeys?.openai || ''}
                     onChange={(e) =>
                       setConfig({
@@ -929,10 +929,20 @@ export const SubBotsConfig = () => {
                       setShowKeys((prev) => ({ ...prev, openai: !prev.openai }))
                     }
                     className="absolute right-3 top-2.5 text-[var(--text-muted)] hover:text-[var(--text-main)]"
+                    title={showKeys.openai ? 'Ocultar clave' : 'Mostrar clave'}
                   >
                     {showKeys.openai ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
                 </div>
+                <p className="text-[10px] font-mono text-[var(--text-muted)]">
+                  {config?.apiKeys?.openai?.trim() ? (
+                    <span className="text-emerald-400 flex items-center gap-1">
+                      <Check className="w-3 h-3" /> Clave configurada. Las consultas a GPT-4o se enrutarán a tu cuenta OpenAI.
+                    </span>
+                  ) : (
+                    '💡 Opcional: Si este negocio no requiere GPT-4o, puedes dejar este campo en blanco.'
+                  )}
+                </p>
               </div>
 
               {/* 3. ANTHROPIC CLAUDE API KEY */}
@@ -942,9 +952,15 @@ export const SubBotsConfig = () => {
                     <span className="text-xs font-bold text-[var(--text-main)] font-mono">
                       Anthropic Claude API Key
                     </span>
-                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-400 font-bold">
-                      Opcional
-                    </span>
+                    {config?.apiKeys?.anthropic?.trim() ? (
+                      <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30 flex items-center gap-1">
+                        <Check className="w-2.5 h-2.5" /> Clave de {currentTenant?.name}
+                      </span>
+                    ) : (
+                      <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-purple-500/15 text-purple-400 font-bold border border-purple-500/30">
+                        Opcional
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2 text-[10px] font-mono">
                     {pingStatus.anthropic.result === 'connected' && (
@@ -955,8 +971,8 @@ export const SubBotsConfig = () => {
                     <button
                       type="button"
                       onClick={() => handlePingTest('anthropic')}
-                      disabled={pingStatus.anthropic.loading || !config?.apiKeys?.anthropic}
-                      className="px-2 py-1 rounded bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-purple-400 text-[var(--text-muted)] hover:text-purple-400 text-[10px] font-bold transition-all flex items-center gap-1 disabled:opacity-50"
+                      disabled={pingStatus.anthropic.loading}
+                      className="px-2 py-1 rounded bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-purple-400 text-[var(--text-muted)] hover:text-purple-400 text-[10px] font-bold transition-all flex items-center gap-1"
                     >
                       <Zap className="w-3 h-3 text-purple-400" />
                       <span>{pingStatus.anthropic.loading ? 'Probando...' : 'Test Ping'}</span>
@@ -967,7 +983,7 @@ export const SubBotsConfig = () => {
                 <div className="relative">
                   <input
                     type={showKeys.anthropic ? 'text' : 'password'}
-                    placeholder="sk-ant-••••••••••••••••••••••••••••••••"
+                    placeholder="sk-ant-•••••••••••••••••••••••••••••••• (Opcional: ingresa clave de este negocio)"
                     value={config?.apiKeys?.anthropic || ''}
                     onChange={(e) =>
                       setConfig({
@@ -983,10 +999,20 @@ export const SubBotsConfig = () => {
                       setShowKeys((prev) => ({ ...prev, anthropic: !prev.anthropic }))
                     }
                     className="absolute right-3 top-2.5 text-[var(--text-muted)] hover:text-[var(--text-main)]"
+                    title={showKeys.anthropic ? 'Ocultar clave' : 'Mostrar clave'}
                   >
                     {showKeys.anthropic ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
                 </div>
+                <p className="text-[10px] font-mono text-[var(--text-muted)]">
+                  {config?.apiKeys?.anthropic?.trim() ? (
+                    <span className="text-emerald-400 flex items-center gap-1">
+                      <Check className="w-3 h-3" /> Clave configurada. Las consultas a Claude 3.5 se debitarán de tu cuenta Anthropic.
+                    </span>
+                  ) : (
+                    '💡 Opcional: Déjalo en blanco si este bot utiliza DeepSeek o Groq como motor principal.'
+                  )}
+                </p>
               </div>
 
               {/* 4. GROQ CLOUD API KEY */}
@@ -996,9 +1022,15 @@ export const SubBotsConfig = () => {
                     <span className="text-xs font-bold text-[var(--text-main)] font-mono">
                       Groq Cloud API Key (Llama 3 70B)
                     </span>
-                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 font-bold">
-                      $0 Cost
-                    </span>
+                    {config?.apiKeys?.groq?.trim() ? (
+                      <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30 flex items-center gap-1">
+                        <Check className="w-2.5 h-2.5" /> Clave de {currentTenant?.name}
+                      </span>
+                    ) : (
+                      <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-blue-500/15 text-blue-400 font-bold border border-blue-500/30">
+                        Pool Vector Inside ($0 Cost)
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2 text-[10px] font-mono">
                     {pingStatus.groq.result === 'connected' && (
@@ -1021,8 +1053,7 @@ export const SubBotsConfig = () => {
                 <div className="relative">
                   <input
                     type={showKeys.groq ? 'text' : 'password'}
-                    placeholder={config?.useCustomKeys ? 'gsk_••••••••••••••••••••••••••••••••' : 'Gestionada por la Plataforma (Predeterminada)'}
-                    disabled={!config?.useCustomKeys}
+                    placeholder="gsk_•••••••••••••••••••••••••••••••• (Opcional: o en blanco para cuota Vector Inside)"
                     value={config?.apiKeys?.groq || ''}
                     onChange={(e) =>
                       setConfig({
@@ -1030,20 +1061,28 @@ export const SubBotsConfig = () => {
                         apiKeys: { ...config?.apiKeys, groq: e.target.value },
                       })
                     }
-                    className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl px-3.5 py-2 pr-10 text-xs text-[var(--text-main)] font-mono focus:border-neon focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl px-3.5 py-2 pr-10 text-xs text-[var(--text-main)] font-mono focus:border-neon focus:outline-none"
                   />
-                  {config?.useCustomKeys && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowKeys((prev) => ({ ...prev, groq: !prev.groq }))
-                      }
-                      className="absolute right-3 top-2.5 text-[var(--text-muted)] hover:text-[var(--text-main)]"
-                    >
-                      {showKeys.groq ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowKeys((prev) => ({ ...prev, groq: !prev.groq }))
+                    }
+                    className="absolute right-3 top-2.5 text-[var(--text-muted)] hover:text-[var(--text-main)]"
+                    title={showKeys.groq ? 'Ocultar clave' : 'Mostrar clave'}
+                  >
+                    {showKeys.groq ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
                 </div>
+                <p className="text-[10px] font-mono text-[var(--text-muted)]">
+                  {config?.apiKeys?.groq?.trim() ? (
+                    <span className="text-emerald-400 flex items-center gap-1">
+                      <Check className="w-3 h-3" /> Clave personalizada activa. Inferencia Llama ultra veloz en tu cuenta Groq.
+                    </span>
+                  ) : (
+                    '💡 Campo vacío: Groq LPU gestionado por el pool de alta velocidad de Vector Inside.'
+                  )}
+                </p>
               </div>
             </div>
 
@@ -1106,7 +1145,7 @@ export const SubBotsConfig = () => {
               >
                 {msg.toolCalled && (
                   <span className="text-[9px] font-mono text-neon/80 bg-black/40 px-2 py-0.5 rounded-md mb-1 border border-neon/20">
-                    ⚡ Tool: {msg.toolCalled}
+                    ⚡ Acción: {cleanConcept(msg.toolCalled)}
                   </span>
                 )}
                 <div

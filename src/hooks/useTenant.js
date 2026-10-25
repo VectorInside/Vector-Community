@@ -1,15 +1,24 @@
 import { create } from 'zustand';
 import { INITIAL_TENANTS } from '@/utils/constants';
 
+const getInitialTenantId = () => {
+  if (typeof window !== 'undefined') {
+    const key = localStorage.getItem('vector_active_tenant_key') || localStorage.getItem('vector_active_tenant_id');
+    if (key) return key;
+  }
+  return 'dental';
+};
+
 export const useTenantStore = create((set, get) => ({
   tenants: INITIAL_TENANTS,
-  activeTenantId: 'tenant-mex-001',
+  activeTenantId: getInitialTenantId(),
   isLoading: false,
 
   setActiveTenantId: (tenantId) => {
     set({ activeTenantId: tenantId });
     if (typeof window !== 'undefined') {
       localStorage.setItem('vector_active_tenant_id', tenantId);
+      localStorage.setItem('vector_active_tenant_key', tenantId);
     }
   },
 

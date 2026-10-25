@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import {
   MessageSquareWarning,
@@ -43,6 +43,9 @@ import {
   Search,
   Minimize2,
   Maximize2,
+  Reply,
+  CornerDownRight,
+  Radio,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import {
@@ -53,6 +56,497 @@ import {
 import { REENGAGEMENT_QUEUE_MOCK } from '@/utils/mockData';
 import { PreCitaDrawer } from './PreCitaDrawer';
 import { Portal } from '@/components/common/Portal';
+import { cleanConcept } from '@/utils/formatters';
+
+// Multi-tenant canonical matrices for Meta stream & 24h re-engagement
+const CANONICAL_META_POSTS_BY_TENANT = {
+  dental: [
+    {
+      id: 'post-dent-01',
+      platform: 'instagram',
+      type: 'Reel',
+      title: '3 Secretos para Cuidar tu Sonrisa y Evitar Cirugías Costosas ✨',
+      date: 'Publicado hace 3 horas',
+      reach: '14,820 reproducciones',
+      hookRate: '48.2%',
+      commentsCount: 38,
+      dmsTriggered: 19,
+      sentiment: '94% Positivo',
+    },
+    {
+      id: 'post-dent-02',
+      platform: 'instagram',
+      type: 'Carrusel',
+      title: 'Caso de Éxito: Alineación Invisible en solo 6 meses 🦷',
+      date: 'Publicado ayer',
+      reach: '9,410 visualizaciones',
+      hookRate: '41.5%',
+      commentsCount: 24,
+      dmsTriggered: 14,
+      sentiment: '98% Positivo',
+    },
+  ],
+  polanco: [
+    {
+      id: 'post-pol-01',
+      platform: 'instagram',
+      type: 'Reel',
+      title: 'El Corte Tomahawk Flameado en Mesa que Conquistó Polanco 🔥🥩',
+      date: 'Publicado hace 2 horas',
+      reach: '22,400 reproducciones',
+      hookRate: '52.1%',
+      commentsCount: 56,
+      dmsTriggered: 31,
+      sentiment: '97% Positivo',
+    },
+    {
+      id: 'post-pol-02',
+      platform: 'instagram',
+      type: 'Carrusel',
+      title: 'Noches de Terraza VIP & Coctelería de Autor bajo las Estrellas 🍸✨',
+      date: 'Publicado ayer',
+      reach: '12,300 visualizaciones',
+      hookRate: '45.0%',
+      commentsCount: 29,
+      dmsTriggered: 18,
+      sentiment: '96% Positivo',
+    },
+  ],
+  urban: [
+    {
+      id: 'post-urb-01',
+      platform: 'instagram',
+      type: 'Reel',
+      title: 'DROP EXCLUSIVO: Cyberpunk Sneaker Collection 👟⚡ Solo 50 pares en México',
+      date: 'Publicado hace 1 hora',
+      reach: '38,900 reproducciones',
+      hookRate: '58.4%',
+      commentsCount: 92,
+      dmsTriggered: 64,
+      sentiment: '95% Positivo',
+    },
+    {
+      id: 'post-urb-02',
+      platform: 'instagram',
+      type: 'Carrusel',
+      title: 'Lookbook Otoño/Invierno: Hoodies Oversize & Pantalones Cargo Reflectivos 🖤',
+      date: 'Publicado ayer',
+      reach: '19,100 visualizaciones',
+      hookRate: '49.8%',
+      commentsCount: 41,
+      dmsTriggered: 27,
+      sentiment: '93% Positivo',
+    },
+  ],
+  corp: [
+    {
+      id: 'post-corp-01',
+      platform: 'instagram',
+      type: 'Reel',
+      title: 'Cómo Reducir 70% el Costo de Adquisición B2B con IA y CAPI Server-to-Server 📊🤖',
+      date: 'Publicado hace 4 horas',
+      reach: '11,200 reproducciones',
+      hookRate: '44.3%',
+      commentsCount: 22,
+      dmsTriggered: 16,
+      sentiment: '98% Positivo',
+    },
+    {
+      id: 'post-corp-02',
+      platform: 'instagram',
+      type: 'Carrusel',
+      title: 'Arquitectura Multi-Tenant Vector: Aislamiento Criptográfico y Cero Fuga de Leads 🛡️',
+      date: 'Publicado ayer',
+      reach: '8,700 visualizaciones',
+      hookRate: '42.0%',
+      commentsCount: 18,
+      dmsTriggered: 11,
+      sentiment: '99% Positivo',
+    },
+  ],
+};
+
+const CANONICAL_META_COMMENTS_BY_TENANT = {
+  dental: [
+    {
+      id: 'comm-dent-01',
+      author: '@carlos_garcia92',
+      postRef: 'Reel: 3 Secretos para Cuidar tu Sonrisa',
+      text: '¿Cuánto cuesta la primera consulta de valoración?',
+      intent: 'Pregunta de Precio / Cita',
+      aiAction: 'Auto-DM Enviado con Oferta Activa ("Diagnóstico 3D Gratis")',
+      sentiment: 'Conversión Directa',
+      status: 'Resuelto por IA',
+      time: 'Hace 12 min',
+      category: 'LEAD',
+    },
+    {
+      id: 'comm-dent-02',
+      author: '@valeria.design',
+      postRef: 'Reel: 3 Secretos para Cuidar tu Sonrisa',
+      text: 'VALORACION',
+      intent: 'Palabra Clave de Lead Magnet',
+      aiAction: 'Trigger Activado -> DM despachado en 4s con enlace a Google Calendar',
+      sentiment: 'Conversión Directa',
+      status: 'Resuelto por IA',
+      time: 'Hace 28 min',
+      category: 'LEAD',
+    },
+    {
+      id: 'comm-dent-03',
+      author: '@javier_mtz',
+      postRef: 'Carrusel: Caso de Éxito',
+      text: '¿Aceptan seguros de gastos médicos mayores?',
+      intent: 'Duda de Cobertura / FAQ',
+      aiAction: 'Respuesta pública en hilo: "¡Hola Javier! Sí, trabajamos con GNP, MetLife y AXA. Te enviamos los detalles por mensaje."',
+      sentiment: 'Informativo',
+      status: 'Retroalimentar a FAQ RAG',
+      time: 'Hace 1 hora',
+      category: 'FAQ',
+    },
+    {
+      id: 'comm-dent-04',
+      author: '@pedro_hater88',
+      postRef: 'Reel: 3 Secretos para Cuidar tu Sonrisa',
+      text: 'Puros precios inflados seguro no sirve para nada',
+      intent: 'Hate / Trolling',
+      aiAction: 'Comentario Ocultado Automáticamente por Filtro de Toxicidad (Regla Inviolable)',
+      sentiment: 'Tóxico (Bloqueado)',
+      status: 'Ocultado por Toxicidad',
+      time: 'Hace 2 horas',
+      category: 'TOXIC',
+    },
+  ],
+  polanco: [
+    {
+      id: 'comm-pol-01',
+      author: '@gourmet_foodie_mx',
+      postRef: 'Reel: Tomahawk Flameado en Mesa',
+      text: '¿Tienen disponibilidad de mesa en terraza para este sábado 9:00 PM?',
+      intent: 'Reserva Inmediata (High Ticket)',
+      aiAction: 'Auto-DM Enviado con Menú Tasting y Enlace de Reserva con Depósito Stripe',
+      sentiment: 'Conversión Directa',
+      status: 'Resuelto por IA',
+      time: 'Hace 8 min',
+      category: 'LEAD',
+    },
+    {
+      id: 'comm-pol-02',
+      author: '@patricia_art_cdmx',
+      postRef: 'Carrusel: Noches de Terraza VIP',
+      text: 'RESERVA',
+      intent: 'Palabra Clave de Lead Magnet',
+      aiAction: 'Trigger Activado -> DM despachado en 3s con Coctel de Bienvenida de Cortesía',
+      sentiment: 'Conversión Directa',
+      status: 'Resuelto por IA',
+      time: 'Hace 19 min',
+      category: 'LEAD',
+    },
+    {
+      id: 'comm-pol-03',
+      author: '@enrique_sommelier',
+      postRef: 'Reel: Tomahawk Flameado en Mesa',
+      text: '¿Manejan descorche de vino y cuál es la cuota?',
+      intent: 'Duda de Políticas / FAQ',
+      aiAction: 'Respuesta en hilo: "¡Hola Enrique! Sí, $650 MXN por botella de hasta 750ml."',
+      sentiment: 'Informativo',
+      status: 'Retroalimentar a FAQ RAG',
+      time: 'Hace 45 min',
+      category: 'FAQ',
+    },
+    {
+      id: 'comm-pol-04',
+      author: '@troll_restaurantero',
+      postRef: 'Carrusel: Noches de Terraza VIP',
+      text: 'Lugar pésimo pésimo carísimo y no vale un centavo no vayan',
+      intent: 'Ataque Reputacional Fake',
+      aiAction: 'Comentario Ocultado Automáticamente por Filtro de Toxicidad',
+      sentiment: 'Tóxico (Bloqueado)',
+      status: 'Ocultado por Toxicidad',
+      time: 'Hace 3 horas',
+      category: 'TOXIC',
+    },
+  ],
+  urban: [
+    {
+      id: 'comm-urb-01',
+      author: '@sneakerhead_99',
+      postRef: 'Reel: DROP EXCLUSIVO Cyberpunk',
+      text: '¿Tienen en talla 27.5 MX y cuánto es con envío a Monterrey?',
+      intent: 'Intención de Compra Calzada',
+      aiAction: 'Auto-DM Enviado con Link de Pago Directo Kueski/Stripe y Envío Gratis',
+      sentiment: 'Conversión Directa',
+      status: 'Resuelto por IA',
+      time: 'Hace 5 min',
+      category: 'LEAD',
+    },
+    {
+      id: 'comm-urb-02',
+      author: '@alan_skate',
+      postRef: 'Reel: DROP EXCLUSIVO Cyberpunk',
+      text: 'DROP',
+      intent: 'Palabra Clave de Lead Magnet',
+      aiAction: 'Trigger Activado -> DM con Código de Descuento 10% First Drop despachado',
+      sentiment: 'Conversión Directa',
+      status: 'Resuelto por IA',
+      time: 'Hace 15 min',
+      category: 'LEAD',
+    },
+    {
+      id: 'comm-urb-03',
+      author: '@andrea_style',
+      postRef: 'Carrusel: Lookbook Otoño/Invierno',
+      text: '¿De qué material es la hoodie oversize? ¿Es 100% algodón?',
+      intent: 'Especificación de Producto / FAQ',
+      aiAction: 'Respuesta en hilo: "¡Hola Andrea! Algodón francés peinado 450 GSM de alto gramaje."',
+      sentiment: 'Informativo',
+      status: 'Retroalimentar a FAQ RAG',
+      time: 'Hace 35 min',
+      category: 'FAQ',
+    },
+    {
+      id: 'comm-urb-04',
+      author: '@bot_spam_crypto',
+      postRef: 'Reel: DROP EXCLUSIVO Cyberpunk',
+      text: 'Buy free crypto now click link in my bio guaranteed 100x return',
+      intent: 'Spam Bot Malicioso',
+      aiAction: 'Comentario Ocultado y Usuario Baneado Automáticamente',
+      sentiment: 'Tóxico (Bloqueado)',
+      status: 'Ocultado por Toxicidad',
+      time: 'Hace 1 hora',
+      category: 'TOXIC',
+    },
+  ],
+  corp: [
+    {
+      id: 'comm-corp-01',
+      author: '@miguel_fintech_cto',
+      postRef: 'Reel: Reducir 70% CAC B2B',
+      text: '¿Cómo garantizan que la API no tenga latencia mayor a 500ms en el webhook?',
+      intent: 'Evaluación Técnica Lead B2B',
+      aiAction: 'Auto-DM Enviado con Arquitectura Técnica y Acceso a Sandbox API',
+      sentiment: 'Conversión Directa',
+      status: 'Resuelto por IA',
+      time: 'Hace 10 min',
+      category: 'LEAD',
+    },
+    {
+      id: 'comm-corp-02',
+      author: '@lucia_marketing_lead',
+      postRef: 'Reel: Reducir 70% CAC B2B',
+      text: 'DEMO',
+      intent: 'Palabra Clave de Lead Magnet',
+      aiAction: 'Trigger Activado -> DM con Link de Agendamiento Discovery Call 15 min',
+      sentiment: 'Conversión Directa',
+      status: 'Resuelto por IA',
+      time: 'Hace 22 min',
+      category: 'LEAD',
+    },
+    {
+      id: 'comm-corp-03',
+      author: '@sergio_consultor',
+      postRef: 'Carrusel: Arquitectura Multi-Tenant',
+      text: '¿Ofrecen esquema de revenue share para agencias que implementen con sus clientes?',
+      intent: 'Alianza Estratégica / FAQ',
+      aiAction: 'Respuesta en hilo: "¡Hola Sergio! Sí, contamos con el programa Partner Vector del 25% recurrente. Te contactamos."',
+      sentiment: 'Informativo',
+      status: 'Retroalimentar a FAQ RAG',
+      time: 'Hace 50 min',
+      category: 'FAQ',
+    },
+    {
+      id: 'comm-corp-04',
+      author: '@scam_agency_lead',
+      postRef: 'Carrusel: Arquitectura Multi-Tenant',
+      text: 'Fraude no sirve usen mi herramienta gratis en el enlace',
+      intent: 'Spam Competidor / Hate',
+      aiAction: 'Comentario Ocultado Automáticamente por Filtro de Toxicidad',
+      sentiment: 'Tóxico (Bloqueado)',
+      status: 'Ocultado por Toxicidad',
+      time: 'Hace 4 horas',
+      category: 'TOXIC',
+    },
+  ],
+};
+
+const CANONICAL_REENGAGEMENT_BY_TENANT = {
+  dental: [
+    {
+      id: 're-001',
+      leadId: 'lead-006',
+      clientName: 'Carlos Mendoza Jr.',
+      phone: '+52 55 6677 8899',
+      productInterest: 'Limpieza Dental Ultrasónica ($850 MXN)',
+      lastObjection: 'Lo voy a pensar (Evasiva)',
+      timeRemaining: '14h 22m',
+      targetScheduledAt: 'Hoy, 16:12 hrs',
+      status: 'En Cola de Re-contacto (24h)',
+      vacaPurpuraMessage: '¡Hola Carlos! Estuve pensando en tu consulta. ¿Sabías que el 90% de las caries invisibles se previenen con profilaxis ultrasónica anual? ¿Te gustaría que te aparte un espacio con diagnóstico 3D sin costo este jueves?',
+      wordCount: 36,
+      framework: 'Vaca Púrpura + Regla 95/5',
+    },
+    {
+      id: 're-002',
+      leadId: 'lead-005',
+      clientName: 'Valeria Cordero',
+      phone: '+52 55 9821 4433',
+      productInterest: 'Carillas de Resina de Alta Estética',
+      lastObjection: 'Viendo opciones sin profundizar en MSI',
+      timeRemaining: '08h 45m',
+      targetScheduledAt: 'Hoy, 20:25 hrs',
+      status: 'En Cola de Re-contacto (24h)',
+      vacaPurpuraMessage: '¡Hola Valeria! Para tu diseño de sonrisa: contamos con simulación digital 3D previa para que veas el resultado antes de tocar tus dientes. ¿Quieres que te envíe un video de cómo se realiza en 1 sola sesión?',
+      wordCount: 37,
+      framework: 'JTBD + Ecuación de Valor',
+    },
+    {
+      id: 're-003',
+      leadId: 'lead-009',
+      clientName: 'Dr. Hugo Peralta',
+      phone: '+52 55 4433 2211',
+      productInterest: 'Blanqueamiento Dental Láser Led ($3,200 MXN)',
+      lastObjection: 'Miedo a la sensibilidad post-tratamiento',
+      timeRemaining: '03h 10m',
+      targetScheduledAt: 'Hoy, 18:30 hrs',
+      status: 'Disparo Inminente',
+      vacaPurpuraMessage: '¡Hola Hugo! Nuestro protocolo de blanqueamiento incluye suero desensibilizante con nanopartículas de hidroxiapatita que neutraliza el 100% de la molestia. ¿Te gustaría agendar una prueba de sensibilidad sin costo?',
+      wordCount: 31,
+      framework: 'Superación de Objeción Técnica',
+    },
+  ],
+  polanco: [
+    {
+      id: 're-pol-01',
+      leadId: 'lead-pol-01',
+      clientName: 'Eduardo Garza',
+      phone: '+52 55 3322 1100',
+      productInterest: 'Mesa Terraza 6 Personas (Polanco Steakhouse)',
+      lastObjection: 'Checando con la familia el horario',
+      timeRemaining: '02h 15m',
+      targetScheduledAt: 'Hoy, 17:00 hrs',
+      status: 'Disparo Inminente',
+      vacaPurpuraMessage: '¡Hola Eduardo! Nos quedan únicamente 2 mesas en Terraza Principal para este fin de semana. ¿Deseas que te guarde una con la cortesía de bienvenida del Sommelier?',
+      wordCount: 29,
+      framework: 'Vaca Púrpura (Escasez Real)',
+    },
+    {
+      id: 're-pol-02',
+      leadId: 'lead-pol-02',
+      clientName: 'Sofía Larios',
+      phone: '+52 55 8899 4455',
+      productInterest: 'Cena Maridaje 8 Tiempos (Aniversario)',
+      lastObjection: 'Comparando con otros restaurantes en Campos Elíseos',
+      timeRemaining: '11h 40m',
+      targetScheduledAt: 'Hoy, 21:00 hrs',
+      status: 'En Cola de Re-contacto (24h)',
+      vacaPurpuraMessage: '¡Hola Sofía! Para celebrar su aniversario, nuestro Chef Ejecutivo personaliza la carta con su dedicatoria impresa y una copa de Champagne de bienvenida. ¿Te reservo el rincón privado?',
+      wordCount: 29,
+      framework: 'Efecto WOW + Hospitalidad',
+    },
+    {
+      id: 're-pol-03',
+      leadId: 'lead-pol-03',
+      clientName: 'Lic. Mauricio Cárdenas',
+      phone: '+52 55 1122 3344',
+      productInterest: 'Salón Privado Cava para 12 Empresarios',
+      lastObjection: 'Presupuesto corporativo en revisión',
+      timeRemaining: '06h 15m',
+      targetScheduledAt: 'Hoy, 19:15 hrs',
+      status: 'En Cola de Re-contacto (24h)',
+      vacaPurpuraMessage: '¡Estimado Lic. Mauricio! Contamos con factura deducible al 100% como gasto de representación con menú degustación cerrado sin sobrecostos sorpresa. ¿Le comparto el brochure ejecutivo en PDF?',
+      wordCount: 29,
+      framework: 'Facilitación B2B',
+    },
+  ],
+  urban: [
+    {
+      id: 're-urb-01',
+      leadId: 'lead-urb-01',
+      clientName: 'Kevin Roldán',
+      phone: '+52 55 4567 8901',
+      productInterest: 'Sneakers Edición Limitada Cyberpunk ($4,890 MXN)',
+      lastObjection: 'Duda sobre la talla exacta y política de cambios',
+      timeRemaining: '05h 20m',
+      targetScheduledAt: 'Hoy, 18:00 hrs',
+      status: 'En Cola de Re-contacto (24h)',
+      vacaPurpuraMessage: '¡Qué onda Kevin! Para tu tranquilidad con la talla: el primer cambio es 100% gratuito con recolección a domicilio. Además te incluye stickers y calcetas de edición limitada. ¿Te aparto el par?',
+      wordCount: 32,
+      framework: 'Garantía Cero Fricción',
+    },
+    {
+      id: 're-urb-02',
+      leadId: 'lead-urb-02',
+      clientName: 'Camila S.',
+      phone: '+52 55 6789 0123',
+      productInterest: 'Hoodie Oversize Acid Wash ($1,850 MXN)',
+      lastObjection: 'Consultando presupuesto con su quincena',
+      timeRemaining: '13h 10m',
+      targetScheduledAt: 'Hoy, 22:30 hrs',
+      status: 'En Cola de Re-contacto (24h)',
+      vacaPurpuraMessage: '¡Hola Camila! Puedes pagar a 3 quincenas sin intereses con Kueski Pay o Aplazo sin tarjeta de crédito. Quedan solo 4 piezas en stock nacional. ¿Quieres tu link de checkout directo?',
+      wordCount: 31,
+      framework: 'Financiamiento BNPL',
+    },
+    {
+      id: 're-urb-03',
+      leadId: 'lead-urb-03',
+      clientName: 'Mateo G.',
+      phone: '+52 55 7890 1234',
+      productInterest: 'Cargo Pants Reflectivos Streetwear',
+      lastObjection: 'Lo voy a pensar',
+      timeRemaining: '01h 45m',
+      targetScheduledAt: 'Hoy, 16:45 hrs',
+      status: 'Disparo Inminente',
+      vacaPurpuraMessage: '¡Ey Mateo! Checa este video rápido de cómo se ven los detalles reflectivos en la noche bajo la luz de la ciudad. Si confirmas hoy te incluimos envío express 24h gratis. ¿Te va?',
+      wordCount: 34,
+      framework: 'Demostración Visual Inmediata',
+    },
+  ],
+  corp: [
+    {
+      id: 're-corp-01',
+      leadId: 'lead-corp-01',
+      clientName: 'Rodrigo Elizondo',
+      phone: '+52 55 9012 3456',
+      productInterest: 'Licenciamiento Multi-Tenant Vector (4 Subsidiarias)',
+      lastObjection: 'Evaluación de seguridad ISO 27001 por departamento de TI',
+      timeRemaining: '07h 30m',
+      targetScheduledAt: 'Hoy, 17:30 hrs',
+      status: 'En Cola de Re-contacto (24h)',
+      vacaPurpuraMessage: 'Estimado Rodrigo, nuestro stack cuenta con cifrado SHA-256 en reposo, SOC-2 Type II y soberanía de datos local. ¿Le gustaría que nuestro CISO tenga una llamada de 15 min con su equipo de TI?',
+      wordCount: 34,
+      framework: 'Validación de Compliance Corporativo',
+    },
+    {
+      id: 're-corp-02',
+      leadId: 'lead-corp-02',
+      clientName: 'Lic. Patricia Peña',
+      phone: '+52 55 0123 4567',
+      productInterest: 'Auditoría y Automatización de Procesos de Cobranza',
+      lastObjection: 'Tiempo de implementación prolongado',
+      timeRemaining: '15h 00m',
+      targetScheduledAt: 'Hoy, 23:00 hrs',
+      status: 'En Cola de Re-contacto (24h)',
+      vacaPurpuraMessage: 'Lic. Patricia, el despliegue de nuestros sub-bots de cobranza toma exactamente 72 horas hábiles mediante API y no requiere cambiar su ERP actual. ¿Le comparto el caso de éxito de Grupo Alsea?',
+      wordCount: 32,
+      framework: 'Reducción de Tiempo al Valor (TTV)',
+    },
+    {
+      id: 're-corp-03',
+      leadId: 'lead-corp-03',
+      clientName: 'Ing. Fernando Vélez',
+      phone: '+52 55 1234 5670',
+      productInterest: 'SDR de Inteligencia Artificial para Call Center',
+      lastObjection: 'Preocupación por alucinaciones en respuestas a clientes',
+      timeRemaining: '02h 00m',
+      targetScheduledAt: 'Hoy, 16:30 hrs',
+      status: 'Disparo Inminente',
+      vacaPurpuraMessage: 'Ing. Fernando, Vector Inside opera con el Lobo Sentinel que intercepta el 100% de las respuestas dudosas y pausa el bot para sutura humana en menos de 300ms. ¿Agendamos una prueba de fuego en vivo?',
+      wordCount: 34,
+      framework: 'HITL Sentinel Proof',
+    },
+  ],
+};
 
 export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
   const { triggerModal, activeTenant } = useAuth();
@@ -65,7 +559,32 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
   const [isBotPaused, setIsBotPaused] = useState(false);
   const [selectedCapiLead, setSelectedCapiLead] = useState(null);
   const [drawerLead, setDrawerLead] = useState(null);
-  const [reengagementList, setReengagementList] = useState(REENGAGEMENT_QUEUE_MOCK);
+
+  // Tenant-aware dynamic states
+  const currentTenantKey = activeTenant?.id || 'dental';
+  const [reengagementList, setReengagementList] = useState(
+    CANONICAL_REENGAGEMENT_BY_TENANT[currentTenantKey] || CANONICAL_REENGAGEMENT_BY_TENANT.dental
+  );
+  const [metaPosts, setMetaPosts] = useState(
+    CANONICAL_META_POSTS_BY_TENANT[currentTenantKey] || CANONICAL_META_POSTS_BY_TENANT.dental
+  );
+  const [metaComments, setMetaComments] = useState(
+    CANONICAL_META_COMMENTS_BY_TENANT[currentTenantKey] || CANONICAL_META_COMMENTS_BY_TENANT.dental
+  );
+
+  // Meta comments interactive states
+  const [commentSentimentFilter, setCommentSentimentFilter] = useState('ALL'); // 'ALL' | 'LEAD' | 'FAQ' | 'TOXIC'
+  const [replyingCommentId, setReplyingCommentId] = useState(null);
+  const [replyText, setReplyText] = useState('');
+  const [reengagementFilter, setReengagementFilter] = useState('ALL'); // 'ALL' | 'PENDING' | 'SENT'
+
+  // Automatic tenant synchronizer
+  useEffect(() => {
+    const key = activeTenant?.id || 'dental';
+    setReengagementList(CANONICAL_REENGAGEMENT_BY_TENANT[key] || CANONICAL_REENGAGEMENT_BY_TENANT.dental);
+    setMetaPosts(CANONICAL_META_POSTS_BY_TENANT[key] || CANONICAL_META_POSTS_BY_TENANT.dental);
+    setMetaComments(CANONICAL_META_COMMENTS_BY_TENANT[key] || CANONICAL_META_COMMENTS_BY_TENANT.dental);
+  }, [activeTenant]);
 
 
   // Chat threads state with AI Customer Feedback, Boolean AND Criteria & Unified ENUMs
@@ -450,80 +969,169 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
     },
   });
 
-  // Meta Posts & Live Comments Stream Mock Data
-  const [metaPosts] = useState([
-    {
-      id: 'post-01',
-      platform: 'instagram',
-      type: 'Reel',
-      title: '3 Secretos para Cuidar tu Sonrisa y Evitar Cirugías Costosas ✨',
-      date: 'Publicado hace 3 horas',
-      reach: '14,820 reproducciones',
-      hookRate: '48.2%',
-      commentsCount: 38,
-      dmsTriggered: 19,
-      sentiment: '94% Positivo',
-    },
-    {
-      id: 'post-02',
-      platform: 'instagram',
-      type: 'Carrusel',
-      title: 'Caso de Éxito: Alineación Invisible en solo 6 meses 🦷',
-      date: 'Publicado ayer',
-      reach: '9,410 visualizaciones',
-      hookRate: '41.5%',
-      commentsCount: 24,
-      dmsTriggered: 14,
-      sentiment: '98% Positivo',
-    },
-  ]);
+  // Helper handlers for Meta Graph Comments & Redis Queue interactions
+  const handleTriggerDirectDm = (comment) => {
+    setMetaComments((prev) =>
+      prev.map((c) =>
+        c.id === comment.id
+          ? {
+              ...c,
+              status: 'DM Despachado (Graph API v20.0)',
+              aiAction: `DM verificado enviado vía Webhook Meta Graph a ${c.author}`,
+            }
+          : c
+      )
+    );
+    try {
+      confetti({ particleCount: 35, spread: 65, colors: ['#00F0FF', '#E7F900', '#EC4899'] });
+    } catch (e) {}
+    triggerModal(
+      'Trigger Meta Graph API Exitoso',
+      `<b>Destinatario:</b> ${comment.author}<br><b>Canal:</b> Instagram Direct Graph API v20.0<br><b>Webhook Status:</b> 200 OK (Latencia: 248ms)<br><b>Acción Despachada:</b> "${comment.aiAction}"`
+    );
+  };
 
-  const [metaComments] = useState([
-    {
-      id: 'comm-01',
-      author: '@carlos_garcia92',
-      postRef: 'Reel: 3 Secretos para Cuidar tu Sonrisa',
-      text: '¿Cuánto cuesta la primera consulta de valoración?',
-      intent: 'Pregunta de Precio / Cita',
-      aiAction: 'Auto-DM Enviado con Oferta Activa ("Diagnóstico 3D Gratis")',
-      sentiment: 'Interés Alto',
-      status: 'Resuelto por IA',
-      time: 'Hace 12 min',
-    },
-    {
-      id: 'comm-02',
-      author: '@valeria.design',
-      postRef: 'Reel: 3 Secretos para Cuidar tu Sonrisa',
-      text: 'VALORACION',
-      intent: 'Palabra Clave de Lead Magnet',
-      aiAction: 'Trigger Activado -> DM despachado en 4 segundos con enlace a Google Calendar',
-      sentiment: 'Conversión Directa',
-      status: 'Resuelto por IA',
-      time: 'Hace 28 min',
-    },
-    {
-      id: 'comm-03',
-      author: '@javier_mtz',
-      postRef: 'Carrusel: Caso de Éxito',
-      text: '¿Aceptan seguros de gastos médicos mayores?',
-      intent: 'Duda de Cobertura / FAQ',
-      aiAction: 'Respuesta pública en hilo: "¡Hola Javier! Sí, trabajamos con GNP, MetLife y AXA. Te enviamos los detalles por mensaje."',
-      sentiment: 'Informativo',
-      status: 'Retroalimentar a FAQ RAG',
-      time: 'Hace 1 hora',
-    },
-    {
-      id: 'comm-04',
-      author: '@pedro_hater88',
-      postRef: 'Reel: 3 Secretos para Cuidar tu Sonrisa',
-      text: 'Puros precios inflados seguro no sirve para nada',
-      intent: 'Hate / Trolling',
-      aiAction: 'Comentario Ocultado Automáticamente por Filtro de Toxicidad (Regla Inviolable)',
-      sentiment: 'Tóxico (Bloqueado)',
-      status: 'HITL Seguro',
-      time: 'Hace 2 horas',
-    },
-  ]);
+  const handlePublicReplySubmit = (commentId) => {
+    if (!replyText.trim()) return;
+    setMetaComments((prev) =>
+      prev.map((c) =>
+        c.id === commentId
+          ? {
+              ...c,
+              status: 'Respondido en Hilo',
+              operatorReply: replyText,
+            }
+          : c
+      )
+    );
+    setReplyingCommentId(null);
+    setReplyText('');
+    try {
+      confetti({ particleCount: 25, spread: 50, colors: ['#E7F900', '#10B981'] });
+    } catch (e) {}
+    triggerModal(
+      'Respuesta Pública Publicada en Hilo',
+      'Tu respuesta ha sido transmitida vía Meta Graph API directamente al comentario en el Reel/Post.'
+    );
+  };
+
+  const handleSimulateInboundComment = () => {
+    const tenantKey = activeTenant?.id || 'dental';
+    const samples = {
+      dental: {
+        author: '@dra_monica_s',
+        postRef: 'Reel: 3 Secretos para Cuidar tu Sonrisa',
+        text: '¡Hola! ¿Tienen disponibilidad de valoración este viernes a las 4pm para carillas?',
+        intent: 'Cita Inmediata (High-Ticket)',
+        aiAction: 'Detectado por Webhook 0ms -> Auto-DM sugerido con agenda de citas',
+        sentiment: 'Conversión Directa',
+        category: 'LEAD',
+      },
+      polanco: {
+        author: '@roberto_sommelier',
+        postRef: 'Reel: Tomahawk Flameado en Mesa',
+        text: '¿Tienen mesa para 6 en Terraza VIP este sábado con menú maridaje?',
+        intent: 'Reserva VIP (High-Ticket)',
+        aiAction: 'Detectado por Webhook 0ms -> Auto-DM con depósito Stripe preparado',
+        sentiment: 'Conversión Directa',
+        category: 'LEAD',
+      },
+      urban: {
+        author: '@hype_collector_mx',
+        postRef: 'Reel: DROP EXCLUSIVO Cyberpunk',
+        text: '¿Tienen la hoodie reflectiva en talla M? Pago inmediato por transferencia',
+        intent: 'Compra Inmediata Drop',
+        aiAction: 'Detectado por Webhook 0ms -> Auto-DM con link de pago express despachado',
+        sentiment: 'Conversión Directa',
+        category: 'LEAD',
+      },
+      corp: {
+        author: '@ing_marcelo_cloud',
+        postRef: 'Reel: Reducir 70% CAC B2B',
+        text: '¿La API de Vector Inside soporta integración con SAP Business One y Meta CAPI?',
+        intent: 'Evaluación Técnica B2B Enterprise',
+        aiAction: 'Detectado por Webhook 0ms -> Auto-DM con documentación Swagger y Sandbox',
+        sentiment: 'Conversión Directa',
+        category: 'LEAD',
+      },
+    };
+
+    const sample = samples[tenantKey] || samples.dental;
+    const newComment = {
+      id: `comm-live-${Date.now()}`,
+      author: sample.author,
+      postRef: sample.postRef,
+      text: sample.text,
+      intent: sample.intent,
+      aiAction: sample.aiAction,
+      sentiment: sample.sentiment,
+      status: 'Detectado por Webhook (0ms)',
+      time: 'Justo ahora',
+      category: sample.category,
+    };
+
+    setMetaComments((prev) => [newComment, ...prev]);
+    try {
+      confetti({ particleCount: 40, spread: 70, colors: ['#00F0FF', '#E7F900'] });
+    } catch (e) {}
+    triggerModal(
+      'Simulación Meta Webhook Inbound (0ms)',
+      `<b>Nuevo Comentario Recibido:</b> "${newComment.text}"<br><b>Autor:</b> ${newComment.author}<br><b>Clasificación IA:</b> ${newComment.intent}<br><b>Acción Inmediata:</b> ${newComment.aiAction}`
+    );
+  };
+
+  const handleRunBatchWorker = () => {
+    setReengagementList((prev) =>
+      prev.map((item) => ({
+        ...item,
+        timeRemaining: 'DESPACHADO',
+        status: 'FOLLOWUP_SENT',
+      }))
+    );
+    try {
+      confetti({ particleCount: 50, spread: 80, colors: ['#A855F7', '#E7F900', '#10B981'] });
+    } catch (e) {}
+    triggerModal(
+      'Worker Redis Nocturno Ejecutado en Batch (0ms)',
+      `<b>Job ID:</b> upstash_cron_${Date.now()}<br><b>Mensajes Despachados:</b> ${reengagementList.length} micro-mensajes Vaca Púrpura.<br><b>Motor IA:</b> Groq Llama 3 Batching.<br><b>Costo en Tokens:</b> $0.00 USD.<br><b>Resultado:</b> Todos los prospectos Out-of-Market recibieron su estímulo no invasivo a las 24h exactas.`
+    );
+  };
+
+  // Helper styles for columns with rich gradients
+  const getColumnContainerStyle = (colId) => {
+    switch (colId) {
+      case LEAD_STATUS_ENUM.LEAD_COLD_24H:
+        return 'bg-gradient-to-b from-sky-50/80 via-white to-sky-50/30 dark:from-sky-950/20 dark:via-zinc-950/90 dark:to-zinc-950 border-sky-200 dark:border-sky-500/25';
+      case LEAD_STATUS_ENUM.LEAD_WARM_24H:
+        return 'bg-gradient-to-b from-amber-50/80 via-white to-amber-50/30 dark:from-amber-950/20 dark:via-zinc-950/90 dark:to-zinc-950 border-amber-200 dark:border-amber-500/25';
+      case LEAD_STATUS_ENUM.LEAD_HOT_PREQUAL:
+        return 'bg-gradient-to-b from-orange-50/80 via-white to-orange-50/30 dark:from-orange-950/20 dark:via-zinc-950/90 dark:to-zinc-950 border-orange-200 dark:border-orange-500/25';
+      case LEAD_STATUS_ENUM.BILLABLE_LEAD:
+        return 'bg-gradient-to-b from-lime-50/80 via-white to-emerald-50/30 dark:from-lime-950/25 dark:via-zinc-950/90 dark:to-zinc-950 border-lime-300 dark:border-lime-500/35 shadow-[0_0_25px_rgba(200,255,0,0.05)]';
+      case LEAD_STATUS_ENUM.HITL_INTERVENTION:
+        return 'bg-gradient-to-b from-rose-50/90 via-white to-rose-50/40 dark:from-rose-950/30 dark:via-zinc-950/90 dark:to-zinc-950 border-rose-300 dark:border-rose-500/40 shadow-[0_0_25px_rgba(244,63,94,0.08)]';
+      default:
+        return 'bg-white dark:bg-zinc-950/80 border-zinc-200 dark:border-zinc-800/90';
+    }
+  };
+
+  // Helper styles for individual lead cards with luminous dual-theme gradients
+  const getLeadCardGradient = (leadState) => {
+    switch (leadState) {
+      case LEAD_STATUS_ENUM.HITL_INTERVENTION:
+        return 'bg-gradient-to-br from-rose-50/95 via-red-50/60 to-white dark:from-zinc-900/95 dark:via-rose-950/40 dark:to-zinc-950 border-2 border-rose-500/80 dark:border-rose-500/70 shadow-md dark:shadow-[0_4px_25px_rgba(244,63,94,0.20)] ring-1 ring-rose-500/20';
+      case LEAD_STATUS_ENUM.BILLABLE_LEAD:
+        return 'bg-gradient-to-br from-white via-lime-50/70 to-emerald-50/40 dark:from-zinc-900/95 dark:via-lime-950/35 dark:to-zinc-950 border-2 border-lime-500/60 dark:border-neon/60 shadow-md dark:shadow-[0_4px_22px_rgba(229,255,0,0.16)] hover:border-lime-600 dark:hover:border-neon';
+      case LEAD_STATUS_ENUM.LEAD_HOT_PREQUAL:
+        return 'bg-gradient-to-br from-white via-orange-50/60 to-amber-50/30 dark:from-zinc-900/95 dark:via-orange-950/30 dark:to-zinc-950 border border-orange-300 dark:border-orange-500/35 shadow-sm dark:shadow-[0_4px_18px_rgba(249,115,22,0.12)] hover:border-orange-400';
+      case LEAD_STATUS_ENUM.LEAD_WARM_24H:
+        return 'bg-gradient-to-br from-white via-amber-50/50 to-yellow-50/20 dark:from-zinc-900/95 dark:via-amber-950/25 dark:to-zinc-950 border border-amber-300 dark:border-amber-500/35 shadow-sm dark:shadow-[0_4px_18px_rgba(245,158,11,0.12)] hover:border-amber-400';
+      case LEAD_STATUS_ENUM.LEAD_COLD_24H:
+        return 'bg-gradient-to-br from-white via-sky-50/50 to-blue-50/20 dark:from-zinc-900/95 dark:via-sky-950/25 dark:to-zinc-950 border border-sky-300 dark:border-sky-500/30 shadow-sm dark:shadow-[0_4px_18px_rgba(56,189,248,0.12)] hover:border-sky-400';
+      default:
+        return 'bg-white dark:bg-zinc-900/70 border border-zinc-200 dark:border-zinc-800';
+    }
+  };
 
   const currentChat = threads[activeContact] || threads.ana;
 
@@ -670,17 +1278,11 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
         key={leadKey}
         className={`${
           isExecutiveGrid
-            ? 'p-4 space-y-3.5 bg-white dark:bg-zinc-950/85 border border-zinc-200 dark:border-zinc-800/90 hover:border-zinc-300 dark:hover:border-zinc-700 shadow-sm dark:shadow-md'
+            ? 'p-4 space-y-3.5 shadow-sm dark:shadow-md'
             : isCompact
             ? 'p-3 space-y-2'
             : 'p-4 space-y-3'
-        } rounded-2xl transition-all font-mono text-xs group relative flex flex-col justify-between ${
-          isRisk
-            ? 'bg-rose-50/90 dark:bg-gradient-to-b dark:from-rose-950/40 dark:via-zinc-950 dark:to-zinc-950 border-2 border-rose-500 shadow-md ring-1 ring-rose-500/30'
-            : isBillable
-            ? 'bg-white dark:bg-zinc-900/90 border-2 border-lime-500/50 dark:border-neon/50 shadow-sm dark:shadow-[0_0_15px_rgba(229,255,0,0.12)] hover:border-lime-600 dark:hover:border-neon'
-            : 'bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800/80 hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-md dark:shadow-sm'
-        }`}
+        } rounded-2xl transition-all font-mono text-xs group relative flex flex-col justify-between ${getLeadCardGradient(item.leadState)}`}
       >
         <div className="space-y-3">
           {/* Card Top: Avatar, Nombre, Teléfono & Ticket */}
@@ -1095,7 +1697,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
                 return (
                   <div key={col.id} className="space-y-4">
                     {/* Banner Ejecutivo de la Clasificación */}
-                    <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800/90 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm dark:shadow-lg">
+                    <div className={`p-4 rounded-2xl ${getColumnContainerStyle(col.id)} flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm dark:shadow-lg`}>
                       <div className="flex items-center gap-3">
                         <span className={`w-3.5 h-3.5 rounded-full ${col.dotColor} shadow-[0_0_12px_currentColor] shrink-0`} />
                         <div>
@@ -1174,7 +1776,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
                       isCompact
                         ? 'min-w-[260px] max-w-[280px] w-[270px]'
                         : 'min-w-[320px] max-w-[350px] w-[340px]'
-                    } flex-shrink-0 flex flex-col rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800/90 shadow-sm dark:shadow-xl backdrop-blur-md relative overflow-hidden snap-start transition-all`}
+                    } flex-shrink-0 flex flex-col rounded-2xl ${getColumnContainerStyle(col.id)} shadow-sm dark:shadow-xl backdrop-blur-md relative overflow-hidden snap-start transition-all`}
                   >
                     {/* Top Accent Stripe */}
                     <div className={`h-1.5 w-full bg-gradient-to-r ${getColumnAccent()}`} />
@@ -1309,7 +1911,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
                     </span>
                   ) : (
                     <span className="px-3 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold text-xs">
-                      Estado: {currentChat.leadState}
+                      Estado: {cleanConcept(currentChat.leadState)}
                     </span>
                   )}
 
@@ -1520,38 +2122,46 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
 
             <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-1 shadow-sm">
               <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase">Comentarios Analizados</span>
-              <p className="text-2xl font-black text-zinc-900 dark:text-white">128</p>
+              <p className="text-2xl font-black text-zinc-900 dark:text-white">{metaComments.length * 32}</p>
               <span className="text-[10px] text-zinc-400 dark:text-zinc-500">Últimas 24 horas</span>
             </div>
 
             <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-1 shadow-sm">
               <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase">DMs Disparados Automáticos</span>
-              <p className="text-2xl font-black text-cyan-600 dark:text-cyan-400">42</p>
-              <span className="text-[10px] text-cyan-700 dark:text-cyan-500">Conversión a Chat: 32.8%</span>
+              <p className="text-2xl font-black text-cyan-600 dark:text-cyan-400">
+                {metaComments.filter((c) => c.status?.includes('DM') || c.category === 'LEAD').length * 14}
+              </p>
+              <span className="text-[10px] text-cyan-700 dark:text-cyan-500">Conversión a Chat: 38.4%</span>
             </div>
 
             <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-1 shadow-sm">
               <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase">Sentimiento de Comunidad</span>
-              <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">96%</p>
+              <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">96.8%</p>
               <span className="text-[10px] text-emerald-700 dark:text-emerald-500">Filtro de Toxicidad Activo</span>
             </div>
           </div>
 
           {/* Posts & Reels Grid */}
           <div className="space-y-3">
-            <h3 className="text-sm font-bold text-zinc-900 dark:text-white font-mono uppercase tracking-wider flex items-center gap-2">
-              <Instagram className="w-4 h-4 text-pink-500" />
-              <span>Publicaciones & Reels Activos en Meta</span>
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-zinc-900 dark:text-white font-mono uppercase tracking-wider flex items-center gap-2">
+                <Instagram className="w-4 h-4 text-pink-500" />
+                <span>Publicaciones & Reels Activos en Meta Graph ({activeTenant?.name || 'Clínica Dental'})</span>
+              </h3>
+              <span className="text-xs font-mono text-zinc-500 dark:text-zinc-400">
+                Instagram Graph API v20.0
+              </span>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {metaPosts.map((post) => (
                 <div
                   key={post.id}
-                  className="p-5 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-3 font-mono text-xs shadow-sm"
+                  className="p-5 rounded-2xl bg-gradient-to-br from-white via-zinc-50/50 to-pink-50/20 dark:from-zinc-950/90 dark:via-zinc-900/40 dark:to-pink-950/10 border border-zinc-200 dark:border-zinc-800/90 space-y-3 font-mono text-xs shadow-sm hover:border-pink-500/40 transition-all"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-pink-100 dark:bg-pink-500/20 text-pink-700 dark:text-pink-400 border border-pink-200 dark:border-pink-500/30">
+                    <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-pink-100 dark:bg-pink-500/20 text-pink-700 dark:text-pink-400 border border-pink-200 dark:border-pink-500/30 flex items-center gap-1">
+                      <Instagram className="w-3 h-3" />
                       {post.type} • {post.platform}
                     </span>
                     <span className="text-[10px] text-zinc-400 dark:text-zinc-500">{post.date}</span>
@@ -1578,60 +2188,268 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
             </div>
           </div>
 
-          {/* Live Meta Comments Feed */}
-          <div className="p-6 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-zinc-900 dark:text-white font-mono uppercase tracking-wider flex items-center gap-2">
-                <MessageSquareWarning className="w-4 h-4 text-neon" />
-                <span>Feed de Comentarios en Vivo & Acciones Automatizadas</span>
-              </h3>
-              <span className="text-xs font-mono text-zinc-500 dark:text-zinc-400">
-                Sincronizado vía Meta Webhooks
-              </span>
+          {/* Live Meta Comments Feed with Real-time Simulation & Action Triggers */}
+          <div className="p-6 rounded-3xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-5 shadow-sm">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-zinc-100 dark:border-zinc-800/80">
+              <div className="space-y-0.5">
+                <h3 className="text-sm font-bold text-zinc-900 dark:text-white font-mono uppercase tracking-wider flex items-center gap-2">
+                  <MessageSquareWarning className="w-4 h-4 text-neon" />
+                  <span>Feed de Comentarios en Vivo & Acciones Automatizadas</span>
+                </h3>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 font-sans">
+                  Sincronizado vía Meta Webhooks con detección semántica e inyección de respuesta en menos de 500ms.
+                </p>
+              </div>
+
+              {/* Botones de Acción Global */}
+              <div className="flex flex-wrap items-center gap-2 font-mono">
+                <button
+                  type="button"
+                  onClick={handleSimulateInboundComment}
+                  className="px-3.5 py-2 rounded-xl bg-neon hover:bg-[var(--neon-hover)] text-black text-xs font-bold font-mono flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+                >
+                  <Zap className="w-3.5 h-3.5" />
+                  <span>Simular Comentario Entrante (0ms)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const pendingCount = metaComments.filter((c) => c.category === 'LEAD' && !c.status?.includes('DM')).length;
+                    setMetaComments((prev) =>
+                      prev.map((c) =>
+                        c.category === 'LEAD'
+                          ? { ...c, status: 'DM Despachado (Graph API v20.0)' }
+                          : c
+                      )
+                    );
+                    try {
+                      confetti({ particleCount: 30, spread: 60, colors: ['#00F0FF', '#E7F900'] });
+                    } catch (e) {}
+                    triggerModal(
+                      'DMs en Lote Despachados',
+                      `Se procesaron y despacharon automáticamente <strong>${pendingCount || 1}</strong> DMs a leads con intención de compra mediante Meta Graph API.`
+                    );
+                  }}
+                  className="px-3.5 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800 text-xs font-mono font-bold flex items-center gap-1.5 transition-colors"
+                >
+                  <Send className="w-3.5 h-3.5 text-cyan-500" />
+                  <span>Disparar DMs a Leads</span>
+                </button>
+              </div>
             </div>
 
-            <div className="space-y-3">
-              {metaComments.map((comm) => (
-                <div
-                  key={comm.id}
-                  className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 space-y-2 font-mono text-xs"
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px]">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-neon">{comm.author}</span>
-                      <span className="text-zinc-500">en {comm.postRef}</span>
-                    </div>
-                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500">{comm.time}</span>
-                  </div>
+            {/* Filtros de Sentimiento / Intención */}
+            <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
+              <span className="text-zinc-400 text-[11px] font-bold mr-1">Filtrar por:</span>
+              {[
+                { id: 'ALL', label: 'Todos', count: metaComments.length },
+                {
+                  id: 'LEAD',
+                  label: 'Conversión (Leads)',
+                  count: metaComments.filter((c) => c.category === 'LEAD').length,
+                  dot: 'bg-emerald-500',
+                },
+                {
+                  id: 'FAQ',
+                  label: 'Preguntas / FAQs',
+                  count: metaComments.filter((c) => c.category === 'FAQ').length,
+                  dot: 'bg-sky-500',
+                },
+                {
+                  id: 'TOXIC',
+                  label: 'Toxicidad (Ocultados)',
+                  count: metaComments.filter((c) => c.category === 'TOXIC').length,
+                  dot: 'bg-rose-500',
+                },
+              ].map((f) => {
+                const isSelected = commentSentimentFilter === f.id;
+                return (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => setCommentSentimentFilter(f.id)}
+                    className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 font-bold ${
+                      isSelected
+                        ? 'bg-zinc-900 dark:bg-white text-white dark:text-black shadow-sm'
+                        : 'bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white border border-zinc-200 dark:border-zinc-800'
+                    }`}
+                  >
+                    {f.dot && <span className={`w-2 h-2 rounded-full ${f.dot}`} />}
+                    <span>{f.label}</span>
+                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-zinc-200/80 dark:bg-black/40 text-zinc-800 dark:text-zinc-300">
+                      {f.count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
 
-                  <p className="text-zinc-900 dark:text-white text-xs font-sans bg-white dark:bg-black/40 p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800">
-                    "{comm.text}"
-                  </p>
+            {/* Listado de Comentarios Filtrados */}
+            <div className="space-y-3 font-mono text-xs">
+              {metaComments
+                .filter((comm) => {
+                  if (commentSentimentFilter === 'ALL') return true;
+                  return comm.category === commentSentimentFilter;
+                })
+                .map((comm) => {
+                  const isReplying = replyingCommentId === comm.id;
+                  const isToxic = comm.category === 'TOXIC';
+                  const isLead = comm.category === 'LEAD';
+                  const isDmSent = comm.status?.includes('DM');
+                  const isThreadReplied = comm.status === 'Respondido en Hilo';
 
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 text-[10px]">
-                    <div className="space-y-0.5">
-                      <span className="text-zinc-500 dark:text-zinc-400">Acción IA: </span>
-                      <span className="text-cyan-700 dark:text-cyan-300 font-sans font-medium">{comm.aiAction}</span>
-                    </div>
+                  return (
+                    <div
+                      key={comm.id}
+                      className={`p-4 rounded-2xl border transition-all space-y-3 ${
+                        isToxic
+                          ? 'bg-rose-50/50 dark:bg-gradient-to-r dark:from-rose-950/20 dark:via-zinc-900/60 dark:to-zinc-900 border-rose-200 dark:border-rose-900/40 opacity-80'
+                          : isLead
+                          ? 'bg-gradient-to-r from-emerald-50/60 via-white to-lime-50/30 dark:from-emerald-950/20 dark:via-zinc-900/80 dark:to-zinc-900 border-emerald-200 dark:border-emerald-500/30 shadow-sm'
+                          : 'bg-zinc-50/80 dark:bg-zinc-900/80 border-zinc-200 dark:border-zinc-800'
+                      }`}
+                    >
+                      {/* Top Info */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px]">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-zinc-900 dark:text-white flex items-center gap-1">
+                            <span className="text-neon">@</span>
+                            {comm.author.replace('@', '')}
+                          </span>
+                          <span className="text-zinc-500 dark:text-zinc-400">en {comm.postRef}</span>
+                        </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-300 font-medium">
-                        {comm.sentiment}
-                      </span>
-                      {comm.status === 'Retroalimentar a FAQ RAG' && (
-                        <button
-                          type="button"
-                          onClick={() => handleAddFaqToRag(comm.text)}
-                          className="px-2.5 py-1 rounded bg-neon text-black font-bold flex items-center gap-1 hover:bg-[var(--neon-hover)] transition-colors shadow-sm"
-                        >
-                          <PlusCircle className="w-3 h-3" />
-                          <span>Guardar en FAQ RAG</span>
-                        </button>
+                        <div className="flex items-center gap-2">
+                          {isDmSent && (
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 font-bold flex items-center gap-1 text-[10px]">
+                              <CheckCircle2 className="w-3 h-3" />
+                              DM Despachado
+                            </span>
+                          )}
+                          {isThreadReplied && (
+                            <span className="px-2 py-0.5 rounded-full bg-sky-100 dark:bg-sky-500/20 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-500/30 font-bold flex items-center gap-1 text-[10px]">
+                              <Reply className="w-3 h-3" />
+                              Respondido en Hilo
+                            </span>
+                          )}
+                          <span className="text-[10px] text-zinc-400 dark:text-zinc-500">{comm.time}</span>
+                        </div>
+                      </div>
+
+                      {/* Comment Body */}
+                      <p className="text-zinc-900 dark:text-white text-xs font-sans bg-white dark:bg-black/50 p-3 rounded-xl border border-zinc-200 dark:border-zinc-800/80 leading-relaxed">
+                        "{comm.text}"
+                      </p>
+
+                      {/* Operator Public Reply if already sent */}
+                      {comm.operatorReply && (
+                        <div className="p-3 rounded-xl bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-500/30 text-xs font-sans space-y-1">
+                          <span className="text-[10px] font-bold text-sky-700 dark:text-sky-400 font-mono flex items-center gap-1">
+                            <CornerDownRight className="w-3 h-3" />
+                            Respuesta Pública Enviada al Hilo:
+                          </span>
+                          <p className="text-zinc-800 dark:text-zinc-200 text-xs">
+                            "{comm.operatorReply}"
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Action Bar & AI Status */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 text-[10px]">
+                        <div className="space-y-0.5 min-w-0">
+                          <span className="text-zinc-500 dark:text-zinc-400">Acción IA: </span>
+                          <span className="text-cyan-700 dark:text-cyan-300 font-sans font-medium truncate block">
+                            {comm.aiAction}
+                          </span>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2 shrink-0">
+                          <span
+                            className={`px-2.5 py-1 rounded-lg font-medium ${
+                              isToxic
+                                ? 'bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30'
+                                : isLead
+                                ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
+                                : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-300'
+                            }`}
+                          >
+                            {comm.sentiment}
+                          </span>
+
+                          {/* Action Button: Disparar Auto-DM */}
+                          {isLead && !isDmSent && (
+                            <button
+                              type="button"
+                              onClick={() => handleTriggerDirectDm(comm)}
+                              className="px-3 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold flex items-center gap-1 shadow-sm transition-all active:scale-95"
+                            >
+                              <Send className="w-3 h-3" />
+                              <span>Disparar Auto-DM</span>
+                            </button>
+                          )}
+
+                          {/* Action Button: Responder en Hilo */}
+                          {!isToxic && !isThreadReplied && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setReplyingCommentId(isReplying ? null : comm.id);
+                                setReplyText(
+                                  comm.category === 'FAQ'
+                                    ? `¡Hola ${comm.author}! Con gusto te apoyamos. Te hemos enviado la información detallada.`
+                                    : `¡Hola ${comm.author}! Claro que sí, con gusto te apoyamos. ¿Nos dejas un mensaje privado para darte atención personalizada?`
+                                );
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 font-bold flex items-center gap-1 border border-zinc-200 dark:border-zinc-700 transition-colors"
+                            >
+                              <Reply className="w-3 h-3" />
+                              <span>{isReplying ? 'Cancelar' : 'Responder en Hilo'}</span>
+                            </button>
+                          )}
+
+                          {/* Action Button: Guardar en FAQ RAG */}
+                          {(comm.category === 'FAQ' || comm.status === 'Retroalimentar a FAQ RAG') && (
+                            <button
+                              type="button"
+                              onClick={() => handleAddFaqToRag(comm.text)}
+                              className="px-3 py-1.5 rounded-xl bg-neon text-black font-bold flex items-center gap-1 hover:bg-[var(--neon-hover)] transition-colors shadow-sm"
+                            >
+                              <PlusCircle className="w-3 h-3" />
+                              <span>Guardar en FAQ RAG</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Formulario Inline de Respuesta Pública */}
+                      {isReplying && (
+                        <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800 space-y-2 animate-fade-in">
+                          <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">
+                            Redactar Respuesta Pública para {comm.author}:
+                          </span>
+
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={replyText}
+                              onChange={(e) => setReplyText(e.target.value)}
+                              placeholder="Escribe la respuesta que será visible en el Reel..."
+                              className="flex-1 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 text-xs text-zinc-900 dark:text-white rounded-xl px-3.5 py-2 outline-none focus:border-neon font-sans"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handlePublicReplySubmit(comm.id)}
+                              className="px-4 py-2 rounded-xl bg-neon text-black font-bold text-xs hover:bg-[var(--neon-hover)] transition-all font-mono active:scale-95 shrink-0"
+                            >
+                              Publicar en Hilo
+                            </button>
+                          </div>
+                        </div>
                       )}
                     </div>
-                  </div>
-                </div>
-              ))}
+                  );
+                })}
             </div>
           </div>
         </div>
@@ -1642,20 +2460,23 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
       {/* ========================================================================= */}
       {activeTab === 'redis_queue' && (
         <div className="space-y-6 animate-fade-in font-mono text-xs">
-          {/* Top Banner de Fundamentación de Negocio */}
-          <div className="p-6 rounded-3xl bg-gradient-to-r from-purple-950/40 via-zinc-950 to-zinc-950 border border-purple-500/30 space-y-3">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          {/* Top Banner de Fundamentación de Negocio con Disparador en Batch */}
+          <div className="p-6 rounded-3xl bg-gradient-to-r from-purple-950/50 via-zinc-950 to-zinc-950 border border-purple-500/30 space-y-4 shadow-xl">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <span className="p-3 rounded-2xl bg-purple-500/20 text-purple-400 border border-purple-500/40 text-xl">
+                <span className="p-3.5 rounded-2xl bg-purple-500/20 text-purple-400 border border-purple-500/40 text-2xl shrink-0">
                   ⏱️
                 </span>
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <h3 className="text-xl font-heading font-black text-white">
                       Motor Asíncrono de Re-Engagement 24h & Vaca Púrpura
                     </h3>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 font-bold uppercase">
+                    <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 font-bold uppercase">
                       Regla 95/5 Activa
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-300 font-mono">
+                      Vertical: {activeTenant?.name || 'Clínica Dental'}
                     </span>
                   </div>
                   <p className="text-xs text-zinc-400 font-sans mt-0.5">
@@ -1664,10 +2485,16 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] px-3 py-1 rounded-xl bg-zinc-900 border border-purple-500/30 text-purple-300 font-mono">
-                  Cola Activa: <strong>{reengagementList.length} Prospectos</strong>
-                </span>
+              {/* Acciones de Batch Worker */}
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleRunBatchWorker}
+                  className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold font-mono text-xs flex items-center gap-2 shadow-lg shadow-purple-600/20 transition-all active:scale-95"
+                >
+                  <Zap className="w-4 h-4 text-neon" />
+                  <span>⚡ Ejecutar Worker Redis Nocturno (Batch 0ms)</span>
+                </button>
               </div>
             </div>
 
@@ -1678,126 +2505,183 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
 
           {/* KPI Summary Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-1">
-              <span className="text-[10px] text-zinc-500 uppercase">Leads Out-of-Market en Espera</span>
-              <p className="text-2xl font-black text-purple-400">{reengagementList.length}</p>
+            <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-1 shadow-sm">
+              <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase">Leads Out-of-Market en Espera</span>
+              <p className="text-2xl font-black text-purple-400">
+                {reengagementList.filter((x) => x.status !== 'FOLLOWUP_SENT').length}
+              </p>
               <span className="text-[10px] text-zinc-400 font-sans">Encolados en Upstash Redis</span>
             </div>
 
-            <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-1">
-              <span className="text-[10px] text-zinc-500 uppercase">Tasa de Reactivación a Cita</span>
+            <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-1 shadow-sm">
+              <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase">Tasa de Reactivación a Cita</span>
               <p className="text-2xl font-black text-neon">39.1%</p>
               <span className="text-[10px] text-emerald-400 font-sans">+4x vs seguimiento manual</span>
             </div>
 
-            <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-1">
-              <span className="text-[10px] text-zinc-500 uppercase">Costo de Tokens por Mensaje</span>
+            <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-1 shadow-sm">
+              <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase">Costo de Tokens por Mensaje</span>
               <p className="text-2xl font-black text-emerald-400">$0.00 USD</p>
               <span className="text-[10px] text-zinc-400 font-sans">Batching Groq / Llama 3 Nocturno</span>
             </div>
           </div>
 
-          {/* List of Re-Engagement Queue Items */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
+          {/* Filtros de la Cola Redis */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
               <h4 className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
                 <Clock className="w-4 h-4 text-purple-400" />
                 <span>Prospectos Encolados para Disparo a las 24 Horas Exactas</span>
               </h4>
-              <span className="text-[10px] text-zinc-400">
-                Trigger programado por Worker Redis
-              </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {reengagementList.map((item) => (
-                <div
-                  key={item.id}
-                  className="p-5 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/90 space-y-4 hover:border-purple-500/50 transition-all flex flex-col justify-between shadow-sm"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-bold text-zinc-900 dark:text-white font-sans">
-                        {item.clientName}
-                      </span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-400 border border-purple-500/30 font-bold">
-                        ⏳ {item.timeRemaining}
-                      </span>
-                    </div>
-
-                    <div className="space-y-1 text-[11px] text-zinc-500 dark:text-zinc-400">
-                      <div>
-                        <span>Interés: </span>
-                        <strong className="text-zinc-800 dark:text-zinc-200">{item.productInterest}</strong>
-                      </div>
-                      <div>
-                        <span>Objeción: </span>
-                        <span className="text-amber-500 italic">"{item.lastObjection}"</span>
-                      </div>
-                      <div className="text-[10px] text-zinc-400">
-                        Disparo programado: <strong>{item.targetScheduledAt}</strong>
-                      </div>
-                    </div>
-
-                    {/* Vaca Púrpura Copy Box */}
-                    <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 text-xs font-sans space-y-2">
-                      <div className="flex items-center justify-between font-mono text-[10px]">
-                        <span className="text-purple-400 font-bold flex items-center gap-1">
-                          <Sparkles className="w-3 h-3" />
-                          Mensaje Vaca Púrpura Generado:
-                        </span>
-                        <span className="text-zinc-400">
-                          {item.wordCount} palabras (&lt; 40)
-                        </span>
-                      </div>
-                      <p className="text-zinc-700 dark:text-zinc-200 italic leading-relaxed text-[11px]">
-                        "{item.vacaPurpuraMessage}"
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800/80 flex items-center justify-between gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        navigator.clipboard.writeText(item.vacaPurpuraMessage);
-                        triggerModal(
-                          'Copiado al Portapapeles',
-                          `El guion de la Vaca Púrpura para <strong>${item.clientName}</strong> ha sido copiado.`
-                        );
-                      }}
-                      className="px-3 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:text-white transition-colors text-[10px] font-bold"
-                    >
-                      Copiar
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setReengagementList((prev) =>
-                          prev.map((x) =>
-                            x.id === item.id
-                              ? { ...x, timeRemaining: 'DESPACHADO', status: 'FOLLOWUP_SENT' }
-                              : x
-                          )
-                        );
-                        try {
-                          confetti({ particleCount: 35, spread: 60, colors: ['#A855F7', '#E7F900'] });
-                        } catch (e) {}
-                        triggerModal(
-                          'Disparo de Prueba 24h Ejecutado (0ms)',
-                          `<b>Destinatario:</b> ${item.clientName} (${item.phone})<br><b>Mensaje:</b> "${item.vacaPurpuraMessage}"<br><b>Estado:</b> Mutado a FOLLOWUP_SENT en Upstash Redis. Transición a embudo de consideración exitosa.`
-                        );
-                      }}
-                      className="flex-1 px-3 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px] flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95"
-                    >
-                      <Zap className="w-3 h-3" />
-                      <span>{item.status === 'FOLLOWUP_SENT' ? 'Enviado ✅' : 'Simular Disparo (0ms)'}</span>
-                    </button>
-                  </div>
-                </div>
-              ))}
+            <div className="flex items-center gap-1.5 font-mono text-xs">
+              {[
+                { id: 'ALL', label: 'Todos', count: reengagementList.length },
+                {
+                  id: 'PENDING',
+                  label: 'En Espera',
+                  count: reengagementList.filter((x) => x.status !== 'FOLLOWUP_SENT').length,
+                },
+                {
+                  id: 'SENT',
+                  label: 'Despachados',
+                  count: reengagementList.filter((x) => x.status === 'FOLLOWUP_SENT').length,
+                },
+              ].map((tab) => {
+                const isSelected = reengagementFilter === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setReengagementFilter(tab.id)}
+                    className={`px-3 py-1 rounded-xl transition-all font-bold ${
+                      isSelected
+                        ? 'bg-purple-600 text-white shadow-sm'
+                        : 'bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:text-white border border-zinc-200 dark:border-zinc-800'
+                    }`}
+                  >
+                    <span>{tab.label}</span>
+                    <span className="ml-1 text-[10px] opacity-80">({tab.count})</span>
+                  </button>
+                );
+              })}
             </div>
+          </div>
+
+          {/* Grid de Prospectos Encolados */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {reengagementList
+              .filter((item) => {
+                if (reengagementFilter === 'PENDING') return item.status !== 'FOLLOWUP_SENT';
+                if (reengagementFilter === 'SENT') return item.status === 'FOLLOWUP_SENT';
+                return true;
+              })
+              .map((item) => {
+                const isSent = item.status === 'FOLLOWUP_SENT';
+
+                return (
+                  <div
+                    key={item.id}
+                    className={`p-5 rounded-2xl border transition-all flex flex-col justify-between shadow-sm ${
+                      isSent
+                        ? 'bg-gradient-to-br from-zinc-50 via-white to-emerald-50/20 dark:from-zinc-950 dark:via-zinc-900/60 dark:to-emerald-950/20 border-emerald-300 dark:border-emerald-500/40'
+                        : 'bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800/90 hover:border-purple-500/50'
+                    }`}
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-bold text-zinc-900 dark:text-white font-sans truncate">
+                          {item.clientName}
+                        </span>
+                        <span
+                          className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold shrink-0 ${
+                            isSent
+                              ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/40'
+                              : 'bg-purple-500/15 text-purple-400 border border-purple-500/30'
+                          }`}
+                        >
+                          {isSent ? '✅ DESPACHADO' : `⏳ ${item.timeRemaining}`}
+                        </span>
+                      </div>
+
+                      <div className="space-y-1 text-[11px] text-zinc-500 dark:text-zinc-400">
+                        <div>
+                          <span>Interés: </span>
+                          <strong className="text-zinc-800 dark:text-zinc-200">{item.productInterest}</strong>
+                        </div>
+                        <div>
+                          <span>Objeción: </span>
+                          <span className="text-amber-500 italic">"{item.lastObjection}"</span>
+                        </div>
+                        <div className="text-[10px] text-zinc-400">
+                          Disparo programado: <strong>{item.targetScheduledAt}</strong>
+                        </div>
+                      </div>
+
+                      {/* Vaca Púrpura Copy Box */}
+                      <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 text-xs font-sans space-y-2">
+                        <div className="flex items-center justify-between font-mono text-[10px]">
+                          <span className="text-purple-400 font-bold flex items-center gap-1">
+                            <Sparkles className="w-3 h-3" />
+                            Mensaje Vaca Púrpura Generado:
+                          </span>
+                          <span className="text-zinc-400">
+                            {item.wordCount} palabras (&lt; 40)
+                          </span>
+                        </div>
+                        <p className="text-zinc-700 dark:text-zinc-200 italic leading-relaxed text-[11px]">
+                          "{item.vacaPurpuraMessage}"
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800/80 flex items-center justify-between gap-2 mt-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(item.vacaPurpuraMessage);
+                          triggerModal(
+                            'Copiado al Portapapeles',
+                            `El guion de la Vaca Púrpura para <strong>${item.clientName}</strong> ha sido copiado.`
+                          );
+                        }}
+                        className="px-3 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:text-white transition-colors text-[10px] font-bold"
+                      >
+                        Copiar
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setReengagementList((prev) =>
+                            prev.map((x) =>
+                              x.id === item.id
+                                ? { ...x, timeRemaining: 'DESPACHADO', status: 'FOLLOWUP_SENT' }
+                                : x
+                            )
+                          );
+                          try {
+                            confetti({ particleCount: 35, spread: 60, colors: ['#A855F7', '#E7F900'] });
+                          } catch (e) {}
+                          triggerModal(
+                            'Disparo de Prueba 24h Ejecutado (0ms)',
+                            `<b>Destinatario:</b> ${item.clientName} (${item.phone})<br><b>Mensaje:</b> "${item.vacaPurpuraMessage}"<br><b>Estado:</b> Mutado a FOLLOWUP_SENT en Upstash Redis. Transición a embudo de consideración exitosa.`
+                          );
+                        }}
+                        className={`flex-1 px-3 py-2 rounded-xl font-bold text-[10px] flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 ${
+                          isSent
+                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                            : 'bg-purple-600 hover:bg-purple-500 text-white'
+                        }`}
+                      >
+                        <Zap className="w-3 h-3" />
+                        <span>{isSent ? 'Re-enviar Disparo (0ms)' : 'Simular Disparo (0ms)'}</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
           </div>
         </div>
       )}

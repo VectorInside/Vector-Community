@@ -42,3 +42,86 @@ export const formatRelativeTime = (dateString) => {
     return dateString;
   }
 };
+
+export const cleanConcept = (val) => {
+  if (!val || typeof val !== 'string') return val || '';
+  const trimmed = val.trim();
+
+  const CONCEPT_DICTIONARY = {
+    // CAPI & Eventos Comerciales
+    'Purchase / Table_Reserved': 'Venta / Reserva de Mesa',
+    'Table_Reserved': 'Reserva de Mesa',
+    'Lead_HighIntent': 'Prospecto de Alta Intención',
+    'Purchase / Wine_AddOn': 'Venta / Adicional Gourmet',
+    'Wine_AddOn': 'Adicional Gourmet',
+    'Schedule_Confirmed': 'Cita Confirmada',
+    'Schedule / Dental_Diagnosis': 'Cita / Valoración Clínica',
+    'Dental_Diagnosis': 'Valoración Clínica',
+    'Treatment_Accepted': 'Tratamiento Aceptado',
+    'Purchase / Neon_Runner': 'Venta / Calzado Deportivo',
+    'Neon_Runner': 'Calzado Deportivo',
+    'Membership_Signed': 'Membresía Contratada',
+    'InitiateCheckout': 'Inicio de Compra',
+    'MATCHED_CAPI_98%': 'Sincronizado CAPI (98%)',
+    'MATCHED_CAPI_95%': 'Sincronizado CAPI (95%)',
+    'MATCHED_CAPI_99%': 'Sincronizado CAPI (99%)',
+    'MATCHED_CAPI_97%': 'Sincronizado CAPI (97%)',
+    'MATCHED_CAPI_96%': 'Sincronizado CAPI (96%)',
+    'MATCHED_CAPI_100%': 'Sincronizado CAPI (100%)',
+
+    // Estados de Prospecto & Triaje
+    'LEAD_COLD_24H': 'Ingreso / Frío (24h)',
+    'LEAD_WARM_24H': 'En Seguimiento (24h)',
+    'LEAD_HOT_PREQUAL': 'Prospecto Cálido',
+    'BILLABLE_LEAD': 'Lead Calificado',
+    'HITL_INTERVENTION': 'Intervención Humana',
+    'QUEUED_REDIS_24H': 'En Cola de Re-contacto (24h)',
+    'TRIGGER_IMMIMENT': 'Disparo Inminente',
+    'PENDING_AGENCY_APPROVAL': 'Pendiente de Aprobación',
+    'PENDING_INVOICE': 'Facturación Pendiente',
+    'PENDING_INVITE': 'Invitación Pendiente',
+    'ACTIVE': 'Activo',
+    'SUSPENDED': 'Suspendido',
+    'SYNCED_GOOGLE_CALENDAR': 'Sincronizado en Google Calendar',
+
+    // Herramientas & Sub-Bots
+    'consultar_disponibilidad_google_calendar()': 'Consulta de Agenda en Google Calendar',
+    'registrar_cita()': 'Registro de Cita en Agenda',
+    'mostrar_menu_digital()': 'Visualización de Menú Digital',
+    'obtener_ubicacion()': 'Envío de Ubicación y Mapa',
+    'reservar_mesa()': 'Confirmación de Mesa en Salón',
+    'SubAgente_Moderador_Closer': 'Sub-Agente Moderador de Cierre',
+
+    // Verticales
+    'service_appointments': 'Citas y Servicios',
+    'hospitality': 'Restaurantes y Hospitalidad',
+    'ecommerce': 'Comercio Electrónico',
+    'b2b_sales': 'Ventas Corporativas B2B',
+    'creator_economy': 'Creadores y Marca Personal',
+  };
+
+  if (CONCEPT_DICTIONARY[trimmed]) return CONCEPT_DICTIONARY[trimmed];
+
+  // Regex para patrones MATCHED_CAPI_XX%
+  if (/^MATCHED_CAPI_(\d+)%$/i.test(trimmed)) {
+    const match = trimmed.match(/^MATCHED_CAPI_(\d+)%$/i);
+    return `Sincronizado CAPI (${match[1]}%)`;
+  }
+
+  // Reemplazar guiones bajos por espacios y limpiar paréntesis
+  const cleaned = trimmed
+    .replace(/_/g, ' ')
+    .replace(/\(\)/g, '')
+    .trim();
+
+  // Si estaba todo en MAYÚSCULAS tipo ENUM_CONSTANTE, pasar a Capitalización Natural
+  if (cleaned === cleaned.toUpperCase() && cleaned.length > 2) {
+    return cleaned
+      .toLowerCase()
+      .split(' ')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  }
+
+  return cleaned;
+};

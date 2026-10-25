@@ -17,6 +17,7 @@ import {
   Bell,
   Sparkles,
   Menu,
+  ArrowRight,
 } from 'lucide-react';
 import { findModuleByPath } from '@/utils/modulesRegistry';
 
@@ -39,22 +40,141 @@ export const Header = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const popoverRef = useRef(null);
 
+  // Cross-Tenant Notifications Center
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [notifFilter, setNotifFilter] = useState('all'); // 'all' | 'unread'
+  const notifRef = useRef(null);
+
+  const INITIAL_CROSS_TENANT_NOTIFICATIONS = [
+    {
+      id: 'notif-pol-01',
+      tenantKey: 'polanco',
+      tenantName: 'Polanco Steakhouse',
+      tenantAvatar: '🥩',
+      channel: 'WhatsApp',
+      channelColor: 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10',
+      title: 'Reserva VIP Terraza (4 personas)',
+      sender: 'Alejandro Bastida',
+      snippet: 'Hola! Queremos reservar hoy a las 9pm en terraza para 4 personas, festejo de aniversario.',
+      time: 'Hace 3 min',
+      slaRemaining: 5,
+      threadId: 'pol-001',
+      isRead: false,
+    },
+    {
+      id: 'notif-dent-01',
+      tenantKey: 'dental',
+      tenantName: 'Odontología Integral',
+      tenantAvatar: '🦷',
+      channel: 'Instagram DM',
+      channelColor: 'border-pink-500/30 text-pink-400 bg-pink-500/10',
+      title: 'Valoración Implante Molar 3D',
+      sender: 'Dra. Mariana Solares',
+      snippet: 'Buenas tardes, me urge cita para valorar un implante con anestesia sin dolor.',
+      time: 'Hace 8 min',
+      slaRemaining: 8,
+      threadId: 'dent-002',
+      isRead: false,
+    },
+    {
+      id: 'notif-urb-01',
+      tenantKey: 'urban',
+      tenantName: 'Urban Sneaks',
+      tenantAvatar: '👟',
+      channel: 'WhatsApp',
+      channelColor: 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10',
+      title: 'Legit Check & Talla 27.5mx',
+      sender: 'Kevin Almonte',
+      snippet: 'Tienen disponible el Jordan 1 Retro High en 27.5mx? Es 100% original con factura?',
+      time: 'Hace 14 min',
+      slaRemaining: 12,
+      threadId: 'urb-001',
+      isRead: false,
+    },
+    {
+      id: 'notif-corp-01',
+      tenantKey: 'corp',
+      tenantName: 'Vector Enterprise',
+      tenantAvatar: '🏢',
+      channel: 'Facebook Messenger',
+      channelColor: 'border-blue-500/30 text-blue-400 bg-blue-500/10',
+      title: 'Auditoría Fuga de Leads B2B',
+      sender: 'Ing. Fernando Arteaga',
+      snippet: 'Quisiéramos agendar la sesión de diagnóstico técnico con un Arquitecto Senior.',
+      time: 'Hace 22 min',
+      slaRemaining: 18,
+      threadId: 'corp-001',
+      isRead: true,
+    },
+  ];
+
+  const [notifications, setNotifications] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('vector_global_notifications');
+        if (saved) return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return INITIAL_CROSS_TENANT_NOTIFICATIONS;
+  });
+
+  const unreadCount = useMemo(
+    () => notifications.filter((n) => !n.isRead).length,
+    [notifications]
+  );
+
+  const filteredNotifications = useMemo(() => {
+    if (notifFilter === 'unread') return notifications.filter((n) => !n.isRead);
+    return notifications;
+  }, [notifications, notifFilter]);
+
+  const handleSelectNotification = (notif) => {
+    // 1. Mark notification as read
+    const updated = notifications.map((n) =>
+      n.id === notif.id ? { ...n, isRead: true } : n
+    );
+    setNotifications(updated);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('vector_global_notifications', JSON.stringify(updated));
+      } catch (e) {}
+    }
+
+    // 2. Switch Tenant Context
+    switchTenantContext(notif.tenantKey);
+
+    // 3. Close popover and jump to inbox thread
+    setIsNotifOpen(false);
+    router.push(`/inbox?threadId=${notif.threadId}`);
+  };
+
+  const handleMarkAllRead = () => {
+    const updated = notifications.map((n) => ({ ...n, isRead: true }));
+    setNotifications(updated);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('vector_global_notifications', JSON.stringify(updated));
+      } catch (e) {}
+    }
+  };
+
   const activeModule = findModuleByPath(pathname);
 
-  // Close popover when clicking outside
+  // Close popovers when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (popoverRef.current && !popoverRef.current.contains(event.target)) {
         setIsOpen(false);
       }
+      if (notifRef.current && !notifRef.current.contains(event.target)) {
+        setIsNotifOpen(false);
+      }
     };
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
+    document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isOpen]);
+  }, []);
 
   const tenantsList = useMemo(() => Object.values(tenantsData || {}), [tenantsData]);
 
@@ -250,16 +370,166 @@ export const Header = () => {
             {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
 
-          {/* Notification / Bell with dot */}
-          <button
-            type="button"
-            onClick={() => router.push('/inbox')}
-            title="3 mensajes pendientes de respuesta"
-            className="p-2 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] hover:border-lime-400 text-[var(--text-muted)] hover:text-lime-400 transition-all relative"
-          >
-            <Bell className="w-4 h-4" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-lime-400 animate-pulse" />
-          </button>
+          {/* Cross-Tenant Notification Bell with Popover */}
+          <div className="relative" ref={notifRef}>
+            <button
+              type="button"
+              onClick={() => setIsNotifOpen((prev) => !prev)}
+              title={`${unreadCount} notificaciones sin atender`}
+              className={`p-2 rounded-xl bg-[var(--bg-base)] border transition-all relative ${
+                isNotifOpen
+                  ? 'border-lime-400 ring-1 ring-lime-400/40 text-lime-400 shadow-sm'
+                  : 'border-[var(--border-color)] hover:border-lime-400 text-[var(--text-muted)] hover:text-lime-400'
+              }`}
+            >
+              <Bell className="w-4 h-4" />
+              {unreadCount > 0 ? (
+                <span className="absolute -top-1 -right-1 px-1.5 min-w-[18px] h-[18px] rounded-full text-[9px] font-mono font-black bg-lime-400 text-black flex items-center justify-center shadow-[0_0_8px_rgba(200,255,0,0.5)] animate-pulse">
+                  {unreadCount}
+                </span>
+              ) : (
+                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              )}
+            </button>
+
+            {/* Notification Popover Dropdown */}
+            {isNotifOpen && (
+              <div className="absolute top-full right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] shadow-2xl z-50 p-3 space-y-2.5 animate-scale-up">
+                {/* Header */}
+                <div className="flex items-center justify-between pb-2 border-b border-[var(--border-color)]">
+                  <div className="flex items-center gap-2">
+                    <span className="p-1 rounded-lg bg-lime-400/10 text-lime-400 border border-lime-400/20">
+                      <Bell className="w-3.5 h-3.5" />
+                    </span>
+                    <span className="text-xs font-heading font-black text-[var(--text-main)] uppercase tracking-wider">
+                      Centro de Notificaciones
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {unreadCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleMarkAllRead}
+                        className="text-[10px] font-mono text-[var(--text-muted)] hover:text-lime-400 transition-colors"
+                      >
+                        Marcar leídas
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Filter Pills */}
+                <div className="flex items-center gap-1.5 text-[10px] font-mono">
+                  <button
+                    type="button"
+                    onClick={() => setNotifFilter('all')}
+                    className={`px-2 py-0.5 rounded-md font-bold transition-all ${
+                      notifFilter === 'all'
+                        ? 'bg-lime-400 text-black'
+                        : 'bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                    }`}
+                  >
+                    Todas ({notifications.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNotifFilter('unread')}
+                    className={`px-2 py-0.5 rounded-md font-bold transition-all ${
+                      notifFilter === 'unread'
+                        ? 'bg-lime-400 text-black'
+                        : 'bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                    }`}
+                  >
+                    Sin leer ({unreadCount})
+                  </button>
+                  <span className="text-[10px] font-mono text-[var(--text-faint)] ml-auto">
+                    Cross-Tenant
+                  </span>
+                </div>
+
+                {/* Notifications List */}
+                <div className="max-h-72 overflow-y-auto space-y-1.5 custom-scrollbar pr-0.5 divide-y divide-[var(--border-color)]/50">
+                  {filteredNotifications.length === 0 ? (
+                    <div className="p-6 text-center text-xs text-[var(--text-muted)] font-mono">
+                      No hay notificaciones pendientes.
+                    </div>
+                  ) : (
+                    filteredNotifications.map((notif) => (
+                      <button
+                        key={notif.id}
+                        type="button"
+                        onClick={() => handleSelectNotification(notif)}
+                        className={`w-full text-left p-2.5 rounded-xl transition-all flex items-start gap-2.5 pt-2.5 ${
+                          notif.isRead
+                            ? 'hover:bg-[var(--bg-card)]/50 opacity-75'
+                            : 'bg-[var(--bg-card)]/80 hover:bg-[var(--bg-card)] border border-lime-400/20'
+                        }`}
+                      >
+                        {/* Tenant Avatar */}
+                        <div className="w-8 h-8 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] flex items-center justify-center text-base shrink-0 mt-0.5">
+                          {notif.tenantAvatar}
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0 space-y-0.5">
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="text-[10px] font-mono font-bold text-lime-400 truncate">
+                              {notif.tenantName}
+                            </span>
+                            <span className="text-[9px] font-mono text-[var(--text-faint)] shrink-0">
+                              {notif.time}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            <span className={`text-[8px] font-mono px-1.5 py-0.2 rounded font-bold border ${notif.channelColor}`}>
+                              {notif.channel}
+                            </span>
+                            <h5 className="font-heading font-bold text-xs text-[var(--text-main)] truncate">
+                              {notif.sender}: {notif.title}
+                            </h5>
+                          </div>
+
+                          <p className="text-[11px] text-[var(--text-muted)] font-sans truncate leading-tight">
+                            "{notif.snippet}"
+                          </p>
+
+                          <div className="flex items-center justify-between pt-1 text-[9px] font-mono">
+                            <span className="text-amber-400 font-bold">
+                              ⏳ {notif.slaRemaining} min SLA
+                            </span>
+                            <span className="text-[var(--text-faint)] hover:text-lime-400 flex items-center gap-0.5 font-bold">
+                              <span>Atender lead</span>
+                              <ArrowRight className="w-2.5 h-2.5" />
+                            </span>
+                          </div>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+
+                {/* Footer Quick Action */}
+                <div className="pt-2 border-t border-[var(--border-color)] flex items-center justify-between">
+                  <span className="text-[10px] font-mono text-[var(--text-faint)]">
+                    Espacio actual: <strong className="text-[var(--text-main)]">{activeTenant?.shortName || activeTenant?.name}</strong>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsNotifOpen(false);
+                      router.push('/inbox');
+                    }}
+                    className="text-[10px] font-mono font-bold text-lime-400 hover:underline flex items-center gap-1"
+                  >
+                    <span>Ir a Bandeja</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Role Avatar */}
           <div
