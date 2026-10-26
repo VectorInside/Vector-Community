@@ -277,10 +277,10 @@ export const INITIAL_PERFORMANCE_METRICS = {
       { date: '30 Sep', spend: 500, revenue: 2289, realRoas: 4.57, metaRoas: 3.35, hookRate: 41.8 },
     ],
     capiLogs: [
-      { id: 'ev-01', event: 'Purchase / Table_Reserved', timestamp: 'Hace 4m', value: '$4,200 MXN', status: 'MATCHED_CAPI_98%', signalSource: 'WhatsApp + Stripe' },
-      { id: 'ev-02', event: 'Lead_HighIntent', timestamp: 'Hace 18m', value: 'N/A', status: 'MATCHED_CAPI_95%', signalSource: 'Meta Adset #441' },
-      { id: 'ev-03', event: 'Purchase / Wine_AddOn', timestamp: 'Hace 42m', value: '$1,850 MXN', status: 'MATCHED_CAPI_99%', signalSource: 'TPV Terminal Sync' },
-      { id: 'ev-04', event: 'Schedule_Confirmed', timestamp: 'Hace 1h', value: '$3,500 MXN', status: 'MATCHED_CAPI_97%', signalSource: 'Google Calendar API' },
+      { id: 'ev-01', event: 'Venta / Reserva de Mesa', timestamp: 'Hace 4m', value: '$4,200 MXN', status: 'Sincronizado CAPI (98%)', signalSource: 'WhatsApp + Stripe' },
+      { id: 'ev-02', event: 'Prospecto de Alta Intención', timestamp: 'Hace 18m', value: 'N/A', status: 'Sincronizado CAPI (95%)', signalSource: 'Meta Adset #441' },
+      { id: 'ev-03', event: 'Venta / Adicional Gourmet', timestamp: 'Hace 42m', value: '$1,850 MXN', status: 'Sincronizado CAPI (99%)', signalSource: 'TPV Terminal Sync' },
+      { id: 'ev-04', event: 'Cita Confirmada', timestamp: 'Hace 1h', value: '$3,500 MXN', status: 'Sincronizado CAPI (97%)', signalSource: 'Google Calendar API' },
     ]
   },
   'tenant-med-002': {
@@ -305,8 +305,8 @@ export const INITIAL_PERFORMANCE_METRICS = {
       { date: '30 Sep', spend: 610, revenue: 3630, realRoas: 5.95, metaRoas: 3.95, hookRate: 48.2 },
     ],
     capiLogs: [
-      { id: 'ev-11', event: 'Schedule / Dental_Diagnosis', timestamp: 'Hace 8m', value: '$800 MXN', status: 'MATCHED_CAPI_99%', signalSource: 'Calendar Booking' },
-      { id: 'ev-12', event: 'Treatment_Accepted', timestamp: 'Hace 35m', value: '$18,500 MXN', status: 'MATCHED_CAPI_98%', signalSource: 'CRM Dental Sync' },
+      { id: 'ev-11', event: 'Cita / Valoración Clínica', timestamp: 'Hace 8m', value: '$800 MXN', status: 'Sincronizado CAPI (99%)', signalSource: 'Calendar Booking' },
+      { id: 'ev-12', event: 'Tratamiento Aceptado', timestamp: 'Hace 35m', value: '$18,500 MXN', status: 'Sincronizado CAPI (98%)', signalSource: 'CRM Dental Sync' },
     ]
   },
   'tenant-eco-003': {
@@ -331,8 +331,8 @@ export const INITIAL_PERFORMANCE_METRICS = {
       { date: '30 Sep', spend: 800, revenue: 3104, realRoas: 3.88, metaRoas: 2.80, hookRate: 38.6 },
     ],
     capiLogs: [
-      { id: 'ev-21', event: 'Purchase / Neon_Runner', timestamp: 'Hace 12m', value: '$3,600 MXN', status: 'MATCHED_CAPI_99%', signalSource: 'Shopify Server CAPI' },
-      { id: 'ev-22', event: 'InitiateCheckout', timestamp: 'Hace 29m', value: '$7,200 MXN', status: 'MATCHED_CAPI_96%', signalSource: 'Vector Pixel' },
+      { id: 'ev-21', event: 'Venta / Calzado Deportivo', timestamp: 'Hace 12m', value: '$3,600 MXN', status: 'Sincronizado CAPI (99%)', signalSource: 'Shopify Server CAPI' },
+      { id: 'ev-22', event: 'Inicio de Compra', timestamp: 'Hace 29m', value: '$7,200 MXN', status: 'Sincronizado CAPI (96%)', signalSource: 'Vector Pixel' },
     ]
   },
   'tenant-fit-004': {
@@ -357,7 +357,7 @@ export const INITIAL_PERFORMANCE_METRICS = {
       { date: '30 Sep', spend: 400, revenue: 2040, realRoas: 5.10, metaRoas: 3.68, hookRate: 45.4 },
     ],
     capiLogs: [
-      { id: 'ev-31', event: 'Membership_Signed', timestamp: 'Hace 15m', value: '$2,400 MXN', status: 'MATCHED_CAPI_98%', signalSource: 'Gym CRM Sync' },
+      { id: 'ev-31', event: 'Membresía Contratada', timestamp: 'Hace 15m', value: '$2,400 MXN', status: 'Sincronizado CAPI (98%)', signalSource: 'Gym CRM Sync' },
     ]
   }
 };
@@ -568,7 +568,7 @@ export const REENGAGEMENT_QUEUE_MOCK = [
     lastObjection: 'Lo voy a pensar (Evasiva)',
     timeRemaining: '14h 22m',
     targetScheduledAt: 'Hoy, 16:12 hrs',
-    status: 'QUEUED_REDIS_24H',
+    status: 'En Cola de Re-contacto (24h)',
     vacaPurpuraMessage: 'Hola Carlos! Estuve pensando en tu consulta. Sabías que el 90% de las caries invisibles se previenen con profilaxis ultrasónica anual? Te gustaría que te aparte un espacio con diagnóstico 3D sin costo este jueves?',
     wordCount: 36,
     framework: 'Vaca Púrpura + Regla 95/5',
@@ -582,7 +582,7 @@ export const REENGAGEMENT_QUEUE_MOCK = [
     lastObjection: 'Viendo opciones sin profundizar en MSI',
     timeRemaining: '08h 45m',
     targetScheduledAt: 'Hoy, 20:25 hrs',
-    status: 'QUEUED_REDIS_24H',
+    status: 'En Cola de Re-contacto (24h)',
     vacaPurpuraMessage: 'Hola Valeria! Para tu diseño de sonrisa: contamos con una simulación digital previa para que veas el resultado antes de tocar tus dientes. Quieres que te envíe un video de cómo se realiza en 1 sola sesión?',
     wordCount: 38,
     framework: 'JTBD + Ecuación de Valor',
@@ -596,7 +596,7 @@ export const REENGAGEMENT_QUEUE_MOCK = [
     lastObjection: 'Checando con la familia el horario',
     timeRemaining: '02h 15m',
     targetScheduledAt: 'Hoy, 17:00 hrs',
-    status: 'TRIGGER_IMMIMENT',
+    status: 'Disparo Inminente',
     vacaPurpuraMessage: 'Hola Eduardo! Nos quedan únicamente 2 mesas en Terraza Principal para este fin de semana. Deseas que te guarde una con la cortesía de bienvenida del Sommelier?',
     wordCount: 29,
     framework: 'Vaca Púrpura (Escasez Real)',

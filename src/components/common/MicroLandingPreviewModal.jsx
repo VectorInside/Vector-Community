@@ -29,8 +29,50 @@ import {
   MapPin,
   Tag,
   Phone,
+  ArrowUp,
+  ArrowDown,
+  Printer,
+  Palette,
+  CheckCircle2,
+  Image as ImageIcon,
+  FileText,
+  RefreshCw,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+
+const DEFAULT_COVERS = {
+  dental: 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=800&auto=format&fit=crop&q=80',
+  polanco: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=800&auto=format&fit=crop&q=80',
+  urban: 'https://images.unsplash.com/photo-1552346154-21d32810aba3?w=800&auto=format&fit=crop&q=80',
+  corp: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&auto=format&fit=crop&q=80',
+};
+
+const DEFAULT_LEAD_FORMS = {
+  dental: {
+    title: 'Motivo principal de consulta:',
+    subtitle: 'Te orientamos sobre fechas y presupuestos en minutos',
+    buttonText: 'Solicitar Cita de Valoración',
+    options: ['Limpieza Dental', 'Implante Molar', 'Ortodoncia', 'Diagnóstico General'],
+  },
+  polanco: {
+    title: 'Reserva tu Mesa VIP en Terraza:',
+    subtitle: 'Confirmación prioritaria por WhatsApp en < 5 min',
+    buttonText: 'Solicitar Reserva de Mesa',
+    options: ['2 comensales', '4 comensales', '6 comensales', 'Mesa VIP 8+'],
+  },
+  urban: {
+    title: 'Talla o Modelo a consultar / apartar:',
+    subtitle: 'Verificamos disponibilidad de tu talla de inmediato',
+    buttonText: 'Consultar Stock & Apartar',
+    options: ['26 MX', '26.5 MX', '27 MX', '27.5 MX', '28 MX'],
+  },
+  corp: {
+    title: 'Servicio de Interés Estratégico:',
+    subtitle: 'Sesión de 30 min con un consultor de soluciones',
+    buttonText: 'Agendar Discovery Call (30 min)',
+    options: ['Automatización IA', 'Integración CRM', 'Agentes Multi-Canal', 'Consultoría B2B'],
+  },
+};
 
 const DEFAULT_SERVICES = {
   dental: [
@@ -55,7 +97,16 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
   const [copiedLink, setCopiedLink] = useState(false);
   const [activeTab, setActiveTab] = useState('customize'); // 'customize' | 'qr' | 'overview'
   const [activeSubSection, setActiveSubSection] = useState('services'); // 'brand' | 'services' | 'contact'
+  const [deviceMode, setDeviceMode] = useState('iphone'); // 'iphone' | 'android'
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  const badgeToneOptions = [
+    { id: 'emerald', label: 'Esmeralda', badgeClass: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' },
+    { id: 'neon', label: 'Neón', badgeClass: 'bg-[#D4FF00]/15 text-[#D4FF00] border-[#D4FF00]/30' },
+    { id: 'blue', label: 'Zafiro', badgeClass: 'bg-blue-500/15 text-blue-400 border-blue-500/30' },
+    { id: 'purple', label: 'Violeta VIP', badgeClass: 'bg-purple-500/15 text-purple-400 border-purple-500/30' },
+    { id: 'amber', label: 'Ámbar', badgeClass: 'bg-amber-500/15 text-amber-400 border-amber-500/30' },
+  ];
 
   // Customization state
   const [customData, setCustomData] = useState({
@@ -66,7 +117,14 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
     hoursWeek: '',
     hoursWeekend: '',
     logo: null,
+    cover: null,
     services: [],
+    leadForm: {
+      title: '',
+      subtitle: '',
+      buttonText: '',
+      options: [],
+    },
   });
 
   const iframeRef = useRef(null);
@@ -76,6 +134,8 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
   useEffect(() => {
     if (!tenant) return;
     const defaultList = DEFAULT_SERVICES[tenant.id] || DEFAULT_SERVICES.dental;
+    const defaultCover = DEFAULT_COVERS[tenant.id] || DEFAULT_COVERS.dental;
+    const defaultLeadForm = DEFAULT_LEAD_FORMS[tenant.id] || DEFAULT_LEAD_FORMS.dental;
 
     try {
       const saved = localStorage.getItem(`vector_microlanding_${tenant.id}`);
@@ -91,7 +151,9 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
           ga4MeasurementId: parsed.ga4MeasurementId || tenant.ga4MeasurementId || '',
           metaPixelId: parsed.metaPixelId || tenant.metaPixelId || '',
           logo: parsed.logo || null,
+          cover: parsed.cover || defaultCover,
           services: parsed.services && parsed.services.length > 0 ? parsed.services : defaultList,
+          leadForm: parsed.leadForm || defaultLeadForm,
         });
       } else {
         setCustomData({
@@ -104,7 +166,9 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
           ga4MeasurementId: tenant.ga4MeasurementId || '',
           metaPixelId: tenant.metaPixelId || '',
           logo: null,
+          cover: defaultCover,
           services: defaultList,
+          leadForm: defaultLeadForm,
         });
       }
     } catch (e) {
@@ -118,7 +182,9 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
         ga4MeasurementId: tenant.ga4MeasurementId || '',
         metaPixelId: tenant.metaPixelId || '',
         logo: null,
+        cover: defaultCover,
         services: defaultList,
+        leadForm: defaultLeadForm,
       });
     }
   }, [tenant]);
@@ -168,6 +234,24 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
     handleUpdateField('services', nextServices);
   };
 
+  const handleDuplicateService = (index) => {
+    const srv = customData.services[index];
+    if (!srv) return;
+    const duplicated = { ...srv, title: `${srv.title} (Copia)` };
+    const nextServices = [...customData.services];
+    nextServices.splice(index + 1, 0, duplicated);
+    handleUpdateField('services', nextServices);
+  };
+
+  const handleMoveService = (index, direction) => {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= customData.services.length) return;
+    const nextServices = [...customData.services];
+    const [moved] = nextServices.splice(index, 1);
+    nextServices.splice(targetIndex, 0, moved);
+    handleUpdateField('services', nextServices);
+  };
+
   const handleLogoUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -195,6 +279,78 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
 
   const handleRemoveLogo = () => {
     handleUpdateField('logo', null);
+  };
+
+  const handleCoverUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 3.5 * 1024 * 1024) {
+      alert('Por favor selecciona una imagen menor a 3.5 MB para no sobrecargar el almacenamiento local.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target.result;
+      handleUpdateField('cover', base64);
+      try {
+        confetti({
+          particleCount: 25,
+          spread: 40,
+          origin: { y: 0.6 },
+          colors: ['#D4FF00', '#25D366', '#FFFFFF'],
+        });
+      } catch (err) {}
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveCover = () => {
+    const defaultCover = DEFAULT_COVERS[tenant?.id] || DEFAULT_COVERS.dental;
+    handleUpdateField('cover', defaultCover);
+  };
+
+  // Lead Form state handlers
+  const handleUpdateLeadFormField = (field, value) => {
+    const current = customData.leadForm || DEFAULT_LEAD_FORMS[tenant?.id] || DEFAULT_LEAD_FORMS.dental;
+    const updated = { ...current, [field]: value };
+    handleUpdateField('leadForm', updated);
+  };
+
+  const handleAddLeadOption = () => {
+    const current = customData.leadForm || DEFAULT_LEAD_FORMS[tenant?.id] || DEFAULT_LEAD_FORMS.dental;
+    const nextOptions = [...(current.options || []), `Opción ${(current.options?.length || 0) + 1}`];
+    handleUpdateLeadFormField('options', nextOptions);
+  };
+
+  const handleUpdateLeadOption = (index, value) => {
+    const current = customData.leadForm || DEFAULT_LEAD_FORMS[tenant?.id] || DEFAULT_LEAD_FORMS.dental;
+    const nextOptions = [...(current.options || [])];
+    nextOptions[index] = value;
+    handleUpdateLeadFormField('options', nextOptions);
+  };
+
+  const handleRemoveLeadOption = (index) => {
+    const current = customData.leadForm || DEFAULT_LEAD_FORMS[tenant?.id] || DEFAULT_LEAD_FORMS.dental;
+    const nextOptions = [...(current.options || [])];
+    nextOptions.splice(index, 1);
+    handleUpdateLeadFormField('options', nextOptions);
+  };
+
+  const handleLoadLeadFormPreset = (presetKey) => {
+    const preset = DEFAULT_LEAD_FORMS[presetKey];
+    if (preset) {
+      handleUpdateField('leadForm', { ...preset });
+      try {
+        confetti({
+          particleCount: 25,
+          spread: 45,
+          origin: { y: 0.6 },
+          colors: ['#D4FF00', '#25D366', '#FFFFFF'],
+        });
+      } catch (e) {}
+    }
   };
 
   // Generate QR with Logo on Canvas
@@ -304,18 +460,93 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
 
   const handleDownloadQR = () => {
     if (!qrCanvasRef.current) return;
-    const link = document.createElement('a');
-    link.download = `QR_${tenant.id}_VectorInside.png`;
-    link.href = qrCanvasRef.current.toDataURL('image/png');
-    link.click();
     try {
+      const link = document.createElement('a');
+      link.download = `QR_${tenant.id || 'microlanding'}.png`;
+      link.href = qrCanvasRef.current.toDataURL('image/png');
+      link.click();
       confetti({
-        particleCount: 35,
-        spread: 55,
+        particleCount: 30,
+        spread: 50,
         origin: { y: 0.6 },
         colors: ['#D4FF00', '#25D366', '#FFFFFF'],
       });
-    } catch (e) {}
+    } catch (e) {
+      console.error('Error downloading QR:', e);
+    }
+  };
+
+  const handleDownloadStandCard = () => {
+    if (!qrCanvasRef.current) return;
+    try {
+      const cardCanvas = document.createElement('canvas');
+      cardCanvas.width = 800;
+      cardCanvas.height = 1100;
+      const ctx = cardCanvas.getContext('2d');
+      if (!ctx) return;
+
+      // Dark Gradient Background
+      const gradient = ctx.createLinearGradient(0, 0, 0, 1100);
+      gradient.addColorStop(0, '#0D1117');
+      gradient.addColorStop(1, '#07090D');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, 800, 1100);
+
+      // Border Box with Neon Accent
+      ctx.strokeStyle = '#D4FF00';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(30, 30, 740, 1040);
+
+      // Business Header
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 36px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(customData.name || tenant.name, 400, 120);
+
+      // Subtitle
+      ctx.fillStyle = '#A1A1AA';
+      ctx.font = '20px sans-serif';
+      ctx.fillText(customData.tagline || 'Atención personalizada directa por WhatsApp', 400, 160);
+
+      // QR Code Container
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(175, 230, 450, 450);
+      ctx.drawImage(qrCanvasRef.current, 195, 250, 410, 410);
+
+      // Call to action text below QR
+      ctx.fillStyle = '#D4FF00';
+      ctx.font = 'bold 30px monospace';
+      ctx.fillText('ESCANEA CON TU CÁMARA', 400, 760);
+
+      ctx.fillStyle = '#E4E4E7';
+      ctx.font = '22px sans-serif';
+      ctx.fillText('Para consultar catálogo, cartas y atención inmediata', 400, 810);
+
+      // Contact info
+      ctx.fillStyle = '#71717A';
+      ctx.font = '18px monospace';
+      ctx.fillText(`WhatsApp Oficial: ${customData.phone || tenant.phone}`, 400, 880);
+      ctx.fillText(customData.address, 400, 920);
+
+      // Footer branding
+      ctx.fillStyle = '#52525B';
+      ctx.font = '14px monospace';
+      ctx.fillText('Tecnología Direct-to-Messaging • Vector Inside', 400, 1020);
+
+      const link = document.createElement('a');
+      link.download = `Ficha_Mesa_${tenant.id}_Imprimible.png`;
+      link.href = cardCanvas.toDataURL('image/png');
+      link.click();
+
+      confetti({
+        particleCount: 50,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#D4FF00', '#25D366', '#FFFFFF'],
+      });
+    } catch (e) {
+      handleDownloadQR();
+    }
   };
 
   const handleSaveChanges = () => {
@@ -339,28 +570,75 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
         <div className="w-full max-w-6xl rounded-3xl bg-[var(--bg-panel)] border border-neon/40 shadow-2xl overflow-hidden flex flex-col lg:flex-row max-h-[94vh] my-auto animate-scale-up text-[var(--text-main)]">
         
         {/* Left Column: Phone Mockup Frame (Sleek Dynamic Island Pro) */}
-        <div className="w-full lg:w-[380px] bg-[var(--bg-card)] p-4 sm:p-5 flex flex-col items-center justify-center border-b lg:border-b-0 lg:border-r border-[var(--border-color)] relative shrink-0">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider font-bold">
-              Previsualización Móvil en Vivo
-            </span>
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+        <div className="w-full lg:w-[390px] bg-[var(--bg-card)] p-4 sm:p-5 flex flex-col items-center justify-center border-b lg:border-b-0 lg:border-r border-[var(--border-color)] relative shrink-0">
+          <div className="w-full flex items-center justify-between gap-2 mb-2 px-1">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider font-bold">
+                Previsualización en Vivo
+              </span>
+            </div>
+
+            {/* Device Switcher */}
+            <div className="flex items-center gap-1 bg-[var(--bg-card-subtle)] p-0.5 rounded-lg border border-[var(--border-color)] text-[10px] font-mono">
+              <button
+                type="button"
+                onClick={() => setDeviceMode('iphone')}
+                className={`px-2 py-0.5 rounded-md transition-all ${
+                  deviceMode === 'iphone'
+                    ? 'bg-neon text-black font-bold shadow-sm'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                }`}
+              >
+                iPhone 16 Pro
+              </button>
+              <button
+                type="button"
+                onClick={() => setDeviceMode('android')}
+                className={`px-2 py-0.5 rounded-md transition-all ${
+                  deviceMode === 'android'
+                    ? 'bg-neon text-black font-bold shadow-sm'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                }`}
+              >
+                Android
+              </button>
+            </div>
           </div>
 
           {/* Smartphone Frame (Optimized viewport) */}
-          <div className="w-[300px] sm:w-[315px] h-[560px] rounded-[44px] bg-black border-[6px] border-zinc-800 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9),0_0_20px_rgba(212,255,0,0.12)] ring-1 ring-white/10 relative overflow-hidden flex flex-col">
-            {/* Dynamic Island Notch */}
-            <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-24 h-5 bg-black rounded-full z-30 ring-1 ring-zinc-800/80 flex items-center justify-between px-2.5 pointer-events-none">
-              <div className="w-2.5 h-2.5 rounded-full bg-zinc-900 border border-zinc-800" />
-              <div className="w-2 h-2 rounded-full bg-emerald-500/80 animate-pulse" />
-            </div>
+          <div className="w-[305px] sm:w-[325px] h-[580px] rounded-[48px] bg-black border-[7px] border-zinc-800 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9),0_0_25px_rgba(212,255,0,0.15)] ring-1 ring-white/10 relative overflow-hidden flex flex-col">
+            {/* Top iOS Status Bar Area */}
+            {deviceMode === 'iphone' ? (
+              <div className="absolute top-0 left-0 right-0 h-8 px-6 flex items-center justify-between z-30 pointer-events-none select-none text-white text-[11px] font-semibold">
+                <span>9:41</span>
+                
+                {/* Dynamic Island Notch */}
+                <div className="w-24 h-5 bg-black rounded-full ring-1 ring-zinc-800/80 flex items-center justify-between px-2.5 shadow-sm">
+                  <div className="w-2.5 h-2.5 rounded-full bg-zinc-900 border border-zinc-800" />
+                  <div className="w-2 h-2 rounded-full bg-emerald-500/90 animate-pulse" />
+                </div>
+
+                <div className="flex items-center gap-1.5 text-zinc-300">
+                  <span className="text-[9px] font-bold">5G</span>
+                  <div className="w-4 h-2.5 rounded-[3px] border border-white/70 p-[1px] flex items-center">
+                    <div className="w-full h-full bg-white rounded-[1px]" />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Android Pinhole Camera Notch */
+              <div className="absolute top-2 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-black border border-zinc-800 z-30 pointer-events-none flex items-center justify-center">
+                <div className="w-1.5 h-1.5 rounded-full bg-zinc-900" />
+              </div>
+            )}
 
             {/* Embedded Iframe of the MicroLanding */}
             <iframe
               ref={iframeRef}
-              src={`/m/${tenant.id}`}
+              src={`/m/${tenant.id}?preview=true`}
               title="MicroLanding Live Preview"
-              className="w-full flex-1 border-0 rounded-[38px] bg-[#07090D]"
+              className="w-full flex-1 border-0 rounded-[40px] bg-[#07090D]"
             />
 
             {/* iOS Bottom Home Bar Indicator */}
@@ -454,38 +732,51 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
             {activeTab === 'customize' && (
               <div className="space-y-4 animate-fadeIn">
                 
-                {/* Sub-section Selector (Servicios & Promos | Marca & Logo | Contacto & Horarios) */}
-                <div className="flex items-center gap-1.5 border-b border-[var(--border-color)] pb-2 text-[11px] font-mono">
+                {/* Sub-section Selector (Servicios & Promos | Formulario & Captación | Marca & Portada | Contacto & Horarios) */}
+                <div className="flex items-center gap-1.5 border-b border-[var(--border-color)] pb-2 text-[11px] font-mono overflow-x-auto no-scrollbar">
                   <button
                     type="button"
                     onClick={() => setActiveSubSection('services')}
-                    className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
+                    className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 shrink-0 transition-colors ${
                       activeSubSection === 'services'
                         ? 'bg-neon/15 text-lime-700 dark:text-neon border border-neon/30 font-bold'
                         : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                     }`}
                   >
                     <Sparkles className="w-3.5 h-3.5" />
-                    <span>Servicios & Promos ({customData.services?.length || 0})</span>
+                    <span>Servicios ({customData.services?.length || 0})</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveSubSection('leadForm')}
+                    className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 shrink-0 transition-colors ${
+                      activeSubSection === 'leadForm'
+                        ? 'bg-neon/15 text-lime-700 dark:text-neon border border-neon/30 font-bold'
+                        : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                    }`}
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Formulario de Captación ({customData.leadForm?.options?.length || 0})</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setActiveSubSection('brand')}
-                    className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
+                    className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 shrink-0 transition-colors ${
                       activeSubSection === 'brand'
                         ? 'bg-neon/15 text-lime-700 dark:text-neon border border-neon/30 font-bold'
                         : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                     }`}
                   >
-                    <Upload className="w-3.5 h-3.5" />
-                    <span>Marca & Logo</span>
+                    <ImageIcon className="w-3.5 h-3.5" />
+                    <span>Logo & Portada</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setActiveSubSection('contact')}
-                    className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
+                    className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 shrink-0 transition-colors ${
                       activeSubSection === 'contact'
                         ? 'bg-neon/15 text-lime-700 dark:text-neon border border-neon/30 font-bold'
                         : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
@@ -520,62 +811,128 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
                       </button>
                     </div>
 
-                    <div className="space-y-2.5 max-h-[310px] overflow-y-auto pr-1">
+                    <div className="space-y-3 max-h-[330px] overflow-y-auto pr-1">
                       {customData.services?.map((srv, idx) => (
                         <div
                           key={idx}
-                          className="p-3 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-2 relative group hover:border-neon/40 transition-colors"
+                          className="p-3.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-2.5 relative group hover:border-neon/50 transition-all shadow-sm"
                         >
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-[10px] font-mono text-lime-700 dark:text-neon font-bold">
-                              Oferta #{idx + 1}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveService(idx)}
-                              className="text-[var(--text-muted)] hover:text-red-500 p-1 transition-colors"
-                              title="Eliminar este servicio"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                          <div className="flex items-center justify-between gap-2 border-b border-[var(--border-color)] pb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-mono text-lime-700 dark:text-neon font-bold">
+                                Oferta #{idx + 1}
+                              </span>
+                              {srv.badge && (
+                                <span
+                                  className={`text-[9px] font-mono px-2 py-0.5 rounded font-bold uppercase ${
+                                    srv.tone === 'emerald'
+                                      ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                                      : srv.tone === 'blue'
+                                      ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
+                                      : srv.tone === 'purple'
+                                      ? 'bg-purple-500/15 text-purple-400 border border-purple-500/30'
+                                      : srv.tone === 'amber'
+                                      ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                                      : 'bg-[#D4FF00]/15 text-lime-700 dark:text-[#D4FF00] border border-[#D4FF00]/30'
+                                  }`}
+                                >
+                                  {srv.badge}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                disabled={idx === 0}
+                                onClick={() => handleMoveService(idx, 'up')}
+                                className="p-1 rounded-lg text-[var(--text-muted)] hover:text-white disabled:opacity-20 hover:bg-[var(--bg-card-subtle)] transition-colors"
+                                title="Mover arriba"
+                              >
+                                <ArrowUp className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                disabled={idx === customData.services.length - 1}
+                                onClick={() => handleMoveService(idx, 'down')}
+                                className="p-1 rounded-lg text-[var(--text-muted)] hover:text-white disabled:opacity-20 hover:bg-[var(--bg-card-subtle)] transition-colors"
+                                title="Mover abajo"
+                              >
+                                <ArrowDown className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDuplicateService(idx)}
+                                className="p-1 rounded-lg text-[var(--text-muted)] hover:text-neon hover:bg-[var(--bg-card-subtle)] transition-colors"
+                                title="Duplicar oferta"
+                              >
+                                <Copy className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveService(idx)}
+                                className="p-1 rounded-lg text-[var(--text-muted)] hover:text-red-500 hover:bg-[var(--bg-card-subtle)] transition-colors"
+                                title="Eliminar oferta"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </div>
 
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div>
                               <label className="text-[9.5px] font-mono text-[var(--text-muted)] block mb-0.5">
-                                Título del Servicio
+                                Título del Servicio u Oferta
                               </label>
                               <input
                                 type="text"
                                 value={srv.title}
                                 onChange={(e) => handleUpdateService(idx, 'title', e.target.value)}
-                                placeholder="ej. Limpieza Ultrasónica"
+                                placeholder="ej. Reserva de Mesa VIP & Terraza"
                                 className="w-full p-2 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-main)] text-xs focus:border-neon outline-none"
                               />
                             </div>
 
                             <div>
                               <label className="text-[9.5px] font-mono text-[var(--text-muted)] block mb-0.5">
-                                Badge / Promoción
+                                Texto del Badge
                               </label>
-                              <div className="flex items-center gap-1.5">
-                                <input
-                                  type="text"
-                                  value={srv.badge || ''}
-                                  onChange={(e) => handleUpdateService(idx, 'badge', e.target.value)}
-                                  placeholder="ej. MÁS SOLICITADO, -20%"
-                                  className="flex-1 p-2 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-main)] text-xs font-mono focus:border-neon outline-none"
-                                />
-                                <select
-                                  value={srv.tone || 'neon'}
-                                  onChange={(e) => handleUpdateService(idx, 'tone', e.target.value)}
-                                  className="p-2 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[11px] text-[var(--text-main)] font-mono outline-none"
+                              <input
+                                type="text"
+                                value={srv.badge || ''}
+                                onChange={(e) => handleUpdateService(idx, 'badge', e.target.value)}
+                                placeholder="ej. Confirmación 5 min, -20%"
+                                className="w-full p-2 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-main)] text-xs font-mono focus:border-neon outline-none"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Interactive Badge Tone Selector */}
+                          <div>
+                            <label className="text-[9.5px] font-mono text-[var(--text-muted)] block mb-1">
+                              Color del Badge:
+                            </label>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {badgeToneOptions.map((tone) => (
+                                <button
+                                  key={tone.id}
+                                  type="button"
+                                  onClick={() => handleUpdateService(idx, 'tone', tone.id)}
+                                  className={`px-2 py-1 rounded-lg text-[10px] font-mono transition-all flex items-center gap-1 border ${
+                                    (srv.tone || 'neon') === tone.id
+                                      ? 'border-neon font-bold ring-1 ring-neon/40 shadow-sm'
+                                      : 'border-[var(--border-color)] hover:border-zinc-500 text-[var(--text-muted)]'
+                                  }`}
                                 >
-                                  <option value="neon">Neón</option>
-                                  <option value="emerald">Verde</option>
-                                  <option value="blue">Azul</option>
-                                </select>
-                              </div>
+                                  <span className={`w-2 h-2 rounded-full ${
+                                    tone.id === 'emerald' ? 'bg-emerald-400' :
+                                    tone.id === 'neon' ? 'bg-[#D4FF00]' :
+                                    tone.id === 'blue' ? 'bg-blue-400' :
+                                    tone.id === 'purple' ? 'bg-purple-400' : 'bg-amber-400'
+                                  }`} />
+                                  <span>{tone.label}</span>
+                                </button>
+                              ))}
                             </div>
                           </div>
 
@@ -587,19 +944,249 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
                               type="text"
                               value={srv.desc}
                               onChange={(e) => handleUpdateService(idx, 'desc', e.target.value)}
-                              placeholder="ej. Profilaxis profunda con ultrasonido y flúor"
+                              placeholder="ej. Asignación prioritaria para ocasiones especiales"
                               className="w-full p-2 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-main)] text-xs focus:border-neon outline-none"
                             />
                           </div>
                         </div>
                       ))}
                     </div>
+
+                    {/* Quick Save and Apply Button */}
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={handleSaveChanges}
+                        className={`w-full py-3 px-4 rounded-xl font-bold text-xs font-mono transition-all flex items-center justify-center gap-2 active:scale-[0.99] shadow-lg ${
+                          savedSuccess
+                            ? 'bg-emerald-500 text-black shadow-emerald-500/20'
+                            : 'bg-neon text-black hover:bg-[var(--neon-hover)] shadow-neon'
+                        }`}
+                      >
+                        {savedSuccess ? (
+                          <>
+                            <Check className="w-4 h-4 stroke-[3]" />
+                            <span>¡Cambios Guardados y Sincronizados en Vivo!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Save className="w-4 h-4" />
+                            <span>Guardar y Sincronizar en Vivo</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 )}
 
-                {/* SUB-SECTION 2: BRAND & LOGO */}
+                {/* SUB-SECTION 2: LEAD CAPTURE FORM / BOOKING CHIPS */}
+                {activeSubSection === 'leadForm' && (
+                  <div className="space-y-4 animate-fadeIn">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div>
+                        <h4 className="text-xs font-bold text-[var(--text-main)] flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-lime-700 dark:text-neon" />
+                          <span>Configuración del Formulario & Chips de Captación</span>
+                        </h4>
+                        <p className="text-[11px] text-[var(--text-muted)] font-sans">
+                          Personaliza la pregunta o motivo, los chips seleccionables y el botón que envía a WhatsApp.
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleAddLeadOption}
+                        className="py-1.5 px-3 rounded-xl bg-neon text-black font-bold text-xs flex items-center gap-1.5 hover:scale-105 transition-all shadow-md active:scale-95"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Agregar Opción</span>
+                      </button>
+                    </div>
+
+                    {/* Presets Rápidos por Giro */}
+                    <div className="p-3.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-2">
+                      <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase block font-bold">
+                        Cargar plantilla rápida según giro:
+                      </span>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleLoadLeadFormPreset('dental')}
+                          className="py-2 px-2.5 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-[var(--text-main)] hover:text-neon border border-[var(--border-color)] text-xs font-mono transition-all text-center flex items-center justify-center gap-1.5 active:scale-95"
+                        >
+                          <span>🦷 Dental</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleLoadLeadFormPreset('polanco')}
+                          className="py-2 px-2.5 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-[var(--text-main)] hover:text-neon border border-[var(--border-color)] text-xs font-mono transition-all text-center flex items-center justify-center gap-1.5 active:scale-95"
+                        >
+                          <span>🍷 Restaurante</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleLoadLeadFormPreset('urban')}
+                          className="py-2 px-2.5 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-[var(--text-main)] hover:text-neon border border-[var(--border-color)] text-xs font-mono transition-all text-center flex items-center justify-center gap-1.5 active:scale-95"
+                        >
+                          <span>👟 Calzado</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleLoadLeadFormPreset('corp')}
+                          className="py-2 px-2.5 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-[var(--text-main)] hover:text-neon border border-[var(--border-color)] text-xs font-mono transition-all text-center flex items-center justify-center gap-1.5 active:scale-95"
+                        >
+                          <span>💼 Asesoría B2B</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Form Texts (Title & Button) */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[10px] font-mono text-[var(--text-muted)] uppercase block mb-1 font-bold">
+                          Título del Campo (Pregunta o Motivo)
+                        </label>
+                        <input
+                          type="text"
+                          value={customData.leadForm?.title ?? ''}
+                          onChange={(e) => handleUpdateLeadFormField('title', e.target.value)}
+                          placeholder="ej. Motivo principal de consulta:"
+                          className="w-full p-2.5 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-main)] text-xs focus:border-neon outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] font-mono text-[var(--text-muted)] uppercase block mb-1 font-bold">
+                          Texto del Botón CTA
+                        </label>
+                        <input
+                          type="text"
+                          value={customData.leadForm?.buttonText ?? ''}
+                          onChange={(e) => handleUpdateLeadFormField('buttonText', e.target.value)}
+                          placeholder="ej. Solicitar Cita de Valoración"
+                          className="w-full p-2.5 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-lime-700 dark:text-neon font-bold text-xs focus:border-neon outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-mono text-[var(--text-muted)] uppercase block mb-1 font-bold">
+                        Subtítulo o Promesa de Respuesta Rápida
+                      </label>
+                      <input
+                        type="text"
+                        value={customData.leadForm?.subtitle ?? ''}
+                        onChange={(e) => handleUpdateLeadFormField('subtitle', e.target.value)}
+                        placeholder="ej. Te orientamos sobre fechas y presupuestos en minutos"
+                        className="w-full p-2.5 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-main)] text-xs focus:border-neon outline-none"
+                      />
+                    </div>
+
+                    {/* Options / Chips List */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[10px] font-mono text-[var(--text-muted)] uppercase block font-bold">
+                          Opciones / Chips Seleccionables ({customData.leadForm?.options?.length || 0})
+                        </label>
+                        <span className="text-[10px] text-zinc-500 font-mono">
+                          El usuario elige 1 opción al interactuar
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {(customData.leadForm?.options || []).map((opt, optIdx) => (
+                          <div
+                            key={optIdx}
+                            className="flex items-center gap-1.5 p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] focus-within:border-neon transition-colors"
+                          >
+                            <span className="text-[10px] font-mono text-[var(--text-muted)] w-4 text-center">
+                              {optIdx + 1}
+                            </span>
+                            <input
+                              type="text"
+                              value={opt}
+                              onChange={(e) => handleUpdateLeadOption(optIdx, e.target.value)}
+                              placeholder={`Opción ${optIdx + 1}`}
+                              className="flex-1 bg-transparent text-xs text-[var(--text-main)] outline-none font-sans"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveLeadOption(optIdx)}
+                              className="p-1 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                              title="Eliminar opción"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      {(!customData.leadForm?.options || customData.leadForm.options.length === 0) && (
+                        <div className="p-4 rounded-xl border border-dashed border-[var(--border-color)] text-center text-xs text-[var(--text-muted)] font-mono">
+                          No hay opciones configuradas. Haz clic en "Agregar Opción" o selecciona una plantilla arriba.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* SUB-SECTION 3: BRAND, LOGO & COVER */}
                 {activeSubSection === 'brand' && (
                   <div className="space-y-3">
+                    {/* Cover Photo / Header Banner Upload */}
+                    <div className="p-3.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[11px] font-mono font-bold text-[var(--text-main)] uppercase tracking-wider flex items-center gap-1.5">
+                          <ImageIcon className="w-3.5 h-3.5 text-lime-700 dark:text-neon" />
+                          <span>Foto de Portada / Banner Superior</span>
+                        </label>
+                        <span className="text-[10px] text-[var(--text-muted)] font-mono">Recomendado 800x260</span>
+                      </div>
+
+                      {/* Banner Preview */}
+                      <div className="w-full h-24 rounded-xl bg-zinc-950 border border-[var(--border-color)] overflow-hidden relative group">
+                        <Image
+                          src={customData.cover || DEFAULT_COVERS[tenant?.id] || DEFAULT_COVERS.dental}
+                          alt="Cover Banner"
+                          width={400}
+                          height={100}
+                          unoptimized
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-2 justify-between">
+                          <span className="text-[10px] font-mono text-zinc-300 truncate max-w-[220px]">
+                            {customData.cover?.startsWith('data:') ? 'Imagen personalizada cargada' : customData.cover}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <label className="flex-1 py-2 px-3 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-[var(--text-main)] font-mono text-xs flex items-center justify-center gap-1.5 cursor-pointer border border-[var(--border-color)] transition-colors font-bold">
+                          <Upload className="w-3.5 h-3.5 text-lime-700 dark:text-neon" />
+                          <span>Subir Portada (JPG / PNG)</span>
+                          <input
+                            type="file"
+                            accept="image/png, image/jpeg, image/webp"
+                            onChange={handleCoverUpload}
+                            className="hidden"
+                          />
+                        </label>
+
+                        {customData.cover && (
+                          <button
+                            type="button"
+                            onClick={handleRemoveCover}
+                            className="py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-[var(--text-muted)] hover:text-white border border-[var(--border-color)] text-xs font-mono transition-colors flex items-center gap-1"
+                            title="Restaurar portada por defecto"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5" />
+                            <span>Restaurar</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Logo Upload */}
                     <div className="p-3.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-2">
                       <div className="flex items-center justify-between">
                         <label className="text-[11px] font-mono font-bold text-[var(--text-main)] uppercase tracking-wider flex items-center gap-1.5">
@@ -812,14 +1399,22 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
                     <canvas ref={qrCanvasRef} className="w-full h-full object-contain" />
                   </div>
 
-                  <div className="flex items-center justify-center gap-2 pt-2">
+                  <div className="flex items-center justify-center gap-2 pt-2 flex-wrap">
                     <button
                       type="button"
                       onClick={handleDownloadQR}
-                      className="py-2.5 px-5 rounded-xl bg-neon text-black font-bold text-xs flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md"
+                      className="py-2.5 px-4 rounded-xl bg-neon text-black font-bold text-xs flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md"
                     >
                       <Download className="w-4 h-4" />
-                      <span>Descargar QR en Alta Calidad (.PNG)</span>
+                      <span>Descargar QR (.PNG)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDownloadStandCard}
+                      className="py-2.5 px-4 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-[var(--text-main)] font-mono font-bold text-xs flex items-center justify-center gap-2 transition-all border border-[var(--border-color)] active:scale-95 shadow-sm"
+                    >
+                      <Printer className="w-4 h-4 text-neon" />
+                      <span>Ficha de Mesa / Mostrador (Imprimible)</span>
                     </button>
                   </div>
                 </div>

@@ -73,31 +73,71 @@ export const BriefingBridge = {
     await new Promise((r) => setTimeout(r, 800));
     if (signal?.aborted) throw new Error('AbortError');
 
-    onProgress?.(`Identificando Arquetipo y Tono para ${cleanGiroName}...`);
-    await new Promise((r) => setTimeout(r, 900));
+    onProgress?.(`Identificando Pilar 2 (Brandbook y Tono de Voz) para ${cleanGiroName}...`);
+    await new Promise((r) => setTimeout(r, 600));
     if (signal?.aborted) throw new Error('AbortError');
 
-    onProgress?.('Extrayendo Oferta Comercial, Hook de Conversión y CTAs...');
-    await new Promise((r) => setTimeout(r, 900));
+    onProgress?.('Extrayendo Oferta Comercial y Gancho de Conversión...');
+    await new Promise((r) => setTimeout(r, 600));
     if (signal?.aborted) throw new Error('AbortError');
 
-    onProgress?.('Compilando Directrices, Protocolos y Reglas Inviolables...');
-    await new Promise((r) => setTimeout(r, 900));
+    onProgress?.(`Estructurando Pilar 1 (Precios, Tarifas y Servicios) para ${cleanGiroName}...`);
+    await new Promise((r) => setTimeout(r, 600));
+    if (signal?.aborted) throw new Error('AbortError');
+
+    onProgress?.('Extrayendo Pilar 3 (Políticas, Reglamentos y FAQs)...');
+    await new Promise((r) => setTimeout(r, 600));
+    if (signal?.aborted) throw new Error('AbortError');
+
+    onProgress?.('Compilando Directrices, Protocolos y Reglas Inviolables (Pilar 4)...');
+    await new Promise((r) => setTimeout(r, 600));
     if (signal?.aborted) throw new Error('AbortError');
 
     onProgress?.('¡Auto-Ingestión completada con éxito!');
 
-    // Devuelve el objeto que coincide con el estado de RAGWizard
+    const fileSize = file ? file.size : 148500;
+    const fileType = file ? file.type : 'application/pdf';
+    const cleanFileName = file ? file.name : 'Master_Briefing.pdf';
+
+    // Devuelve el objeto integral con los 4 Pilares RAG + Oferta
     return {
       businessName: text?.slice(0, 30)?.trim() || `Centro de Excelencia (${cleanGiroName})`,
-      brandTone: 'Profesional, Empático y Orientado a Conversión Directa',
+      // Pilar 2: Brandbook & Tono
+      brandTone: 'Profesional, empático, resolutivo y orientado a conversión directa',
       archetype: verticalConfig?.badge || 'El Asesor Experto & Aliado de Confianza',
+      brandbookDoc: {
+        name: file ? `Brandbook_${cleanFileName}` : `Brandbook_${cleanGiroName}.md`,
+        size: Math.round(fileSize * 0.42) || 45000,
+        type: 'text/markdown',
+        source: 'master_extraction'
+      },
+      // Propuesta Comercial
       offerHook: `Diagnóstico / Valoración de Bienvenida en ${cleanGiroName} + Garantía de Satisfacción`,
       offerCta: 'Envía un mensaje para apartar tu horario de atención',
       offerValidity: 'Válido durante los primeros 30 días de activación',
-      commercialProposalDoc: file ? file.name : 'Master_Briefing_Integral.pdf',
-      brandbookDoc: 'Brandbook_Manual_Identidad.md',
-      faqsDoc: 'FAQs_Politicas_Garantias.md',
+      commercialProposalDoc: {
+        name: cleanFileName,
+        size: fileSize,
+        type: fileType,
+        source: 'master_extraction'
+      },
+      // Pilar 1: Precios, Tarifas & Catálogo
+      pricingDetails: `Tarifas y planes oficiales para ${cleanGiroName} con facilidades de pago diferido (MSI)`,
+      pricingDoc: {
+        name: file ? `Tarifario_${cleanFileName}` : `Catalogo_Precios_${cleanGiroName}.pdf`,
+        size: Math.round(fileSize * 0.75) || 98000,
+        type: 'application/pdf',
+        source: 'master_extraction'
+      },
+      // Pilar 3: Políticas & FAQs
+      faqDetails: `Cancelación flexible con 24h de aviso. Atención de contingencias y protocolo de garantía en ${cleanGiroName}.`,
+      faqsDoc: {
+        name: file ? `FAQs_Reglamento_${cleanFileName}` : `FAQs_Politicas_${cleanGiroName}.md`,
+        size: Math.round(fileSize * 0.38) || 52000,
+        type: 'text/markdown',
+        source: 'master_extraction'
+      },
+      // Pilar 4 & Reglas Inviolables
       enableCommercialProposal: true,
       enableCrisisPillar: true,
       inviolableRules: verticalConfig?.defaultRules && verticalConfig.defaultRules.length > 0

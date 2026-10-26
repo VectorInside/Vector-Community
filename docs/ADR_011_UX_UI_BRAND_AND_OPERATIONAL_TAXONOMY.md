@@ -28,7 +28,7 @@ Este ADR establece la **reconciliación y unificación oficial**: se adopta la v
 
 ---
 
-## 3. Taxonomía de los 12 Módulos Operativos
+## 3. Taxonomía de los Módulos Operativos (Ontología Oficial UX/UI)
 
 La interfaz de usuario se reordena formalmente bajo tres pilares de valor comercial y un soporte metodológico transversal:
 
@@ -40,22 +40,23 @@ graph TD
         M03["3. Campañas (/campaigns) - Ofertas, Audiencias y Presupuesto vs Gasto"]
         M04["4. Estudio de Contenido (/planner) - Parrilla Editorial y Ciclo de Aprobación"]
         M05["5. Conversaciones (/inbox) - Bandeja de Mensajes y Calificación Inmediata"]
-        M06["6. Prospectos y Ventas CRM (/crm) - Tablero Kanban, Pre-Cita y Master Agenda"]
+        M06["6. Prospectos y Ventas CRM (/crm) - Tablero Kanban, BANT y Dictamen Pre-Cita"]
+        M07["7. Agenda y Citas (/agenda) - QR Móvil, WebCal, Google Calendar y Turnos Semanales"]
     end
 
     subgraph Pillar2["📊 PILAR 2: INTELIGENCIA (Auditoría y Crecimiento)"]
-        M07["7. Resultados (/results) - Reconciliación Inversión Meta/Google, ROAS Real y CAC"]
-        M08["8. Pruebas y Aprendizaje Lab (/lab) - Hipótesis A/B, Agentes y Fatiga Creativa"]
+        M08["8. Resultados (/results) - Reconciliación Inversión Meta/Google, ROAS Real y CAC"]
+        M09["9. Pruebas y Aprendizaje Lab (/lab) - Hipótesis A/B, Agentes y Fatiga Creativa"]
     end
 
     subgraph Pillar3["⚙️ PILAR 3: ADMINISTRACIÓN (Control de Agencia y Cliente)"]
-        M09["9. Perfil de Marca (/profile) - Propuesta de Valor, Voz y Objetivos de Respuesta"]
-        M10["10. Conexiones y Datos (/connections) - Salud CAPI, GA4, Webhooks y Base RAG"]
-        M11["11. Equipo y Control (/team) - Miembros, Roles, Políticas de Cobro y Auditoría"]
+        M10["10. Perfil de Marca (/profile) - Propuesta de Valor, Voz y Objetivos de Respuesta"]
+        M11["11. Conexiones y Datos (/connections) - Salud CAPI, GA4, Webhooks y Base RAG"]
+        M12["12. Equipo y Control (/team) - Miembros, Roles, Políticas de Cobro y Auditoría"]
     end
 
     subgraph Pillar4["📖 SOPORTE TRANSVERSAL"]
-        M12["12. Guía de Medición (Modal / Drawer) - 13 Fórmulas Oficiales y Glosario"]
+        M13["13. Guía de Medición (Modal / Drawer) - 13 Fórmulas Oficiales y Glosario"]
     end
 ```
 

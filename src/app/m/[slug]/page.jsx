@@ -72,6 +72,33 @@ const TENANT_THEMES = {
   },
 };
 
+const DEFAULT_LEAD_FORMS = {
+  dental: {
+    title: 'Motivo principal de consulta:',
+    subtitle: 'Te orientamos sobre fechas y presupuestos en minutos',
+    buttonText: 'Solicitar Cita de Valoración',
+    options: ['Limpieza Dental', 'Implante Molar', 'Ortodoncia', 'Diagnóstico General'],
+  },
+  polanco: {
+    title: 'Reserva tu Mesa VIP en Terraza:',
+    subtitle: 'Confirmación prioritaria por WhatsApp en < 5 min',
+    buttonText: 'Solicitar Reserva de Mesa',
+    options: ['2 comensales', '4 comensales', '6 comensales', 'Mesa VIP 8+'],
+  },
+  urban: {
+    title: 'Talla o Modelo a consultar / apartar:',
+    subtitle: 'Verificamos disponibilidad de tu talla de inmediato',
+    buttonText: 'Consultar Stock & Apartar',
+    options: ['26 MX', '26.5 MX', '27 MX', '27.5 MX', '28 MX'],
+  },
+  corp: {
+    title: 'Servicio de Interés Estratégico:',
+    subtitle: 'Sesión de 30 min con un consultor de soluciones',
+    buttonText: 'Agendar Discovery Call (30 min)',
+    options: ['Automatización IA', 'Integración CRM', 'Agentes Multi-Canal', 'Consultoría B2B'],
+  },
+};
+
 export default function MicroLandingPage() {
   const params = useParams();
   const slug = params?.slug || 'dental';
@@ -133,6 +160,7 @@ export default function MicroLandingPage() {
 
   const baseTenant = activeTenantData;
   const baseTheme = TENANT_THEMES[baseTenant.id] || TENANT_THEMES.dental;
+  const baseDefaultLead = DEFAULT_LEAD_FORMS[baseTenant.id] || DEFAULT_LEAD_FORMS.dental;
 
   // Real-time customizer state
   const [customData, setCustomData] = useState({
@@ -147,6 +175,7 @@ export default function MicroLandingPage() {
     logo: null,
     cover: baseTheme.cover,
     services: baseTheme.services,
+    leadForm: baseDefaultLead,
   });
 
   // Load from localStorage or sync with parent window message events
@@ -214,14 +243,57 @@ export default function MicroLandingPage() {
     } catch (e) {}
   };
 
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [bookingName, setBookingName] = useState('');
   const [bookingPhone, setBookingPhone] = useState('');
+  const [selectedOption, setSelectedOption] = useState(() => {
+    return (DEFAULT_LEAD_FORMS[baseTenant.id] || DEFAULT_LEAD_FORMS.dental).options?.[0] || 'Consulta General';
+  });
   const [bookedSuccess, setBookedSuccess] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
+  useEffect(() => {
+    const activeLead = customData.leadForm || DEFAULT_LEAD_FORMS[baseTenant.id] || DEFAULT_LEAD_FORMS.dental;
+    if (activeLead?.options && activeLead.options.length > 0) {
+      if (!activeLead.options.includes(selectedOption)) {
+        setSelectedOption(activeLead.options[0]);
+      }
+    }
+  }, [customData.leadForm, baseTenant.id, selectedOption]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const isIframe = window.self !== window.top;
+      const searchParams = new URLSearchParams(window.location.search);
+      if (isIframe || searchParams.get('preview') === 'true') {
+        setIsPreviewMode(true);
+      }
+    }
+  }, []);
+
+  const vertical = baseTenant.vertical || (baseTenant.id === 'polanco' ? 'hospitality' : baseTenant.id === 'urban' ? 'ecommerce' : 'service_appointments');
+
+  const getVerticalFormConfig = () => {
+    const defaultLead = DEFAULT_LEAD_FORMS[baseTenant.id] || DEFAULT_LEAD_FORMS.dental;
+    const activeLead = customData.leadForm || defaultLead;
+
+    return {
+      title: activeLead.title || defaultLead.title,
+      subtitle: activeLead.subtitle || defaultLead.subtitle,
+      buttonText: activeLead.buttonText || defaultLead.buttonText,
+      options: activeLead.options && activeLead.options.length > 0 ? activeLead.options : defaultLead.options,
+      icon: Sparkles,
+      waText: `¡Hola ${customData.name}! 👋 Mi nombre es ${bookingName || 'un cliente'} (Tel: ${bookingPhone}). Deseo solicitar informes o agendar para: *${selectedOption}*.`,
+    };
+  };
+
+  const formConfig = getVerticalFormConfig();
+
   const cleanPhone = (customData.phone || '+525512345678').replace(/[^0-9]/g, '');
   const primaryWaUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
-    `¡Hola ${customData.name}! 👋 Vi su micro-landing y me gustaría agendar una cita / solicitar informes.`
+    vertical === 'hospitality' || baseTenant.id === 'polanco'
+      ? `¡Hola ${customData.name}! 👋 Vi su micro-landing y me gustaría reservar una mesa o consultar el menú.`
+      : `¡Hola ${customData.name}! 👋 Vi su micro-landing y me gustaría agendar una cita / solicitar informes.`
   )}`;
 
   const handleShare = async () => {
@@ -259,9 +331,7 @@ export default function MicroLandingPage() {
 
     // Open prefilled WhatsApp
     setTimeout(() => {
-      const customText = encodeURIComponent(
-        `¡Hola ${customData.name}! 👋 Mi nombre es ${bookingName || 'un nuevo cliente'} (Tel: ${bookingPhone}). Deseo agendar una cita o atención personalizada.`
-      );
+      const customText = encodeURIComponent(formConfig.waText);
       window.open(`https://wa.me/${cleanPhone}?text=${customText}`, '_blank');
     }, 1000);
   };
@@ -291,34 +361,30 @@ export default function MicroLandingPage() {
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/30">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
               {activeTenantData?.microLandingStatus === 'suspended'
-                ? 'Servicio Pausado por Falta de Pago'
+                ? 'Página en Actualización Temporal'
                 : 'Micro-Landing Inactiva'}
             </span>
             <h1 className="text-xl font-bold text-white tracking-tight">
               {activeTenantData?.name || customData.name}
             </h1>
             <p className="text-xs text-white/60 leading-relaxed font-sans">
-              Esta micro-landing de captación y conversión se encuentra temporalmente deshabilitada desde el panel de control central.
+              Esta micro-landing de atención y captación se encuentra temporalmente en pausa por actualización de servicios.
             </p>
           </div>
 
           {/* Info Box */}
           <div className="p-4 rounded-2xl bg-black/40 border border-white/5 text-left space-y-2 text-xs font-mono">
             <div className="flex items-center justify-between text-white/40 text-[11px]">
-              <span>Cortesía 3 Meses:</span>
-              <span className="text-amber-400 font-bold">
-                {activeTenantData?.microLandingTrialDaysLeft > 0
-                  ? `${activeTenantData.microLandingTrialDaysLeft} días restantes`
-                  : 'Concluida (0 días)'}
-              </span>
+              <span>Estado del Servicio:</span>
+              <span className="text-amber-400 font-bold">En Pausa Temporal</span>
             </div>
             <div className="flex items-center justify-between text-white/40 text-[11px]">
-              <span>Costo Suscripción:</span>
-              <span className="text-white font-bold">$29 USD / mes</span>
+              <span>Canal de Atención:</span>
+              <span className="text-emerald-400 font-bold">WhatsApp Directo</span>
             </div>
             <div className="flex items-center justify-between text-white/40 text-[11px]">
-              <span>Estado en Panel:</span>
-              <span className="text-rose-400 font-bold">Inactiva (Bloqueo Admin)</span>
+              <span>Disponibilidad:</span>
+              <span className="text-white font-bold">Inmediata</span>
             </div>
           </div>
 
@@ -326,14 +392,14 @@ export default function MicroLandingPage() {
           <div className="space-y-3 pt-2">
             <a
               href={`https://wa.me/525588997711?text=${encodeURIComponent(
-                `Hola Vector Inside, soy el titular de "${activeTenantData?.name}" y deseo regularizar/reactivar mi servicio de Micro-Landing.`
+                `Hola Vector Inside, soy el titular de "${activeTenantData?.name}" y deseo información sobre los servicios.`
               )}`}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full py-3.5 px-4 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-black font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-500/10"
             >
               <MessageCircle className="w-4 h-4" />
-              <span>Reactivar Servicio vía WhatsApp</span>
+              <span>Contactar vía WhatsApp</span>
             </a>
 
             {activeTenantData?.websiteUrl && (
@@ -374,8 +440,10 @@ export default function MicroLandingPage() {
       {/* Background Ambient Glows */}
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-md h-96 bg-gradient-to-b from-[#D4FF00]/10 via-transparent to-transparent pointer-events-none blur-3xl -z-10" />
 
-      {/* Top Header / Sticky Nav */}
-      <header className="w-full max-w-md px-3.5 py-2.5 flex items-center justify-between sticky top-0 z-40 bg-[#07090D]/90 backdrop-blur-md border-b border-white/5">
+      {/* Top Header / Sticky Nav (Safe Area Aware for Dynamic Island) */}
+      <header className={`w-full max-w-md px-3.5 flex items-center justify-between sticky top-0 z-40 bg-[#07090D]/95 backdrop-blur-md border-b border-white/5 transition-all ${
+        isPreviewMode ? 'pt-8 pb-2.5' : 'py-2.5'
+      }`}>
         <div className="flex items-center gap-2 min-w-0">
           <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
             {customData.logo ? (
@@ -573,13 +641,13 @@ export default function MicroLandingPage() {
           </div>
         </div>
 
-        {/* Quick Lead / 1-Tap Booking Form */}
+        {/* Quick Lead / 1-Tap Booking Form (Vertical-Aware) */}
         <div className="p-3.5 rounded-3xl bg-zinc-950 border border-white/10 space-y-3 relative overflow-hidden shadow-xl">
           <div className="flex items-center gap-2 pb-2 border-b border-white/10">
-            <Clock className="w-4 h-4 text-[#D4FF00] shrink-0" />
+            <formConfig.icon className="w-4 h-4 text-[#D4FF00] shrink-0" />
             <div>
-              <h4 className="text-xs font-bold text-white">¿Prefieres que te contactemos?</h4>
-              <p className="text-[10px] text-zinc-400 font-mono">Te escribimos por WhatsApp en minutos</p>
+              <h4 className="text-xs font-bold text-white">{formConfig.title}</h4>
+              <p className="text-[10px] text-zinc-400 font-mono">{formConfig.subtitle}</p>
             </div>
           </div>
 
@@ -588,11 +656,11 @@ export default function MicroLandingPage() {
               <CheckCircle2 className="w-6 h-6 text-emerald-400 mx-auto" />
               <p className="font-bold text-xs">¡Solicitud recibida con éxito!</p>
               <p className="text-[10.5px] text-zinc-300">
-                Abriendo WhatsApp para confirmar tu horario...
+                Abriendo WhatsApp para confirmar tu solicitud...
               </p>
             </div>
           ) : (
-            <form onSubmit={handleQuickLeadSubmit} className="space-y-2">
+            <form onSubmit={handleQuickLeadSubmit} className="space-y-2.5">
               <div>
                 <label className="text-[9.5px] text-zinc-400 font-mono block mb-0.5">
                   Tu Nombre Completo
@@ -620,11 +688,37 @@ export default function MicroLandingPage() {
                 />
               </div>
 
+              {/* Dynamic Customizable Lead Form Chips */}
+              <div className="space-y-1.5 pt-1 border-t border-white/5 font-mono text-[10px]">
+                <label className="text-[9px] text-zinc-400 block font-bold">
+                  {customData.leadForm?.title || formConfig.title}
+                </label>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {(customData.leadForm?.options && customData.leadForm.options.length > 0
+                    ? customData.leadForm.options
+                    : formConfig.options || ['Consulta General', 'Atención Especializada']
+                  ).map((opt) => (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => setSelectedOption(opt)}
+                      className={`py-1.5 px-2 rounded-xl text-left truncate transition-all text-xs ${
+                        selectedOption === opt
+                          ? 'bg-[#D4FF00]/15 text-[#D4FF00] border border-[#D4FF00]/40 font-bold shadow-sm'
+                          : 'bg-zinc-900 text-zinc-300 hover:text-white border border-zinc-800'
+                      }`}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <button
                 type="submit"
-                className="w-full py-2.5 rounded-xl bg-[#D4FF00] hover:bg-[#bce000] text-black font-black text-xs flex items-center justify-center gap-1.5 transition-transform active:scale-95 shadow-[0_0_15px_rgba(212,255,0,0.2)] mt-1"
+                className="w-full py-2.5 rounded-xl bg-[#D4FF00] hover:bg-[#bce000] text-black font-black text-xs flex items-center justify-center gap-1.5 transition-transform active:scale-95 shadow-[0_0_15px_rgba(212,255,0,0.2)] mt-1.5"
               >
-                <span>Solicitar Cita de Valoración</span>
+                <span>{formConfig.buttonText}</span>
                 <ArrowRight className="w-3.5 h-3.5 stroke-[3]" />
               </button>
             </form>

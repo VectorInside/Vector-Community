@@ -2,12 +2,14 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { BriefingBridge } from '@/services/briefingBridge';
+import { resolveBrandPreset } from '@/utils/brandPresets';
 import { useAuth } from '@/context/AuthContext';
 import {
   Database,
   FileText,
   Upload,
   Shield,
+  ShieldCheck,
   Key,
   Sparkles,
   CheckCircle2,
@@ -50,6 +52,10 @@ import {
   ShieldAlert,
   ListFilter,
   LayoutGrid,
+  LayoutList,
+  ChevronDown,
+  ChevronUp,
+  SlidersHorizontal,
   List,
   Lightbulb,
   Search,
@@ -68,6 +74,7 @@ import {
   Code,
   Globe,
   Smartphone,
+  Power,
   ExternalLink,
   MessageSquare,
   Linkedin,
@@ -685,6 +692,656 @@ export const BUSINESS_VERTICALS_CONFIG = {
   },
 };
 
+
+export const VERTICAL_PILLARS_ADAPTIVE_CONFIG = {
+  gym_fitness: {
+    pilar1: {
+      title: 'PILAR 1: Membresías, Pases & Servicios',
+      label: 'Tarifas de Membresías, Costos de Inscripción y Promociones Vigentes',
+      placeholder: 'ej. Pase Diario: $150 | Mensualidad Full: $890 MXN | Plan Semestral: $4,800 MXN',
+      docLabel: 'Subir Tarifario de Membresías / Catálogo Oficial (PDF, DOCX, MD)',
+    },
+    pilar2: {
+      title: 'PILAR 2: Brandbook & Tono de Voz',
+      label: 'Identidad Enérgica, Motivadora & Disciplinada (Obligatorio)',
+      placeholder: 'ej. Enérgico, motivador, disciplinado y cercano (ej. "¡Vamos con todo por tu meta!")',
+      docLabel: 'Subir Brandbook / Guía de Identidad (PDF, DOCX, MD)',
+    },
+    pilar3: {
+      title: 'PILAR 3: Políticas de Acceso & FAQs',
+      label: 'Políticas de Congelación, Reglamento de Instalaciones y Cancelaciones',
+      placeholder: 'ej. Congelación de membresía hasta 30 días por viaje. Candado y toalla obligatorios.',
+      docLabel: 'Subir Reglamento de Instalaciones / Documento de FAQs (PDF, DOCX, MD)',
+    },
+    pilar4: {
+      title: 'PILAR 4: Casos de Éxito & Testimonios',
+      label: 'Testimonios de Transformación Física & Logros de la Comunidad',
+      placeholder: 'ej. Casos de éxito de pérdida de peso, fotos de antes/después y reviews en Google (4.9★)',
+      docLabel: 'Subir Testimonios / Ficha de Casos de Éxito (PDF, DOCX, MD)',
+    },
+    offer: {
+      title: 'PROPUESTA COMERCIAL & OFERTA',
+      label: 'Gancho del Mes / Lead Magnet',
+      placeholder: 'ej. Pase de Cortesía de 3 Días + Valoración Corporal InBody Gratis',
+      docLabel: 'Subir Folleto de Oferta / Voucher de Cortesía (PDF, DOCX, MD)',
+    },
+    criteria: [
+      '1. Cercanía o Zona Compatible',
+      '2. Meta Física Definida',
+      '3. Disponibilidad de Horario',
+      '4. Decisor de Compra (+18)',
+    ],
+  },
+  service_appointments: {
+    pilar1: {
+      title: 'PILAR 1: Aranceles, Procedimientos & Facilidades',
+      label: 'Aranceles Base, Facilidades de Pago (MSI) y Seguros Aceptados',
+      placeholder: 'ej. Consulta Especialidad: $600 | Profilaxis: $750 | Ortodoncia Invisible: desde $1,800/mes a 12 MSI',
+      docLabel: 'Subir Lista de Aranceles Médicos / Catálogo Oficial (PDF, DOCX, MD)',
+    },
+    pilar2: {
+      title: 'PILAR 2: Brandbook & Tono de Voz',
+      label: 'Identidad Empática, Profesional & Científica (Obligatorio)',
+      placeholder: 'ej. Empático, profesional, cálido, riguroso, reconfortante y científico',
+      docLabel: 'Subir Guía de Identidad / Protocolo Clínico (PDF, DOCX, MD)',
+    },
+    pilar3: {
+      title: 'PILAR 3: Protocolo Médico, Cancelaciones & FAQs',
+      label: 'Protocolo Médico, Cancelaciones con 24h y Teléfono de Urgencias',
+      placeholder: 'ej. Cancelación con 24h de anticipación. En caso de dolor agudo o urgencia llamar a línea de guardia.',
+      docLabel: 'Subir Protocolo de Urgencias / Documento de FAQs (PDF, DOCX, MD)',
+    },
+    pilar4: {
+      title: 'PILAR 4: Casos Clínicos Anónimos & Certificaciones',
+      label: 'Casos Clínicos de Éxito Anónimos y Credenciales Médicas',
+      placeholder: 'ej. Certificaciones del Consejo Mexicano, convenios con aseguradoras y casos clínicos documentados',
+      docLabel: 'Subir Certificaciones Médicas / Casos Clínicos (PDF, DOCX, MD)',
+    },
+    offer: {
+      title: 'PROPUESTA COMERCIAL & OFERTA',
+      label: 'Gancho del Mes / Lead Magnet',
+      placeholder: 'ej. 1ª Consulta Diagnóstica con Escaneo 3D Gratuito',
+      docLabel: 'Subir Folleto de Oferta / Campaña de Diagnóstico (PDF, DOCX, MD)',
+    },
+    criteria: [
+      '1. Motivo de Consulta Claro',
+      '2. Paciente no Urgencia Crítica (P0)',
+      '3. Disponibilidad Presencial',
+      '4. Presupuesto para Valoración',
+    ],
+  },
+  spa_beauty: {
+    pilar1: {
+      title: 'PILAR 1: Menú de Servicios, Masajes & Paquetes',
+      label: 'Menú de Servicios, Paquetes de Sesiones y Anticipos de Cita',
+      placeholder: 'ej. Masaje Relajante 60min: $750 | Limpieza Facial Profunda: $900 | Paquete Novias: $2,800 MXN',
+      docLabel: 'Subir Menú de Servicios Spa / Lista de Precios (PDF, DOCX, MD)',
+    },
+    pilar2: {
+      title: 'PILAR 2: Brandbook & Tono de Voz',
+      label: 'Tono Relajante, Sofisticado & Amable (Obligatorio)',
+      placeholder: 'ej. Relajante, sofisticado, cálido, acogedor y de máximo confort',
+      docLabel: 'Subir Brandbook Spa / Manual de Estilo (PDF, DOCX, MD)',
+    },
+    pilar3: {
+      title: 'PILAR 3: Políticas de Citas, Anticipos & Tolerancia',
+      label: 'Política de Anticipo, Tolerancia de Horario y Cancelaciones',
+      placeholder: 'ej. Anticipo del 30% para apartado de cabina. Tolerancia de 10 minutos. Cancelaciones con 12h de aviso.',
+      docLabel: 'Subir Políticas de Cabina / Documento de FAQs (PDF, DOCX, MD)',
+    },
+    pilar4: {
+      title: 'PILAR 4: Galería de Resultados & Reseñas',
+      label: 'Galería de Antes y Después de Tratamientos y Reviews',
+      placeholder: 'ej. Galería de cambios antes/después en tratamientos faciales y corporales, satisfacción 4.9★',
+      docLabel: 'Subir Dossier de Resultados / Reseñas de Clientes (PDF, DOCX, MD)',
+    },
+    offer: {
+      title: 'PROPUESTA COMERCIAL & OFERTA',
+      label: 'Gancho del Mes / Lead Magnet',
+      placeholder: 'ej. Sesión de Hidratación Facial Express de Cortesía al reservar cualquier masaje',
+      docLabel: 'Subir Cupón de Promoción / Voucher Spa (PDF, DOCX, MD)',
+    },
+    criteria: [
+      '1. Servicio o Zona de Interés',
+      '2. Disponibilidad de Agenda',
+      '3. Sin Contraindicaciones Médicas',
+      '4. Anticipo de Cita Aceptado',
+    ],
+  },
+  education_schools: {
+    pilar1: {
+      title: 'PILAR 1: Colegiaturas, Inscripción & Becas',
+      label: 'Colegiaturas, Costo de Inscripción, Cuotas de Exámenes y Esquemas de Becas',
+      placeholder: 'ej. Inscripción Anual: $6,500 | Colegiatura Mensual: $4,200 MXN | Descuento del 10% por pronto pago',
+      docLabel: 'Subir Tabulador de Cuotas / Esquema de Becas (PDF, DOCX, MD)',
+    },
+    pilar2: {
+      title: 'PILAR 2: Brandbook & Tono de Voz',
+      label: 'Tono Formativo, Institucional, Cálido & Confiable (Obligatorio)',
+      placeholder: 'ej. Formativo, institucional, cálido, confiable e inspirador',
+      docLabel: 'Subir Ideario Institucional / Brandbook Escolar (PDF, DOCX, MD)',
+    },
+    pilar3: {
+      title: 'PILAR 3: Fechas de Admisión, Requisitos & Reglamentos',
+      label: 'Fechas Límite de Registro, Documentación Oficial y Políticas de Reembolso',
+      placeholder: 'ej. Exámenes de admisión los sábados de 9 a 12h. Entrega de acta de nacimiento y boletas anteriores.',
+      docLabel: 'Subir Convocatoria de Admisiones / Reglamento Interno (PDF, DOCX, MD)',
+    },
+    pilar4: {
+      title: 'PILAR 4: Acreditaciones Oficiales (SEP) & Logros',
+      label: 'Acreditaciones Oficiales (SEP, RVOE), Bolsa de Trabajo y Convenios',
+      placeholder: 'ej. Clave de Centro de Trabajo (CCT), certificaciones Cambridge, intercambios y bolsa de trabajo',
+      docLabel: 'Subir Folleto de Acreditaciones / Plan de Estudios (PDF, DOCX, MD)',
+    },
+    offer: {
+      title: 'PROPUESTA COMERCIAL & OFERTA',
+      label: 'Gancho del Mes / Lead Magnet',
+      placeholder: 'ej. 50% de Descuento en Cuota de Inscripción + Tour Guiado por Campus',
+      docLabel: 'Subir Folleto Promocional de Admisiones (PDF, DOCX, MD)',
+    },
+    criteria: [
+      '1. Grado Escolar de Interés',
+      '2. Zona Geográfica / Transporte',
+      '3. Alineación con Cuotas Mensuales',
+      '4. Padre, Madre o Tutor Legal',
+    ],
+  },
+  academies_courses: {
+    pilar1: {
+      title: 'PILAR 1: Mensualidades, Módulos & Materiales',
+      label: 'Precios por Nivel o Módulo, Mensualidades y Material de Estudio',
+      placeholder: 'ej. Curso Básico (12 semanas): $1,400/mes | Taller Sabatino: $950/mes | Material didáctico incluido',
+      docLabel: 'Subir Tarifario de Cursos / Programas Académicos (PDF, DOCX, MD)',
+    },
+    pilar2: {
+      title: 'PILAR 2: Brandbook & Tono de Voz',
+      label: 'Tono Pedagógico, Motivante, Empático & Amigable (Obligatorio)',
+      placeholder: 'ej. Pedagógico, motivante, paciente, cercano y creativo',
+      docLabel: 'Subir Guía de Estilo / Filosofía de Enseñanza (PDF, DOCX, MD)',
+    },
+    pilar3: {
+      title: 'PILAR 3: Calendario de Inicio, Asistencias & Certificados',
+      label: 'Políticas de Asistencia, Fechas de Inicio y Acreditaciones',
+      placeholder: 'ej. Inicios de grupo el primer lunes de cada mes. 80% de asistencia obligatoria para diploma.',
+      docLabel: 'Subir Calendario de Cursos / Políticas Académicas (PDF, DOCX, MD)',
+    },
+    pilar4: {
+      title: 'PILAR 4: Muestras de Alumnos & Casos de Éxito',
+      label: 'Logros de Alumnos, Muestras Prácticas & Casos de Éxito',
+      placeholder: 'ej. Presentaciones de fin de curso, certificaciones obtenidas y audiciones aprobadas por alumnos',
+      docLabel: 'Subir Evidencia de Alumnos / Reseñas de Cursos (PDF, DOCX, MD)',
+    },
+    offer: {
+      title: 'PROPUESTA COMERCIAL & OFERTA',
+      label: 'Gancho del Mes / Lead Magnet',
+      placeholder: 'ej. Clase Muestra Gratuita de 45 minutos para evaluación de nivel',
+      docLabel: 'Subir Voucher de Clase Muestra (PDF, DOCX, MD)',
+    },
+    criteria: [
+      '1. Nivel o Disciplina Requerida',
+      '2. Horario Disponible (Semana/Sábado)',
+      '3. Mayor de 15 años o con Tutor',
+      '4. Compromiso con el Ciclo Completo',
+    ],
+  },
+  infoproducts_bootcamps: {
+    pilar1: {
+      title: 'PILAR 1: Matrícula, Cuotas & Métodos de Pago',
+      label: 'Precio del Programa, Descuentos Vigentes y Facilidades de Pago',
+      placeholder: 'ej. Bootcamp Completo: $1,200 USD o 6 cuotas de $220 USD | Acceso vitalicio a grabaciones',
+      docLabel: 'Subir Ficha de Precios / Plan de Financiamiento (PDF, DOCX, MD)',
+    },
+    pilar2: {
+      title: 'PILAR 2: Brandbook & Tono de Voz',
+      label: 'Tono Disruptivo, Aspiracional & Tecnológico (Obligatorio)',
+      placeholder: 'ej. Disruptivo, aspiracional, ágil, pragmático y de alta energía',
+      docLabel: 'Subir Manual de Marca / Directrices de Contenido (PDF, DOCX, MD)',
+    },
+    pilar3: {
+      title: 'PILAR 3: Garantía de Satisfacción, SLAs & Requisitos',
+      label: 'Políticas de Garantía, Acceso a la Plataforma y Requisitos',
+      placeholder: 'ej. Garantía de devolución de 7 días sin preguntas. Requiere laptop con min 8GB RAM.',
+      docLabel: 'Subir Términos de Servicio / Políticas de Reembolso (PDF, DOCX, MD)',
+    },
+    pilar4: {
+      title: 'PILAR 4: Salarios de Egresados, Testimonios & Métricas',
+      label: 'Resultados de Egresados, Testimonios y Proyección Práctica',
+      placeholder: 'ej. Tasa de contratación del 84% en los primeros 6 meses, salario promedio inicial $1,500 USD',
+      docLabel: 'Subir Reporte de Transparencia de Egresados (PDF, DOCX, MD)',
+    },
+    offer: {
+      title: 'PROPUESTA COMERCIAL & OFERTA',
+      label: 'Gancho del Mes / Lead Magnet',
+      placeholder: 'ej. Acceso a Masterclass Gratuita de 90 min + Beca del 25% por postulación temprana',
+      docLabel: 'Subir Temario Oficial / Guía del Bootcamp (PDF, DOCX, MD)',
+    },
+    criteria: [
+      '1. Requisitos Técnicos Básicos',
+      '2. Disponibilidad de 10h/semana',
+      '3. Capacidad de Pago o Financiamiento',
+      '4. Meta Profesional Concreta',
+    ],
+  },
+  networking_mastermind: {
+    pilar1: {
+      title: 'PILAR 1: Membresías Anuales, Capítulos & Eventos',
+      label: 'Cuota de Membresía, Eventos de Vinculación y Opciones de Pago',
+      placeholder: 'ej. Membresía Anual: $1,800 USD | Cuota de Desayunos: $350 MXN por sesión | Acceso a directorio global',
+      docLabel: 'Subir Reglamento de Cuotas / Beneficios de Socio (PDF, DOCX, MD)',
+    },
+    pilar2: {
+      title: 'PILAR 2: Brandbook & Tono de Voz',
+      label: 'Tono Ejecutivo, Colaborativo & de Alto Valor (Obligatorio)',
+      placeholder: 'ej. Ejecutivo, colaborativo, estructurado, de alto estatus y visión de negocio',
+      docLabel: 'Subir Código de Conducta / Filosofía de Red (PDF, DOCX, MD)',
+    },
+    pilar3: {
+      title: 'PILAR 3: Exclusividad de Giro, Asistencia & Código Ético',
+      label: 'Criterios de Aceptación, Compromiso de Asistencia y Código Ético',
+      placeholder: 'ej. Solo un representante por giro profesional por capítulo. 3 inasistencias causan baja.',
+      docLabel: 'Subir Estatutos del Club / Normas de Exclusividad (PDF, DOCX, MD)',
+    },
+    pilar4: {
+      title: 'PILAR 4: Negocios Cruzados & Volumen Facturado',
+      label: 'Volumen de Negocios y Casos de Colaboración entre Miembros',
+      placeholder: 'ej. Cifra récord de $45 MDP en referencias comerciales generadas entre socios el último año',
+      docLabel: 'Subir Reporte de Referencias / Casos de Alianzas (PDF, DOCX, MD)',
+    },
+    offer: {
+      title: 'PROPUESTA COMERCIAL & OFERTA',
+      label: 'Gancho del Mes / Lead Magnet',
+      placeholder: 'ej. Invitación como Invitado Especial a Sesión de Negocios sin costo de entrada',
+      docLabel: 'Subir Invitación Formal a Sesión de Networking (PDF, DOCX, MD)',
+    },
+    criteria: [
+      '1. Giro Profesional sin Conflicto',
+      '2. Empresa Constituida > 2 años',
+      '3. Decisor o Dueño de Negocio',
+      '4. Compromiso con Reunión Semanal',
+    ],
+  },
+  community_subscriptions: {
+    pilar1: {
+      title: 'PILAR 1: Planes Mensuales, Anuales & Perks',
+      label: 'Planes Mensual / Anual, Beneficios Incluidos y Período de Prueba',
+      placeholder: 'ej. Mensual: $29 USD/mes | Plan Anual (2 meses gratis): $290 USD | Acceso a Discord y calls VIP',
+      docLabel: 'Subir Planes de Suscripción / Tabla de Beneficios (PDF, DOCX, MD)',
+    },
+    pilar2: {
+      title: 'PILAR 2: Brandbook & Tono de Voz',
+      label: 'Tono de Tribu, Exclusivo & Cercano (Obligatorio)',
+      placeholder: 'ej. De comunidad, cercano, exclusivo, colaborativo e informal pero de alto valor',
+      docLabel: 'Subir Manifiesto de Comunidad / Reglas de Discord (PDF, DOCX, MD)',
+    },
+    pilar3: {
+      title: 'PILAR 3: Reglas de Convivencia, Privacidad & Cancelación',
+      label: 'Reglas de Convivencia, Privacidad y Gestión de Suscripción',
+      placeholder: 'ej. Cero spam o prospección no autorizada en DMs. Cancelación en 1-click desde portal de Stripe.',
+      docLabel: 'Subir Reglas de la Comunidad / Políticas de Privacidad (PDF, DOCX, MD)',
+    },
+    pilar4: {
+      title: 'PILAR 4: Repositorio de Masterclasses & Recursos',
+      label: 'Histórico de Masterclasses y Contenido Exclusivo para Miembros',
+      placeholder: 'ej. Repositorio de más de 80 masterclasses grabadas, plantillas Notion y recursos descargables',
+      docLabel: 'Subir Catálogo de Recursos / Testimonios de Miembros (PDF, DOCX, MD)',
+    },
+    offer: {
+      title: 'PROPUESTA COMERCIAL & OFERTA',
+      label: 'Gancho del Mes / Lead Magnet',
+      placeholder: 'ej. Prueba de 7 días por $1 USD o Acceso Inmediato a Plantilla Exclusiva',
+      docLabel: 'Subir Preview de Contenido / Ficha del Club (PDF, DOCX, MD)',
+    },
+    criteria: [
+      '1. Perfil Profesional Afín a la Tribu',
+      '2. Tarjeta de Crédito/Débito Activa',
+      '3. Aceptación de Reglas de Convivencia',
+      '4. Compromiso de Participación Activa',
+    ],
+  },
+  ecommerce: {
+    pilar1: {
+      title: 'PILAR 1: Catálogo de SKUs, Precios & Envíos',
+      label: 'Catálogo de SKUs, Precios, Variantes, Stock y Promociones',
+      placeholder: 'ej. Playera Oversize: $380 MXN | Sneakers Urban: $1,450 | Envíos gratis en compras > $899 MXN',
+      docLabel: 'Subir Catálogo de Productos / Lista de Precios (PDF, DOCX, MD)',
+    },
+    pilar2: {
+      title: 'PILAR 2: Brandbook & Tono de Voz',
+      label: 'Identidad Dinámica, Fresca & Visual (Obligatorio)',
+      placeholder: 'ej. Fresco, dinámico, visual, ágil, entusiasta y centrado en el estilo de vida',
+      docLabel: 'Subir Brandbook de Marca / Lookbook (PDF, DOCX, MD)',
+    },
+    pilar3: {
+      title: 'PILAR 3: Guías de Envío, Tiempos de Entrega & Cambios',
+      label: 'Guías de Envío, Políticas de Devolución o Cambio y Tiempos de Entrega',
+      placeholder: 'ej. Envíos nacionales en 3 a 5 días hábiles. Primer cambio de talla gratis dentro de 15 días.',
+      docLabel: 'Subir Políticas de Envío y Devolución / FAQs (PDF, DOCX, MD)',
+    },
+    pilar4: {
+      title: 'PILAR 4: Bestsellers, Reseñas con Foto & UGC',
+      label: 'Top Bestsellers y Promociones Exitosas',
+      placeholder: 'ej. Más de 1,200 reseñas de 5 estrellas en sitio web, fotos de clientes en Instagram',
+      docLabel: 'Subir Ficha de Productos Estrella / Galería UGC (PDF, DOCX, MD)',
+    },
+    offer: {
+      title: 'PROPUESTA COMERCIAL & OFERTA',
+      label: 'Gancho del Mes / Lead Magnet',
+      placeholder: 'ej. 15% de Descuento en Primera Compra con cupón BIENVENIDO + Envío Gratis',
+      docLabel: 'Subir Banner Promocional / Cupón de Descuento (PDF, DOCX, MD)',
+    },
+    criteria: [
+      '1. Cobertura de Envío en su Código Postal',
+      '2. Producto y Talla en Stock',
+      '3. Medio de Pago Disponible',
+      '4. Intención de Compra en Línea',
+    ],
+  },
+  local_retail: {
+    pilar1: {
+      title: 'PILAR 1: Precios de Mostrador, Mayoreo & Piezas',
+      label: 'Catálogo de Productos, Precios por Pieza o Mayoreo y Métodos de Pago',
+      placeholder: 'ej. Bulto Cemento: $240 MXN | Varilla 3/8: $185 | Descuento del 8% en compras > $10,000 MXN',
+      docLabel: 'Subir Lista de Precios Mostrador & Mayoreo (PDF, DOCX, MD)',
+    },
+    pilar2: {
+      title: 'PILAR 2: Brandbook & Tono de Voz',
+      label: 'Tono Técnico, Ágil, Práctico & Resolutivo (Obligatorio)',
+      placeholder: 'ej. Práctico, técnico, resolutivo, claro, honesto y ágil de mostrador',
+      docLabel: 'Subir Ficha de Identidad de Tienda (PDF, DOCX, MD)',
+    },
+    pilar3: {
+      title: 'PILAR 3: Tiempos de Entrega en Obra, Garantías & Flete',
+      label: 'Políticas de Garantía de Piezas, Tiempos de Entrega a Domicilio y Devoluciones',
+      placeholder: 'ej. Flete gratis en compras mayores a $3,500 en radio de 10 km. Garantía de fábrica en herramientas.',
+      docLabel: 'Subir Políticas de Flete, Entregas y Garantías (PDF, DOCX, MD)',
+    },
+    pilar4: {
+      title: 'PILAR 4: Marcas Distribuidas & Inventario en Almacén',
+      label: 'Marcas Oficiales Distribuidas y Stock en Almacén',
+      placeholder: 'ej. Distribuidores autorizados de Truper, Makita, DeWalt y Cemex con inventario disponible',
+      docLabel: 'Subir Catálogo de Marcas y Stock (PDF, DOCX, MD)',
+    },
+    offer: {
+      title: 'PROPUESTA COMERCIAL & OFERTA',
+      label: 'Gancho del Mes / Lead Magnet',
+      placeholder: 'ej. Cotización Formal en menos de 15 min + Flete Gratuito en tu Primer Pedido',
+      docLabel: 'Subir Folleto de Mayoreo / Promociones de Mes (PDF, DOCX, MD)',
+    },
+    criteria: [
+      '1. Ubicación de Entrega o Retiro en Tienda',
+      '2. Especificación Técnica Confirmada',
+      '3. Volumen (Menudeo o Mayoreo)',
+      '4. Fecha de Requerimiento de Material',
+    ],
+  },
+  hospitality: {
+    pilar1: {
+      title: 'PILAR 1: Menú Digital, Precios & Paquetes',
+      label: 'Menú Digital, Precios Promedio y Paquetes para Grupos',
+      placeholder: 'ej. Menú Degustación 4 Tiempos: $650 | Platillo Especial: $290 | Coctelería de Autor desde $160 MXN',
+      docLabel: 'Subir Carta de Platillos / Menú Digital con Precios (PDF, DOCX, MD)',
+    },
+    pilar2: {
+      title: 'PILAR 2: Brandbook & Tono de Voz',
+      label: 'Tono Cálido, Gourmet, Experiencial & Amigable (Obligatorio)',
+      placeholder: 'ej. Hospitalario, gourmet, cálido, sugerente, sensorial y cordial',
+      docLabel: 'Subir Brandbook Gastronómico / Filosofía de Mesa (PDF, DOCX, MD)',
+    },
+    pilar3: {
+      title: 'PILAR 3: Alergias Alimentarias, Reservas & Descorche',
+      label: 'Alergias Alimentarias, Políticas de Reserva y Tolerancia en Mesa',
+      placeholder: 'ej. Tolerancia de 15 min en reservaciones de mesa. Protocolo estricto para celíacos. Descorche $350 MXN.',
+      docLabel: 'Subir Políticas de Reservación y Alergias (PDF, DOCX, MD)',
+    },
+    pilar4: {
+      title: 'PILAR 4: Reconocimientos Gastronómicos & Eventos',
+      label: 'Fechas de Alta Demanda y Paquetes de Temporada',
+      placeholder: 'ej. Recomendado en Guía Gastronómica local, menciones en prensa y fotos de platillos insignia',
+      docLabel: 'Subir Dossier de Prensa / Menú de Temporada (PDF, DOCX, MD)',
+    },
+    offer: {
+      title: 'PROPUESTA COMERCIAL & OFERTA',
+      label: 'Gancho del Mes / Lead Magnet',
+      placeholder: 'ej. Cóctel de Bienvenida de Cortesía o Postre Insignia en Reservación para 2+ personas',
+      docLabel: 'Subir Cupón de Degustación / Voucher de Mesa (PDF, DOCX, MD)',
+    },
+    criteria: [
+      '1. Número de Comensales y Fecha',
+      '2. Alergias o Restricciones Notificadas',
+      '3. Tipo de Ocasión (Cena, Festejo, Trabajo)',
+      '4. Confirmación de Horario de Llegada',
+    ],
+  },
+  event_venues: {
+    pilar1: {
+      title: 'PILAR 1: Paquetes por Persona, Mobiliario & Banquete',
+      label: 'Paquetes por Persona, Servicios Incluidos y Opciones Adicionales',
+      placeholder: 'ej. Paquete Boda Todo Incluido (150 personas): $850/persona | Alquiler de Salón: $35,000 MXN',
+      docLabel: 'Subir Paquetes de Salón / Menús de Banquete (PDF, DOCX, MD)',
+    },
+    pilar2: {
+      title: 'PILAR 2: Brandbook & Tono de Voz',
+      label: 'Tono Festivo, Emotivo, Confiable & Elegante (Obligatorio)',
+      placeholder: 'ej. Emotivo, elegante, confiable, detallista, inspirador y profesional',
+      docLabel: 'Subir Manual de Identidad / Estilo de Eventos (PDF, DOCX, MD)',
+    },
+    pilar3: {
+      title: 'PILAR 3: Anticipos, Pagos en Parcialidades & Políticas',
+      label: 'Esquema de Pagos, Anticipos y Políticas de Cancelación',
+      placeholder: 'ej. Apartado con 20% inicial. Liquidación 15 días antes del evento. Políticas de horas extras.',
+      docLabel: 'Subir Contrato Tipo de Evento / Políticas de Fecha (PDF, DOCX, MD)',
+    },
+    pilar4: {
+      title: 'PILAR 4: Galería de Montajes Reales & Proveedores',
+      label: 'Fotografías de Montajes Reales y Recomendaciones de Proveedores',
+      placeholder: 'ej. Portafolio fotográfico de bodas y graduaciones reales, alianzas con fotógrafos y DJ',
+      docLabel: 'Subir Dossier Fotográfico de Montajes (PDF, DOCX, MD)',
+    },
+    offer: {
+      title: 'PROPUESTA COMERCIAL & OFERTA',
+      label: 'Gancho del Mes / Lead Magnet',
+      placeholder: 'ej. Degustación Gratuita de Menú para 4 Personas al agendar visita presencial al salón',
+      docLabel: 'Subir Folleto de Paquetes / Cupón de Degustación (PDF, DOCX, MD)',
+    },
+    criteria: [
+      '1. Fecha Estimada del Evento',
+      '2. Número Mínimo de Invitados (50+)',
+      '3. Presupuesto Compatible por Persona',
+      '4. Decisores (Pareja o Comité Organizador)',
+    ],
+  },
+  b2b: {
+    pilar1: {
+      title: 'PILAR 1: Rangos de Inversión, Retainers & Alcance',
+      label: 'Rangos de Inversión, Planes de Servicio y Esquemas de Implementación',
+      placeholder: 'ej. Auditoría Estratégica: $1,500 USD | Retainer de Pauta & IA: desde $2,500 USD/mes | Sprint de 90 días',
+      docLabel: 'Subir Ficha de Servicios B2B / Tarifario de Retainers (PDF, DOCX, MD)',
+    },
+    pilar2: {
+      title: 'PILAR 2: Brandbook & Tono de Voz',
+      label: 'Tono Ejecutivo, Consultivo, Estratégico & Riguroso (Obligatorio)',
+      placeholder: 'ej. Ejecutivo, consultivo, analítico, estratégico, riguroso y orientado a ROI',
+      docLabel: 'Subir Brandbook Corporativo / Directrices de Comunicación (PDF, DOCX, MD)',
+    },
+    pilar3: {
+      title: 'PILAR 3: Acuerdos NDA, SLAs de Respuesta & Contratos',
+      label: 'Acuerdos de Confidencialidad (NDA), SLAs y Términos de Servicio',
+      placeholder: 'ej. Firma de NDA obligatorio previo a auditoría. Soporte con SLA de respuesta < 4 horas hábiles.',
+      docLabel: 'Subir Modelo de NDA / Términos de Servicio B2B (PDF, DOCX, MD)',
+    },
+    pilar4: {
+      title: 'PILAR 4: Casos de Estudio Reales con Métricas de ROI',
+      label: 'Casos de Estudio Reales con Métricas y Resultados Comprobables',
+      placeholder: 'ej. Caso Fintech: Incremento de 340% en leads calificados reduciendo el CAC en un 42%',
+      docLabel: 'Subir Whitepaper / Casos de Estudio de Éxito (PDF, DOCX, MD)',
+    },
+    offer: {
+      title: 'PROPUESTA COMERCIAL & OFERTA',
+      label: 'Gancho del Mes / Lead Magnet',
+      placeholder: 'ej. Sesión de Diagnóstico Estratégico de 45 min sin costo con Lead Consultant',
+      docLabel: 'Subir Ficha de Discovery Call / Credenciales (PDF, DOCX, MD)',
+    },
+    criteria: [
+      '1. Presupuesto de Pauta/Servicio > $15K USD',
+      '2. Problemática Concreta de Escalamiento',
+      '3. Plazo de Implementación < 60 días',
+      '4. Cargo de C-Level, VP o Socio',
+    ],
+  },
+  legal_accounting: {
+    pilar1: {
+      title: 'PILAR 1: Honorarios, Pólizas Mensuales & Aranceles',
+      label: 'Costo de Consulta Inicial, Pólizas de Asesoría y Aranceles por Trámite',
+      placeholder: 'ej. Consulta Inicial (1h): $1,200 MXN | Póliza Fiscal PyME: $4,500/mes | Dictamen Notarial: según avalúo',
+      docLabel: 'Subir Tabulador de Honorarios / Pólizas de Asesoría (PDF, DOCX, MD)',
+    },
+    pilar2: {
+      title: 'PILAR 2: Brandbook & Tono de Voz',
+      label: 'Tono Formal, Riguroso, Ético & de Máxima Discreción (Obligatorio)',
+      placeholder: 'ej. Formal, riguroso, ético, institucional, sobrio y de máxima confidencialidad',
+      docLabel: 'Subir Código Deontológico / Manual de Marca (PDF, DOCX, MD)',
+    },
+    pilar3: {
+      title: 'PILAR 3: Secreto Fiduciario, Términos & Documentación',
+      label: 'Secreto Profesional, Confidencialidad y Términos de Representación',
+      placeholder: 'ej. Secreto profesional amparado por ley. Se requiere INE y constancia de situación fiscal para expediente.',
+      docLabel: 'Subir Aviso de Privacidad Legal / Términos de Asesoría (PDF, DOCX, MD)',
+    },
+    pilar4: {
+      title: 'PILAR 4: Trayectoria, Cédulas Profesionales & Especialidades',
+      label: 'Casos Resueltos Favorablemente (Sin revelar datos confidenciales)',
+      placeholder: 'ej. Abogados titulados con más de 18 años de litigio mercantil y fiscal exitoso',
+      docLabel: 'Subir Currículum del Despacho / Credenciales (PDF, DOCX, MD)',
+    },
+    offer: {
+      title: 'PROPUESTA COMERCIAL & OFERTA',
+      label: 'Gancho del Mes / Lead Magnet',
+      placeholder: 'ej. Diagnóstico Fiscal Preliminar de 30 min sin costo para detectar riesgos inmediatos',
+      docLabel: 'Subir Folleto Informativo / Checklist Legal (PDF, DOCX, MD)',
+    },
+    criteria: [
+      '1. Asunto Específico (Mercantil, Fiscal, Laboral)',
+      '2. Estado Procesal o Fecha Límite',
+      '3. Documentación Básica Disponible',
+      '4. Titular o Apoderado Legal',
+    ],
+  },
+  realestate: {
+    pilar1: {
+      title: 'PILAR 1: Precios de Unidades, Enganches & Créditos',
+      label: 'Precios Base, Esquemas de Enganche, Mensualidades y Promociones',
+      placeholder: 'ej. Deptos desde $2.6 MDP | Enganche del 15% diferido en 18 meses | Aceptamos Cofinavit y Bancario',
+      docLabel: 'Subir Lista de Precios de Unidades / Esquemas de Pago (PDF, DOCX, MD)',
+    },
+    pilar2: {
+      title: 'PILAR 2: Brandbook & Tono de Voz',
+      label: 'Tono Asesor, Patrimonial, Inspirador & Profesional (Obligatorio)',
+      placeholder: 'ej. Asesor patrimonial, aspiracional, profesional, confiable y seguro',
+      docLabel: 'Subir Brandbook del Desarrollo / Manual de Identidad (PDF, DOCX, MD)',
+    },
+    pilar3: {
+      title: 'PILAR 3: Requisitos de Precalificación & Proceso Notarial',
+      label: 'Requisitos de Crédito Hipotecario y Proceso de Escrituración',
+      placeholder: 'ej. Apartado con $20,000 MXN reembolsable en 10 días si no se aprueba crédito. Gastos notariales ~6%.',
+      docLabel: 'Subir Requisitos de Crédito Hipotecario / Guía de Compra (PDF, DOCX, MD)',
+    },
+    pilar4: {
+      title: 'PILAR 4: Fichas Técnicas, Planos & Amenidades',
+      label: 'Historial de Entregas, Plusvalía Proyectada y Amenidades',
+      placeholder: 'ej. Master plan del proyecto, amenidades (alberca, gimnasio, coworking) y fecha de entrega garantizada',
+      docLabel: 'Subir Brochure Oficial del Desarrollo / Planos (PDF, DOCX, MD)',
+    },
+    offer: {
+      title: 'PROPUESTA COMERCIAL & OFERTA',
+      label: 'Gancho del Mes / Lead Magnet',
+      placeholder: 'ej. Bono Especial de $50,000 MXN en Equipamiento + Asesoría Hipotecaria Gratuita',
+      docLabel: 'Subir Ficha de Promoción / Voucher de Descuento (PDF, DOCX, MD)',
+    },
+    criteria: [
+      '1. Presupuesto / Crédito Preaprobado',
+      '2. Número de Recámaras y Zona Deseada',
+      '3. Plazo de Compra (< 6 meses)',
+      '4. Decisor Familiar o Inversionista',
+    ],
+  },
+  automotive: {
+    pilar1: {
+      title: 'PILAR 1: Precios de Modelos, Enganche & Mantenimiento',
+      label: 'Precios de Unidades, Opciones de Enganche, Mensualidades y Paquetes de Servicio',
+      placeholder: 'ej. SUV 2026 desde $435,000 MXN | Enganche desde 20% | Servicio de 10,000 km: $2,100 MXN',
+      docLabel: 'Subir Catálogo de Unidades / Lista de Precios Oficial (PDF, DOCX, MD)',
+    },
+    pilar2: {
+      title: 'PILAR 2: Brandbook & Tono de Voz',
+      label: 'Tono Dinámico, Experto, Confiable & Ágil (Obligatorio)',
+      placeholder: 'ej. Dinámico, experto en autos, ágil, entusiasta, transparente y confiable',
+      docLabel: 'Subir Manual de Marca Automotriz (PDF, DOCX, MD)',
+    },
+    pilar3: {
+      title: 'PILAR 3: Requisitos para Test Drive & Pólizas de Garantía',
+      label: 'Requisitos de Identificación para Test Drive y Cobertura de Garantía',
+      placeholder: 'ej. Para prueba de manejo se requiere licencia de conducir vigente y ser mayor de 21 años. Garantía 5 años o 100 mil km.',
+      docLabel: 'Subir Requisitos de Test Drive / Póliza de Garantía (PDF, DOCX, MD)',
+    },
+    pilar4: {
+      title: 'PILAR 4: Fichas Técnicas, Seguridad & Valoraciones',
+      label: 'Reseñas de Manejo y Satisfacción de Clientes',
+      placeholder: 'ej. 5 estrellas de seguridad Latin NCAP, rendimiento de combustible 17 km/L y valor de reventa',
+      docLabel: 'Subir Fichas Técnicas de Vehículos / Comparativas (PDF, DOCX, MD)',
+    },
+    offer: {
+      title: 'PROPUESTA COMERCIAL & OFERTA',
+      label: 'Gancho del Mes / Lead Magnet',
+      placeholder: 'ej. Prueba de Manejo a Domicilio o en Agencia + 0% de Comisión por Apertura de Crédito',
+      docLabel: 'Subir Folleto Promocional / Bono de Agencia (PDF, DOCX, MD)',
+    },
+    criteria: [
+      '1. Modelo de Interés (SUV, Sedán, Taller)',
+      '2. Forma de Compra (Contado, Crédito, Leasing)',
+      '3. Licencia de Conducir Vigente',
+      '4. Plazo de Adquisición (< 30 días)',
+    ],
+  },
+  creator: {
+    pilar1: {
+      title: 'PILAR 1: Tarifas de Patrocinio & Media Kit',
+      label: 'Tarifas y Media Kit para Alianzas Comerciales (Opcional)',
+      placeholder: 'ej. Story de Instagram: $450 USD | Video Integrado en YouTube: $1,800 USD | Paquete Reels + TikTok: $1,200 USD',
+      docLabel: 'Subir Media Kit Oficial / Tarifario de Alianzas (PDF, DOCX, MD)',
+    },
+    pilar2: {
+      title: 'PILAR 2: Brandbook & Tono de Voz del Creador',
+      label: 'Identidad & Tono de Voz Único del Creador (Obligatorio Núcleo)',
+      placeholder: 'ej. Auténtico, humorístico, desenfadado, transparente y con frases icónicas de la comunidad',
+      docLabel: 'Subir Guía de Estilo / Manifiesto del Creador (PDF, DOCX, MD)',
+    },
+    pilar3: {
+      title: 'PILAR 3: Límites Editoriales, Moderación & Colaboraciones',
+      label: 'Moderación de Contenido, Filtro de Respeto y Menciones',
+      placeholder: 'ej. No se promocionan casas de apuestas ni criptomonedas no reguladas. Aprobación de guion previa.',
+      docLabel: 'Subir Lineamientos de Marca / Políticas de Moderación (PDF, DOCX, MD)',
+    },
+    pilar4: {
+      title: 'PILAR 4: Estadísticas de Audiencia & Alcance (Insights)',
+      label: 'Métricas de Audiencia y Alianzas Exitosas Previas',
+      placeholder: 'ej. 240K seguidores, 65% de 25 a 34 años, 7.8% de engagement rate y 85K vistas promedio por Story',
+      docLabel: 'Subir Capturas de Insights de Meta / Analítica (PDF, DOCX, MD)',
+    },
+    offer: {
+      title: 'PROPUESTA COMERCIAL & OFERTA',
+      label: 'Gancho del Mes / Lead Magnet',
+      placeholder: 'ej. Descuento del 20% en Paquete Trimestral para Marcas con Productos de Lifestyle',
+      docLabel: 'Subir Propuesta Comercial de Patrocinio (PDF, DOCX, MD)',
+    },
+    criteria: [
+      '1. Marca o Empresa Constituida',
+      '2. Presupuesto Mínimo de Campaña',
+      '3. Producto Compatible con la Audiencia',
+      '4. Fechas de Pauta Solicitadas',
+    ],
+  },
+};
+
 export const RAGWizard = ({
   externalAdminViewMode,
   onAdminViewModeChange,
@@ -701,6 +1358,7 @@ export const RAGWizard = ({
     registerTenant,
     deleteTenant,
     updateTenantPolicy,
+    switchTenantContext,
   } = useAuth();
 
   // Mode for Admin: 'list' (Tenant Overview & Requests) or 'wizard' (Step-by-Step New Business Onboarding)
@@ -765,6 +1423,69 @@ export const RAGWizard = ({
     }
   };
 
+  // Multi-Tenant Control Panel State (Search, Filters, View Mode, Accordion)
+  const [tenantSearchQuery, setTenantSearchQuery] = useState('');
+  const [tenantStatusFilter, setTenantStatusFilter] = useState('all'); // 'all' | 'active' | 'suspended'
+  const [tenantVerticalFilter, setTenantVerticalFilter] = useState('all');
+  const [tenantViewLayout, setTenantViewLayout] = useState('table'); // 'table' | 'cards'
+  const [expandedTenantPillars, setExpandedTenantPillars] = useState({});
+
+  // Computed metrics for ecosystem
+  const tenantEcosystemStats = useMemo(() => {
+    const list = Object.values(tenantsData || {});
+    const total = list.length;
+    const activeCount = list.filter(
+      (t) => t.microLandingStatus !== 'suspended' && t.microLandingStatus !== 'disabled' && t.microLandingEnabled !== false
+    ).length;
+    const pausedCount = total - activeCount;
+    return { total, activeCount, pausedCount };
+  }, [tenantsData]);
+
+  // Filtered and searched tenant list (Aislamiento Multi-Tenant Estricto)
+  const filteredTenantsList = useMemo(() => {
+    let list = Object.values(tenantsData || {});
+    // Si el usuario es cliente, filtrar ÚNICAMENTE su propio negocio asignado
+    if (!isAdmin && activeTenant?.id) {
+      list = list.filter((t) => t.id === activeTenant.id);
+    }
+    return list.filter((tenant) => {
+      // 1. Search Query
+      if (tenantSearchQuery.trim()) {
+        const q = tenantSearchQuery.toLowerCase();
+        const matchesName = tenant.name?.toLowerCase().includes(q);
+        const matchesId = tenant.id?.toLowerCase().includes(q);
+        const matchesGiro = (tenant.giro || tenant.vertical || tenant.verticalLabel)?.toLowerCase().includes(q);
+        if (!matchesName && !matchesId && !matchesGiro) return false;
+      }
+
+      // 2. Status Filter
+      if (tenantStatusFilter !== 'all') {
+        const isSuspended =
+          tenant.microLandingStatus === 'suspended' ||
+          tenant.microLandingStatus === 'disabled' ||
+          tenant.microLandingEnabled === false;
+        if (tenantStatusFilter === 'active' && isSuspended) return false;
+        if (tenantStatusFilter === 'suspended' && !isSuspended) return false;
+      }
+
+      // 3. Vertical Filter
+      if (tenantVerticalFilter !== 'all') {
+        const tVert = (tenant.vertical || tenant.giro || '').toLowerCase();
+        if (!tVert.includes(tenantVerticalFilter.toLowerCase())) return false;
+      }
+
+      return true;
+    });
+  }, [tenantsData, tenantSearchQuery, tenantStatusFilter, tenantVerticalFilter]);
+
+  // Toggle expanded pillars for a tenant
+  const toggleTenantPillars = (tenantId) => {
+    setExpandedTenantPillars((prev) => ({
+      ...prev,
+      [tenantId]: !prev[tenantId],
+    }));
+  };
+
   // Category Filter, View Mode and Search Query for Vertical Selection
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -802,24 +1523,24 @@ export const RAGWizard = ({
     businessGoal: 'appointments',
     primaryContact: '',
     contactEmail: '',
-    ownerPhone: '+52 55 9876 5432',
+    ownerPhone: '',
 
     // Estrategia Dual has_website & Canales Meta
     hasWebsite: true,
-    websiteUrl: 'https://clinicasonrisas.com',
-    ga4MeasurementId: 'G-ABC123XYZ',
-    metaPixelId: '123456789012345',
-    metaCapiToken: 'EAAX_CAPI_TOKEN_SAMPLE...',
-    whatsappPhoneId: '109283746592019',
-    wabaId: '987654321098765',
-    instagramAccountId: '1784140000000',
+    websiteUrl: '',
+    ga4MeasurementId: '',
+    metaPixelId: '',
+    metaCapiToken: '',
+    whatsappPhoneId: '',
+    wabaId: '',
+    instagramAccountId: '',
 
     // Micro-Landing Universal como Servicio
     microLandingBillingPlan: 'trial_90d', // 'trial_90d' (3 Meses Gratis) | 'active_monthly' ($29 USD/mes) | 'disabled' (Inactiva)
     microLandingCustomSlug: '',
 
     // Google Calendar & Performance
-    googleCalendarId: 'c_dental_sonrisas@group.calendar.google.com',
+    googleCalendarId: '',
     appointmentDuration: 45,
     calendarScheduleType: 'split', // 'split' (2 turnos) | 'single' (corrido) | 'hospitality' (mesas) | 'calls' (b2b)
     shiftMorningStart: '09:00',
@@ -832,7 +1553,7 @@ export const RAGWizard = ({
     activeDays: ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'],
     concurrencyLimit: 1,
     costPerQualifiedLead: 350.0,
-    monthlyAdBudget: 1500.0,
+    monthlyAdBudget: '',
     showOnboardingPayloadModal: false,
     
     // Toggles for Optional Pillars (Only Pillar 2 is strictly required!)
@@ -949,6 +1670,29 @@ export const RAGWizard = ({
           requires_calendar_slot: true,
         },
       ],
+      ai_rag_pillars: {
+        pilar_1_pricing: {
+          details: wizardData.pricingDetails || 'Tarifas base del giro comercial',
+          document_source: typeof wizardData.pricingDoc === 'string' ? wizardData.pricingDoc : (wizardData.pricingDoc?.name || null),
+        },
+        pilar_2_brandbook: {
+          brand_tone: wizardData.brandTone || 'Empático, resolutivo y profesional',
+          archetype: wizardData.archetype || currentVerticalObj.badge || 'El Asesor Experto',
+          document_source: typeof wizardData.brandbookDoc === 'string' ? wizardData.brandbookDoc : (wizardData.brandbookDoc?.name || null),
+        },
+        commercial_offer: {
+          offer_hook: wizardData.offerHook || 'Diagnóstico de bienvenida sin costo',
+          document_source: typeof wizardData.commercialProposalDoc === 'string' ? wizardData.commercialProposalDoc : (wizardData.commercialProposalDoc?.name || null),
+        },
+        pilar_3_policies_faqs: {
+          details: wizardData.faqDetails || 'Políticas de cancelación con 24h y garantías oficiales',
+          document_source: typeof wizardData.faqsDoc === 'string' ? wizardData.faqsDoc : (wizardData.faqsDoc?.name || null),
+        },
+        pilar_4_lead_matrix: {
+          criteria_and: currentPillarsAdaptive.criteria || [],
+          cost_per_qualified_lead_mxn: wizardData.costPerQualifiedLead || 350,
+        },
+      },
       inviolable_rules: wizardData.inviolableRules,
     };
   };
@@ -987,17 +1731,133 @@ export const RAGWizard = ({
     });
   }, [selectedCategory, searchQuery]);
 
+  const [showPilar4Guide, setShowPilar4Guide] = useState(false);
+
+  // Dynamic Deficiencies & Gaps in Master Plan
+  const detectedDeficiencies = useMemo(() => {
+    const list = [];
+    const vert = BUSINESS_VERTICALS_CONFIG[wizardData.vertical] || BUSINESS_VERTICALS_CONFIG.gym_fitness;
+    const adaptive = VERTICAL_PILLARS_ADAPTIVE_CONFIG[wizardData.vertical] || VERTICAL_PILLARS_ADAPTIVE_CONFIG.gym_fitness;
+
+    // 1. Pilar 2 (Brandbook / Tono)
+    if (!wizardData.brandTone && !wizardData.brandbookDoc) {
+      list.push({
+        id: 'gap-pilar2',
+        pilar: 'Pilar 2: Brandbook',
+        severity: 'critical',
+        severityLabel: 'Crítico',
+        title: 'Falta Tono de Voz o Identidad de Marca [Obligatorio]',
+        description: `El bot no tiene directrices de lenguaje para ${vert.name}. Podría sonar plano o responder sin empatía.`,
+        suggestedFix: adaptive.pilar2.placeholder.replace(/^ej\.\s*/, ''),
+        actionLabel: 'Asignar Tono Recomendado',
+        field: 'brandTone',
+      });
+    }
+
+    // 2. Propuesta Comercial & Oferta
+    if (!wizardData.offerHook && !wizardData.commercialProposalDoc) {
+      list.push({
+        id: 'gap-offer',
+        pilar: 'Propuesta Comercial',
+        severity: 'recommended',
+        severityLabel: 'Recomendado',
+        title: 'Sin Gancho Comercial o Lead Magnet de Captación',
+        description: 'Una oferta con beneficio tangible (clase muestra, diagnóstico, bono) eleva la conversión en pauta en un 42%.',
+        suggestedFix: adaptive.offer.placeholder.replace(/^ej\.\s*/, ''),
+        actionLabel: 'Activar Gancho del Giro',
+        field: 'offerHook',
+      });
+    }
+
+    // 3. Pilar 1 (Precios & Servicios)
+    if (!wizardData.pricingDetails && !wizardData.pricingDoc) {
+      list.push({
+        id: 'gap-pilar1',
+        pilar: 'Pilar 1: Precios & Servicios',
+        severity: 'warning',
+        severityLabel: 'Advertencia',
+        title: 'Tarifario o Servicios no Especificados',
+        description: 'El prospecto preguntará precios. Sin este pilar, la IA dependerá de aranceles genéricos o citas a ciegas.',
+        suggestedFix: adaptive.pilar1.placeholder.replace(/^ej\.\s*/, ''),
+        actionLabel: 'Cargar Tarifario del Giro',
+        field: 'pricingDetails',
+      });
+    }
+
+    // 4. Pilar 3 (Políticas & FAQs)
+    if (!wizardData.faqDetails && !wizardData.faqsDoc) {
+      list.push({
+        id: 'gap-pilar3',
+        pilar: 'Pilar 3: Políticas & FAQs',
+        severity: 'optional',
+        severityLabel: 'Opcional',
+        title: 'Sin Reglas de Cancelación o Preguntas Frecuentes',
+        description: 'Es clave prevenir reclamos definiendo con anticipación políticas de cancelación, garantías y tolerancias.',
+        suggestedFix: adaptive.pilar3.placeholder.replace(/^ej\.\s*/, ''),
+        actionLabel: 'Incorporar Políticas Base',
+        field: 'faqDetails',
+      });
+    }
+
+    // 5. Pilar 4 (Reglas Inviolables)
+    if (!wizardData.inviolableRules || wizardData.inviolableRules.length === 0) {
+      list.push({
+        id: 'gap-pilar4',
+        pilar: 'Pilar 4: Reglas & Filtros',
+        severity: 'recommended',
+        severityLabel: 'Recomendado',
+        title: 'Sin Reglas Inviolables de Protección Comercial',
+        description: 'Faltan límites éticos y comerciales que la IA jamás deba cruzar (ej. no prometer resultados médicos sin consulta).',
+        suggestedFix: vert.defaultRules?.[0] || 'No prometer resultados absolutos sin valoración previa presencial.',
+        actionLabel: 'Activar Regla Inviolable',
+        field: 'inviolableRule',
+      });
+    }
+
+    return list;
+  }, [wizardData.vertical, wizardData.brandTone, wizardData.brandbookDoc, wizardData.offerHook, wizardData.commercialProposalDoc, wizardData.pricingDetails, wizardData.pricingDoc, wizardData.faqDetails, wizardData.faqsDoc, wizardData.inviolableRules]);
+
   // Calculate dynamic RAG Health Score (0-100)
   const calculateHealthScore = () => {
-    let score = 50;
-    if (wizardData.brandbookDoc) score += 20;
-    if (wizardData.enableCommercialProposal && wizardData.offerHook) score += 15;
-    if (wizardData.enableCrisisPillar) score += 10;
-    if (wizardData.inviolableRules.length >= 1) score += 5;
+    let score = 30;
+    if (wizardData.brandTone || wizardData.brandbookDoc) score += 20;
+    if (wizardData.enableCommercialProposal && (wizardData.offerHook || wizardData.commercialProposalDoc)) score += 20;
+    if (wizardData.pricingDetails || wizardData.pricingDoc) score += 15;
+    if (wizardData.faqDetails || wizardData.faqsDoc) score += 10;
+    if (wizardData.inviolableRules && wizardData.inviolableRules.length >= 1) score += 5;
     return Math.min(score, 100);
   };
 
   const healthScore = calculateHealthScore();
+
+  // 1-Click resolve deficiency suggested by AI
+  const handleResolveDeficiency = (def) => {
+    if (def.field === 'brandTone') {
+      setWizardData((prev) => ({ ...prev, brandTone: def.suggestedFix }));
+    } else if (def.field === 'offerHook') {
+      setWizardData((prev) => ({ ...prev, offerHook: def.suggestedFix }));
+    } else if (def.field === 'pricingDetails') {
+      setWizardData((prev) => ({ ...prev, pricingDetails: def.suggestedFix }));
+    } else if (def.field === 'faqDetails') {
+      setWizardData((prev) => ({ ...prev, faqDetails: def.suggestedFix }));
+    } else if (def.field === 'inviolableRule') {
+      setWizardData((prev) => ({
+        ...prev,
+        inviolableRules: [...prev.inviolableRules, def.suggestedFix],
+      }));
+    }
+
+    try {
+      confetti({ particleCount: 30, spread: 60, colors: ['#E7F900', '#00f2fe', '#FFFFFF'] });
+    } catch (e) {}
+
+    triggerModal(
+      'Sugerencia IA Aplicada con Éxito',
+      `Se integró la directriz recomendada para <strong>${def.pilar}</strong>. El Health Score de tu base de conocimiento aumentó.`,
+      () => {},
+      'Excelente'
+    );
+  };
 
   // Switch vertical & update pillar defaults + suggestions + auto-suggest schedule
   const handleSelectVertical = (verticalId) => {
@@ -1099,6 +1959,7 @@ export const RAGWizard = ({
 
     try {
       const vert = BUSINESS_VERTICALS_CONFIG[wizardData.vertical] || BUSINESS_VERTICALS_CONFIG.gym_fitness;
+      const adaptive = VERTICAL_PILLARS_ADAPTIVE_CONFIG[wizardData.vertical] || VERTICAL_PILLARS_ADAPTIVE_CONFIG.gym_fitness;
       
       const result = await BriefingBridge.analyze({
         file: masterFile,
@@ -1111,21 +1972,31 @@ export const RAGWizard = ({
       setIsAnalyzingBriefing(false);
       setBriefingAnalyzed(true);
 
-      // Auto-popular los estados del negocio con la extracción de IA
+      const fileObj = masterFile ? { name: masterFile.name, size: masterFile.size, type: masterFile.type } : null;
+
+      // Auto-popular los 4 pilares + propuesta comercial + reglas con la extracción de IA
       setWizardData((prev) => ({
         ...prev,
         businessName: result.businessName || prev.businessName || `Centro de Excelencia (${vert.name.split(',')[0]})`,
-        brandTone: result.brandTone || 'Profesional, Empático y Orientado a Resultados',
+        // Pilar 2: Brandbook & Tono
+        brandTone: result.brandTone || adaptive?.pilar2?.placeholder?.replace(/^ej\.\s*/, '') || 'Profesional, Empático y Orientado a Resultados',
+        brandbookDoc: (result.brandbookDoc && typeof result.brandbookDoc === 'object') ? result.brandbookDoc : (fileObj ? { name: `Brandbook_${fileObj.name}`, size: Math.round(fileObj.size * 0.42), type: 'text/markdown' } : { name: `Brandbook_${vert.id}.md`, size: 45000, type: 'text/markdown' }),
         archetype: result.archetype || vert.badge || 'El Asesor Experto',
-        offerHook: result.offerHook || 'Diagnóstico de Valoración Sin Costo',
+        // Propuesta Comercial & Gancho
+        offerHook: result.offerHook || adaptive?.offer?.placeholder?.replace(/^ej\.\s*/, '') || 'Diagnóstico de Valoración Sin Costo',
         offerCta: result.offerCta || 'Envía mensaje para apartar cupo',
         offerValidity: result.offerValidity || 'Válido por tiempo limitado',
-        commercialProposalDoc: result.commercialProposalDoc || (masterFile ? masterFile.name : 'Master_Briefing_Integral.pdf'),
-        brandbookDoc: result.brandbookDoc || 'Manual_Identidad_Extraido.md',
-        faqsDoc: result.faqsDoc || 'FAQs_Políticas_AutoExtraidas.md',
+        commercialProposalDoc: (result.commercialProposalDoc && typeof result.commercialProposalDoc === 'object') ? result.commercialProposalDoc : (fileObj || { name: `Oferta_${vert.id}.pdf`, size: 185000, type: 'application/pdf' }),
+        // Pilar 1: Precios & Servicios
+        pricingDetails: result.pricingDetails || adaptive?.pilar1?.placeholder?.replace(/^ej\.\s*/, '') || 'Tarifas base y opciones de pago diferido',
+        pricingDoc: (result.pricingDoc && typeof result.pricingDoc === 'object') ? result.pricingDoc : (fileObj ? { name: `Tarifario_${fileObj.name}`, size: Math.round(fileObj.size * 0.75), type: 'application/pdf' } : { name: `Tarifario_${vert.id}.pdf`, size: 98000, type: 'application/pdf' }),
+        // Pilar 3: Políticas & FAQs
+        faqDetails: result.faqDetails || adaptive?.pilar3?.placeholder?.replace(/^ej\.\s*/, '') || 'Cancelaciones con 24h de anticipación',
+        faqsDoc: (result.faqsDoc && typeof result.faqsDoc === 'object') ? result.faqsDoc : (fileObj ? { name: `FAQs_Reglamento_${fileObj.name}`, size: Math.round(fileObj.size * 0.38), type: 'text/markdown' } : { name: `FAQs_${vert.id}.md`, size: 52000, type: 'text/markdown' }),
+        // Pilar 4 & Reglas
         enableCommercialProposal: true,
         enableCrisisPillar: true,
-        inviolableRules: result.inviolableRules?.length > 0 ? result.inviolableRules : prev.inviolableRules,
+        inviolableRules: result.inviolableRules?.length > 0 ? result.inviolableRules : (vert.defaultRules || prev.inviolableRules),
       }));
 
       try {
@@ -1227,15 +2098,23 @@ export const RAGWizard = ({
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '');
 
+    const preset = resolveBrandPreset({ vertical: vert.id, id: tenantSlug });
+
     const newTenant = {
       id: tenantSlug,
       name: wizardData.businessName,
       shortName: wizardData.businessName,
       legalNameTaxId: wizardData.legalNameTaxId || 'Validación en trámite',
-      vertical: vert.tipo,
+      vertical: vert.id,
+      verticalKey: vert.id,
       verticalLabel: vert.name,
+      canonicalId: vert.canonicalId,
       giro: vert.name,
-      brandPurpose: `Excelencia operativa y conversión directa para ${wizardData.businessName}.`,
+      brandPurpose: wizardData.brandPurpose || (wizardData.offerHook ? `${wizardData.offerHook}. ${wizardData.offerCta || ''}`.trim() : (vert.conversionGoal || `Excelencia operativa y conversión directa para ${wizardData.businessName}.`)),
+      toneOfVoice: wizardData.brandTone || preset.defaultTone || 'Profesional, empático y orientado a conversión',
+      slaTarget: wizardData.hitlEscalationLatency?.includes('<') ? 5 : 15,
+      brandColors: preset.colors,
+      avatar: vert.avatar || preset.avatar || '🏢',
       connectedSocialNetworks: ['WHATSAPP', 'INSTAGRAM', 'FACEBOOK'],
       hasWebsite: wizardData.hasWebsite,
       websiteUrl: wizardData.hasWebsite ? wizardData.websiteUrl : null,
@@ -1251,22 +2130,64 @@ export const RAGWizard = ({
       microLandingTrialDaysLeft: wizardData.microLandingBillingPlan === 'trial_90d' ? 90 : 0,
       microLandingSlug: tenantSlug,
       microLandingUrl: `https://app.vectorinside.com/m/${tenantSlug}`,
-      cacMax: `$${wizardData.costPerQualifiedLead || 200} MXN`,
+      cacMax: `${wizardData.costPerQualifiedLead || 200} MXN`,
       ifv: `${healthScore}%`,
       capiStatus: 'Sincronizado',
       phone: wizardData.ownerPhone,
-      avatar: vert.iconName || '🏢',
+      email: wizardData.contactEmail,
+      primaryContact: wizardData.primaryContact,
       isAiActive: true,
       crisisMode: false,
+
+      // Pilares RAG & Oferta Comercial inyectados para Perfil de Marca
+      commercialOffer: {
+        hook: wizardData.offerHook,
+        cta: wizardData.offerCta,
+        validity: wizardData.offerValidity,
+        hasProposalDoc: !!wizardData.commercialProposalDoc,
+        proposalDocName: wizardData.commercialProposalDoc?.name || null,
+      },
+      inviolableRules: wizardData.inviolableRules || [],
+      pillars: {
+        pillar1: {
+          enabled: wizardData.enablePricingPillar,
+          cacMax: wizardData.cacMax,
+          ltvExpected: wizardData.ltvExpected,
+          minGrossMargin: wizardData.minGrossMargin,
+          fileName: wizardData.pricingDoc?.name || null,
+        },
+        pillar2: {
+          enabled: true,
+          brandTone: wizardData.brandTone,
+          archetype: wizardData.archetype,
+          emojiPolicy: wizardData.emojiPolicy,
+          inviolableRules: wizardData.inviolableRules || [],
+          fileName: wizardData.brandbookDoc?.name || null,
+        },
+        pillar3: {
+          enabled: wizardData.enableCrisisPillar,
+          keywords: wizardData.crisisKeywords,
+          latency: wizardData.hitlEscalationLatency,
+          fileName: wizardData.faqsDoc?.name || null,
+        },
+        pillar4: {
+          enabled: wizardData.enableHistoryPillar,
+          context: wizardData.historicalContext,
+          fileName: wizardData.historicalDoc?.name || null,
+        },
+      },
     };
 
     if (registerTenant) {
-      registerTenant(newTenant);
+      registerTenant(newTenant, true);
+    }
+    if (switchTenantContext) {
+      switchTenantContext(newTenant.id);
     }
     
     triggerModal(
       '¡Nuevo Negocio Desplegado con Éxito!',
-      `El tenant "${wizardData.businessName}" ha sido configurado en el giro ${vert.name}. Se indexaron ${activePillarsCount} pilares con aislamiento PostgreSQL RLS y Score de Salud ${healthScore}/100. Servicio de Micro-Landing: ${newTenant.microLandingStatus === 'trial' ? '🎁 Cortesía 3 Meses (90 Días)' : (newTenant.microLandingStatus === 'active' ? '💳 Suscripción Activa' : '⛔ Deshabilitada')}.`,
+      `El tenant "${wizardData.businessName}" ha sido configurado en el giro ${vert.name}. Se indexaron ${activePillarsCount} pilares con aislamiento PostgreSQL RLS y Score de Salud ${healthScore}/100. Servicio de Micro-Landing: ${newTenant.microLandingEnabled ? 'Activa' : 'Inactiva'}.`,
       () => {
         try {
           confetti({
@@ -1276,6 +2197,9 @@ export const RAGWizard = ({
             colors: ['#E7F900', '#8A95B6', '#FFFFFF'],
           });
         } catch (e) {}
+        if (switchTenantContext) {
+          switchTenantContext(newTenant.id);
+        }
         setAdminViewMode('list');
         setCurrentStep(1);
       },
@@ -1283,7 +2207,8 @@ export const RAGWizard = ({
     );
   };
 
-  const currentVerticalObj = BUSINESS_VERTICALS_CONFIG[wizardData.vertical] || BUSINESS_VERTICALS_CONFIG.gym_fitness;
+    const currentVerticalObj = BUSINESS_VERTICALS_CONFIG[wizardData.vertical] || BUSINESS_VERTICALS_CONFIG.gym_fitness;
+  const currentPillarsAdaptive = VERTICAL_PILLARS_ADAPTIVE_CONFIG[wizardData.vertical] || VERTICAL_PILLARS_ADAPTIVE_CONFIG.gym_fitness;
 
   const shouldShowHeader = !hideHeader && !externalAdminViewMode;
 
@@ -1349,231 +2274,684 @@ export const RAGWizard = ({
       {/* VISTA 1: ADMINISTRADOR — LISTA DE TENANTS & BANDEJA DE APROBACIÓN         */}
       {/* ========================================================================= */}
       {isAdmin && adminViewMode === 'list' && (
-        <div className="space-y-8 animate-fade-in">
-          {/* LISTA DE NEGOCIOS / TENANTS ACTIVOS */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-black uppercase text-[var(--text-main)] tracking-tight flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-neon" />
-                <span>Negocios Activos & Estado de Pilares</span>
-              </h3>
-              <span className="text-xs font-mono text-[var(--text-muted)] font-medium">
-                5 Tenants Aislados con PostgreSQL RLS
+        <div className="space-y-6 animate-fade-in font-sans">
+          {/* ========================================================================= */}
+          {/* 1. BARRA DE TELEMETRÍA EJECUTIVA (KPIs CLAVE DEL ECOSISTEMA)              */}
+          {/* ========================================================================= */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs font-mono">
+            <div className="p-3.5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1 shadow-sm">
+              <div className="flex items-center justify-between text-[var(--text-muted)] text-[10px] uppercase font-bold">
+                <span>Total Empresas</span>
+                <Building2 className="w-3.5 h-3.5 text-neon" />
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl font-heading font-black text-[var(--text-main)]">
+                  {tenantEcosystemStats.total}
+                </span>
+                <span className="text-[10px] text-neon font-bold">Tenants Aislados</span>
+              </div>
+              <span className="text-[9px] text-[var(--text-muted)] block truncate">
+                PostgreSQL RLS Multi-Tenant Activo
               </span>
             </div>
 
-            <div className="grid grid-cols-1 gap-4">
-              {Object.values(tenantsData || {}).map((tenant) => (
-                <div
-                  key={tenant.id}
-                  className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] hover:border-neon/40 transition-all space-y-4 shadow-sm"
+            <div className="p-3.5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1 shadow-sm">
+              <div className="flex items-center justify-between text-[var(--text-muted)] text-[10px] uppercase font-bold">
+                <span>Micro-Landings</span>
+                <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-xl font-heading font-black text-emerald-400">
+                  {tenantEcosystemStats.activeCount}
+                </span>
+                <span className="text-[10px] text-emerald-500 font-bold">Activas</span>
+                {tenantEcosystemStats.pausedCount > 0 && (
+                  <span className="text-[10px] text-zinc-400 font-bold">
+                    • {tenantEcosystemStats.pausedCount} Pausada{tenantEcosystemStats.pausedCount > 1 ? 's' : ''}
+                  </span>
+                )}
+              </div>
+              <span className="text-[9px] text-[var(--text-muted)] block truncate">
+                Tráfico público directo a WhatsApp
+              </span>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1 shadow-sm">
+              <div className="flex items-center justify-between text-[var(--text-muted)] text-[10px] uppercase font-bold">
+                <span>Salud RAG Global</span>
+                <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl font-heading font-black text-cyan-400">94.2%</span>
+                <span className="text-[10px] text-cyan-500 font-bold">Antifrágil</span>
+              </div>
+              <span className="text-[9px] text-[var(--text-muted)] block truncate">
+                4/4 Pilares Indexados en Vector DB
+              </span>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-[var(--bg-panel)] border border-neon/30 space-y-1 shadow-sm">
+              <div className="flex items-center justify-between text-[var(--text-muted)] text-[10px] uppercase font-bold">
+                <span>Contexto Activo</span>
+                <span className="w-2 h-2 rounded-full bg-neon animate-pulse" />
+              </div>
+              <div className="flex items-center gap-1.5 truncate">
+                <span className="text-base shrink-0">{activeTenant?.avatar || '🏢'}</span>
+                <span className="font-heading font-bold text-xs text-[var(--text-main)] truncate">
+                  {activeTenant?.name || 'Clínica Odontológica'}
+                </span>
+              </div>
+              <span className="text-[9px] text-neon font-bold font-mono block truncate">
+                ID: {activeTenant?.id || 'dental'}
+              </span>
+            </div>
+          </div>
+
+          {/* ========================================================================= */}
+          {/* 2. BARRA DE HERRAMIENTAS: BÚSQUEDA, FILTROS Y CAMBIO DE VISTA (TOOLBAR)   */}
+          {/* ========================================================================= */}
+          <div className="p-3 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 shadow-sm font-mono text-xs">
+            {/* Buscador en Vivo */}
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="w-4 h-4 text-[var(--text-muted)] absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={tenantSearchQuery}
+                onChange={(e) => setTenantSearchQuery(e.target.value)}
+                placeholder="Buscar por nombre, ID o giro comercial..."
+                className="w-full pl-9 pr-8 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs transition-colors placeholder:text-[var(--text-muted)]"
+              />
+              {tenantSearchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setTenantSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-main)] text-xs font-bold"
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border-color)] pb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="text-2xl p-2 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)]">
-                        {tenant.avatar || '🏢'}
-                      </div>
-                      <div>
-                        <h4 className="text-base font-bold text-[var(--text-main)] font-mono flex items-center gap-2">
-                          <span>{tenant.name}</span>
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neon/15 text-neon border border-neon/30 uppercase font-bold">
-                            {tenant.giro || tenant.vertical || 'Vertical Activa'}
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* Filtros de Estado y Switcher de Layout */}
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Filtro de Estado */}
+              <div className="flex items-center p-1 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[10px]">
+                {[
+                  { id: 'all', label: `Todos (${tenantEcosystemStats.total})` },
+                  { id: 'active', label: `Activos (${tenantEcosystemStats.activeCount})` },
+                  { id: 'suspended', label: `Pausados (${tenantEcosystemStats.pausedCount})` },
+                ].map((st) => (
+                  <button
+                    key={st.id}
+                    type="button"
+                    onClick={() => setTenantStatusFilter(st.id)}
+                    className={`px-2.5 py-1 rounded-lg transition-all font-bold ${
+                      tenantStatusFilter === st.id
+                        ? 'bg-neon text-black shadow-sm'
+                        : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                    }`}
+                  >
+                    {st.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Switcher de Vista: Tabla Compacta vs Tarjetas */}
+              <div className="flex items-center p-1 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
+                <button
+                  type="button"
+                  onClick={() => setTenantViewLayout('table')}
+                  className={`p-1.5 px-2.5 rounded-lg transition-all flex items-center gap-1.5 text-[10px] font-bold ${
+                    tenantViewLayout === 'table'
+                      ? 'bg-neon text-black shadow-sm'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                  }`}
+                  title="Vista Tabla de Alta Densidad (Recomendada para 10+ clientes)"
+                >
+                  <LayoutList className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Tabla</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTenantViewLayout('cards')}
+                  className={`p-1.5 px-2.5 rounded-lg transition-all flex items-center gap-1.5 text-[10px] font-bold ${
+                    tenantViewLayout === 'cards'
+                      ? 'bg-neon text-black shadow-sm'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                  }`}
+                  title="Vista Tarjetas Detalladas"
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Tarjetas</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* ========================================================================= */}
+          {/* 3. VISTA EN TABLA DE ALTA DENSIDAD (LINEAR / STRIPE STYLE)                */}
+          {/* ========================================================================= */}
+          {tenantViewLayout === 'table' && (
+            <div className="rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] overflow-hidden shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs font-mono border-collapse">
+                  <thead>
+                    <tr className="border-b border-[var(--border-color)] bg-[var(--bg-card)]/50 text-[10px] font-bold uppercase text-[var(--text-muted)]">
+                      <th className="py-3 px-4">Negocio / Tenant</th>
+                      <th className="py-3 px-4">Giro Comercial</th>
+                      <th className="py-3 px-4">Micro-Landing</th>
+                      <th className="py-3 px-4">Salud RAG</th>
+                      <th className="py-3 px-4">4 Pilares</th>
+                      <th className="py-3 px-4 text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--border-color)]">
+                    {filteredTenantsList.map((tenant) => {
+                      const isCurrentlyActive = activeTenant?.id === tenant.id;
+                      const isExpanded = !!expandedTenantPillars[tenant.id];
+                      const isLandingActive =
+                        tenant.microLandingStatus !== 'suspended' &&
+                        tenant.microLandingStatus !== 'disabled' &&
+                        tenant.microLandingEnabled !== false;
+
+                      return (
+                        <React.Fragment key={tenant.id}>
+                          <tr
+                            className={`transition-colors group hover:bg-[var(--bg-card)]/40 ${
+                              isCurrentlyActive ? 'bg-neon/5' : ''
+                            }`}
+                          >
+                            {/* Negocio / Tenant */}
+                            <td className="py-3 px-4">
+                              <div className="flex items-center gap-2.5 min-w-[200px]">
+                                <span className="text-xl shrink-0 p-1 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)]">
+                                  {tenant.avatar || '🏢'}
+                                </span>
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <p className="font-heading font-bold text-xs text-[var(--text-main)] truncate">
+                                      {tenant.name}
+                                    </p>
+                                    {isCurrentlyActive && (
+                                      <span className="px-1.5 py-0.2 rounded bg-neon text-black font-black text-[8px] uppercase tracking-wider shrink-0">
+                                        Activo
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span className="text-[10px] text-[var(--text-muted)] font-mono block truncate">
+                                    ID: {tenant.id}
+                                  </span>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Giro Comercial */}
+                            <td className="py-3 px-4">
+                              <span className="inline-block px-2 py-0.5 rounded-md bg-[var(--bg-card)] border border-[var(--border-color)] text-[10px] text-[var(--text-main)] font-medium max-w-[170px] truncate">
+                                {tenant.giro || tenant.vertical || 'Servicios'}
+                              </span>
+                            </td>
+
+                            {/* Micro-Landing */}
+                            <td className="py-3 px-4">
+                              <div className="flex items-center gap-2 min-w-[160px]">
+                                {isLandingActive ? (
+                                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[9px] font-bold inline-flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                    Activa
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-0.5 rounded-full bg-zinc-500/15 text-zinc-400 border border-zinc-500/30 text-[9px] font-bold inline-flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
+                                    Inactiva
+                                  </span>
+                                )}
+
+                                <a
+                                  href={`/m/${tenant.microLandingSlug || tenant.id}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[10px] text-cyan-400 hover:text-cyan-300 hover:underline flex items-center gap-0.5 shrink-0"
+                                  title="Abrir Micro-Landing"
+                                >
+                                  <span>/m/{tenant.microLandingSlug || tenant.id}</span>
+                                  <ExternalLink className="w-2.5 h-2.5" />
+                                </a>
+                              </div>
+                            </td>
+
+                            {/* Salud RAG */}
+                            <td className="py-3 px-4">
+                              <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold inline-flex items-center gap-1">
+                                <span className="w-1 h-1 rounded-full bg-emerald-400" />
+                                {tenant.ifv || '94%'} Antifrágil
+                              </span>
+                            </td>
+
+                            {/* Botón de inspección de 4 Pilares */}
+                            <td className="py-3 px-4">
+                              <button
+                                type="button"
+                                onClick={() => toggleTenantPillars(tenant.id)}
+                                className={`px-2.5 py-1 rounded-lg border text-[10px] font-bold flex items-center gap-1 transition-all ${
+                                  isExpanded
+                                    ? 'bg-neon/15 border-neon text-neon'
+                                    : 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)] hover:border-neon/40'
+                                }`}
+                              >
+                                <span>4 Pilares</span>
+                                {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                              </button>
+                            </td>
+
+                            {/* Acciones */}
+                            <td className="py-3 px-4 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                {/* Botón Activar / Pausar Micro-Landing */}
+                                {isLandingActive ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      toggleTenantMicroLanding(tenant.id, 'suspended');
+                                      triggerModal(
+                                        'Micro-Landing Pausada',
+                                        `<div class="space-y-2">
+                                          <p class="text-xs text-[var(--text-main)]">
+                                            La micro-landing para <strong class="text-[var(--text-main)] font-bold">${tenant.name}</strong> ha sido pausada temporalmente.
+                                          </p>
+                                          <p class="text-[11px] text-[var(--text-muted)] font-mono">
+                                            Los visitantes verán un aviso de mantenimiento temporal al visitar <code class="text-neon">/m/${tenant.microLandingSlug || tenant.id}</code>. Puedes reactivarla en cualquier momento con un solo clic.
+                                          </p>
+                                        </div>`,
+                                        () => {},
+                                        'Entendido'
+                                      );
+                                    }}
+                                    className="p-1.5 rounded-lg border border-[var(--border-color)] text-[var(--text-muted)] hover:text-amber-400 hover:border-amber-500/40 transition-colors text-[10px] font-bold"
+                                    title="Pausar Micro-Landing"
+                                  >
+                                    <Power className="w-3 h-3 text-amber-400" />
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      toggleTenantMicroLanding(tenant.id, 'active');
+                                      triggerModal(
+                                        'Micro-Landing Activada',
+                                        `<div class="space-y-2">
+                                          <p class="text-xs text-[var(--text-main)]">
+                                            La micro-landing para <strong class="text-neon font-bold">${tenant.name}</strong> ha sido activada con éxito.
+                                          </p>
+                                          <p class="text-[11px] text-[var(--text-muted)] font-mono">
+                                            La página vuelve a estar en línea y lista para recibir tráfico y canalizar prospectos de forma inmediata.
+                                          </p>
+                                        </div>`,
+                                        () => {},
+                                        'Aceptar'
+                                      );
+                                    }}
+                                    className="p-1.5 rounded-lg bg-emerald-500 text-black font-bold text-[10px] hover:bg-emerald-400 transition-colors"
+                                    title="Activar Micro-Landing"
+                                  >
+                                    <CheckCircle2 className="w-3 h-3" />
+                                  </button>
+                                )}
+
+                                {/* Botón Establecer como Contexto Activo */}
+                                {!isCurrentlyActive ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => switchTenantContext && switchTenantContext(tenant.id)}
+                                    className="px-2.5 py-1 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon hover:text-neon text-[10px] font-bold text-[var(--text-muted)] transition-all"
+                                    title="Cambiar al contexto de este negocio en el panel"
+                                  >
+                                    <span>Activar</span>
+                                  </button>
+                                ) : (
+                                  <a
+                                    href="/profile"
+                                    className="px-2.5 py-1 rounded-lg bg-neon/15 border border-neon/30 text-neon hover:bg-neon hover:text-black text-[10px] font-bold transition-all flex items-center gap-1"
+                                    title="Editar perfil de marca y ADN RAG"
+                                  >
+                                    <span>Perfil</span>
+                                    <ArrowRight className="w-2.5 h-2.5" />
+                                  </a>
+                                )}
+
+                                {/* Eliminar Negocio */}
+                                {isAdmin && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteTenant(tenant);
+                                    }}
+                                    className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                                    title={`Eliminar negocio ${tenant.name}`}
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+
+                          {/* Acordeón Desplegable de los 4 Pilares RAG para esta fila */}
+                          {isExpanded && (
+                            <tr className="bg-[var(--bg-card)]/30 border-b border-[var(--border-color)]">
+                              <td colSpan={6} className="p-4">
+                                <div className="p-3.5 rounded-xl bg-[var(--bg-panel)] border border-neon/20 space-y-2.5">
+                                  <div className="flex items-center justify-between text-[11px] font-bold text-neon">
+                                    <span className="flex items-center gap-1.5">
+                                      <Database className="w-3.5 h-3.5" />
+                                      Desglose de Memoria RAG: {tenant.name}
+                                    </span>
+                                    <a
+                                      href="/profile"
+                                      onClick={() => switchTenantContext && switchTenantContext(tenant.id)}
+                                      className="text-[10px] text-cyan-400 hover:underline flex items-center gap-1"
+                                    >
+                                      <span>Ajustar en Perfil de Marca</span>
+                                      <ArrowRight className="w-3 h-3" />
+                                    </a>
+                                  </div>
+
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-[10px]">
+                                    <div className="p-2.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)]">
+                                      <span className="text-neon font-bold block mb-0.5">Pilar 1: Precios & CAC</span>
+                                      <p className="text-[var(--text-main)] font-semibold truncate">
+                                        CAC Máx: {tenant.cacMax || '$180 MXN'}
+                                      </p>
+                                      <span className="text-[9px] text-[var(--text-muted)]">Matriz Financiera</span>
+                                    </div>
+
+                                    <div className="p-2.5 rounded-lg bg-[var(--bg-card)] border border-cyan-500/30">
+                                      <span className="text-cyan-400 font-bold block mb-0.5">Pilar 2: Brandbook & Tono</span>
+                                      <p className="text-[var(--text-main)] font-semibold truncate">
+                                        {tenant.toneOfVoice || 'Tono Profesional'}
+                                      </p>
+                                      <span className="text-[9px] text-[var(--text-muted)]">Identidad Activa</span>
+                                    </div>
+
+                                    <div className="p-2.5 rounded-lg bg-[var(--bg-card)] border border-amber-500/30">
+                                      <span className="text-amber-400 font-bold block mb-0.5">Pilar 3: Crisis & FAQs</span>
+                                      <p className="text-[var(--text-main)] font-semibold truncate">
+                                        Escalación Sub-segundo
+                                      </p>
+                                      <span className="text-[9px] text-[var(--text-muted)]">HITL WhatsApp Activo</span>
+                                    </div>
+
+                                    <div className="p-2.5 rounded-lg bg-[var(--bg-card)] border border-purple-500/30">
+                                      <span className="text-purple-400 font-bold block mb-0.5">Pilar 4: Histórico</span>
+                                      <p className="text-[var(--text-main)] font-semibold truncate">
+                                        Casos de Éxito & FAQs
+                                      </p>
+                                      <span className="text-[9px] text-[var(--text-muted)]">Memoria Retroactiva</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* 4. VISTA EN TARJETAS DETALLADAS (MODERNA / EXPANDIDA)                      */}
+          {/* ========================================================================= */}
+          {tenantViewLayout === 'cards' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredTenantsList.map((tenant) => {
+                const isCurrentlyActive = activeTenant?.id === tenant.id;
+                const isExpanded = !!expandedTenantPillars[tenant.id];
+                const isLandingActive =
+                  tenant.microLandingStatus !== 'suspended' &&
+                  tenant.microLandingStatus !== 'disabled' &&
+                  tenant.microLandingEnabled !== false;
+
+                return (
+                  <div
+                    key={tenant.id}
+                    className={`p-4 sm:p-5 rounded-2xl bg-[var(--bg-panel)] border transition-all space-y-4 shadow-sm ${
+                      isCurrentlyActive
+                        ? 'border-neon/60 shadow-[0_0_15px_rgba(195,244,0,0.12)]'
+                        : 'border-[var(--border-color)] hover:border-neon/30'
+                    }`}
+                  >
+                    {/* Header de la Tarjeta */}
+                    <div className="flex items-start justify-between gap-3 border-b border-[var(--border-color)] pb-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="text-2xl p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] shrink-0">
+                          {tenant.avatar || '🏢'}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-sm font-bold text-[var(--text-main)] font-mono truncate">
+                              {tenant.name}
+                            </h4>
+                            {isCurrentlyActive && (
+                              <span className="px-1.5 py-0.2 rounded bg-neon text-black font-black text-[8px] uppercase tracking-wider shrink-0">
+                                Activo
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-[var(--text-muted)] font-mono block truncate">
+                            {tenant.giro || tenant.vertical || 'Vertical Activa'} • ID: {tenant.id}
                           </span>
-                        </h4>
-                        <p className="text-xs text-[var(--text-muted)] font-mono">
-                          ID: <span className="text-[var(--text-main)] font-bold">{tenant.id}</span> • CAPI Status:{' '}
-                          <span className="text-emerald-600 dark:text-emerald-400 font-bold">{tenant.capiStatus || 'Sincronizado'}</span>
-                        </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[9px] font-bold">
+                          {tenant.ifv || '94%'} Antifrágil
+                        </span>
+                        {isAdmin && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteTenant(tenant);
+                            }}
+                            className="p-1 rounded-lg text-[var(--text-muted)] hover:text-rose-400 transition-colors"
+                            title={`Eliminar negocio ${tenant.name}`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                          </button>
+                        )}
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3 text-xs font-mono">
-                      <span className="text-[var(--text-muted)]">RAG Health:</span>
-                      <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-bold flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        {tenant.ifv || '94%'} Antifrágil
-                      </span>
-
-                      {/* Botón de Eliminación Segura de Negocio */}
-                      {isAdmin && (
+                    {/* Resumen Compacto de 4 Pilares con Toggle */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-[10px] font-mono">
+                        <span className="text-[var(--text-muted)] font-bold uppercase">Estado de Pilares RAG:</span>
                         <button
                           type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteTenant(tenant);
-                          }}
-                          className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/30 transition-all flex items-center gap-1 text-[11px] font-bold"
-                          title={`Eliminar negocio ${tenant.name}`}
-                          aria-label={`Eliminar negocio ${tenant.name}`}
+                          onClick={() => toggleTenantPillars(tenant.id)}
+                          className="text-neon hover:underline flex items-center gap-1 font-bold"
                         >
-                          <Trash2 className="w-3.5 h-3.5 text-rose-500" />
-                          <span className="hidden sm:inline text-rose-500">Eliminar</span>
+                          <span>{isExpanded ? 'Ocultar' : 'Ver Detalles'}</span>
+                          {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                         </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* 4 Pillars Status Badges */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs font-mono">
-                    <div className="p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-1">
-                      <span className="text-neon font-bold text-[10px] flex items-center gap-1">
-                        <DollarSign className="w-3 h-3" /> PILAR 1: RENTABILIDAD
-                      </span>
-                      <p className="text-[var(--text-main)] font-bold truncate">Matriz_Precios.json</p>
-                      <span className="text-[10px] text-[var(--text-muted)] block">CAC Máx: {tenant.cacMax || '$180 MXN'}</span>
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-cyan-500/30 space-y-1 shadow-sm">
-                      <span className="text-cyan-600 dark:text-cyan-400 font-bold text-[10px] flex items-center gap-1">
-                        <BookOpen className="w-3 h-3" /> PILAR 2: BRANDBOOK
-                      </span>
-                      <p className="text-[var(--text-main)] font-bold truncate">Brandbook_TonoVoz.md</p>
-                      <span className="text-[10px] text-[var(--text-muted)] block">Identidad Activa</span>
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-1">
-                      <span className="text-amber-600 dark:text-amber-400 font-bold text-[10px] flex items-center gap-1">
-                        <AlertTriangle className="w-3 h-3" /> PILAR 3: CRISIS & FAQS
-                      </span>
-                      <p className="text-[var(--text-main)] font-bold truncate">Crisis_Objeciones.md</p>
-                      <span className="text-[10px] text-[var(--text-muted)] block">Filtro HITL Sub-segundo</span>
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-1">
-                      <span className="text-purple-600 dark:text-purple-400 font-bold text-[10px] flex items-center gap-1">
-                        <History className="w-3 h-3" /> PILAR 4: HISTÓRICO
-                      </span>
-                      <p className="text-[var(--text-main)] font-bold truncate">Casos_Exito_2025.txt</p>
-                      <span className="text-[10px] text-[var(--text-muted)] block">Memoria retroactiva</span>
-                    </div>
-                  </div>
-
-                  {/* Control Administrativo de Micro-Landing como Servicio Add-On */}
-                  <div className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs font-mono">
-                    <div className="flex flex-wrap items-center gap-2.5">
-                      <div className="flex items-center gap-1.5 font-bold">
-                        <Smartphone className="w-4 h-4 text-neon" />
-                        <span className="text-[var(--text-main)]">Micro-Landing Universal:</span>
                       </div>
 
-                      {/* Status Badge */}
-                      {tenant.microLandingStatus === 'trial' && (
-                        <span className="px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-500 border border-amber-500/30 text-[10px] font-bold flex items-center gap-1">
-                          <Sparkles className="w-3 h-3 animate-spin" />
-                          <span>🎁 Cortesía 3 Meses: {tenant.microLandingTrialDaysLeft || 90} días restantes</span>
-                        </span>
-                      )}
-                      {tenant.microLandingStatus === 'active' && (
-                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 text-[10px] font-bold flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3" />
-                          <span>💳 Suscripción Activa ($29 USD/mes)</span>
-                        </span>
-                      )}
-                      {tenant.microLandingStatus === 'suspended' && (
-                        <span className="px-2.5 py-0.5 rounded-full bg-rose-500/15 text-rose-500 border border-rose-500/30 text-[10px] font-bold flex items-center gap-1">
-                          <AlertTriangle className="w-3 h-3" />
-                          <span>⏸️ Suspendida por Falta de Pago</span>
-                        </span>
-                      )}
-                      {tenant.microLandingStatus === 'disabled' && (
-                        <span className="px-2.5 py-0.5 rounded-full bg-gray-500/15 text-[var(--text-muted)] border border-[var(--border-color)] text-[10px] font-bold">
-                          ⛔ Deshabilitada
-                        </span>
-                      )}
+                      {/* 4 Mini-Pills */}
+                      <div className="grid grid-cols-4 gap-1.5 text-center text-[9px] font-mono font-bold">
+                        <div className="p-1.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] text-neon">
+                          P1: Precios
+                        </div>
+                        <div className="p-1.5 rounded-lg bg-[var(--bg-card)] border border-cyan-500/30 text-cyan-400">
+                          P2: Brand
+                        </div>
+                        <div className="p-1.5 rounded-lg bg-[var(--bg-card)] border border-amber-500/30 text-amber-400">
+                          P3: Crisis
+                        </div>
+                        <div className="p-1.5 rounded-lg bg-[var(--bg-card)] border border-purple-500/30 text-purple-400">
+                          P4: Hist
+                        </div>
+                      </div>
 
-                      {/* Micro-Landing URL Preview */}
-                      <a
-                        href={`/m/${tenant.microLandingSlug || tenant.id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[10px] text-cyan-500 hover:underline flex items-center gap-1 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20"
-                        title="Abrir Micro-Landing"
-                      >
-                        <span>/m/{tenant.microLandingSlug || tenant.id}</span>
-                        <ExternalLink className="w-2.5 h-2.5" />
-                      </a>
+                      {/* Contenido Expandido del Acordeón */}
+                      {isExpanded && (
+                        <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-2 text-[10px] font-mono animate-fade-in mt-2">
+                          <div className="flex justify-between border-b border-[var(--border-color)] pb-1.5">
+                            <span className="text-[var(--text-muted)]">Pilar 1 (Rentabilidad):</span>
+                            <span className="text-[var(--text-main)] font-bold">{tenant.cacMax || '$180 MXN'}</span>
+                          </div>
+                          <div className="flex justify-between border-b border-[var(--border-color)] pb-1.5">
+                            <span className="text-[var(--text-muted)]">Pilar 2 (Tono de Voz):</span>
+                            <span className="text-cyan-400 font-bold truncate max-w-[200px]">{tenant.toneOfVoice || 'Activo'}</span>
+                          </div>
+                          <div className="flex justify-between border-b border-[var(--border-color)] pb-1.5">
+                            <span className="text-[var(--text-muted)]">Pilar 3 (HITL Crisis):</span>
+                            <span className="text-amber-400 font-bold">Sub-segundo (&lt; 1.2s)</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-[var(--text-muted)]">Pilar 4 (Histórico):</span>
+                            <span className="text-purple-400 font-bold">Memoria Activa</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                    {/* Admin Action Buttons */}
-                    <div className="flex items-center gap-2 shrink-0">
-                      {tenant.microLandingStatus === 'suspended' || tenant.microLandingStatus === 'disabled' ? (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              toggleTenantMicroLanding(tenant.id, 'active');
-                              triggerModal(
-                                'Micro-Landing Reactivada',
-                                `El servicio para ${tenant.name} ha sido reactivado bajo suscripción mensual activa ($29 USD/mes). La landing vuelve a recibir tráfico de forma inmediata.`,
-                                () => {},
-                                'Aceptar'
-                              );
-                            }}
-                            className="px-3 py-1.5 rounded-lg bg-emerald-500 text-black font-bold text-[11px] hover:bg-emerald-400 transition-all flex items-center gap-1 shadow-sm"
-                          >
-                            <CheckCircle2 className="w-3 h-3" />
-                            <span>Reactivar Servicio (Pago Recibido)</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              toggleTenantMicroLanding(tenant.id, 'trial', 90);
-                              triggerModal(
-                                'Cortesía Renovada (+90 Días)',
-                                `Se ha reactivado el período de cortesía de 3 meses (90 días) para ${tenant.name}.`,
-                                () => {},
-                                'Aceptar'
-                              );
-                            }}
-                            className="px-2.5 py-1.5 rounded-lg bg-[var(--bg-panel)] border border-amber-500/40 text-amber-500 hover:bg-amber-500/10 font-bold text-[10px] transition-all"
-                          >
-                            <span>🎁 Reset 90d</span>
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          {tenant.microLandingStatus === 'trial' && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const currentDays = tenant.microLandingTrialDaysLeft || 90;
-                                toggleTenantMicroLanding(tenant.id, 'trial', currentDays + 30);
-                                triggerModal(
-                                  'Período Extendido +30 Días',
-                                  `Se otorgaron 30 días adicionales de cortesía para ${tenant.name}. Total: ${currentDays + 30} días restantes.`,
-                                  () => {},
-                                  'Aceptar'
-                                );
-                              }}
-                              className="px-2.5 py-1.5 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] text-[var(--text-main)] hover:border-neon font-bold text-[10px] transition-all"
-                            >
-                              <span>+30 Días Gracia</span>
-                            </button>
-                          )}
+                    {/* Footer de la Tarjeta con Micro-Landing y Acciones */}
+                    <div className="pt-2 border-t border-[var(--border-color)] flex items-center justify-between gap-2 text-xs font-mono">
+                      <div className="flex items-center gap-2">
+                        {isLandingActive ? (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[9px] font-bold flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                            Activa
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full bg-zinc-500/15 text-zinc-400 border border-zinc-500/30 text-[9px] font-bold flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
+                            Inactiva
+                          </span>
+                        )}
+
+                        <a
+                          href={`/m/${tenant.microLandingSlug || tenant.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] text-cyan-400 hover:underline flex items-center gap-1 truncate max-w-[130px]"
+                        >
+                          <span>/m/{tenant.microLandingSlug || tenant.id}</span>
+                          <ExternalLink className="w-2.5 h-2.5 shrink-0" />
+                        </a>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {/* Toggle Micro-Landing */}
+                        {isLandingActive ? (
                           <button
                             type="button"
                             onClick={() => {
                               toggleTenantMicroLanding(tenant.id, 'suspended');
                               triggerModal(
-                                'Micro-Landing Suspendida',
-                                `El servicio de micro-landing para ${tenant.name} fue suspendido por falta de pago. Los visitantes a /m/${tenant.microLandingSlug || tenant.id} verán la pantalla de reactivación/renovación.`,
+                                'Micro-Landing Pausada',
+                                `<div class="space-y-2">
+                                  <p class="text-xs text-[var(--text-main)]">
+                                    La micro-landing para <strong class="text-[var(--text-main)] font-bold">${tenant.name}</strong> ha sido pausada temporalmente.
+                                  </p>
+                                  <p class="text-[11px] text-[var(--text-muted)] font-mono">
+                                    Los visitantes verán un aviso de mantenimiento temporal al visitar <code class="text-neon">/m/${tenant.microLandingSlug || tenant.id}</code>. Puedes reactivarla en cualquier momento con un solo clic.
+                                  </p>
+                                </div>`,
                                 () => {},
                                 'Entendido'
                               );
                             }}
-                            className="px-3 py-1.5 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-500 hover:bg-rose-500 hover:text-white font-bold text-[11px] transition-all flex items-center gap-1"
+                            className="p-1.5 rounded-lg border border-[var(--border-color)] text-[var(--text-muted)] hover:text-amber-400 hover:border-amber-500/40 transition-colors"
+                            title="Pausar Micro-Landing"
                           >
-                            <AlertTriangle className="w-3 h-3" />
-                            <span>Pausar / Suspender por Falta de Pago</span>
+                            <Power className="w-3 h-3 text-amber-400" />
                           </button>
-                        </>
-                      )}
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              toggleTenantMicroLanding(tenant.id, 'active');
+                              triggerModal(
+                                'Micro-Landing Activada',
+                                `<div class="space-y-2">
+                                  <p class="text-xs text-[var(--text-main)]">
+                                    La micro-landing para <strong class="text-neon font-bold">${tenant.name}</strong> ha sido activada con éxito.
+                                  </p>
+                                  <p class="text-[11px] text-[var(--text-muted)] font-mono">
+                                    La página vuelve a estar en línea y lista para recibir tráfico y canalizar prospectos de forma inmediata.
+                                  </p>
+                                </div>`,
+                                () => {},
+                                'Aceptar'
+                              );
+                            }}
+                            className="p-1.5 rounded-lg bg-emerald-500 text-black font-bold hover:bg-emerald-400 transition-colors"
+                            title="Activar Micro-Landing"
+                          >
+                            <CheckCircle2 className="w-3 h-3" />
+                          </button>
+                        )}
+
+                        {/* Switch / Ver Perfil */}
+                        {!isCurrentlyActive ? (
+                          <button
+                            type="button"
+                            onClick={() => switchTenantContext && switchTenantContext(tenant.id)}
+                            className="px-2.5 py-1 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon hover:text-neon text-[10px] font-bold text-[var(--text-muted)] transition-all"
+                          >
+                            Activar
+                          </button>
+                        ) : (
+                          <a
+                            href="/profile"
+                            className="px-2.5 py-1 rounded-lg bg-neon/15 border border-neon/30 text-neon hover:bg-neon hover:text-black text-[10px] font-bold transition-all flex items-center gap-1"
+                          >
+                            <span>Perfil</span>
+                            <ArrowRight className="w-2.5 h-2.5" />
+                          </a>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
-          </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* 5. ESTADO VACÍO (CUANDO NO HAY RESULTADOS DE BÚSQUEDA O FILTRO)           */}
+          {/* ========================================================================= */}
+          {filteredTenantsList.length === 0 && (
+            <div className="p-8 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] text-center space-y-3 font-mono">
+              <div className="w-12 h-12 mx-auto rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-center text-2xl text-[var(--text-muted)]">
+                🔍
+              </div>
+              <h4 className="text-sm font-bold text-[var(--text-main)]">
+                No se encontraron negocios con los filtros actuales
+              </h4>
+              <p className="text-xs text-[var(--text-muted)] max-w-md mx-auto">
+                No hay coincidencias para "{tenantSearchQuery || tenantStatusFilter}". Prueba modificando tu término de búsqueda o limpia los filtros.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setTenantSearchQuery('');
+                  setTenantStatusFilter('all');
+                  setTenantVerticalFilter('all');
+                }}
+                className="px-4 py-2 rounded-xl bg-neon text-black font-bold text-xs uppercase hover:bg-[var(--neon-hover)] transition-all shadow-sm"
+              >
+                Limpiar Filtros
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -1583,34 +2961,91 @@ export const RAGWizard = ({
       {isAdmin && adminViewMode === 'wizard' && (
         <div className="vector-bg-card vector-border rounded-2xl p-4 sm:p-6 lg:p-8 w-full shadow-2xl space-y-8 animate-fade-in">
 
-          {/* Step Breadcrumbs: 6 Pasos Limpios y Modulares */}
-          <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-4 font-mono text-xs overflow-x-auto gap-2">
-            {[
-              { num: 1, title: '1. Giro & IA' },
-              { num: 2, title: '2. Entidad & Web' },
-              { num: 3, title: '3. Marketing & Tracking' },
-              { num: 4, title: '4. Agenda & Horarios' },
-              { num: 5, title: '5. Pilares RAG' },
-              { num: 6, title: '6. Reglas & Despliegue' },
-            ].map((st) => (
-              <button
-                key={st.num}
-                type="button"
-                onClick={() => setCurrentStep(st.num)}
-                className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-all font-bold ${
-                  currentStep === st.num
-                    ? 'bg-neon text-black shadow-neon-sm'
-                    : currentStep > st.num
-                    ? 'text-emerald-500 dark:text-emerald-400 hover:text-[var(--text-main)]'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
-                }`}
-              >
-                {st.title}
-              </button>
-            ))}
+          {/* Stepper Header: Barra de Progreso y Estados Visuales (Stripe / Linear standard) */}
+          <div className="space-y-4 border-b border-[var(--border-color)] pb-6 font-mono">
+            {/* Barra superior de métrica de avance */}
+            <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-neon animate-pulse" />
+                <span className="font-bold text-[var(--text-main)]">Paso {currentStep} de 6:</span>
+                <span className="text-neon font-black">
+                  {currentStep === 1 && 'Giro Comercial & IA'}
+                  {currentStep === 2 && 'Entidad & Web'}
+                  {currentStep === 3 && 'Marketing & Tracking'}
+                  {currentStep === 4 && 'Agenda & Horarios'}
+                  {currentStep === 5 && 'Pilares RAG & Oferta'}
+                  {currentStep === 6 && 'Reglas & Despliegue'}
+                </span>
+              </div>
+              <span className="font-bold text-[var(--text-muted)] text-[11px]">
+                {Math.round((currentStep / 6) * 100)}% Completado
+              </span>
+            </div>
+
+            {/* Track de Progreso */}
+            <div className="w-full h-1.5 bg-[var(--bg-panel)] rounded-full overflow-hidden border border-[var(--border-color)]">
+              <div
+                className="h-full bg-gradient-to-r from-emerald-400 via-neon to-neon transition-all duration-300 shadow-[0_0_8px_rgba(231,249,0,0.5)]"
+                style={{ width: `${(currentStep / 6) * 100}%` }}
+              />
+            </div>
+
+            {/* Stepper Tabs Interactivos */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs">
+              {[
+                { num: 1, title: 'Giro & IA', icon: Target },
+                { num: 2, title: 'Entidad & Web', icon: Building2 },
+                { num: 3, title: 'Marketing & Tracking', icon: Activity },
+                { num: 4, title: 'Agenda & Horarios', icon: Clock },
+                { num: 5, title: 'Pilares RAG', icon: Database },
+                { num: 6, title: 'Reglas & Despliegue', icon: Shield },
+              ].map((st) => {
+                const isCurrent = currentStep === st.num;
+                const isCompleted = currentStep > st.num;
+
+                return (
+                  <button
+                    key={st.num}
+                    type="button"
+                    onClick={() => setCurrentStep(st.num)}
+                    className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 relative group ${
+                      isCurrent
+                        ? 'bg-neon/15 border-neon text-[var(--text-main)] shadow-neon-sm ring-1 ring-neon/40'
+                        : isCompleted
+                        ? 'bg-[var(--bg-panel)] border-emerald-500/40 text-[var(--text-main)] hover:border-emerald-400'
+                        : 'bg-[var(--bg-panel)] border-[var(--border-color)] text-[var(--text-muted)] hover:border-[var(--text-muted)]'
+                    }`}
+                  >
+                    <div
+                      className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black shrink-0 transition-all ${
+                        isCurrent
+                          ? 'bg-neon text-black shadow-[0_0_8px_rgba(231,249,0,0.6)]'
+                          : isCompleted
+                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                          : 'bg-[var(--bg-card)] text-[var(--text-muted)] border border-[var(--border-color)]'
+                      }`}
+                    >
+                      {isCompleted ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : st.num}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <span className="block text-[10px] text-[var(--text-muted)] font-bold uppercase truncate">
+                        {isCompleted ? 'Listo' : `Paso ${st.num}`}
+                      </span>
+                      <span
+                        className={`block text-xs font-bold truncate ${
+                          isCurrent ? 'text-neon' : isCompleted ? 'text-[var(--text-main)]' : 'text-[var(--text-muted)]'
+                        }`}
+                      >
+                        {st.title}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          {/* ============================================================= */}
           {/* PASO 1: Giro Comercial del Negocio & Acelerador con IA       */}
           {/* ============================================================= */}
           {currentStep === 1 && (
@@ -1618,10 +3053,15 @@ export const RAGWizard = ({
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-black text-[var(--text-main)] uppercase flex items-center gap-2">
-                      <Target className="w-5 h-5 text-neon" />
-                      <span>Paso 1: Giro Comercial del Negocio & Acelerador con IA</span>
-                    </h3>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded-full bg-neon/15 text-neon border border-neon/30 text-[10px] font-mono font-bold uppercase">
+                        Paso 1 de 6
+                      </span>
+                      <h3 className="text-lg font-black text-[var(--text-main)] uppercase flex items-center gap-2">
+                        <Target className="w-5 h-5 text-neon" />
+                        <span>Giro Comercial del Negocio & Acelerador con IA</span>
+                      </h3>
+                    </div>
                     <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-neon/15 text-neon border border-neon/30">
                       {filteredVerticals.length} disponibles
                     </span>
@@ -1988,10 +3428,16 @@ export const RAGWizard = ({
               {currentStep === 2 && (
                 <div className="space-y-6 animate-fade-in">
                   <div>
-                    <h3 className="text-lg font-black text-[var(--text-main)] uppercase flex items-center gap-2">
-                      <Building2 className="w-5 h-5 text-neon" />
-                      <span>Paso 2: Entidad del Negocio & Presencia Web</span>
-                    </h3>
+                    <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded-full bg-neon/15 text-neon border border-neon/30 text-[10px] font-mono font-bold uppercase">
+                          Paso 2 de 6
+                        </span>
+                        <h3 className="text-lg font-black text-[var(--text-main)] uppercase flex items-center gap-2">
+                          <Building2 className="w-5 h-5 text-neon" />
+                          <span>Entidad del Negocio & Presencia Web</span>
+                        </h3>
+                      </div>
+
                     <p className="text-xs text-[var(--text-muted)] font-mono mt-1">
                       Giro seleccionado: <strong className="text-neon">{currentVerticalObj.name}</strong>
                     </p>
@@ -2043,7 +3489,7 @@ export const RAGWizard = ({
 
                     <div>
                       <label className="flex items-center justify-between text-xs font-mono font-bold text-[var(--text-main)] mb-1">
-                        <span>Teléfono / WhatsApp de Escalación (HITL)</span>
+                        <span>Teléfono WhatsApp / Escalación Humana (HITL)</span>
                         <span className="text-[10px] text-neon uppercase font-bold">[Obligatorio]</span>
                       </label>
                       <input
@@ -2082,7 +3528,7 @@ export const RAGWizard = ({
                                 Micro-Landing Universal `/m/[slug]`
                               </h4>
                               <span className="text-[10px] font-mono text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
-                                ● Add-On Monetizable
+                                ● Embudo de Captación
                               </span>
                             </div>
                             <p className="text-xs font-mono text-[var(--text-muted)] mt-0.5">
@@ -2095,7 +3541,7 @@ export const RAGWizard = ({
                         </div>
 
                         <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold uppercase border border-emerald-500/30">
-                          ● Cortesía 3 Meses Activa
+                          ● Activa por Defecto
                         </span>
                       </div>
 
@@ -2104,14 +3550,14 @@ export const RAGWizard = ({
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
                             <span className="text-[11px] font-bold text-amber-400 flex items-center gap-1">
-                              🎁 3 Meses de Cortesía Incluidos
+                              ✦ Micro-Landing Incluida
                             </span>
                             <span className="text-[9px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30">
                               Activo
                             </span>
                           </div>
                           <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">
-                            Tu Micro-Landing se aprovisiona automáticamente con este registro. Al concluir tu período de cortesía, o si deseas adquirirla de forma definitiva o personalizada, comunícate con tu asesor Vector Inside.
+                            Tu Micro-Landing se aprovisiona automáticamente con este registro para recibir tráfico de pauta y canalizarlo directamente a WhatsApp.
                           </p>
                         </div>
                         <button
@@ -2139,7 +3585,7 @@ export const RAGWizard = ({
                             </span>
                             <input
                               type="text"
-                              placeholder={(wizardData.businessName || 'tu-negocio').toLowerCase().replace(/[^a-z0-9]/g, '-')}
+                              placeholder="ej. sonrisas-polanco"
                               value={wizardData.microLandingCustomSlug}
                               onChange={(e) => setWizardData({ ...wizardData, microLandingCustomSlug: e.target.value })}
                               className="flex-1 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-r-lg p-1.5 text-xs text-[var(--text-main)] focus:border-neon outline-none"
@@ -2238,10 +3684,16 @@ export const RAGWizard = ({
               {currentStep === 3 && (
                 <div className="space-y-6 animate-fade-in">
                   <div>
-                    <h3 className="text-lg font-black text-[var(--text-main)] uppercase flex items-center gap-2">
-                      <Target className="w-5 h-5 text-neon" />
-                      <span>Paso 2: Marketing, Tracking & Modelo Comercial</span>
-                    </h3>
+                    <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded-full bg-neon/15 text-neon border border-neon/30 text-[10px] font-mono font-bold uppercase">
+                          Paso 3 de 6
+                        </span>
+                        <h3 className="text-lg font-black text-[var(--text-main)] uppercase flex items-center gap-2">
+                          <Activity className="w-5 h-5 text-neon" />
+                          <span>Marketing, Tracking & Modelo Comercial</span>
+                        </h3>
+                      </div>
+
                     <p className="text-xs text-[var(--text-muted)] font-mono mt-1">
                       Configuración de analítica, atribución de anuncios y costo por lead calificado.
                     </p>
@@ -2269,7 +3721,7 @@ export const RAGWizard = ({
                         </div>
                         <input
                           type="text"
-                          placeholder="G-XXXXXXXXXX"
+                          placeholder="ej. G-ABC123XYZ"
                           value={wizardData.ga4MeasurementId || ''}
                           onChange={(e) => setWizardData({ ...wizardData, ga4MeasurementId: e.target.value })}
                           className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-3 text-[var(--text-main)] focus:border-neon outline-none font-mono"
@@ -2288,7 +3740,7 @@ export const RAGWizard = ({
                         </div>
                         <input
                           type="text"
-                          placeholder="123456789012345"
+                          placeholder="ej. 123456789012345"
                           value={wizardData.metaPixelId || ''}
                           onChange={(e) => setWizardData({ ...wizardData, metaPixelId: e.target.value })}
                           className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-3 text-[var(--text-main)] focus:border-neon outline-none font-mono"
@@ -2335,7 +3787,7 @@ export const RAGWizard = ({
                         <input
                           type="number"
                           placeholder="1500"
-                          value={wizardData.monthlyAdBudget || 1500}
+                          value={wizardData.monthlyAdBudget || ""}
                           onChange={(e) => setWizardData({ ...wizardData, monthlyAdBudget: Number(e.target.value) })}
                           className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs rounded-xl p-3 text-[var(--text-main)] focus:border-neon outline-none font-mono"
                         />
@@ -2371,10 +3823,16 @@ export const RAGWizard = ({
               {currentStep === 4 && (
                 <div className="space-y-6 animate-fade-in">
                   <div>
-                    <h3 className="text-lg font-black text-[var(--text-main)] uppercase flex items-center gap-2">
-                      <Clock className="w-5 h-5 text-neon" />
-                      <span>Paso 3: Agenda & Disponibilidad Comercial</span>
-                    </h3>
+                    <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded-full bg-neon/15 text-neon border border-neon/30 text-[10px] font-mono font-bold uppercase">
+                          Paso 4 de 6
+                        </span>
+                        <h3 className="text-lg font-black text-[var(--text-main)] uppercase flex items-center gap-2">
+                          <Clock className="w-5 h-5 text-neon" />
+                          <span>Agenda & Disponibilidad Comercial</span>
+                        </h3>
+                      </div>
+
                     <p className="text-xs text-[var(--text-muted)] font-mono mt-1">
                       Define los turnos de atención y la sincronización con Google Calendar. La atención del bot opera <strong className="text-neon">24/7/365</strong>.
                     </p>
@@ -2387,7 +3845,7 @@ export const RAGWizard = ({
                     </label>
                     <input
                       type="text"
-                      placeholder="c_tenant@group.calendar.google.com"
+                      placeholder="ej. c_tenant@group.calendar.google.com"
                       value={wizardData.googleCalendarId}
                       onChange={(e) => setWizardData({ ...wizardData, googleCalendarId: e.target.value })}
                       className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs rounded-xl p-3 text-[var(--text-main)] focus:border-neon outline-none font-mono"
@@ -2817,19 +4275,118 @@ export const RAGWizard = ({
                 <div className="space-y-6 animate-fade-in">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
-                      <h3 className="text-lg font-black text-[var(--text-main)] uppercase flex items-center gap-2">
-                        <Database className="w-5 h-5 text-neon" />
-                        <span>Paso 4: Configuración de los 4 Pilares RAG</span>
-                      </h3>
+                      <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded-full bg-neon/15 text-neon border border-neon/30 text-[10px] font-mono font-bold uppercase">
+                            Paso 5 de 6
+                          </span>
+                          <h3 className="text-lg font-black text-[var(--text-main)] uppercase flex items-center gap-2">
+                            <Database className="w-5 h-5 text-neon" />
+                            <span>Configuración de los 4 Pilares RAG & Oferta</span>
+                          </h3>
+                        </div>
+
                       <p className="text-xs text-[var(--text-muted)] font-mono mt-0.5">
                         <strong className="text-cyan-500 dark:text-cyan-400">Pilar 2 (Brandbook) es obligatorio</strong>. Los demás son opcionales y adaptados a {currentVerticalObj.name}.
                       </p>
                     </div>
                   </div>
 
+                  {/* Banner de Diagnóstico de Deficiencias & Sugerencias IA del Plan Maestro */}
+                  <div className="p-4 sm:p-5 rounded-2xl bg-[var(--bg-card)] border border-neon/30 space-y-3.5 shadow-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-9 h-9 rounded-xl bg-neon/10 border border-neon/30 flex items-center justify-center text-neon shrink-0">
+                          <Sparkles className="w-5 h-5 animate-pulse" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-mono font-black uppercase text-[var(--text-main)] flex items-center gap-2">
+                            <span>Auditoría Semántica de tu Plan Maestro (IA)</span>
+                            <span className="text-[9px] px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 font-bold uppercase">
+                              DeepSeek R1
+                            </span>
+                          </h4>
+                          <p className="text-[11px] text-[var(--text-muted)] font-mono">
+                            {masterFile
+                              ? `Analizando archivo maestro: "${masterFile.name}" (${(masterFile.size / 1024).toFixed(1)} KB)`
+                              : masterDocText
+                              ? 'Analizando directrices semánticas del brief ingresado'
+                              : 'Detección automática de huecos o directrices faltantes en tus 4 Pilares RAG'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Health Score Badge */}
+                      <div className="flex items-center gap-2 self-start sm:self-auto bg-[var(--bg-panel)] px-3 py-1.5 rounded-xl border border-[var(--border-color)]">
+                        <div className="text-right">
+                          <div className="text-[9px] font-mono text-[var(--text-muted)] uppercase">Salud del Plan</div>
+                          <div className="text-xs font-mono font-black text-neon">{healthScore}% / 100%</div>
+                        </div>
+                        <div className="w-8 h-8 rounded-full border-2 border-neon/50 flex items-center justify-center font-mono font-black text-[10px] text-neon bg-neon/10">
+                          {healthScore}%
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Deficiencias Detectadas */}
+                    {detectedDeficiencies.length > 0 ? (
+                      <div className="space-y-2 pt-2 border-t border-[var(--border-color)]">
+                        <div className="flex items-center justify-between text-[11px] font-mono">
+                          <span className="text-amber-400 font-bold flex items-center gap-1.5">
+                            <AlertTriangle className="w-3.5 h-3.5" />
+                            {detectedDeficiencies.length} punto{detectedDeficiencies.length > 1 ? 's' : ''} de mejora detectado{detectedDeficiencies.length > 1 ? 's' : ''} en tu Plan Maestro:
+                          </span>
+                          <span className="text-[10px] text-[var(--text-muted)]">Resuelve con 1-Click asistido</span>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-2">
+                          {detectedDeficiencies.map((def) => (
+                            <div
+                              key={def.id}
+                              className="p-3 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs font-mono transition-all hover:border-amber-400/40"
+                            >
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span
+                                    className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase ${
+                                      def.severity === 'critical'
+                                        ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                                        : def.severity === 'recommended'
+                                        ? 'bg-neon/15 text-neon border border-neon/30'
+                                        : 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                                    }`}
+                                  >
+                                    {def.severityLabel} · {def.pilar}
+                                  </span>
+                                  <span className="font-bold text-[var(--text-main)] text-[11px]">{def.title}</span>
+                                </div>
+                                <p className="text-[11px] text-[var(--text-muted)] font-sans">{def.description}</p>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => handleResolveDeficiency(def)}
+                                className="bg-neon/10 hover:bg-neon text-neon hover:text-black border border-neon/40 text-[11px] font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 shrink-0 self-start sm:self-auto shadow-sm active:scale-95"
+                              >
+                                <Zap className="w-3 h-3" />
+                                <span>{def.actionLabel}</span>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-2.5 text-xs font-mono text-emerald-400">
+                        <CheckCircle2 className="w-4 h-4 shrink-0" />
+                        <span>
+                          ¡Plan Maestro Integral! Todos los pilares y reglas comerciales cuentan con directrices calibradas para <strong>{currentVerticalObj.name}</strong>.
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    {/* Pilar 2 */}
-                    <div className="p-5 rounded-2xl bg-[var(--bg-card)] border-2 border-cyan-400/80 space-y-3">
+                    {/* Pilar 2: Brandbook (Obligatorio) */}
+                    <div className="p-5 rounded-2xl bg-[var(--bg-card)] border-2 border-cyan-400/80 space-y-3.5">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-mono font-bold text-cyan-500 dark:text-cyan-400 flex items-center gap-1.5">
                           <BookOpen className="w-4 h-4" />
@@ -2840,21 +4397,80 @@ export const RAGWizard = ({
                         </span>
                       </div>
                       <p className="text-[11px] text-[var(--text-muted)]">
-                        Personalidad, tono y arquetipo para {currentVerticalObj.name}.
+                        {currentPillarsAdaptive.pilar2.label} (ADR-002 §2.4).
                       </p>
+
+                      {/* Opción A: Escribir o Pegar */}
                       <div>
-                        <label className="text-[10px] text-[var(--text-muted)] block font-mono">Tono de Voz</label>
+                        <label className="text-[10px] text-[var(--text-muted)] block font-mono mb-1 font-bold">
+                          1. Escribir / Pegar Tono de Voz del Agente:
+                        </label>
                         <input
                           type="text"
-                          value={wizardData.brandTone}
+                          placeholder={currentPillarsAdaptive.pilar2.placeholder}
+                          value={wizardData.brandTone || ''}
                           onChange={(e) => setWizardData({ ...wizardData, brandTone: e.target.value })}
-                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-lg p-2 text-xs text-[var(--text-main)] font-mono focus:border-cyan-400 outline-none"
+                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2.5 text-xs text-[var(--text-main)] font-mono focus:border-cyan-400 outline-none"
                         />
+                      </div>
+
+                      {/* Opción B: Subir Documento ADR-002 (.pdf, .docx, .md, .txt) */}
+                      <div className="pt-2 border-t border-[var(--border-color)]">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="text-[10px] font-mono font-bold text-[var(--text-muted)] flex items-center gap-1">
+                            <Upload className="w-3 h-3 text-cyan-400" />
+                            <span>2. O {currentPillarsAdaptive.pilar2.docLabel}:</span>
+                          </label>
+                          <span className="text-[9px] font-mono text-[var(--text-muted)]">ADR-002</span>
+                        </div>
+
+                        {!wizardData.brandbookDoc ? (
+                          <label className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-dashed border-cyan-400/40 hover:border-cyan-400 bg-[var(--bg-panel)] cursor-pointer transition-all group">
+                            <FileText className="w-3.5 h-3.5 text-cyan-400 group-hover:scale-110 transition-transform" />
+                            <span className="text-[11px] font-mono text-[var(--text-muted)] group-hover:text-[var(--text-main)]">
+                              Adjuntar archivo <strong className="text-cyan-400 font-bold">.pdf, .docx, .md, .txt</strong>
+                            </span>
+                            <input
+                              type="file"
+                              accept=".pdf,.docx,.doc,.md,.txt"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  setWizardData({
+                                    ...wizardData,
+                                    brandbookDoc: { name: file.name, size: file.size, type: file.type }
+                                  });
+                                }
+                              }}
+                            />
+                          </label>
+                        ) : (
+                          <div className="p-2.5 rounded-xl bg-[var(--bg-panel)] border border-cyan-400/60 flex items-center justify-between text-xs font-mono">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                              <span className="text-[var(--text-main)] font-bold truncate text-[11px]">
+                                {typeof wizardData.brandbookDoc === 'string' ? wizardData.brandbookDoc : wizardData.brandbookDoc?.name}
+                              </span>
+                              <span className="text-[10px] text-[var(--text-muted)] shrink-0">
+                                {wizardData.brandbookDoc?.size ? `(${(wizardData.brandbookDoc.size / 1024).toFixed(1)} KB)` : '(Auto-extraído)'}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setWizardData({ ...wizardData, brandbookDoc: null })}
+                              className="p-1 text-[var(--text-muted)] hover:text-red-400 transition-colors ml-2"
+                              title="Quitar archivo"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    {/* Propuesta Comercial */}
-                    <div className="p-5 rounded-2xl bg-[var(--bg-card)] border-2 border-neon/70 space-y-3">
+                    {/* Propuesta Comercial & Gancho */}
+                    <div className="p-5 rounded-2xl bg-[var(--bg-card)] border-2 border-neon/70 space-y-3.5">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-mono font-bold text-neon flex items-center gap-1.5">
                           <Sparkles className="w-4 h-4" />
@@ -2864,35 +4480,309 @@ export const RAGWizard = ({
                           RECOMENDADO
                         </span>
                       </div>
+                      <p className="text-[11px] text-[var(--text-muted)]">
+                        Gancho irresistible o lead magnet para captación en pauta y micro-landing.
+                      </p>
+
+                      {/* Opción A: Escribir o Pegar */}
                       <div>
-                        <label className="text-[9px] text-[var(--text-muted)] font-mono block">Gancho del Mes / Lead Magnet</label>
+                        <label className="text-[10px] text-[var(--text-muted)] font-mono block mb-1 font-bold">
+                          1. Escribir / Pegar Gancho del Mes:
+                        </label>
                         <input
                           type="text"
-                          value={wizardData.offerHook}
+                          placeholder={currentPillarsAdaptive.offer.placeholder}
+                          value={wizardData.offerHook || ''}
                           onChange={(e) => setWizardData({ ...wizardData, offerHook: e.target.value })}
-                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded p-1.5 text-[11px] text-[var(--text-main)] font-mono focus:border-neon outline-none"
+                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2.5 text-xs text-[var(--text-main)] font-mono focus:border-neon outline-none"
                         />
+                      </div>
+
+                      {/* Opción B: Subir Documento ADR-002 (.pdf, .docx, .md, .txt) */}
+                      <div className="pt-2 border-t border-[var(--border-color)]">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="text-[10px] font-mono font-bold text-[var(--text-muted)] flex items-center gap-1">
+                            <Upload className="w-3 h-3 text-neon" />
+                            <span>2. O {currentPillarsAdaptive.offer.docLabel}:</span>
+                          </label>
+                          <span className="text-[9px] font-mono text-[var(--text-muted)]">ADR-002</span>
+                        </div>
+
+                        {!wizardData.commercialProposalDoc ? (
+                          <label className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-dashed border-neon/40 hover:border-neon bg-[var(--bg-panel)] cursor-pointer transition-all group">
+                            <FileText className="w-3.5 h-3.5 text-neon group-hover:scale-110 transition-transform" />
+                            <span className="text-[11px] font-mono text-[var(--text-muted)] group-hover:text-[var(--text-main)]">
+                              Adjuntar archivo <strong className="text-neon font-bold">.pdf, .docx, .md, .txt</strong>
+                            </span>
+                            <input
+                              type="file"
+                              accept=".pdf,.docx,.doc,.md,.txt"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  setWizardData({
+                                    ...wizardData,
+                                    commercialProposalDoc: { name: file.name, size: file.size, type: file.type }
+                                  });
+                                }
+                              }}
+                            />
+                          </label>
+                        ) : (
+                          <div className="p-2.5 rounded-xl bg-[var(--bg-panel)] border border-neon/60 flex items-center justify-between text-xs font-mono">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-neon shrink-0" />
+                              <span className="text-[var(--text-main)] font-bold truncate text-[11px]">
+                                {typeof wizardData.commercialProposalDoc === 'string' ? wizardData.commercialProposalDoc : wizardData.commercialProposalDoc?.name}
+                              </span>
+                              <span className="text-[10px] text-[var(--text-muted)] shrink-0">
+                                {wizardData.commercialProposalDoc?.size ? `(${(wizardData.commercialProposalDoc.size / 1024).toFixed(1)} KB)` : '(Auto-extraído)'}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setWizardData({ ...wizardData, commercialProposalDoc: null })}
+                              className="p-1 text-[var(--text-muted)] hover:text-red-400 transition-colors ml-2"
+                              title="Quitar archivo"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    {/* Pilar 1 */}
-                    <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-2">
-                      <span className="text-xs font-mono font-bold text-neon flex items-center gap-1.5">
-                        <DollarSign className="w-4 h-4" /> PILAR 1: Precios & Membresías
-                      </span>
+                    {/* Pilar 1: Catálogo & Precios */}
+                    <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-3.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-mono font-bold text-neon flex items-center gap-1.5">
+                          <DollarSign className="w-4 h-4" /> {currentPillarsAdaptive.pilar1.title}
+                        </span>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--bg-panel)] text-[var(--text-muted)] border border-[var(--border-color)] uppercase">
+                          Opcional
+                        </span>
+                      </div>
                       <p className="text-[11px] text-[var(--text-muted)]">
                         {currentVerticalObj.pillars.pilar1.label}
                       </p>
+
+                      {/* Opción A: Escribir o Pegar */}
+                      <div>
+                        <label className="text-[10px] text-[var(--text-muted)] font-mono block mb-1 font-bold">
+                          1. Escribir / Pegar Precios o Servicios:
+                        </label>
+                        <input
+                          type="text"
+                          placeholder={currentPillarsAdaptive.pilar1.placeholder}
+                          value={wizardData.pricingDetails || ''}
+                          onChange={(e) => setWizardData({ ...wizardData, pricingDetails: e.target.value })}
+                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2.5 text-xs text-[var(--text-main)] font-mono focus:border-neon outline-none"
+                        />
+                      </div>
+
+                      {/* Opción B: Subir Documento ADR-002 (.pdf, .docx, .md, .txt) */}
+                      <div className="pt-2 border-t border-[var(--border-color)]">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="text-[10px] font-mono font-bold text-[var(--text-muted)] flex items-center gap-1">
+                            <Upload className="w-3 h-3 text-neon" />
+                            <span>2. O {currentPillarsAdaptive.pilar1.docLabel}:</span>
+                          </label>
+                          <span className="text-[9px] font-mono text-[var(--text-muted)]">ADR-002</span>
+                        </div>
+
+                        {!wizardData.pricingDoc ? (
+                          <label className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-dashed border-[var(--border-color)] hover:border-neon/60 bg-[var(--bg-panel)] cursor-pointer transition-all group">
+                            <FileText className="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-neon transition-colors" />
+                            <span className="text-[11px] font-mono text-[var(--text-muted)] group-hover:text-[var(--text-main)]">
+                              Adjuntar archivo <strong className="text-neon font-bold">.pdf, .docx, .md, .txt</strong>
+                            </span>
+                            <input
+                              type="file"
+                              accept=".pdf,.docx,.doc,.md,.txt"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  setWizardData({
+                                    ...wizardData,
+                                    pricingDoc: { name: file.name, size: file.size, type: file.type }
+                                  });
+                                }
+                              }}
+                            />
+                          </label>
+                        ) : (
+                          <div className="p-2.5 rounded-xl bg-[var(--bg-panel)] border border-emerald-500/50 flex items-center justify-between text-xs font-mono">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                              <span className="text-[var(--text-main)] font-bold truncate text-[11px]">
+                                {typeof wizardData.pricingDoc === 'string' ? wizardData.pricingDoc : wizardData.pricingDoc?.name}
+                              </span>
+                              <span className="text-[10px] text-[var(--text-muted)] shrink-0">
+                                {wizardData.pricingDoc?.size ? `(${(wizardData.pricingDoc.size / 1024).toFixed(1)} KB)` : '(Auto-extraído)'}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setWizardData({ ...wizardData, pricingDoc: null })}
+                              className="p-1 text-[var(--text-muted)] hover:text-red-400 transition-colors ml-2"
+                              title="Quitar archivo"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Pilar 3 */}
-                    <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-2">
-                      <span className="text-xs font-mono font-bold text-amber-500 dark:text-amber-400 flex items-center gap-1.5">
-                        <AlertTriangle className="w-4 h-4" /> PILAR 3: Políticas & FAQs
-                      </span>
+                    {/* Pilar 3: Políticas & FAQ */}
+                    <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-3.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-mono font-bold text-amber-400 flex items-center gap-1.5">
+                          <AlertTriangle className="w-4 h-4" /> {currentPillarsAdaptive.pilar3.title}
+                        </span>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--bg-panel)] text-[var(--text-muted)] border border-[var(--border-color)] uppercase">
+                          Opcional
+                        </span>
+                      </div>
                       <p className="text-[11px] text-[var(--text-muted)]">
                         {currentVerticalObj.pillars.pilar3.label}
                       </p>
+
+                      {/* Opción A: Escribir o Pegar */}
+                      <div>
+                        <label className="text-[10px] text-[var(--text-muted)] font-mono block mb-1 font-bold">
+                          1. Escribir / Pegar Políticas o Preguntas Frecuentes:
+                        </label>
+                        <input
+                          type="text"
+                          placeholder={currentPillarsAdaptive.pilar3.placeholder}
+                          value={wizardData.faqDetails || ''}
+                          onChange={(e) => setWizardData({ ...wizardData, faqDetails: e.target.value })}
+                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2.5 text-xs text-[var(--text-main)] font-mono focus:border-amber-400 outline-none"
+                        />
+                      </div>
+
+                      {/* Opción B: Subir Documento ADR-002 (.pdf, .docx, .md, .txt) */}
+                      <div className="pt-2 border-t border-[var(--border-color)]">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="text-[10px] font-mono font-bold text-[var(--text-muted)] flex items-center gap-1">
+                            <Upload className="w-3 h-3 text-amber-400" />
+                            <span>2. O {currentPillarsAdaptive.pilar3.docLabel}:</span>
+                          </label>
+                          <span className="text-[9px] font-mono text-[var(--text-muted)]">ADR-002</span>
+                        </div>
+
+                        {!wizardData.faqsDoc ? (
+                          <label className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-dashed border-[var(--border-color)] hover:border-amber-400/60 bg-[var(--bg-panel)] cursor-pointer transition-all group">
+                            <FileText className="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-amber-400 transition-colors" />
+                            <span className="text-[11px] font-mono text-[var(--text-muted)] group-hover:text-[var(--text-main)]">
+                              Adjuntar archivo <strong className="text-amber-400 font-bold">.pdf, .docx, .md, .txt</strong>
+                            </span>
+                            <input
+                              type="file"
+                              accept=".pdf,.docx,.doc,.md,.txt"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  setWizardData({
+                                    ...wizardData,
+                                    faqsDoc: { name: file.name, size: file.size, type: file.type }
+                                  });
+                                }
+                              }}
+                            />
+                          </label>
+                        ) : (
+                          <div className="p-2.5 rounded-xl bg-[var(--bg-panel)] border border-amber-400/50 flex items-center justify-between text-xs font-mono">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                              <span className="text-[var(--text-main)] font-bold truncate text-[11px]">
+                                {typeof wizardData.faqsDoc === 'string' ? wizardData.faqsDoc : wizardData.faqsDoc?.name}
+                              </span>
+                              <span className="text-[10px] text-[var(--text-muted)] shrink-0">
+                                {wizardData.faqsDoc?.size ? `(${(wizardData.faqsDoc.size / 1024).toFixed(1)} KB)` : '(Auto-extraído)'}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setWizardData({ ...wizardData, faqsDoc: null })}
+                              className="p-1 text-[var(--text-muted)] hover:text-red-400 transition-colors ml-2"
+                              title="Quitar archivo"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                  <div className="col-span-1 md:col-span-2 p-5 rounded-2xl bg-[var(--bg-card)] border border-emerald-500/30 space-y-3">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono font-bold text-emerald-400 flex items-center gap-1.5">
+                            <CheckCircle2 className="w-4 h-4" /> {currentPillarsAdaptive.pilar4.title} & Calificación de Leads
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setShowPilar4Guide(!showPilar4Guide)}
+                            className="text-[10px] font-mono px-2 py-0.5 rounded-lg bg-[var(--bg-panel)] hover:bg-[var(--bg-card-subtle)] border border-neon/40 text-neon flex items-center gap-1 transition-all active:scale-95"
+                            title="Haz clic para entender cómo funciona el Pilar 4"
+                          >
+                            <HelpCircle className="w-3 h-3 text-neon" />
+                            <span>¿Qué es el Pilar 4?</span>
+                          </button>
+                        </div>
+                        <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-bold uppercase">
+                          4/4 Criterios AND · Facturación $350 MXN
+                        </span>
+                      </div>
+
+                      {/* Explicación Desplegable del Pilar 4 */}
+                      {showPilar4Guide && (
+                        <div className="p-4 rounded-xl bg-[var(--bg-panel)] border border-emerald-500/40 space-y-2 text-xs font-mono animate-fade-in">
+                          <div className="flex items-center justify-between text-emerald-400 font-bold">
+                            <span className="flex items-center gap-1.5">
+                              <Info className="w-4 h-4" />
+                              Guía: ¿Para qué sirve el Pilar 4 en Vector Inside?
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setShowPilar4Guide(false)}
+                              className="text-[var(--text-muted)] hover:text-red-400"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px] text-[var(--text-muted)] font-sans">
+                            <div className="p-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1">
+                              <strong className="text-neon block font-mono">1. Prueba Social & Casos de Éxito</strong>
+                              <p>
+                                Cuando el prospecto duda (&quot;¿Es seguro?&quot;, &quot;¿Tienen resultados?&quot;), la IA no inventa: acude a este pilar y cita transformaciones reales, testimonios, reseñas o fotos de antes/después específicas de {currentVerticalObj.name}.
+                              </p>
+                            </div>
+                            <div className="p-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1">
+                              <strong className="text-emerald-400 block font-mono">2. Matriz de Calificación AND ($350 MXN)</strong>
+                              <p>
+                                Protege tu dinero evitando pagar por &quot;mirones&quot; o curiosos. La IA evalúa los 4 filtros comerciales en la charla. <strong>Solo cuando el prospecto confirma los 4 criterios</strong>, se transfiere a tu equipo y se genera la comisión.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      <p className="text-[11px] text-[var(--text-muted)]">
+                        Filtros de control comercial calibrados para {currentVerticalObj.name}. Solo se factura al tenant cuando el prospecto confirma todos los criterios.
+                      </p>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] font-mono">
+                        {(currentPillarsAdaptive.criteria || []).map((crit, cIdx) => (
+                          <div key={cIdx} className="p-2.5 rounded-xl bg-[var(--bg-panel)] border border-emerald-500/30 flex items-center gap-2">
+                            <Check className="w-3.5 h-3.5 text-neon shrink-0" />
+                            <span className="text-[var(--text-main)] truncate">{crit}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
@@ -2923,10 +4813,15 @@ export const RAGWizard = ({
               {currentStep === 6 && (
                 <div className="space-y-6 animate-fade-in">
                   <div>
-                    <h3 className="text-lg font-black text-[var(--text-main)] uppercase flex items-center gap-2">
-                      <Shield className="w-5 h-5 text-neon" />
-                      <span>Paso 6: Gobernanza, Reglas Inviolables & Despliegue RLS</span>
-                    </h3>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded-full bg-neon/15 text-neon border border-neon/30 text-[10px] font-mono font-bold uppercase">
+                        Paso 6 de 6
+                      </span>
+                      <h3 className="text-lg font-black text-[var(--text-main)] uppercase flex items-center gap-2">
+                        <Shield className="w-5 h-5 text-neon" />
+                        <span>Gobernanza, Reglas Inviolables & Despliegue RLS</span>
+                      </h3>
+                    </div>
                     <p className="text-xs text-[var(--text-muted)] font-mono mt-1">
                       Audita las reglas de operación, revisa el resumen ejecutivo del enjambre y activa el aislamiento RLS para el negocio.
                     </p>
@@ -2952,21 +4847,7 @@ export const RAGWizard = ({
                       )}
                     </div>
 
-                                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <h3 className="text-lg font-black text-[var(--text-main)] uppercase flex items-center gap-2">
-                      <Shield className="w-5 h-5 text-neon" />
-                      <span>Paso 5: Reglas Inviolables del Negocio</span>
-                    </h3>
-                    {wizardData.inviolableRules.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setWizardData(prev => ({ ...prev, inviolableRules: [] }))}
-                        className="text-xs font-mono text-red-400 hover:text-red-300 underline cursor-pointer"
-                      >
-                        Limpiar todas
-                      </button>
-                    )}
-                  </div>
+                                      
 
                   {wizardData.inviolableRules.length === 0 ? (
                     <div className="p-6 rounded-2xl border border-dashed border-[var(--border-color)] bg-[var(--bg-card)] text-center space-y-3">
@@ -3026,61 +4907,161 @@ export const RAGWizard = ({
                   </form>
                   </div>
 
-                  {/* Bloque 2: Resumen Ejecutivo & Inspector JSON */}
-                                    <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-neon/30 space-y-4 font-mono text-xs">
+                  {/* Bloque 2: Resumen Ejecutivo Integral de Auditoría & Pilares RAG */}
+                  <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-neon/30 space-y-4 font-mono text-xs shadow-sm">
                     <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)]">
                       <div className="flex items-center gap-3">
                         <VectorLobo size={32} showStatus={true} status="active" />
                         <div>
-                          <span className="text-[var(--text-main)] font-bold block">Auditoría Previa Lobo Vectorial</span>
-                          <span className="text-[10px] text-[var(--text-muted)]">Parámetros de memoria RAG y blindaje RLS (ADR-001)</span>
+                          <span className="text-[var(--text-main)] font-bold block text-sm">Auditoría Ejecutiva Pre-Despliegue</span>
+                          <span className="text-[10px] text-[var(--text-muted)]">Resumen completo del negocio, canales y 4 Pilares RAG (ADR-001 & ADR-002)</span>
                         </div>
                       </div>
-                      <span className="px-2.5 py-1 rounded bg-neon/15 text-neon font-bold border border-neon/30 text-[10px]">
-                        IFV Esperado: 48/50
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="px-2.5 py-1 rounded bg-neon/15 text-neon font-bold border border-neon/30 text-[10px]">
+                          IFV Esperado: 48/50
+                        </span>
+                        <span className="px-2.5 py-1 rounded bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30 text-[10px]">
+                          Salud RAG: {healthScore}%
+                        </span>
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <span className="text-[var(--text-muted)] block text-[10px] uppercase">Negocio & Razón Social</span>
-                        <span className="text-[var(--text-main)] font-bold text-sm">{wizardData.businessName || 'Nuevo Negocio'}</span>
-                        <span className="text-[10px] text-[var(--text-muted)] block mt-0.5">{wizardData.legalNameTaxId || 'RFC / Tax ID por verificar'}</span>
+                    {/* Fila 1: Entidad, Giro y Canales */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                      {/* Entidad & Dueño */}
+                      <div className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1">
+                        <span className="text-[var(--text-muted)] block text-[9px] uppercase font-bold tracking-wider">Negocio & Contacto HITL</span>
+                        <span className="text-[var(--text-main)] font-black text-sm block truncate">
+                          {wizardData.businessName || 'Nuevo Negocio'}
+                        </span>
+                        <span className="text-[10px] text-cyan-400 block truncate">
+                          Dueño: {wizardData.ownerName || 'Director General'} · {wizardData.ownerPhone || 'Sin tel'}
+                        </span>
+                        <span className="text-[10px] text-[var(--text-muted)] block">
+                          Tax ID: {wizardData.legalNameTaxId || 'RFC en validación'}
+                        </span>
                       </div>
-                      <div>
-                        <span className="text-[var(--text-muted)] block text-[10px] uppercase">Giro Comercial</span>
-                        <span className="text-neon font-bold text-sm">{currentVerticalObj.name}</span>
-                        <span className="text-[10px] text-[var(--text-muted)] block mt-0.5">Meta: {currentVerticalObj.conversionGoal?.split('/')[0]}</span>
+
+                      {/* Giro & Metas */}
+                      <div className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1">
+                        <span className="text-[var(--text-muted)] block text-[9px] uppercase font-bold tracking-wider">Giro & Conversión</span>
+                        <span className="text-neon font-black text-sm block truncate">
+                          {currentVerticalObj.name}
+                        </span>
+                        <span className="text-[10px] text-[var(--text-muted)] block">
+                          Meta: {currentVerticalObj.conversionGoal?.split('/')[0]}
+                        </span>
+                        <span className="text-[10px] text-emerald-400 font-bold block truncate">
+                          Arquetipo: {wizardData.archetype || currentVerticalObj.badge}
+                        </span>
                       </div>
-                      <div>
-                        <span className="text-[var(--text-muted)] block text-[10px] uppercase">Estrategia Digital</span>
+
+                      {/* Canales & Agenda */}
+                      <div className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1">
+                        <span className="text-[var(--text-muted)] block text-[9px] uppercase font-bold tracking-wider">Estrategia & Calendario</span>
                         {wizardData.hasWebsite ? (
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[10px] font-bold flex items-center gap-1">
-                              <Globe className="w-3 h-3" />
-                              CON Sitio Web
+                          <div className="flex items-center gap-1.5">
+                            <span className="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[9px] font-bold flex items-center gap-1 shrink-0">
+                              <Globe className="w-2.5 h-2.5" />
+                              CON Web
                             </span>
                             <span className="text-[10px] text-[var(--text-muted)] truncate">
                               {wizardData.websiteUrl || 'https://negocio.com'}
                             </span>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold flex items-center gap-1">
-                              <Smartphone className="w-3 h-3" />
-                              SIN Sitio Web (Directo a WhatsApp)
+                          <div>
+                            <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] font-bold inline-flex items-center gap-1">
+                              <Smartphone className="w-2.5 h-2.5" />
+                              SIN Web (Directo a WhatsApp)
                             </span>
                           </div>
                         )}
-                      </div>
-                      <div>
-                        <span className="text-[var(--text-muted)] block text-[10px] uppercase">Agenda & Conversión</span>
-                        <span className="text-[var(--text-main)] font-bold block mt-1">
+                        <span className="text-[10px] text-[var(--text-muted)] block">
                           Google Calendar: {wizardData.appointmentDuration || 45} min / cita
                         </span>
                         <span className="text-[10px] text-[var(--text-muted)] block">
-                          Costo Unitario Lead Calificado: ${wizardData.costPerQualifiedLead || 350} MXN
+                          Micro-landing: {wizardData.microLandingBillingPlan === 'disabled' ? 'Desactivada' : `Activa (${wizardData.microLandingBillingPlan})`}
                         </span>
+                      </div>
+                    </div>
+
+                    {/* Resumen de los 4 Pilares RAG & Oferta Comercial */}
+                    <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-neon/25 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-neon flex items-center gap-1.5 uppercase font-mono">
+                          <Database className="w-4 h-4" />
+                          Memoria RAG: Desglose de los 4 Pilares & Oferta
+                        </span>
+                        <span className="text-[10px] font-mono text-[var(--text-muted)]">
+                          {masterFile ? `Fuente: "${masterFile.name}"` : 'Configuración asistida'}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 text-[11px]">
+                        {/* Pilar 1 */}
+                        <div className="p-2.5 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
+                          <span className="text-[10px] text-neon font-bold block truncate">Pilar 1: Precios / Tarifas</span>
+                          <p className="text-[10px] text-[var(--text-main)] font-sans line-clamp-2">
+                            {wizardData.pricingDetails || (wizardData.pricingDoc ? `Doc: ${typeof wizardData.pricingDoc === 'string' ? wizardData.pricingDoc : wizardData.pricingDoc.name}` : 'Tarifario oficial')}
+                          </p>
+                          {wizardData.pricingDoc && (
+                            <span className="text-[9px] text-emerald-400 font-mono block truncate">
+                              📎 {typeof wizardData.pricingDoc === 'string' ? wizardData.pricingDoc : wizardData.pricingDoc.name}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Pilar 2 */}
+                        <div className="p-2.5 rounded-lg bg-[var(--bg-panel)] border border-cyan-400/40 space-y-1">
+                          <span className="text-[10px] text-cyan-400 font-bold block truncate">Pilar 2: Brandbook & Tono</span>
+                          <p className="text-[10px] text-[var(--text-main)] font-sans line-clamp-2">
+                            {wizardData.brandTone || (wizardData.brandbookDoc ? `Doc: ${typeof wizardData.brandbookDoc === 'string' ? wizardData.brandbookDoc : wizardData.brandbookDoc.name}` : 'Tono empático profesional')}
+                          </p>
+                          {wizardData.brandbookDoc && (
+                            <span className="text-[9px] text-cyan-400 font-mono block truncate">
+                              📎 {typeof wizardData.brandbookDoc === 'string' ? wizardData.brandbookDoc : wizardData.brandbookDoc.name}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Oferta */}
+                        <div className="p-2.5 rounded-lg bg-[var(--bg-panel)] border border-neon/30 space-y-1">
+                          <span className="text-[10px] text-neon font-bold block truncate">Propuesta Comercial</span>
+                          <p className="text-[10px] text-[var(--text-main)] font-sans line-clamp-2">
+                            {wizardData.offerHook || (wizardData.commercialProposalDoc ? `Doc: ${typeof wizardData.commercialProposalDoc === 'string' ? wizardData.commercialProposalDoc : wizardData.commercialProposalDoc.name}` : 'Oferta de captación')}
+                          </p>
+                          {wizardData.commercialProposalDoc && (
+                            <span className="text-[9px] text-neon font-mono block truncate">
+                              📎 {typeof wizardData.commercialProposalDoc === 'string' ? wizardData.commercialProposalDoc : wizardData.commercialProposalDoc.name}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Pilar 3 */}
+                        <div className="p-2.5 rounded-lg bg-[var(--bg-panel)] border border-amber-400/40 space-y-1">
+                          <span className="text-[10px] text-amber-400 font-bold block truncate">Pilar 3: Políticas / FAQs</span>
+                          <p className="text-[10px] text-[var(--text-main)] font-sans line-clamp-2">
+                            {wizardData.faqDetails || (wizardData.faqsDoc ? `Doc: ${typeof wizardData.faqsDoc === 'string' ? wizardData.faqsDoc : wizardData.faqsDoc.name}` : 'Reglamento y cancelaciones')}
+                          </p>
+                          {wizardData.faqsDoc && (
+                            <span className="text-[9px] text-amber-400 font-mono block truncate">
+                              📎 {typeof wizardData.faqsDoc === 'string' ? wizardData.faqsDoc : wizardData.faqsDoc.name}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Pilar 4 Footer */}
+                      <div className="pt-2.5 border-t border-[var(--border-color)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-[10px]">
+                        <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
+                          <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                          <span>Pilar 4: 4/4 Criterios AND activos · Costo Lead Calificado: ${wizardData.costPerQualifiedLead || 350} MXN</span>
+                        </div>
+                        <div className="text-[var(--text-muted)]">
+                          Reglas Inviolables: <strong className="text-neon">{wizardData.inviolableRules.length} activas</strong>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -3092,7 +5073,7 @@ export const RAGWizard = ({
                         <FileCode className="w-4 h-4 text-neon" />
                         <div>
                           <span className="text-[var(--text-main)] font-bold block">Payload Onboarding 6-Bloques</span>
-                          <span className="text-[10px] text-[var(--text-muted)]">Endpoint: POST /api/v1/tenants/onboard (ADR-001 §2.7)</span>
+                          <span className="text-[10px] text-[var(--text-muted)]">Endpoint API: POST /api/v1/tenants/onboard · Especificación de Arquitectura ADR-001 §2.7</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">

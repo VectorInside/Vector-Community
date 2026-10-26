@@ -138,11 +138,12 @@ export const CentroDeMando = () => {
         t.giro?.toLowerCase().includes(q) ||
         t.shortName?.toLowerCase().includes(q);
 
-      // 2. AI Status
+      // 2. AI Status & Alerts
       const matchesStatus =
         statusFilter === 'all' ||
         (statusFilter === 'active' && t.isAiActive) ||
-        (statusFilter === 'paused' && !t.isAiActive);
+        (statusFilter === 'paused' && !t.isAiActive) ||
+        (statusFilter === 'alerts' && (t.frictionAlert || t.crisisMode));
 
       // 3. Category
       const matchesCategory =
@@ -257,7 +258,7 @@ export const CentroDeMando = () => {
         <div className="relative z-10 max-w-2xl space-y-4">
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-sans uppercase tracking-widest text-neon font-extrabold bg-neon/10 px-2.5 py-1 rounded-full border border-neon/30">
-              OPERACIÓN · DIRECCIÓN CLARA
+              {isClient ? 'OPERACIÓN · DIRECCIÓN CLARA' : 'GOBERNANZA · CONTROL MULTI-NEGOCIO'}
             </span>
             <span className="text-xs font-sans text-[var(--text-muted)]">
               Octubre 2026
@@ -265,40 +266,89 @@ export const CentroDeMando = () => {
           </div>
 
           <h1 className="text-2xl sm:text-4xl font-heading font-black text-[var(--text-main)] leading-tight tracking-tight">
-            Convierte la atención en conversaciones.<br />
-            <span className="text-neon">Dale dirección a cada oportunidad.</span>
+            {isClient ? (
+              <>
+                Convierte la atención en conversaciones.<br />
+                <span className="text-neon">Dale dirección a cada oportunidad.</span>
+              </>
+            ) : (
+              <>
+                Supervisión activa de tu cartera.<br />
+                <span className="text-neon">Gobernanza y telemetría en tiempo real.</span>
+              </>
+            )}
           </h1>
 
           <p className="text-xs sm:text-sm text-[var(--text-muted)] font-sans leading-relaxed">
-            Conecta tu estrategia, contenido y seguimiento en un solo lugar. 3 consultas esperan atención inmediata en bandeja y 2 piezas requieren revisión editorial antes de programarse.
+            {isClient ? (
+              `Conecta la estrategia, contenido y seguimiento de ${activeTenant?.name || 'tu negocio'}. 3 consultas esperan atención inmediata en tu bandeja de WhatsApp y 2 piezas requieren tu visto bueno editorial.`
+            ) : (
+              `Supervisas ${tenantsList.length} negocios en el ecosistema. ${tenantsList.filter(t => !t.isAiActive).length > 0 ? `${tenantsList.filter(t => !t.isAiActive).length} en atención manual y ` : ''}${tenantsList.filter(t => t.frictionAlert).length} alertas de fricción web detectadas con Meta Pixel & GA4.`
+            )}
           </p>
 
           <div className="flex flex-wrap items-center gap-3 pt-2 font-sans">
-            <button
-              type="button"
-              onClick={() => router.push('/inbox')}
-              className="px-5 py-3 rounded-xl bg-neon text-black font-sans font-bold text-xs uppercase flex items-center gap-2 hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_20px_var(--neon-glow)] active:scale-95"
-            >
-              <span>Atender conversaciones (3)</span>
-              <ArrowRight className="w-4 h-4 stroke-[2.5]" />
-            </button>
+            {isClient ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => router.push('/inbox')}
+                  className="px-5 py-3 rounded-xl bg-neon text-black font-sans font-bold text-xs uppercase flex items-center gap-2 hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_20px_var(--neon-glow)] active:scale-95"
+                >
+                  <span>Atender conversaciones (3)</span>
+                  <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                </button>
 
-            <button
-              type="button"
-              onClick={() => router.push('/planner')}
-              className="px-4 py-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon text-[var(--text-main)] font-sans font-semibold text-xs transition-colors flex items-center gap-2"
-            >
-              <span>Piezas por revisar (2)</span>
-            </button>
+                <button
+                  type="button"
+                  onClick={() => router.push('/planner')}
+                  className="px-4 py-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon text-[var(--text-main)] font-sans font-semibold text-xs transition-colors flex items-center gap-2"
+                >
+                  <span>Piezas por revisar (2)</span>
+                </button>
 
-            <button
-              type="button"
-              onClick={() => setPreviewTenant(activeTenant)}
-              className="px-4 py-3 rounded-xl bg-neon/10 border border-neon/30 text-neon hover:bg-neon hover:text-black font-sans font-semibold text-xs transition-all flex items-center gap-1.5"
-            >
-              <Smartphone className="w-3.5 h-3.5" />
-              <span>Ver Micro-Landing</span>
-            </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewTenant(activeTenant)}
+                  className="px-4 py-3 rounded-xl bg-neon/10 border border-neon/30 text-neon hover:bg-neon hover:text-black font-sans font-semibold text-xs transition-all flex items-center gap-1.5"
+                >
+                  <Smartphone className="w-3.5 h-3.5" />
+                  <span>Ver Micro-Landing</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const el = document.getElementById('deck-negocios');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="px-5 py-3 rounded-xl bg-neon text-black font-sans font-bold text-xs uppercase flex items-center gap-2 hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_20px_var(--neon-glow)] active:scale-95"
+                >
+                  <span>Explorar Cartera ({tenantsList.length})</span>
+                  <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => router.push('/triage')}
+                  className="px-4 py-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon text-[var(--text-main)] font-sans font-semibold text-xs transition-colors flex items-center gap-2"
+                >
+                  <AlertOctagon className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Triage & Sutura Arcángel</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => router.push('/config?tab=rag&mode=wizard')}
+                  className="px-4 py-3 rounded-xl bg-neon/10 border border-neon/30 text-neon hover:bg-neon hover:text-black font-sans font-semibold text-xs transition-all flex items-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Alta Nuevo Negocio</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -766,7 +816,7 @@ export const CentroDeMando = () => {
           </div>
 
           {/* DECK DE GESTIÓN DE NEGOCIOS (BUSINESS COMMAND CARDS + FILTROS) */}
-          <div className="space-y-4">
+          <div id="deck-negocios" className="space-y-4 scroll-mt-6">
             {/* Title, Search & Filters Bar */}
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
               <div>
@@ -801,7 +851,7 @@ export const CentroDeMando = () => {
                   )}
                 </div>
 
-                {/* AI Status Filter Tabs */}
+                {/* AI & Alert Status Filter Tabs */}
                 <div className="flex items-center bg-[var(--bg-card)] p-1 rounded-xl border border-[var(--border-color)] text-[10px] font-mono">
                   <button
                     type="button"
@@ -837,6 +887,18 @@ export const CentroDeMando = () => {
                   >
                     <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
                     Pausado ({tenantsList.filter((t) => !t.isAiActive).length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStatusFilter('alerts')}
+                    className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 ${
+                      statusFilter === 'alerts'
+                        ? 'bg-amber-500/20 text-amber-500 font-bold border border-amber-500/30'
+                        : 'text-[var(--text-muted)] hover:text-amber-500'
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                    Con Alertas ({tenantsList.filter((t) => t.frictionAlert || t.crisisMode).length})
                   </button>
                 </div>
               </div>
@@ -935,6 +997,19 @@ export const CentroDeMando = () => {
                         <span className="px-2 py-0.5 bg-[var(--bg-card-subtle)] text-[var(--text-muted)] border border-[var(--border-color)] rounded font-medium">
                           MER: {t.mer || '5.2x'}
                         </span>
+
+                        {t.frictionAlert && (
+                          <span className="px-2 py-0.5 bg-amber-500/15 text-amber-500 border border-amber-500/30 rounded flex items-center gap-1 font-bold">
+                            <AlertOctagon className="w-3 h-3" />
+                            <span>Alerta Web</span>
+                          </span>
+                        )}
+                        {t.crisisMode && (
+                          <span className="px-2 py-0.5 bg-red-500/15 text-red-500 border border-red-500/30 rounded flex items-center gap-1 font-bold animate-pulse">
+                            <AlertOctagon className="w-3 h-3" />
+                            <span>Crisis</span>
+                          </span>
+                        )}
                       </div>
 
                       {/* Micro-Metrics Grid (3-column financial & leads snapshot) */}

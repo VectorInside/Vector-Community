@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { useTenant } from '@/hooks/useTenant';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import { performanceService } from '@/services/performanceService';
 import { StatCard } from '@/components/common/StatCard';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { MicroLandingPreviewModal } from '@/components/common/MicroLandingPreviewModal';
-import { formatCurrency, formatNumber } from '@/utils/formatters';
+import { formatCurrency, formatNumber, cleanConcept } from '@/utils/formatters';
 import {
   TrendingUp,
   DollarSign,
@@ -33,7 +33,10 @@ import {
   Users,
   Eye,
   Check,
+  Copy,
   Calendar,
+  Clock,
+  MessageSquare,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -48,11 +51,22 @@ import {
 import confetti from 'canvas-confetti';
 
 export const PerformanceDashboard = () => {
-  const { activeTenantId, activeTenant } = useTenant();
+  const { activeTenant: authTenant, activeTenantKey, tenantsData } = useAuth();
+  
+  // Resolve active tenant from canonical AuthContext
+  const activeTenant = useMemo(() => {
+    if (authTenant) return authTenant;
+    if (tenantsData && activeTenantKey && tenantsData[activeTenantKey]) {
+      return tenantsData[activeTenantKey];
+    }
+    return tenantsData ? Object.values(tenantsData)[0] : null;
+  }, [authTenant, activeTenantKey, tenantsData]);
+
+  const activeTenantId = activeTenant?.id || activeTenantKey || 'dental';
+
   const [data, setData] = useState(null);
   const [capiLogs, setCapiLogs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isSendingSignal, setIsSendingSignal] = useState(false);
   const [activeTab, setActiveTab] = useState('web'); // 'web' | 'capi' | 'microlanding'
   const [showMicroLandingModal, setShowMicroLandingModal] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -75,31 +89,9 @@ export const PerformanceDashboard = () => {
     loadData();
   }, [loadData]);
 
-  const handleEmitCapiTest = async () => {
-    setIsSendingSignal(true);
-    try {
-      const newEvent = await performanceService.emitTestCapiSignal(
-        activeTenantId,
-        'Purchase_Attributed_Vector'
-      );
-      setCapiLogs((prev) => [newEvent, ...prev]);
-      try {
-        confetti({
-          particleCount: 35,
-          spread: 60,
-          origin: { y: 0.8 },
-          colors: ['#D4FF00', '#10B981'],
-        });
-      } catch (e) {}
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsSendingSignal(false);
-    }
-  };
-
   const handleCopyPublicLink = () => {
-    const url = `https://app.vectorinside.com/m/${activeTenant?.id || 'demo'}`;
+    const slug = activeTenant?.microLandingSlug || activeTenant?.id || 'demo';
+    const url = `https://app.vectorinside.com/m/${slug}`;
     navigator.clipboard.writeText(url);
     setCopiedLink(true);
     try {
@@ -135,62 +127,62 @@ export const PerformanceDashboard = () => {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 block animate-fade-in space-y-6 max-w-7xl mx-auto font-sans">
-      {/* Header Contextual Homologado */}
+      {/* Header Contextual Homologado con el Tenant Activo */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border-color)] pb-4 gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[10px] font-mono uppercase tracking-wider text-neon font-bold bg-neon/10 px-2 py-0.5 rounded border border-neon/20">
               OPERACIÓN / CONTACTABILIDAD & TIEMPOS
             </span>
-            <span className="text-xs text-[var(--text-muted)] font-mono">
-              Embudo Comercial & Tráfico
+            <span className="text-xs text-[var(--text-muted)] font-mono flex items-center gap-1.5">
+              <span>{activeTenant?.avatar}</span>
+              <span>{activeTenant?.shortName || activeTenant?.name}</span>
+              <span>•</span>
+              <span>{activeTenant?.giro}</span>
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-heading font-black text-[var(--text-main)]">
             Contactabilidad & Tiempos de <span className="text-neon">Respuesta</span>
           </h1>
           <p className="text-xs text-[var(--text-muted)] font-sans mt-0.5 max-w-2xl">
-            Embudo de captación comercial, velocidad de atención y tasa de respuesta en &lt; 15 min para{' '}
-            <strong className="text-[var(--text-main)] font-semibold">{activeTenant?.name || 'Clínica Odontológica Integral'}</strong>.
+            Telemetría de tráfico, embudo de captación comercial y velocidad de atención en &lt; 15 min para{' '}
+            <strong className="text-[var(--text-main)] font-semibold">{activeTenant?.name || 'Negocio Activo'}</strong>.
           </p>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] font-mono text-xs shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[var(--text-muted)]">Meta CAPI:</span>
+            <span className="font-bold text-emerald-500">
+              {activeTenant?.capiStatus || 'Conectado • 99.4% Entrega'}
+            </span>
+          </div>
+
           <button
             type="button"
             onClick={() => setShowMicroLandingModal(true)}
-            className="px-3.5 py-2.5 rounded-xl bg-[var(--bg-panel)] hover:bg-[var(--bg-card)] text-[var(--text-main)] text-xs font-mono font-bold border border-[var(--border-color)] flex items-center gap-2 transition-all hover:border-neon shadow-sm min-h-[44px]"
+            className="px-3.5 py-2 rounded-xl bg-[var(--bg-panel)] hover:bg-[var(--bg-card)] text-[var(--text-main)] text-xs font-mono font-bold border border-[var(--border-color)] flex items-center gap-2 transition-all hover:border-neon shadow-sm"
           >
             <Smartphone className="w-4 h-4 text-neon" />
             <span>Ver Micro-Landing</span>
           </button>
-
-          <Button
-            variant="neonOutline"
-            size="md"
-            icon={Send}
-            loading={isSendingSignal}
-            onClick={handleEmitCapiTest}
-            className="min-h-[44px]"
-          >
-            Emitir CAPI Test Event
-          </Button>
         </div>
       </header>
 
       {/* Navigation Sub-Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-dark-border font-sans">
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-[var(--border-color)] font-sans">
         <button
           type="button"
           onClick={() => setActiveTab('web')}
           className={`px-4 py-2.5 rounded-xl text-xs font-medium flex items-center gap-2 transition-all ${
             activeTab === 'web'
-              ? 'bg-brand-primary text-black shadow-neon-sm font-bold'
-              : 'bg-dark-base text-[var(--text-muted)] hover:text-[var(--text-main)] border border-dark-border'
+              ? 'bg-neon text-black font-bold shadow-[0_0_15px_rgba(231,249,0,0.3)]'
+              : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)]'
           }`}
         >
           <Globe className="w-4 h-4" />
-          <span>Salud de Canales & Tráfico Web</span>
+          <span>{activeTenant?.hasWebsite ? 'Salud de Canales & Tráfico Web' : 'Salud de Canales & Direct-to-Chat'}</span>
         </button>
 
         <button
@@ -198,8 +190,8 @@ export const PerformanceDashboard = () => {
           onClick={() => setActiveTab('capi')}
           className={`px-4 py-2.5 rounded-xl text-xs font-medium flex items-center gap-2 transition-all ${
             activeTab === 'capi'
-              ? 'bg-brand-primary text-black shadow-neon-sm font-bold'
-              : 'bg-dark-base text-[var(--text-muted)] hover:text-[var(--text-main)] border border-dark-border'
+              ? 'bg-neon text-black font-bold shadow-[0_0_15px_rgba(231,249,0,0.3)]'
+              : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)]'
           }`}
         >
           <Activity className="w-4 h-4" />
@@ -211,8 +203,8 @@ export const PerformanceDashboard = () => {
           onClick={() => setActiveTab('microlanding')}
           className={`px-4 py-2.5 rounded-xl text-xs font-medium flex items-center gap-2 transition-all ${
             activeTab === 'microlanding'
-              ? 'bg-brand-primary text-black shadow-neon-sm font-bold'
-              : 'bg-dark-base text-[var(--text-muted)] hover:text-[var(--text-main)] border border-dark-border'
+              ? 'bg-neon text-black font-bold shadow-[0_0_15px_rgba(231,249,0,0.3)]'
+              : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)]'
           }`}
         >
           <Smartphone className="w-4 h-4" />
@@ -221,257 +213,357 @@ export const PerformanceDashboard = () => {
       </div>
 
       {/* ========================================================================= */}
-      {/* PESTAÑA 1: TELEMETRÍA WEB & GA4 (MÉTRICAS DEL SITIO WEB DEL NEGOCIO)     */}
+      {/* PESTAÑA 1: TELEMETRÍA DE CANALES & CONVERSIÓN                             */}
       {/* ========================================================================= */}
       {activeTab === 'web' && (
-        <div className="space-y-6 animate-fadeIn">
-          {/* Web Identity & Tracking IDs Card */}
-          <div className="p-5 rounded-2xl bg-dark-surface border border-dark-border flex flex-col sm:flex-row sm:items-center justify-between gap-4 font-mono text-xs">
+        <div className="space-y-6 animate-fade-in">
+          {/* Identity & Tracking Card */}
+          <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-4 font-mono text-xs shadow-sm">
             <div className="flex items-center gap-3">
               <span className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                <Globe className="w-5 h-5" />
+                {activeTenant?.hasWebsite ? <Globe className="w-5 h-5" /> : <Smartphone className="w-5 h-5 text-neon" />}
               </span>
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-[var(--text-main)] font-bold text-sm">
-                    {activeTenant?.hasWebsite ? 'Sitio Web Oficial Sincronizado' : 'Ecosistema Directo a WhatsApp'}
+                    {activeTenant?.hasWebsite ? 'Sitio Web Oficial Sincronizado' : 'Ecosistema Direct-to-Messaging & Micro-Landing'}
                   </span>
-                  <Badge variant={activeTenant?.hasWebsite ? 'info' : 'success'} size="xs">
+                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold border ${
+                    activeTenant?.hasWebsite
+                      ? 'bg-blue-500/15 text-blue-400 border-blue-500/30'
+                      : 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30'
+                  }`}>
                     {activeTenant?.hasWebsite ? 'Google Analytics 4' : 'Atención Directa por WhatsApp'}
-                  </Badge>
+                  </span>
                 </div>
                 <p className="text-[var(--text-muted)] text-xs mt-0.5 font-sans">
                   URL:{' '}
-                  <a
-                    href={activeTenant?.websiteUrl || '#'}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-brand-primary underline"
-                  >
-                    {activeTenant?.websiteUrl || `app.vectorinside.com/m/${activeTenant?.id}`}
-                  </a>{' '}
-                  • ID de Medición: <code className="text-white">{activeTenant?.ga4MeasurementId || 'N/A (Micro-Landing)'}</code>
+                  {activeTenant?.hasWebsite ? (
+                    <a
+                      href={activeTenant.websiteUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-neon underline"
+                    >
+                      {activeTenant.websiteUrl}
+                    </a>
+                  ) : (
+                    <span className="text-neon font-mono">
+                      app.vectorinside.com/m/{activeTenant?.microLandingSlug || activeTenant?.id}
+                    </span>
+                  )}{' '}
+                  • ID de Medición:{' '}
+                  <code className="text-[var(--text-main)] bg-[var(--bg-card)] px-1.5 py-0.5 rounded border border-[var(--border-color)]">
+                    {activeTenant?.ga4MeasurementId || 'Meta CAPI for Messaging'}
+                  </code>
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-[10px] text-zinc-500">Pixel de Meta:</span>
-              <code className="text-white bg-dark-base px-2 py-1 rounded border border-dark-border text-[11px]">
-                {activeTenant?.metaPixelId || 'Conectado Vía Servidor'}
+              <span className="text-[10px] text-[var(--text-muted)]">Pixel / CAPI:</span>
+              <code className="text-[var(--text-main)] bg-[var(--bg-card)] px-2 py-1 rounded border border-[var(--border-color)] text-[11px]">
+                {activeTenant?.metaPixelId || 'Handshake Servidor Activo'}
               </code>
             </div>
           </div>
 
-          {/* Web Telemetry KPI Cards */}
+          {/* KPI Cards adaptadas según sitio web o flujo directo */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
-              title="Sesiones Web Totales"
-              value={webMetrics.sessions ? String(webMetrics.sessions).replace(/\B(?=(\d{3})+(?!\d))/g, ',') : '3,420'}
-              subvalue="Tráfico calificado de pago"
+              title={activeTenant?.hasWebsite ? 'Sesiones Web Totales' : 'Clics a WhatsApp (Pauta)'}
+              value={
+                activeTenant?.hasWebsite
+                  ? (webMetrics.sessions ? String(webMetrics.sessions).replace(/\B(?=(\d{3})+(?!\d))/g, ',') : '3,420')
+                  : '2,450'
+              }
+              subvalue={activeTenant?.hasWebsite ? 'Tráfico calificado de pago' : 'Conversaciones iniciadas'}
               change="+18.4%"
               isPositive={true}
               icon={Users}
-              badgeText="ANALÍTICA WEB"
+              badgeText={activeTenant?.hasWebsite ? 'ANALÍTICA WEB' : 'DIRECT ADS'}
               accentColor="blue"
             />
 
             <StatCard
-              title="Costo por Clic (CPC Web)"
-              value={webMetrics.cpc || '$3.80 MXN'}
-              subvalue="Costo unitario por visita"
+              title={activeTenant?.hasWebsite ? 'Costo por Clic (CPC Web)' : 'Costo por Conversación'}
+              value={webMetrics.cpc || (activeTenant?.hasWebsite ? '$3.80 MXN' : '$2.10 MXN')}
+              subvalue="Costo unitario por prospecto"
               change="-8.2%"
               isPositive={true}
               icon={DollarSign}
-              badgeText="OPTIMO"
+              badgeText="ÓPTIMO"
               accentColor="emerald"
             />
 
             <StatCard
-              title="Conversión a WhatsApp"
-              value={webMetrics.whatsappClickRate || '1.4%'}
-              subvalue={activeTenant?.frictionAlert ? '⚠️ Crítico (< 3.0% Umbral)' : 'Saludable (> 3.0%)'}
+              title="Conversión a Cita / Venta"
+              value={webMetrics.whatsappClickRate || (activeTenant?.hasWebsite ? '1.4%' : '18.4%')}
+              subvalue={
+                activeTenant?.frictionAlert
+                  ? '⚠️ Crítico (< 3.0% Umbral)'
+                  : activeTenant?.hasWebsite
+                  ? 'Saludable (> 3.0%)'
+                  : 'Alta Conversión en Chat'
+              }
               change={activeTenant?.frictionAlert ? '-32.1%' : '+14.5%'}
               isPositive={!activeTenant?.frictionAlert}
               icon={MousePointerClick}
-              badgeText={activeTenant?.frictionAlert ? 'FRICCIÓN' : 'CONVERTING'}
+              badgeText={activeTenant?.frictionAlert ? 'FRICCIÓN' : 'CONVIRTIENDO'}
               accentColor={activeTenant?.frictionAlert ? 'rose' : 'brand'}
             />
 
             <StatCard
-              title="Tasa de Rebote (Landing)"
-              value={webMetrics.bounceRate || '65%'}
-              subvalue="Salidas en primer fold"
-              change="+4.2%"
-              isPositive={false}
+              title="Tasa de Fuga / Rebote"
+              value={activeTenant?.hasWebsite ? (webMetrics.bounceRate || '65%') : '0.0%'}
+              subvalue={activeTenant?.hasWebsite ? 'Salidas en primer fold' : 'Cero rebote (Directo a chat)'}
+              change={activeTenant?.hasWebsite ? '+4.2%' : '-100%'}
+              isPositive={!activeTenant?.hasWebsite}
               icon={TrendingUp}
-              badgeText="DIAGNÓSTICO"
-              accentColor="amber"
+              badgeText={activeTenant?.hasWebsite ? 'DIAGNÓSTICO' : 'GARANTIZADO'}
+              accentColor={activeTenant?.hasWebsite ? 'amber' : 'emerald'}
             />
           </div>
 
-          {/* ========================================================================= */}
-          {/* ALERTA ALGORÍTMICA DE FRICCIÓN WEB                                       */}
-          {/* ========================================================================= */}
-          {activeTenant?.frictionAlert && (
-            <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-amber-950/40 via-dark-surface to-red-950/20 border-2 border-amber-500/50 shadow-[0_0_25px_rgba(245,158,11,0.15)] space-y-4 animate-fade-in">
+          {/* Banner de Diagnóstico según estado del tenant */}
+          {activeTenant?.frictionAlert ? (
+            <div className="p-5 sm:p-6 rounded-2xl bg-amber-500/10 border-2 border-amber-500/40 shadow-sm space-y-4 animate-fade-in font-sans">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-amber-500/20 pb-3">
                 <div className="flex items-center gap-2.5">
-                  <span className="p-2 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                  <span className="p-2 rounded-xl bg-amber-500/20 text-amber-500 border border-amber-500/30">
                     <AlertTriangle className="w-5 h-5" />
                   </span>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono">
-                        Alerta de Conversión: Oportunidad de Mejora en Sitio Web
+                      <h3 className="text-sm font-bold text-[var(--text-main)] uppercase tracking-wider font-mono">
+                        Alerta de Conversión: Fricción Detectada en Sitio Web
                       </h3>
-                      <span className="px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-mono text-[10px] font-bold">
+                      <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-500 font-mono text-[10px] font-bold">
                         Optimización Web
                       </span>
                     </div>
-                    <p className="text-xs text-amber-200/90 mt-0.5">
-                      El tráfico de pago llega al sitio con buen costo unitario, pero la conversión hacia WhatsApp se encuentra por debajo del umbral mínimo del 3.0%.
+                    <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                      {activeTenant?.frictionDiagnosis || 'El tráfico de pago llega al sitio con buen costo unitario, pero la conversión hacia WhatsApp se encuentra por debajo del umbral mínimo del 3.0%.'}
                     </p>
                   </div>
                 </div>
-                <span className="text-xs font-mono px-3 py-1 rounded-lg bg-red-500/20 text-red-300 border border-red-500/30 shrink-0 self-start sm:self-auto font-bold">
+                <span className="text-xs font-mono px-3 py-1 rounded-lg bg-red-500/20 text-red-500 border border-red-500/30 shrink-0 self-start sm:self-auto font-bold">
                   Conversión: {webMetrics.whatsappClickRate} (Crítica)
                 </span>
               </div>
 
-              {/* Recomendaciones Técnicas Inmediatas */}
-              <div className="p-3.5 rounded-xl bg-dark-bg/90 border border-amber-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-                <div className="flex items-start gap-2 text-zinc-300">
+              <div className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-amber-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs font-sans">
+                <div className="flex items-start gap-2 text-[var(--text-main)]">
                   <Lightbulb className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                   <span>
-                    <strong className="text-white">Diagnóstico Comercial:</strong> Aumentar el contraste del botón flotante de WhatsApp, asegurar que el enlace abra directamente la conversación en móvil y optimizar la velocidad de carga (menos de 2.2s).
+                    <strong>Diagnóstico Comercial:</strong> Aumentar el contraste del botón flotante de WhatsApp, asegurar que el enlace abra directamente la conversación en móvil y optimizar la velocidad de carga (menos de 2.2s).
                   </span>
                 </div>
-                <a
-                  href={activeTenant.websiteUrl || '#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-dark-elevated hover:bg-zinc-800 text-xs font-mono text-zinc-300 hover:text-white border border-dark-border shrink-0 transition-colors"
-                >
-                  <span>Auditar Sitio Web</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
+                {activeTenant?.websiteUrl && (
+                  <a
+                    href={activeTenant.websiteUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--bg-panel)] hover:bg-[var(--bg-card-subtle)] text-xs font-mono text-[var(--text-main)] border border-[var(--border-color)] shrink-0 transition-colors"
+                  >
+                    <span>Auditar Sitio Web</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                )}
               </div>
+            </div>
+          ) : (
+            <div className="p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 space-y-2 animate-fade-in font-sans">
+              <div className="flex items-center gap-2.5 text-emerald-600 dark:text-emerald-400 font-bold text-sm">
+                <CheckCircle2 className="w-5 h-5 shrink-0" />
+                <span>
+                  {activeTenant?.hasWebsite
+                    ? 'Sitio Web Saludable y Sincronizado'
+                    : 'Flujo Direct-to-Messaging Activo: Cero Pérdida por Carga Web'}
+                </span>
+              </div>
+              <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+                {activeTenant?.frictionDiagnosis ||
+                  `El ecosistema de ${activeTenant?.name} está captando prospectos calificados sin fricciones. La atribución a través de Meta Conversions API (CAPI) está emparejando el 99.4% de los eventos comerciales.`}
+              </p>
             </div>
           )}
 
           {/* Step-by-Step Funnel Dropoff Chart */}
-          <div className="p-6 rounded-2xl bg-dark-surface border border-dark-border space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-dark-border">
+          <div className="p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-5 shadow-sm">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)]">
               <div>
                 <h3 className="text-base font-bold text-[var(--text-main)]">
-                  Embudo de Conversión Web Paso a Paso
+                  {activeTenant?.hasWebsite ? 'Embudo de Conversión Web Paso a Paso' : 'Embudo Direct-to-Messaging en WhatsApp'}
                 </h3>
                 <p className="text-xs text-[var(--text-muted)]">
-                  Identificación exacta del punto de fuga de visitantes antes de iniciar el chat con el bot
+                  {activeTenant?.hasWebsite
+                    ? 'Identificación exacta del punto de fuga de visitantes antes de iniciar el chat con el bot'
+                    : 'Rastreo de atribución paso a paso desde el anuncio hasta la reserva confirmada'}
                 </p>
               </div>
-              <Badge variant="neon" size="xs">Medición Web</Badge>
+              <Badge variant="neon" size="xs">
+                {activeTenant?.hasWebsite ? 'Medición Web' : 'Direct Meta CAPI'}
+              </Badge>
             </div>
 
-            <div className="space-y-3 font-mono text-xs">
-              {/* Step 1 */}
-              <div>
-                <div className="flex items-center justify-between text-[11px] mb-1">
-                  <span className="text-[var(--text-muted)]">1. Clics en Anuncios de Meta Ads</span>
-                  <span className="text-[var(--text-main)] font-bold">4,800 clics (100%)</span>
+            {activeTenant?.hasWebsite ? (
+              <div className="space-y-3 font-mono text-xs">
+                {/* Step 1 */}
+                <div>
+                  <div className="flex items-center justify-between text-[11px] mb-1">
+                    <span className="text-[var(--text-muted)]">1. Clics en Anuncios de Meta Ads</span>
+                    <span className="text-[var(--text-main)] font-bold">4,800 clics (100%)</span>
+                  </div>
+                  <div className="w-full h-3 rounded-full bg-[var(--bg-card)] overflow-hidden">
+                    <div className="h-full bg-blue-500 rounded-full" style={{ width: '100%' }} />
+                  </div>
                 </div>
-                <div className="w-full h-3 rounded-full bg-dark-base overflow-hidden">
-                  <div className="h-full bg-blue-500 rounded-full" style={{ width: '100%' }} />
-                </div>
-              </div>
 
-              {/* Step 2 */}
-              <div>
-                <div className="flex items-center justify-between text-[11px] mb-1">
-                  <span className="text-zinc-300">2. Carga Completa del Sitio Web (Visitas)</span>
-                  <span className="text-white font-bold">3,420 sesiones (71.2%)</span>
+                {/* Step 2 */}
+                <div>
+                  <div className="flex items-center justify-between text-[11px] mb-1">
+                    <span className="text-[var(--text-muted)]">2. Carga Completa del Sitio Web (Visitas)</span>
+                    <span className="text-[var(--text-main)] font-bold">3,420 sesiones (71.2%)</span>
+                  </div>
+                  <div className="w-full h-3 rounded-full bg-[var(--bg-card)] overflow-hidden">
+                    <div className="h-full bg-blue-400 rounded-full" style={{ width: '71.2%' }} />
+                  </div>
                 </div>
-                <div className="w-full h-3 rounded-full bg-dark-base overflow-hidden">
-                  <div className="h-full bg-blue-400 rounded-full" style={{ width: '71.2%' }} />
-                </div>
-              </div>
 
-              {/* Step 3 */}
-              <div>
-                <div className="flex items-center justify-between text-[11px] mb-1">
-                  <span className="text-zinc-300">3. Lectura de Propuesta Comercial (Scroll &gt; 50%)</span>
-                  <span className="text-white font-bold">2,188 usuarios (45.5%)</span>
+                {/* Step 3 */}
+                <div>
+                  <div className="flex items-center justify-between text-[11px] mb-1">
+                    <span className="text-[var(--text-muted)]">3. Lectura de Propuesta Comercial (Scroll &gt; 50%)</span>
+                    <span className="text-[var(--text-main)] font-bold">2,188 usuarios (45.5%)</span>
+                  </div>
+                  <div className="w-full h-3 rounded-full bg-[var(--bg-card)] overflow-hidden">
+                    <div className="h-full bg-amber-400 rounded-full" style={{ width: '45.5%' }} />
+                  </div>
                 </div>
-                <div className="w-full h-3 rounded-full bg-dark-base overflow-hidden">
-                  <div className="h-full bg-amber-400 rounded-full" style={{ width: '45.5%' }} />
-                </div>
-              </div>
 
-              {/* Step 4 (Dropoff) */}
-              <div>
-                <div className="flex items-center justify-between text-[11px] mb-1">
-                  <span className="text-amber-300 font-bold flex items-center gap-1.5">
-                    <AlertTriangle className="w-3.5 h-3.5" />
-                    4. Clic en Botón de WhatsApp (Punto de Fuga Principal)
-                  </span>
-                  <span className="text-amber-300 font-bold">48 clics (1.4% ⚠️ Fuga del 98.6%)</span>
+                {/* Step 4 (Dropoff) */}
+                <div>
+                  <div className="flex items-center justify-between text-[11px] mb-1">
+                    <span className="text-amber-500 font-bold flex items-center gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      4. Clic en Botón de WhatsApp (Punto de Fuga Principal)
+                    </span>
+                    <span className="text-amber-500 font-bold">48 clics (1.4% ⚠️ Fuga del 98.6%)</span>
+                  </div>
+                  <div className="w-full h-3 rounded-full bg-[var(--bg-card)] overflow-hidden">
+                    <div className="h-full bg-red-500 rounded-full animate-pulse" style={{ width: '10%' }} />
+                  </div>
                 </div>
-                <div className="w-full h-3 rounded-full bg-dark-base overflow-hidden">
-                  <div className="h-full bg-red-500 rounded-full animate-pulse" style={{ width: '10%' }} />
-                </div>
-              </div>
 
-              {/* Step 5 */}
-              <div>
-                <div className="flex items-center justify-between text-[11px] mb-1">
-                  <span className="text-emerald-400 font-bold">5. Conversaciones Iniciadas y Atendidas por IA</span>
-                  <span className="text-emerald-400 font-bold">44 leads (91.6% de los que dieron clic)</span>
-                </div>
-                <div className="w-full h-3 rounded-full bg-dark-base overflow-hidden">
-                  <div className="h-full bg-emerald-400 rounded-full" style={{ width: '9%' }} />
+                {/* Step 5 */}
+                <div>
+                  <div className="flex items-center justify-between text-[11px] mb-1">
+                    <span className="text-emerald-500 font-bold">5. Conversaciones Iniciadas y Atendidas por IA</span>
+                    <span className="text-emerald-500 font-bold">44 leads (91.6% de los que dieron clic)</span>
+                  </div>
+                  <div className="w-full h-3 rounded-full bg-[var(--bg-card)] overflow-hidden">
+                    <div className="h-full bg-emerald-500 rounded-full" style={{ width: '9%' }} />
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="space-y-3 font-mono text-xs">
+                {/* Direct Step 1 */}
+                <div>
+                  <div className="flex items-center justify-between text-[11px] mb-1">
+                    <span className="text-[var(--text-muted)]">1. Clics en Anuncios Click-to-WhatsApp (Meta Ads)</span>
+                    <span className="text-[var(--text-main)] font-bold">2,450 clics (100%)</span>
+                  </div>
+                  <div className="w-full h-3 rounded-full bg-[var(--bg-card)] overflow-hidden">
+                    <div className="h-full bg-blue-500 rounded-full" style={{ width: '100%' }} />
+                  </div>
+                </div>
+
+                {/* Direct Step 2 */}
+                <div>
+                  <div className="flex items-center justify-between text-[11px] mb-1">
+                    <span className="text-[var(--text-muted)]">2. Conversaciones Abiertas en WhatsApp</span>
+                    <span className="text-[var(--text-main)] font-bold">2,406 chats iniciados (98.2% de efectividad)</span>
+                  </div>
+                  <div className="w-full h-3 rounded-full bg-[var(--bg-card)] overflow-hidden">
+                    <div className="h-full bg-emerald-500 rounded-full" style={{ width: '98.2%' }} />
+                  </div>
+                </div>
+
+                {/* Direct Step 3 */}
+                <div>
+                  <div className="flex items-center justify-between text-[11px] mb-1">
+                    <span className="text-[var(--text-muted)]">3. Interacción con el Asistente IA Vector</span>
+                    <span className="text-[var(--text-main)] font-bold">2,165 usuarios atendidos (88.4%)</span>
+                  </div>
+                  <div className="w-full h-3 rounded-full bg-[var(--bg-card)] overflow-hidden">
+                    <div className="h-full bg-neon rounded-full" style={{ width: '88.4%' }} />
+                  </div>
+                </div>
+
+                {/* Direct Step 4 */}
+                <div>
+                  <div className="flex items-center justify-between text-[11px] mb-1">
+                    <span className="text-neon font-bold">4. Consulta de Menú / Disponibilidad</span>
+                    <span className="text-neon font-bold">1,480 prospectos con alta intención (60.4%)</span>
+                  </div>
+                  <div className="w-full h-3 rounded-full bg-[var(--bg-card)] overflow-hidden">
+                    <div className="h-full bg-neon/80 rounded-full" style={{ width: '60.4%' }} />
+                  </div>
+                </div>
+
+                {/* Direct Step 5 */}
+                <div>
+                  <div className="flex items-center justify-between text-[11px] mb-1">
+                    <span className="text-emerald-500 font-bold">5. Citas / Reservas Atribuidas en CAPI</span>
+                    <span className="text-emerald-500 font-bold">452 conversiones cerradas (18.4% de tasa neta)</span>
+                  </div>
+                  <div className="w-full h-3 rounded-full bg-[var(--bg-card)] overflow-hidden">
+                    <div className="h-full bg-emerald-500 rounded-full" style={{ width: '25%' }} />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Traffic Sources & Device Breakdown */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-5 rounded-2xl bg-dark-surface border border-dark-border space-y-3 font-mono text-xs">
-              <span className="text-white font-bold text-sm block font-sans">
+            <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-3 font-mono text-xs shadow-sm">
+              <span className="text-[var(--text-main)] font-bold text-sm block font-sans">
                 Fuentes de Adquisición de Tráfico
               </span>
               <div className="space-y-2">
-                <div className="flex justify-between items-center p-2 rounded-xl bg-dark-base border border-dark-border">
-                  <span>Meta Ads (Instagram / FB)</span>
-                  <span className="text-brand-primary font-bold">72.4% (2,476 visitas)</span>
+                <div className="flex justify-between items-center p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
+                  <span className="text-[var(--text-main)]">Meta Ads (Instagram / FB)</span>
+                  <span className="text-neon font-bold">72.4% (2,476 visitas)</span>
                 </div>
-                <div className="flex justify-between items-center p-2 rounded-xl bg-dark-base border border-dark-border">
-                  <span>Google Búsqueda Orgánica</span>
+                <div className="flex justify-between items-center p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
+                  <span className="text-[var(--text-main)]">Google Búsqueda Orgánica</span>
                   <span className="text-blue-400 font-bold">15.8% (540 visitas)</span>
                 </div>
-                <div className="flex justify-between items-center p-2 rounded-xl bg-dark-base border border-dark-border">
-                  <span>Tráfico Directo / WhatsApp</span>
-                  <span className="text-emerald-400 font-bold">11.8% (404 visitas)</span>
+                <div className="flex justify-between items-center p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
+                  <span className="text-[var(--text-main)]">Tráfico Directo / WhatsApp</span>
+                  <span className="text-emerald-500 font-bold">11.8% (404 visitas)</span>
                 </div>
               </div>
             </div>
 
-            <div className="p-5 rounded-2xl bg-dark-surface border border-dark-border space-y-3 font-mono text-xs">
-              <span className="text-white font-bold text-sm block font-sans">
+            <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-3 font-mono text-xs shadow-sm">
+              <span className="text-[var(--text-main)] font-bold text-sm block font-sans">
                 Distribución por Tipo de Dispositivo
               </span>
               <div className="space-y-2">
-                <div className="flex justify-between items-center p-2 rounded-xl bg-dark-base border border-dark-border">
-                  <span className="flex items-center gap-1.5">
-                    <Smartphone className="w-3.5 h-3.5 text-brand-primary" />
+                <div className="flex justify-between items-center p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
+                  <span className="flex items-center gap-1.5 text-[var(--text-main)]">
+                    <Smartphone className="w-3.5 h-3.5 text-neon" />
                     <span>Dispositivos Móviles (Smartphones)</span>
                   </span>
-                  <span className="text-[var(--text-main)] font-bold">89.2% (Mayoritaria)</span>
+                  <span className="text-emerald-500 font-bold">89.2% (Mayoritaria)</span>
                 </div>
-                <div className="flex justify-between items-center p-2 rounded-xl bg-dark-base border border-dark-border">
-                  <span className="flex items-center gap-1.5">
-                    <Globe className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+                <div className="flex justify-between items-center p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
+                  <span className="flex items-center gap-1.5 text-[var(--text-muted)]">
+                    <Globe className="w-3.5 h-3.5" />
                     <span>Computadoras de Escritorio (Desktop)</span>
                   </span>
                   <span className="text-[var(--text-muted)] font-bold">10.8%</span>
@@ -535,14 +627,14 @@ export const PerformanceDashboard = () => {
           </div>
 
           {/* Main Chart: Real Revenue vs Spend & Hook Rate */}
-          <div className="p-6 rounded-2xl bg-dark-surface border border-dark-border space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-dark-border">
+          <div className="p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-4 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-[var(--border-color)]">
               <div>
                 <h3 className="text-base font-bold text-[var(--text-main)]">
                   Curva de Atribución y Hook Rate
                 </h3>
                 <p className="text-xs text-[var(--text-muted)]">
-                  Ingresos atribuidos por el sistema de Vector Inside vs Gasto Diario en Meta Ads
+                  Ingresos atribuidos por el sistema de Vector Inside vs Gasto Diario en Meta Ads ({activeTenant?.name})
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -556,25 +648,25 @@ export const PerformanceDashboard = () => {
                 <AreaChart data={series} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#D4FF00" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="#D4FF00" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#C3F400" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#C3F400" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="colorSpend" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
                       <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1F242D" />
-                  <XAxis dataKey="date" stroke="#71717A" fontSize={11} tickLine={false} />
-                  <YAxis stroke="#71717A" fontSize={11} tickLine={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+                  <XAxis dataKey="date" stroke="var(--text-muted)" fontSize={11} tickLine={false} />
+                  <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#12151A',
-                      borderColor: '#1F242D',
+                      backgroundColor: 'var(--bg-panel)',
+                      borderColor: 'var(--border-color)',
                       borderRadius: '12px',
-                      color: '#FFFFFF',
+                      color: 'var(--text-main)',
                       fontSize: '12px',
-                      fontFamily: 'JetBrains Mono, monospace',
+                      fontFamily: 'monospace',
                     }}
                   />
                   <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
@@ -582,7 +674,7 @@ export const PerformanceDashboard = () => {
                     type="monotone"
                     dataKey="revenue"
                     name="Ingreso Atribuido ($ USD)"
-                    stroke="#D4FF00"
+                    stroke="#C3F400"
                     strokeWidth={2.5}
                     fillOpacity={1}
                     fill="url(#colorRevenue)"
@@ -602,23 +694,23 @@ export const PerformanceDashboard = () => {
           </div>
 
           {/* Live CAPI Stream Logs Table */}
-          <div className="p-6 rounded-2xl bg-dark-surface border border-dark-border space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-dark-border">
+          <div className="p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-4 shadow-sm">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)]">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <h3 className="text-sm font-bold text-white uppercase font-mono tracking-wider">
+                <h3 className="text-sm font-bold text-[var(--text-main)] uppercase font-mono tracking-wider">
                   Registro de Conversiones en Tiempo Real
                 </h3>
               </div>
-              <span className="text-xs text-zinc-500 font-mono">
-                Conexión en Vivo con Meta Ads
+              <span className="text-xs text-[var(--text-muted)] font-mono">
+                Conexión en Vivo con Meta Ads ({activeTenant?.shortName || activeTenant?.name})
               </span>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs font-mono">
                 <thead>
-                  <tr className="border-b border-dark-border text-zinc-500 uppercase text-[10px]">
+                  <tr className="border-b border-[var(--border-color)] text-[var(--text-muted)] uppercase text-[10px]">
                     <th className="py-2.5 px-3">Evento Comercial</th>
                     <th className="py-2.5 px-3">Fecha y Hora</th>
                     <th className="py-2.5 px-3">Valor Atribuido</th>
@@ -626,18 +718,18 @@ export const PerformanceDashboard = () => {
                     <th className="py-2.5 px-3">Canal de Origen</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-dark-border/60 text-[var(--text-main)]">
+                <tbody className="divide-y divide-[var(--border-color)] text-[var(--text-main)]">
                   {capiLogs.map((log) => (
-                    <tr key={log.id} className="hover:bg-dark-elevated/40 transition-colors">
+                    <tr key={log.id} className="hover:bg-[var(--bg-card)] transition-colors">
                       <td className="py-3 px-3 font-semibold text-[var(--text-main)] flex items-center gap-2">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                        {log.event}
+                        {cleanConcept(log.event)}
                       </td>
                       <td className="py-3 px-3 text-[var(--text-muted)]">{log.timestamp}</td>
-                      <td className="py-3 px-3 font-bold text-brand-primary">{log.value}</td>
+                      <td className="py-3 px-3 font-bold text-neon">{log.value}</td>
                       <td className="py-3 px-3">
-                        <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-bold">
-                          {log.status}
+                        <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-bold">
+                          {cleanConcept(log.status)}
                         </span>
                       </td>
                       <td className="py-3 px-3 text-[var(--text-muted)]">{log.signalSource}</td>
@@ -654,18 +746,19 @@ export const PerformanceDashboard = () => {
       {/* PESTAÑA 3: MICRO-LANDING & ENLACE EN BIO                                   */}
       {/* ========================================================================= */}
       {activeTab === 'microlanding' && (
-        <div className="space-y-6 animate-fadeIn">
-          <div className="p-6 rounded-3xl bg-dark-surface border border-dark-border flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-6 animate-fade-in">
+          <div className="p-6 rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
             <div className="flex items-center gap-3">
-              <span className="p-3 rounded-2xl bg-brand-primary/10 text-brand-primary border border-brand-primary/30">
+              <span className="p-3 rounded-2xl bg-neon/10 text-neon border border-neon/30">
                 <Smartphone className="w-6 h-6" />
               </span>
               <div>
                 <h3 className="text-xl font-bold text-[var(--text-main)] tracking-tight flex items-center gap-2">
-                  Micro-Landing Page de {activeTenant?.name}
+                  <span>{activeTenant?.avatar}</span>
+                  <span>Micro-Landing Page de {activeTenant?.name}</span>
                 </h3>
                 <p className="text-xs text-[var(--text-muted)] font-mono">
-                  Diseño móvil ultraligero alojado en: app.vectorinside.com/m/{activeTenant?.id}
+                  Diseño móvil ultraligero alojado en: app.vectorinside.com/m/{activeTenant?.microLandingSlug || activeTenant?.id}
                 </p>
               </div>
             </div>
@@ -674,15 +767,15 @@ export const PerformanceDashboard = () => {
               <button
                 type="button"
                 onClick={handleCopyPublicLink}
-                className="px-4 py-2 rounded-xl bg-dark-base hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] text-xs font-mono font-bold border border-dark-border flex items-center gap-1.5 transition-all"
+                className="px-4 py-2 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] text-xs font-mono font-bold border border-[var(--border-color)] flex items-center gap-1.5 transition-all shadow-sm"
               >
-                {copiedLink ? <Check className="w-4 h-4 text-brand-primary" /> : <ExternalLink className="w-4 h-4" />}
+                {copiedLink ? <Check className="w-4 h-4 text-neon" /> : <ExternalLink className="w-4 h-4" />}
                 <span>{copiedLink ? '¡Copiado!' : 'Copiar URL Pública'}</span>
               </button>
               <button
                 type="button"
                 onClick={() => setShowMicroLandingModal(true)}
-                className="px-4 py-2 rounded-xl bg-brand-primary text-black font-bold text-xs font-mono shadow-neon-sm hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-1.5"
+                className="px-4 py-2 rounded-xl bg-neon text-black font-bold text-xs font-mono shadow-[0_0_15px_rgba(231,249,0,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-1.5"
               >
                 <Smartphone className="w-4 h-4" />
                 <span>Previsualización Móvil</span>
@@ -692,8 +785,8 @@ export const PerformanceDashboard = () => {
 
           {/* Micro-Landing Key Benefits Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
-            <div className="p-5 rounded-2xl bg-dark-surface border border-dark-border space-y-2">
-              <span className="text-brand-primary font-bold text-xs flex items-center gap-1.5">
+            <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2 shadow-sm">
+              <span className="text-neon font-bold text-xs flex items-center gap-1.5">
                 <Sparkles className="w-4 h-4" />
                 1. Cero Pérdida de Carga Web
               </span>
@@ -702,7 +795,7 @@ export const PerformanceDashboard = () => {
               </p>
             </div>
 
-            <div className="p-5 rounded-2xl bg-dark-surface border border-dark-border space-y-2">
+            <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2 shadow-sm">
               <span className="text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4" />
                 2. Directo a WhatsApp Cloud API
@@ -712,8 +805,8 @@ export const PerformanceDashboard = () => {
               </p>
             </div>
 
-            <div className="p-5 rounded-2xl bg-dark-surface border border-dark-border space-y-2">
-              <span className="text-blue-600 dark:text-blue-400 font-bold text-xs flex items-center gap-1.5">
+            <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2 shadow-sm">
+              <span className="text-blue-500 font-bold text-xs flex items-center gap-1.5">
                 <QrCode className="w-4 h-4" />
                 3. QR para Mostrador Físico
               </span>
@@ -724,26 +817,83 @@ export const PerformanceDashboard = () => {
           </div>
 
           {/* Quick Preview Embed */}
-          <div className="p-6 rounded-3xl bg-dark-surface border border-dark-border flex flex-col items-center justify-center space-y-4">
-            <span className="text-xs font-mono text-[var(--text-muted)]">
-              Vista previa rápida de la micro-landing oficial:
-            </span>
-            <div className="w-full max-w-sm h-[500px] rounded-3xl bg-black border-2 border-zinc-800 shadow-2xl overflow-hidden">
+          <div className="p-8 rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex flex-col items-center justify-center space-y-6 shadow-sm relative overflow-hidden">
+            {/* Ambient background glow */}
+            <div className="absolute inset-0 bg-radial from-neon/5 via-transparent to-transparent pointer-events-none" />
+
+            <div className="flex flex-col sm:flex-row items-center justify-between w-full max-w-xl gap-3 z-10">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-xs font-mono font-bold text-[var(--text-main)]">
+                  Simulador en Vivo: {activeTenant?.name}
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[var(--text-muted)] font-mono">
+                  /m/{activeTenant?.microLandingSlug || activeTenant?.id || 'dental'}
+                </span>
+              </div>
+              <Button
+                variant="primary"
+                size="sm"
+                className="gap-2 shadow-lg shadow-neon/20 hover:scale-105 transition-all text-xs"
+                onClick={() => setShowMicroLandingModal(true)}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Abrir Studio Completo</span>
+              </Button>
+            </div>
+
+            {/* Framed Mobile Mockup */}
+            <div className="relative w-full max-w-[320px] h-[580px] rounded-[44px] bg-black border-[7px] border-zinc-800 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)] overflow-hidden z-10 flex flex-col ring-1 ring-white/10">
+              {/* Top Notch / Dynamic Island */}
+              <div className="absolute top-2 left-1/2 -translate-x-1/2 w-24 h-5 bg-black rounded-full z-20 flex items-center justify-center border border-zinc-800/80 shadow-inner">
+                <div className="w-2.5 h-2.5 rounded-full bg-zinc-900 border border-zinc-800 mr-2" />
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/80 animate-pulse" />
+              </div>
+
+              {/* Iframe content */}
               <iframe
-                src={`/m/${activeTenant?.id || 'dental'}`}
+                src={`/m/${activeTenant?.microLandingSlug || activeTenant?.id || 'dental'}?preview=true`}
                 title="MicroLanding Quick Preview"
-                className="w-full h-full border-0"
+                className="w-full h-full border-0 pt-0 bg-black"
               />
             </div>
-            <a
-              href={`/m/${activeTenant?.id || 'dental'}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs font-mono text-brand-primary underline flex items-center gap-1"
-            >
-              <span>Abrir en pestaña completa (/m/{activeTenant?.id || 'dental'})</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
+
+            {/* Quick Actions Footer */}
+            <div className="flex flex-wrap items-center justify-center gap-3 z-10 pt-2">
+              <button
+                onClick={() => {
+                  const url = typeof window !== 'undefined' 
+                    ? `${window.location.origin}/m/${activeTenant?.microLandingSlug || activeTenant?.id || 'dental'}`
+                    : `https://vector.lat/m/${activeTenant?.microLandingSlug || activeTenant?.id || 'dental'}`;
+                  navigator.clipboard.writeText(url);
+                  setCopiedLink(true);
+                  setTimeout(() => setCopiedLink(false), 2000);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-[var(--text-main)] transition-colors"
+              >
+                {copiedLink ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-emerald-400">¡Enlace Copiado!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+                    <span>Copiar Enlace Bio</span>
+                  </>
+                )}
+              </button>
+
+              <a
+                href={`/m/${activeTenant?.microLandingSlug || activeTenant?.id || 'dental'}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-neon transition-colors"
+              >
+                <span>Abrir Pestaña Completa</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
           </div>
         </div>
       )}

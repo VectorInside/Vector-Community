@@ -2,13 +2,40 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { INITIAL_TENANTS_DATA } from '@/utils/constants';
+import { useTenantStore } from '@/hooks/useTenant';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [role, setRole] = useState('admin'); // 'admin' (Lobo Vectorial) | 'client' (Dueño Negocio)
-  const [theme, setTheme] = useState('dark');
-  const [activeTenantKey, setActiveTenantKey] = useState('dental');
+  const [role, setRole] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const savedRole = localStorage.getItem('vector_role');
+        if (savedRole === 'admin' || savedRole === 'client') return savedRole;
+      } catch (e) {}
+    }
+    return 'admin';
+  });
+
+  const [theme, setTheme] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const savedTheme = localStorage.getItem('vector_theme');
+        if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme;
+      } catch (e) {}
+    }
+    return 'dark';
+  });
+
+  const [activeTenantKey, setActiveTenantKey] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const savedTenant = localStorage.getItem('vector_active_tenant_key');
+        if (savedTenant) return savedTenant;
+      } catch (e) {}
+    }
+    return 'dental';
+  });
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [modal, setModal] = useState({
     isOpen: false,
@@ -30,7 +57,7 @@ export const AuthProvider = ({ children }) => {
         setRole(savedRole);
       }
       const savedTenant = localStorage.getItem('vector_active_tenant_key');
-      if (savedTenant && INITIAL_TENANTS_DATA[savedTenant]) {
+      if (savedTenant) {
         setActiveTenantKey(savedTenant);
       }
       const savedCollapsed = localStorage.getItem('vector_sidebar_collapsed');
@@ -77,10 +104,67 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
-  const switchRole = (newRole) => {
+  const switchRole = (newRole, newTenantKey = null, force = false) => {
+    // Si un usuario intenta escalar de cliente a admin sin pasar por login ni tener rol real de admin, bloquear
+    if (!force && role === 'client' && newRole === 'admin') {
+      const storedRealRole = typeof window !== 'undefined' ? localStorage.getItem('vector_real_role') : null;
+      if (storedRealRole !== 'admin') {
+        console.warn('[RBAC Security Guard] Intento de escalación de privilegios bloqueado.');
+        return;
+      }
+    }
     setRole(newRole);
     if (typeof window !== 'undefined') {
       localStorage.setItem('vector_role', newRole);
+      if (force && newRole === 'admin') {
+        localStorage.setItem('vector_real_role', 'admin');
+      }
+    }
+    if (newTenantKey) {
+      setActiveTenantKey(newTenantKey);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('vector_active_tenant_key', newTenantKey);
+        localStorage.setItem('vector_active_tenant_id', newTenantKey);
+      }
+      try {
+        useTenantStore.getState().setActiveTenantId(newTenantKey);
+      } catch (e) {}
+    }
+  };
+
+  const loginAs = (userData) => {
+    if (!userData) return;
+    const targetRole = userData.role || 'admin';
+    const targetTenant = userData.tenantKey || activeTenantKey || 'dental';
+
+    setRole(targetRole);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('vector_role', targetRole);
+      localStorage.setItem('vector_real_role', targetRole);
+      localStorage.setItem('vector_user_id', userData.id || '');
+    }
+
+    if (targetRole === 'client' && userData.tenantKey) {
+      setActiveTenantKey(userData.tenantKey);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('vector_active_tenant_key', userData.tenantKey);
+        localStorage.setItem('vector_active_tenant_id', userData.tenantKey);
+      }
+      try {
+        useTenantStore.getState().setActiveTenantId(userData.tenantKey);
+      } catch (e) {}
+    } else if (targetRole === 'admin') {
+      // Si es admin, puede navegar entre todos los negocios; preservamos el tenant activo actual o asignamos el primero
+      if (targetTenant) {
+        setActiveTenantKey(targetTenant);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('vector_active_tenant_key', targetTenant);
+          localStorage.setItem('vector_active_tenant_id', targetTenant);
+        }
+        try {
+          useTenantStore.getState().setActiveTenantId(targetTenant);
+        } catch (e) {}
+      }
     }
   };
 
@@ -108,12 +192,19 @@ export const AuthProvider = ({ children }) => {
   }, [tenantsData]);
 
   const switchTenantContext = (tenantKey) => {
-    if (tenantsData[tenantKey]) {
-      setActiveTenantKey(tenantKey);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('vector_active_tenant_key', tenantKey);
-      }
+    // Aislamiento Multi-Tenant: Si el usuario es cliente, no permitir cambiar a otro tenant
+    if (role === 'client') {
+      console.warn('[RLS Multi-Tenant] Operación denegada: Un usuario con rol Cliente está aislado y no puede conmutar el espacio de trabajo.');
+      return;
     }
+    setActiveTenantKey(tenantKey);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('vector_active_tenant_key', tenantKey);
+      localStorage.setItem('vector_active_tenant_id', tenantKey);
+    }
+    try {
+      useTenantStore.getState().setActiveTenantId(tenantKey);
+    } catch (e) {}
   };
 
   const toggleTenantAi = (tenantKey) => {
@@ -166,11 +257,17 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
-  const registerTenant = (newTenant) => {
+  const registerTenant = (newTenant, makeActive = true) => {
     setTenantsData((prev) => ({
       ...prev,
       [newTenant.id]: newTenant,
     }));
+    if (makeActive && newTenant?.id) {
+      setActiveTenantKey(newTenant.id);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('vector_active_tenant_key', newTenant.id);
+      }
+    }
   };
 
   const deleteTenant = (tenantId) => {
@@ -213,7 +310,7 @@ export const AuthProvider = ({ children }) => {
     closeModal();
   };
 
-  const activeTenant = tenantsData[activeTenantKey] || tenantsData.dental;
+  const activeTenant = tenantsData[activeTenantKey] || Object.values(tenantsData)[0] || tenantsData.dental;
 
   const isAdmin = role === 'admin';
   const isClient = role === 'client';
@@ -225,6 +322,7 @@ export const AuthProvider = ({ children }) => {
         isAdmin,
         isClient,
         switchRole,
+        loginAs,
         theme,
         toggleTheme,
         activeTenantKey,
