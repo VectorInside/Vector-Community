@@ -87,16 +87,104 @@ export function recomputeShiftsHours(shifts, durationMin = 60) {
   }));
 }
 
-export function replaceEmailVariables(text, vars) {
+export const TENANT_EMAIL_TEMPLATES = {
+  dental: {
+    senderName: 'Clínica Odontológica Integral',
+    senderEmail: 'citas@odontologiaintegral.com',
+    logoAvatar: '🦷',
+    accentColor: '#D4FF00',
+    subject: '✅ Cita Confirmada: {{servicio}} en {{negocio}}',
+    welcomeMessage: '¡Hola, {{cliente}}! Tu cita odontológica ha sido agendada con éxito en nuestro sistema.',
+    instructions: 'Por favor preséntate 10 minutos antes. Es indispensable traer una identificación oficial y tus estudios o radiografías previas.',
+    locationType: 'physical',
+    locationAddress: 'Av. Insurgentes Sur 1234, Consultorio 302, Benito Juárez, CDMX',
+    virtualLink: 'https://meet.google.com/vector-dental-cita',
+    cancellationPolicy: 'Puedes cancelar o reprogramar sin costo notificando con al menos 24 horas de antelación vía WhatsApp o llamando al consultorio.',
+    ctaText: 'Añadir a Google Calendar / Outlook',
+    includeIcs: true,
+    includeWhatsapp: true,
+    sampleClient: 'Carlos Villaseñor',
+    sampleClientEmail: 'carlos.villasenor@gmail.com',
+    sampleService: 'Limpieza Dental y Profilaxis Ultrasónica',
+    sampleSpecialist: 'Dra. Claudia Ortiz (Ortodoncia)',
+    sampleDateTime: 'Viernes 23 Octubre 2026 • 11:00 hrs',
+  },
+  polanco: {
+    senderName: 'Polanco Steakhouse & Mixology',
+    senderEmail: 'reservas@polancosteakhouse.mx',
+    logoAvatar: '🥩',
+    accentColor: '#F97316',
+    subject: '🥩 Reservación Confirmada: {{servicio}} en {{negocio}}',
+    welcomeMessage: '¡Hola, {{cliente}}! Tu reservación gastronómica ha sido confirmada con éxito en nuestro sistema.',
+    instructions: 'Mesa reservada con 15 minutos de tolerancia. Código de vestimenta: Smart Casual. Si requieres área de terraza o atención especial, infórmanos con anticipación.',
+    locationType: 'physical',
+    locationAddress: 'Campos Elíseos 204, Polanco IV Sección, Miguel Hidalgo, CDMX',
+    virtualLink: '',
+    cancellationPolicy: 'Cancelaciones o ajuste de comensales sin penalización hasta 4 horas antes de tu horario reservado vía WhatsApp.',
+    ctaText: 'Añadir a Google Calendar / Outlook',
+    includeIcs: true,
+    includeWhatsapp: true,
+    sampleClient: 'Alejandro Bastida',
+    sampleClientEmail: 'alejandro.bastida@empresa.com',
+    sampleService: 'Reserva VIP Terraza & Menú Degustación (4 pax)',
+    sampleSpecialist: 'Capitán de Salón: Marco Aurelio',
+    sampleDateTime: 'Viernes 23 Octubre 2026 • 20:30 hrs',
+  },
+  urban: {
+    senderName: 'Urban Motors & Sneaks Premium',
+    senderEmail: 'citas@urbansneaks.shop',
+    logoAvatar: '👟',
+    accentColor: '#06B6D4',
+    subject: '📦 Turno Confirmado: {{servicio}} en {{negocio}}',
+    welcomeMessage: '¡Hola, {{cliente}}! Tu turno de servicio y entrega ha sido agendado con éxito.',
+    instructions: 'Presenta tu confirmación digital o identificación al ingresar. El tiempo estimado de atención es de 45 minutos.',
+    locationType: 'physical',
+    locationAddress: 'Av. Vasco de Quiroga 3800, Santa Fe, Cuajimalpa, CDMX',
+    virtualLink: 'https://meet.google.com/urban-soporte',
+    cancellationPolicy: 'Puedes reprogramar tu turno con al menos 12 horas de antelación vía WhatsApp.',
+    ctaText: 'Añadir a Google Calendar / Outlook',
+    includeIcs: true,
+    includeWhatsapp: true,
+    sampleClient: 'Lic. Valeria Domínguez',
+    sampleClientEmail: 'valeria.dominguez@live.com',
+    sampleService: 'Tratamiento Cerámico 9H & Entrega Exclusiva',
+    sampleSpecialist: 'Master Detailer: Ing. Roberto S.',
+    sampleDateTime: 'Viernes 23 Octubre 2026 • 15:30 hrs',
+  },
+  corp: {
+    senderName: 'Vector Corporate Solutions B2B',
+    senderEmail: 'enterprise@vectorinside.com',
+    logoAvatar: '🏢',
+    accentColor: '#3B82F6',
+    subject: '💼 Sesión Confirmada: {{servicio}} con {{negocio}}',
+    welcomeMessage: '¡Hola, {{cliente}}! Tu sesión ejecutiva de consultoría ha sido confirmada en nuestra agenda corporativa.',
+    instructions: 'La sesión se llevará a cabo por Google Meet cifrado. Se sugiere contar con diagramas de arquitectura y métricas listas para compartir pantalla.',
+    locationType: 'virtual',
+    locationAddress: 'Sesión Virtual Segura (Google Meet Cifrado S2S) • Torre Chapultepec Piso 28, CDMX',
+    virtualLink: 'https://meet.google.com/vector-enterprise-b2b',
+    cancellationPolicy: 'Puedes reprogramar la sesión con al menos 2 horas de anticipación a través del enlace de Google Calendar.',
+    ctaText: 'Añadir a Google Calendar / Outlook',
+    includeIcs: true,
+    includeWhatsapp: true,
+    sampleClient: 'Lic. Rodrigo Elizondo (VP Operaciones)',
+    sampleClientEmail: 'rodrigo.elizondo@logisticaglobal.com',
+    sampleService: 'Discovery Call & Auditoría IA de Pipeline ($45k USD)',
+    sampleSpecialist: 'Director de Soluciones: Marcos V.',
+    sampleDateTime: 'Viernes 23 Octubre 2026 • 11:00 hrs',
+  },
+};
+
+export function replaceEmailVariables(text, vars = {}, tenantKey = 'dental') {
   if (!text) return '';
+  const template = TENANT_EMAIL_TEMPLATES[tenantKey] || TENANT_EMAIL_TEMPLATES.dental;
   return text
-    .replaceAll('{{cliente}}', vars.client || 'Carlos Villaseñor')
-    .replaceAll('{{servicio}}', vars.service || 'Limpieza Dental y Profilaxis')
-    .replaceAll('{{fecha}}', vars.date || 'Viernes 23 de Octubre, 2026')
-    .replaceAll('{{hora}}', vars.hour || '11:00 hrs')
-    .replaceAll('{{especialista}}', vars.specialist || 'Dra. Claudia Ortiz (Ortodoncia)')
-    .replaceAll('{{negocio}}', vars.business || 'Clínica Odontológica Integral')
-    .replaceAll('{{ubicacion}}', vars.location || 'Av. Insurgentes Sur 1234, CDMX');
+    .replaceAll('{{cliente}}', vars?.cliente || vars?.client || template.sampleClient)
+    .replaceAll('{{servicio}}', vars?.servicio || vars?.service || template.sampleService)
+    .replaceAll('{{fecha}}', vars?.fecha || vars?.date || template.sampleDateTime?.split('•')[0]?.trim() || 'Viernes 23 de Octubre, 2026')
+    .replaceAll('{{hora}}', vars?.hora || vars?.hour || template.sampleDateTime?.split('•')[1]?.trim() || '11:00 hrs')
+    .replaceAll('{{especialista}}', vars?.especialista || vars?.specialist || template.sampleSpecialist)
+    .replaceAll('{{negocio}}', vars?.negocio || vars?.business || template.senderName)
+    .replaceAll('{{ubicacion}}', vars?.ubicacion || vars?.location || template.locationAddress);
 }
 
 const DAYS_OF_WEEK = [
@@ -575,22 +663,35 @@ export const MasterAgenda = () => {
     };
   });
 
-  const [emailConfig, setEmailConfig] = useState({
-    senderName: activeTenant?.name || 'Clínica Odontológica Integral',
-    senderEmail: `citas@${activeTenant?.id === 'dental' ? 'clinicadental' : activeTenant?.id || 'negocio'}.com`,
-    logoAvatar: activeTenant?.avatar || '🦷',
-    accentColor: '#D4FF00',
-    subject: '✅ Cita Confirmada: {{servicio}} en {{negocio}}',
-    welcomeMessage: '¡Hola, {{cliente}}! Tu cita ha sido agendada con éxito en nuestro sistema.',
-    instructions: 'Por favor preséntate 10 minutos antes. Es indispensable traer una identificación oficial y tus estudios o radiografías previas.',
-    locationType: 'physical',
-    locationAddress: 'Av. Insurgentes Sur 1234, Consultorio 302, Benito Juárez, CDMX',
-    virtualLink: 'https://meet.google.com/vector-cita-oficial',
-    cancellationPolicy: 'Puedes cancelar o reprogramar sin costo notificando con al menos 24 horas de antelación vía WhatsApp o llamando al consultorio.',
-    ctaText: 'Añadir a Google Calendar / Outlook',
-    includeIcs: true,
-    includeWhatsapp: true,
+  const activeKey = activeTenant?.id || activeTenantId || 'dental';
+
+  // Almacenar configuraciones por tenant de forma estrictamente aislada
+  const [tenantEmailConfigs, setTenantEmailConfigs] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('vector_email_configs_by_tenant');
+        if (saved) return { ...TENANT_EMAIL_TEMPLATES, ...JSON.parse(saved) };
+      } catch (e) {}
+    }
+    return TENANT_EMAIL_TEMPLATES;
   });
+
+  const emailConfig = tenantEmailConfigs[activeKey] || TENANT_EMAIL_TEMPLATES[activeKey] || TENANT_EMAIL_TEMPLATES.dental;
+  const currentTenantTemplate = TENANT_EMAIL_TEMPLATES[activeKey] || TENANT_EMAIL_TEMPLATES.dental;
+
+  const setEmailConfig = (updaterOrObj) => {
+    setTenantEmailConfigs((prev) => {
+      const current = prev[activeKey] || TENANT_EMAIL_TEMPLATES[activeKey] || TENANT_EMAIL_TEMPLATES.dental;
+      const newObj = typeof updaterOrObj === 'function' ? updaterOrObj(current) : updaterOrObj;
+      const updated = { ...prev, [activeKey]: newObj };
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('vector_email_configs_by_tenant', JSON.stringify(updated));
+        } catch (e) {}
+      }
+      return updated;
+    });
+  };
 
   // Sincronizar si cambia el tenant activo
   useEffect(() => {
@@ -599,12 +700,6 @@ export const MasterAgenda = () => {
       ...base,
       shifts: recomputeShiftsHours(base.shifts || [], base.slotDurationMin || 60),
     });
-    setEmailConfig((prev) => ({
-      ...prev,
-      senderName: activeTenant?.name || prev.senderName,
-      senderEmail: `citas@${activeTenant?.id || 'negocio'}.com`,
-      logoAvatar: activeTenant?.avatar || '🏢',
-    }));
   }, [activeTenantId, activeTenant]);
 
   const handleUpdateDuration = (newDuration) => {
@@ -2130,14 +2225,14 @@ export const MasterAgenda = () => {
                           <span className="text-[10px] text-[var(--text-muted)]">hace 1 minuto</span>
                         </div>
                         <div className="text-[var(--text-muted)] text-[11px]">
-                          <strong className="text-[var(--text-main)]">Para:</strong> Carlos Villaseñor &lt;carlos.villasenor@gmail.com&gt;
+                          <strong className="text-[var(--text-main)]">Para:</strong> {currentTenantTemplate.sampleClient} &lt;{currentTenantTemplate.sampleClientEmail}&gt;
                         </div>
                         <div className="text-[var(--text-main)] font-bold text-xs pt-1 truncate">
                           {replaceEmailVariables(emailConfig.subject, {
-                            cliente: 'Carlos Villaseñor',
-                            servicio: 'Limpieza Dental y Profilaxis',
+                            cliente: currentTenantTemplate.sampleClient,
+                            servicio: currentTenantTemplate.sampleService,
                             negocio: emailConfig.senderName,
-                          })}
+                          }, activeKey)}
                         </div>
                       </div>
 
@@ -2150,7 +2245,7 @@ export const MasterAgenda = () => {
                         <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)]">
                           <div className="flex items-center gap-3">
                             <span className="text-2xl p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
-                              {emailConfig.logoAvatar || '🏢'}
+                              {emailConfig.logoAvatar || activeTenant?.avatar || '🏢'}
                             </span>
                             <div>
                               <h4 className="text-sm font-bold text-[var(--text-main)] leading-tight">{emailConfig.senderName}</h4>
@@ -2173,10 +2268,10 @@ export const MasterAgenda = () => {
                         <div className="space-y-1.5">
                           <p className="text-sm font-semibold text-[var(--text-main)]">
                             {replaceEmailVariables(emailConfig.welcomeMessage, {
-                              cliente: 'Carlos Villaseñor',
-                              servicio: 'Limpieza Dental y Profilaxis',
-                              especialista: 'Dra. Claudia Ortiz',
-                            })}
+                              cliente: currentTenantTemplate.sampleClient,
+                              servicio: currentTenantTemplate.sampleService,
+                              especialista: currentTenantTemplate.sampleSpecialist,
+                            }, activeKey)}
                           </p>
                           <p className="text-xs text-[var(--text-muted)] leading-relaxed">
                             A continuación encontrarás los detalles completos de tu cita programada y el archivo para sincronizarlo con tu calendario personal.
@@ -2187,15 +2282,15 @@ export const MasterAgenda = () => {
                         <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-2 text-xs font-mono">
                           <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-2">
                             <span className="text-[var(--text-muted)]">Servicio Reservado:</span>
-                            <strong className="text-[var(--text-main)]">Limpieza Dental y Profilaxis</strong>
+                            <strong className="text-[var(--text-main)]">{currentTenantTemplate.sampleService}</strong>
                           </div>
                           <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-2">
                             <span className="text-[var(--text-muted)]">Fecha y Hora:</span>
-                            <strong className="text-[var(--text-main)]">Viernes 23 Octubre 2026 • 11:00 hrs</strong>
+                            <strong className="text-[var(--text-main)]">{currentTenantTemplate.sampleDateTime}</strong>
                           </div>
                           <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-2">
-                            <span className="text-[var(--text-muted)]">Especialista:</span>
-                            <span className="text-[var(--text-main)]">Dra. Claudia Ortiz (Ortodoncia)</span>
+                            <span className="text-[var(--text-muted)]">Especialista / Anfitrión:</span>
+                            <span className="text-[var(--text-main)]">{currentTenantTemplate.sampleSpecialist}</span>
                           </div>
                           <div className="flex items-center justify-between">
                             <span className="text-[var(--text-muted)]">Ubicación:</span>

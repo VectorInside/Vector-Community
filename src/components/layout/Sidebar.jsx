@@ -22,6 +22,7 @@ import {
   Shield,
   UserCheck,
   X,
+  CalendarCheck,
 } from 'lucide-react';
 import { VectorInsideLogo } from '@/components/common/VectorInsideLogo';
 import { getNavigationForRole } from '@/utils/modulesRegistry';
@@ -32,6 +33,7 @@ const iconMap = {
   Crosshair,
   Megaphone,
   CalendarDays,
+  CalendarCheck,
   MessageSquare,
   Users,
   BarChart3,

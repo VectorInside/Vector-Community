@@ -46,12 +46,21 @@ function formatIcsDate(dateObj) {
   );
 }
 
+// Helper to get tenant location fallback
+export function getTenantDefaultAddress(tenant) {
+  if (tenant?.address) return tenant.address;
+  if (tenant?.id === 'polanco') return 'Campos Elíseos 204, Polanco IV Sección, Miguel Hidalgo, CDMX';
+  if (tenant?.id === 'urban') return 'Av. Vasco de Quiroga 3800, Santa Fe, Cuajimalpa, CDMX';
+  if (tenant?.id === 'corp') return 'Torre Chapultepec Piso 28, Paseo de la Reforma 505, CDMX';
+  return 'Av. Insurgentes Sur 1234, Consultorio 302, Benito Juárez, CDMX';
+}
+
 // Generate RFC 5545 .ics calendar file content
 export function generateIcsContent(apt, tenant) {
-  const tenantName = tenant?.name || 'Vector Inside';
+  const tenantName = tenant?.name || (tenant?.id === 'polanco' ? 'Polanco Steakhouse' : 'Vector Inside');
   const title = apt?.title || `Cita: ${apt?.serviceName || 'Servicio'} con ${tenantName}`;
   const details = `${apt?.details || 'Cita confirmada en Vector Inside'}. Especialista: ${apt?.specialist || 'Asignado'}. Teléfono: ${apt?.phone || 'N/A'}`;
-  const location = tenant?.address || 'Av. Insurgentes Sur 1234, CDMX';
+  const location = getTenantDefaultAddress(tenant);
 
   const startIso = apt?.start ? new Date(apt.start) : new Date('2026-10-23T11:00:00');
   const endIso = apt?.end ? new Date(apt.end) : new Date(startIso.getTime() + 45 * 60 * 1000);
@@ -97,12 +106,12 @@ export function triggerIcsDownload(apt, tenant) {
 
 // Generate Google Calendar direct URL
 export function getGoogleCalendarUrl(apt, tenant) {
-  const tenantName = tenant?.name || 'Vector Inside';
+  const tenantName = tenant?.name || (tenant?.id === 'polanco' ? 'Polanco Steakhouse' : 'Vector Inside');
   const title = encodeURIComponent(apt?.title || `Cita: ${apt?.serviceName || 'Servicio'} - ${tenantName}`);
   const details = encodeURIComponent(
     `Cita confirmada en ${tenantName}.\nEspecialista: ${apt?.specialist || 'Asignado'}\nCliente: ${apt?.client || 'N/A'}\nTeléfono: ${apt?.phone || 'N/A'}\nDetalles: ${apt?.details || 'N/A'}`
   );
-  const location = encodeURIComponent(tenant?.address || 'Av. Insurgentes Sur 1234, CDMX');
+  const location = encodeURIComponent(getTenantDefaultAddress(tenant));
 
   const startIso = apt?.start ? new Date(apt.start) : new Date('2026-10-23T11:00:00');
   const endIso = apt?.end ? new Date(apt.end) : new Date(startIso.getTime() + 45 * 60 * 1000);
@@ -127,17 +136,58 @@ export const AppointmentConfirmationEmailModal = ({
 
   // Editable fields
   const [recipientEmail, setRecipientEmail] = useState(
-    appointment?.clientEmail || `${appointment?.client?.toLowerCase().replace(/\s+/g, '.') || 'cliente'}@gmail.com`
+    appointment?.clientEmail || `${appointment?.client?.toLowerCase().replace(/[^a-z0-9]/g, '.') || 'cliente'}@gmail.com`
   );
   const [customNotes, setCustomNotes] = useState(
-    'Por favor presentarse con 10 minutos de anticipación e identificación oficial.'
+    emailConfig?.instructions || (
+      tenant?.id === 'polanco'
+        ? 'Mesa reservada con 15 minutos de tolerancia. Código de vestimenta: Smart Casual.'
+        : tenant?.id === 'urban'
+        ? 'Presentar confirmación digital al ingresar. Unidad con mínimo 1/4 de tanque.'
+        : tenant?.id === 'corp'
+        ? 'Sesión por Google Meet cifrado. Tener métricas listas para compartir.'
+        : 'Por favor preséntate 10 minutos antes e identificación oficial.'
+    )
   );
+
+  React.useEffect(() => {
+    if (appointment?.clientEmail) {
+      setRecipientEmail(appointment.clientEmail);
+    } else if (appointment?.client) {
+      setRecipientEmail(`${appointment.client.toLowerCase().replace(/[^a-z0-9]/g, '.')}@gmail.com`);
+    }
+  }, [appointment]);
+
+  React.useEffect(() => {
+    const defaultInstructions = emailConfig?.instructions || (
+      tenant?.id === 'polanco'
+        ? 'Mesa reservada con 15 minutos de tolerancia. Código de vestimenta: Smart Casual. Si requieres área de terraza o atención especial, infórmanos con anticipación.'
+        : tenant?.id === 'urban'
+        ? 'Presenta tu confirmación digital o identificación al ingresar. El tiempo estimado de atención es de 45 minutos.'
+        : tenant?.id === 'corp'
+        ? 'La sesión se llevará a cabo por Google Meet cifrado. Se sugiere contar con diagramas de arquitectura y métricas listas para compartir pantalla.'
+        : 'Por favor preséntate 10 minutos antes. Es indispensable traer una identificación oficial y tus estudios o radiografías previas.'
+    );
+    setCustomNotes(defaultInstructions);
+  }, [tenant, emailConfig, appointment]);
 
   if (!isOpen || !appointment) return null;
 
-  const tenantName = tenant?.name || 'Clínica Odontológica Integral';
-  const tenantAvatar = tenant?.avatar || '🏢';
-  const accentColor = emailConfig?.accentColor || '#D4FF00';
+  const tenantName = tenant?.name || (
+    tenant?.id === 'polanco'
+      ? 'Polanco Steakhouse & Mixology'
+      : tenant?.id === 'urban'
+      ? 'Urban Motors & Sneaks Premium'
+      : tenant?.id === 'corp'
+      ? 'Vector Corporate Solutions B2B'
+      : 'Clínica Odontológica Integral'
+  );
+  const tenantAvatar = tenant?.avatar || (
+    tenant?.id === 'polanco' ? '🥩' : tenant?.id === 'urban' ? '👟' : tenant?.id === 'corp' ? '🏢' : '🦷'
+  );
+  const accentColor = emailConfig?.accentColor || (
+    tenant?.id === 'polanco' ? '#F97316' : tenant?.id === 'urban' ? '#06B6D4' : tenant?.id === 'corp' ? '#3B82F6' : '#D4FF00'
+  );
   const senderEmail = emailConfig?.senderEmail || `citas@${tenant?.id || 'negocio'}.com`;
 
   const googleCalUrl = getGoogleCalendarUrl(appointment, tenant);

@@ -25,6 +25,7 @@ graph TD
             UI_PLAN["Estudio de Contenido (/planner)"]
             UI_INBOX["Conversaciones (/inbox)"]
             UI_CRM["Prospectos y CRM (/crm)"]
+            UI_AGENDA["Agenda y Citas (/agenda)"]
         end
         subgraph Intel["📊 Inteligencia"]
             UI_RES["Resultados & ROAS (/results)"]
@@ -188,6 +189,64 @@ CREATE TABLE meta_comments_stream (
 );
 ```
 
+### 4.4. Tabla `calendar_appointments` (Turnos, Especialistas & Sync RFC 5545)
+
+```sql
+CREATE TABLE calendar_appointments (
+    id VARCHAR(64) PRIMARY KEY,
+    tenant_id VARCHAR(64) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    day_id VARCHAR(10) NOT NULL, -- 'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'
+    hour VARCHAR(10) NOT NULL, -- '11:00'
+    start_time TIMESTAMP WITH TIME ZONE NOT NULL,
+    end_time TIMESTAMP WITH TIME ZONE NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    client_name VARCHAR(150) NOT NULL,
+    client_email VARCHAR(150),
+    client_phone VARCHAR(50) NOT NULL,
+    specialist_name VARCHAR(150) NOT NULL,
+    service_name VARCHAR(150) NOT NULL,
+    service_color VARCHAR(20) DEFAULT '#D4FF00',
+    estimated_value_mxn NUMERIC(10, 2) DEFAULT 0.00,
+    deposit_paid BOOLEAN DEFAULT false,
+    status VARCHAR(30) NOT NULL DEFAULT 'CONFIRMED', -- 'CONFIRMED', 'TRIAGE', 'CANCELLED', 'RESCHEDULED'
+    google_event_id VARCHAR(255),
+    ics_uid VARCHAR(150) NOT NULL,
+    details TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE calendar_appointments ENABLE ROW LEVEL SECURITY;
+CREATE POLICY calendar_appointments_isolation_policy ON calendar_appointments
+    USING (tenant_id = current_setting('app.current_tenant_id', true));
+```
+
+### 4.5. Tabla `tenant_email_templates` (Email Studio & Membrete Aislado por Negocio)
+
+```sql
+CREATE TABLE tenant_email_templates (
+    tenant_id VARCHAR(64) PRIMARY KEY REFERENCES tenants(id) ON DELETE CASCADE,
+    sender_name VARCHAR(150) NOT NULL,
+    sender_email VARCHAR(150) NOT NULL,
+    logo_avatar VARCHAR(50) DEFAULT '🏢',
+    accent_color VARCHAR(20) DEFAULT '#D4FF00',
+    subject_template TEXT NOT NULL,
+    welcome_message_template TEXT NOT NULL,
+    instructions_template TEXT,
+    location_type VARCHAR(30) DEFAULT 'physical', -- 'physical', 'virtual'
+    location_address TEXT NOT NULL,
+    virtual_link TEXT,
+    cancellation_policy TEXT,
+    cta_text VARCHAR(100) DEFAULT 'Añadir a Google Calendar / Outlook',
+    include_ics BOOLEAN DEFAULT true,
+    include_whatsapp BOOLEAN DEFAULT true,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE tenant_email_templates ENABLE ROW LEVEL SECURITY;
+CREATE POLICY tenant_email_templates_isolation_policy ON tenant_email_templates
+    USING (tenant_id = current_setting('app.current_tenant_id', true));
+```
+
 ---
 
 ## 5. Protocolo de Seguridad del Frontend (Axios Interceptor)
@@ -256,7 +315,7 @@ La experiencia de usuario de **Vector Community** implementa un motor de diseño
 
 ## 8. Matriz de Contratos de Backend por Módulo de Negocio (Directiva "No Planchar Reglas de Negocio")
 
-Para garantizar que el pulido de vistas no elimine ningún cimiento del backend, cada uno de los 12 módulos de la interfaz queda blindado con sus correspondientes contratos técnicos, tablas de base de datos y eventos asíncronos:
+Para garantizar que el pulido de vistas no elimine ningún cimiento del backend, cada módulo de la interfaz queda blindado con sus correspondientes contratos técnicos, tablas de base de datos y eventos asíncronos:
 
 | Módulo Frontend (Ruta) | Microservicio / Endpoints Backend | Tablas PostgreSQL (RLS Activo) | Eventos Redis / Asíncronos | Regla de Negocio Intocable |
 | :--- | :--- | :--- | :--- | :--- |
@@ -266,12 +325,13 @@ Para garantizar que el pulido de vistas no elimine ningún cimiento del backend,
 | **4. Estudio de Contenido** (`/planner`) | `GET /api/v1/content/posts`<br>`POST /api/v1/content/generate-copy` | `editorial_posts`, `copy_variants`, `brand_voice_rules` | `worker:deepseek_generation` | Las piezas transitan obligatoriamente: `Borrador` ➔ `Revisión` ➔ `Aprobado` ➔ `Programado` ➔ `Publicado`. |
 | **5. Conversaciones** (`/inbox`) | `GET /api/v1/conversations`<br>`POST /api/v1/conversations/{id}/messages` | `conversations`, `chat_messages`, `leads` | `webhook:whatsapp_incoming` | El operador puede intervenir en tiempo real pausando el bot; ninguna respuesta ficticia se marca como enviada. |
 | **6. Prospectos y CRM** (`/crm`) | `GET /api/v1/leads/kanban`<br>`POST /api/v1/leads/{id}/pre-cita` | `leads`, `hitl_alerts`, `appointments`, `billing_ledger` | `queue:calendar_sync`<br>`queue:meta_capi_lead` | Validación booleana acumulativa de 4 requisitos para mutar a `BILLABLE_LEAD`. Dictamen Pre-Cita en 1 clic. |
-| **7. Resultados** (`/results`) | `GET /api/v1/finance/roas`<br>`GET /api/v1/finance/reconciliation` | `ad_spend_reconciliation`, `billing_ledger`, `transactions` | `job:daily_finance_audit` | Separación matemática estricta: `Venta Ganada` (facturada) vs. `Pipeline Estimado`. Prohibido mostrar $0 si el dato no existe. |
-| **8. Pruebas y Lab** (`/lab`) | `GET /api/v1/lab/experiments`<br>`POST /api/v1/lab/orchestrate` | `experiments`, `agent_eval_metrics`, `creative_fatigue_logs` | `stream:agent_trace` | Detección algorítmica de fatiga creativa: si Hook Rate (3s) < 20% durante 3 días, enciende alerta automática. |
-| **9. Perfil de Marca** (`/profile`) | `GET /api/v1/brand/profile`<br>`PUT /api/v1/brand/profile` | `tenants`, `brand_dna`, `sla_policies` | `cache:purge_tenant_dna` | Política de SLA de respuesta y propósito de marca inyectados como System Prompt base para todos los sub-agentes. |
-| **10. Conexiones y Datos** (`/connections`) | `GET /api/v1/integrations/health`<br>`POST /api/v1/rag/documents` | `integration_tokens`, `rag_documents`, `rag_embeddings` | `queue:embedding_chunking` | Verificación de token SHA-256 de Meta CAPI, GA4 Measurement Protocol y vectorización en `pgvector`. |
-| **11. Equipo y Control** (`/team`) | `GET /api/v1/team/members`<br>`POST /api/v1/team/roles` | `organization_members`, `audit_trail_logs`, `billing_rules` | `stream:audit_events` | Bitácora append-only de auditoría forense para cada cambio de estado, aprobación HITL y regla de precios. |
-| **12. Canales Públicos** (`/m/[slug]`, `/landing`) | `GET /api/v1/public/landing/{slug}`<br>`POST /api/v1/public/leads` | `microlandings`, `leads`, `pageview_telemetry` | `worker:capi_pageview_dispatch` | Captación de prospecto con micro-agendamiento directo, telemetría sin cookies y aislamiento de layout. |
+| **7. Agenda y Citas** (`/agenda`) | `GET /api/v1/calendar/shifts`<br>`GET /api/v1/calendar/appointments`<br>`POST /api/v1/calendar/appointments`<br>`GET /api/v1/calendar/feed/{tenant_id}.ics`<br>`POST /api/v1/calendar/email-confirmation` | `calendar_appointments`, `tenant_calendar_configs`, `tenant_email_templates` | `queue:calendar_2way_sync`<br>`worker:ics_email_dispatch` | Regla determinista $\text{Slots} = \text{Shifts} - \text{Citas} - \text{Bloqueos}$. Feed WebCal RFC 5545. Aislamiento estricto de plantillas por negocio. |
+| **8. Resultados** (`/results`) | `GET /api/v1/finance/roas`<br>`GET /api/v1/finance/reconciliation` | `ad_spend_reconciliation`, `billing_ledger`, `transactions` | `job:daily_finance_audit` | Separación matemática estricta: `Venta Ganada` (facturada) vs. `Pipeline Estimado`. Prohibido mostrar $0 si el dato no existe. |
+| **9. Pruebas y Lab** (`/lab`) | `GET /api/v1/lab/experiments`<br>`POST /api/v1/lab/orchestrate` | `experiments`, `agent_eval_metrics`, `creative_fatigue_logs` | `stream:agent_trace` | Detección algorítmica de fatiga creativa: si Hook Rate (3s) < 20% durante 3 días, enciende alerta automática. |
+| **10. Perfil de Marca** (`/profile`) | `GET /api/v1/brand/profile`<br>`PUT /api/v1/brand/profile` | `tenants`, `brand_dna`, `sla_policies` | `cache:purge_tenant_dna` | Política de SLA de respuesta y propósito de marca inyectados como System Prompt base para todos los sub-agentes. |
+| **11. Conexiones y Datos** (`/connections`) | `GET /api/v1/integrations/health`<br>`POST /api/v1/rag/documents` | `integration_tokens`, `rag_documents`, `rag_embeddings` | `queue:embedding_chunking` | Verificación de token SHA-256 de Meta CAPI, GA4 Measurement Protocol y vectorización en `pgvector`. |
+| **12. Equipo y Control** (`/team`) | `GET /api/v1/team/members`<br>`POST /api/v1/team/roles` | `organization_members`, `audit_trail_logs`, `billing_rules` | `stream:audit_events` | Bitácora append-only de auditoría forense para cada cambio de estado, aprobación HITL y regla de precios. |
+| **13. Canales Públicos** (`/m/[slug]`, `/landing`) | `GET /api/v1/public/landing/{slug}`<br>`POST /api/v1/public/leads` | `microlandings`, `leads`, `pageview_telemetry` | `worker:capi_pageview_dispatch` | Captación de prospecto con micro-agendamiento directo, telemetría sin cookies y aislamiento de layout. |
 
 ---
 

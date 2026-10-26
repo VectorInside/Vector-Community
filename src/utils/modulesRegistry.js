@@ -70,6 +70,16 @@ export const MODULE_PILLARS = [
         badgeKey: 'hitlAlerts',
         adminOnly: false,
       },
+      {
+        id: 'agenda',
+        label: 'Agenda y citas',
+        path: '/agenda',
+        aliases: [],
+        iconName: 'CalendarCheck',
+        description: 'Sincronización móvil, Google Calendar, turnos semanales y confirmación por correo.',
+        badgeKey: null,
+        adminOnly: false,
+      },
     ],
   },
   {
