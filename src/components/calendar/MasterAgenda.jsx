@@ -321,7 +321,7 @@ const INITIAL_DEMO_APPOINTMENTS = [
     status: 'CONFIRMED',
     start: '2026-10-23T11:00:00',
     end: '2026-10-23T11:45:00',
-    details: 'Arancel bonificado $850 MXN en sillón 3. Cita calificada BILLABLE_LEAD.',
+    details: 'Arancel bonificado $850 MXN en sillón 3. Cita de prospecto calificado y confirmada.',
   },
   {
     id: 'apt-d06',

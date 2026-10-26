@@ -191,10 +191,10 @@ export const Sidebar = () => {
 
               {/* Tarjeta Visual del Negocio Actual en Supervisión */}
               <div className="p-2.5 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] flex items-center gap-2.5 text-left shadow-sm">
-                <span className="text-xl shrink-0">{activeTenant?.avatar || '🏢'}</span>
+                <span className="text-xl shrink-0" suppressHydrationWarning>{activeTenant?.avatar || '🏢'}</span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-1">
-                    <p className="text-xs font-bold text-[var(--text-main)] truncate font-sans">
+                    <p className="text-xs font-bold text-[var(--text-main)] truncate font-sans" suppressHydrationWarning>
                       {activeTenant?.shortName || activeTenant?.name}
                     </p>
                     {activeTenant?.isAiActive ? (
@@ -204,7 +204,7 @@ export const Sidebar = () => {
                     )}
                   </div>
                   <div className="flex items-center justify-between gap-1 mt-0.5">
-                    <span className="text-[9px] text-[var(--text-muted)] truncate font-mono">
+                    <span className="text-[9px] text-[var(--text-muted)] truncate font-mono" suppressHydrationWarning>
                       {activeTenant?.giro || 'Giro comercial'}
                     </span>
                     <span className="text-[8px] font-mono font-bold text-cyan-400 uppercase shrink-0">
@@ -226,12 +226,12 @@ export const Sidebar = () => {
                 </span>
               </div>
               <div className="p-2.5 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] flex items-center gap-2.5">
-                <span className="text-xl shrink-0">{activeTenant?.avatar || '🏢'}</span>
+                <span className="text-xl shrink-0" suppressHydrationWarning>{activeTenant?.avatar || '🏢'}</span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold text-[var(--text-main)] truncate font-sans">
+                  <p className="text-xs font-bold text-[var(--text-main)] truncate font-sans" suppressHydrationWarning>
                     {activeTenant?.shortName || activeTenant?.name}
                   </p>
-                  <span className="text-[9px] text-neon font-bold block truncate uppercase">
+                  <span className="text-[9px] text-neon font-bold block truncate uppercase" suppressHydrationWarning>
                     {activeTenant?.giro || 'Dueño de Negocio'}
                   </span>
                 </div>

@@ -69,26 +69,26 @@ export const QUALIFIED_LEAD_CRITERIA = [
   {
     id: 'identity',
     key: 'identityValidated',
-    label: 'Criterio 1: Identidad & Datos de Contacto Validados',
-    description: 'Nombre completo AND Email estructurado AND WhatsApp verificado.',
+    label: 'Criterio 1: Identidad y Contacto Verificados',
+    description: 'Nombre completo, correo electrónico y WhatsApp confirmados.',
   },
   {
     id: 'catalog',
     key: 'catalogIdentified',
     label: 'Criterio 2: Interés Específico en Catálogo',
-    description: 'Identificación unívoca del producto/servicio en la matriz del tenant.',
+    description: 'Identificación clara del producto o servicio de interés.',
   },
   {
     id: 'financial',
     key: 'financialClarified',
     label: 'Criterio 3: Aclaración Financiera Completa',
-    description: 'Precios, métodos de pago, costos de envío o MSI resueltos por la IA.',
+    description: 'Precios, métodos de pago, costos o mensualidades clarificados.',
   },
   {
     id: 'consent',
     key: 'consentOrBooked',
-    label: 'Criterio 4: Aceptación Explícita o Cita Confirmada',
-    description: 'Autorización inambigua de contacto por ejecutivo o franja agendada.',
+    label: 'Criterio 4: Aceptación Expresa o Cita Confirmada',
+    description: 'Autorización clara de contacto comercial o cita agendada en calendario.',
   },
 ];
 
@@ -812,7 +812,7 @@ export const MARKETING_FRAMEWORKS_REGISTRY = [
   {
     id: 'pay_per_lead',
     title: 'Pay-Per-Qualified-Lead',
-    concept: '4 Criterios Booleanos AND',
+    concept: '4 Criterios de Calificación Comercial',
     businessGoal: 'Cobro condicionado ($350 MXN) al cumplimiento de 4 requisitos verificados.',
     techImplementation: 'Función booleana en Spring Boot/FastAPI que valida datos, producto, dudas resueltas y aceptación explícita.',
     badge: '$350 MXN',

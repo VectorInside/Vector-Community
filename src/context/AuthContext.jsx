@@ -7,36 +7,11 @@ import { useTenantStore } from '@/hooks/useTenant';
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [role, setRole] = useState(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const savedRole = localStorage.getItem('vector_role');
-        if (savedRole === 'admin' || savedRole === 'client') return savedRole;
-      } catch (e) {}
-    }
-    return 'admin';
-  });
-
-  const [theme, setTheme] = useState(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const savedTheme = localStorage.getItem('vector_theme');
-        if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme;
-      } catch (e) {}
-    }
-    return 'dark';
-  });
-
-  const [activeTenantKey, setActiveTenantKey] = useState(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const savedTenant = localStorage.getItem('vector_active_tenant_key');
-        if (savedTenant) return savedTenant;
-      } catch (e) {}
-    }
-    return 'dental';
-  });
+  const [role, setRole] = useState('admin');
+  const [theme, setTheme] = useState('dark');
+  const [activeTenantKey, setActiveTenantKey] = useState('dental');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const [modal, setModal] = useState({
     isOpen: false,
     title: 'Notificación Vectorial',
@@ -64,6 +39,14 @@ export const AuthProvider = ({ children }) => {
       if (savedCollapsed !== null) {
         setIsSidebarCollapsed(savedCollapsed === 'true');
       }
+      try {
+        const savedTenants = localStorage.getItem('vector_tenants_data');
+        if (savedTenants) {
+          const parsed = JSON.parse(savedTenants);
+          setTenantsData((prev) => ({ ...prev, ...parsed }));
+        }
+      } catch (e) {}
+      setIsMounted(true);
     }
   }, []);
 
@@ -168,19 +151,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const [tenantsData, setTenantsData] = useState(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('vector_tenants_data');
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          // Merge to ensure default mock tenants have updated schema fields
-          return { ...INITIAL_TENANTS_DATA, ...parsed };
-        }
-      } catch (e) {}
-    }
-    return INITIAL_TENANTS_DATA;
-  });
+  const [tenantsData, setTenantsData] = useState(INITIAL_TENANTS_DATA);
 
   // Keep localStorage synchronized
   useEffect(() => {
@@ -321,6 +292,7 @@ export const AuthProvider = ({ children }) => {
         role,
         isAdmin,
         isClient,
+        isMounted,
         switchRole,
         loginAs,
         theme,

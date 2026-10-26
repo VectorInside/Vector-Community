@@ -133,15 +133,20 @@ export const Header = () => {
     },
   ];
 
-  const [notifications, setNotifications] = useState(() => {
+  const [notifications, setNotifications] = useState(INITIAL_CROSS_TENANT_NOTIFICATIONS);
+  const [isHeaderMounted, setIsHeaderMounted] = useState(false);
+
+  useEffect(() => {
+    setIsHeaderMounted(true);
     if (typeof window !== 'undefined') {
       try {
         const saved = localStorage.getItem('vector_global_notifications');
-        if (saved) return JSON.parse(saved);
+        if (saved) {
+          setNotifications(JSON.parse(saved));
+        }
       } catch (e) {}
     }
-    return INITIAL_CROSS_TENANT_NOTIFICATIONS;
-  });
+  }, []);
 
   const targetTenantKey = activeTenantKey || activeTenant?.id;
 
@@ -281,8 +286,8 @@ export const Header = () => {
                 }`}
                 title="Cambiar espacio de negocio"
               >
-                <span className="text-sm leading-none">{activeTenant?.avatar || '🏢'}</span>
-                <span className="max-w-[120px] sm:max-w-[170px] truncate text-[var(--text-main)] font-semibold">
+                <span className="text-sm leading-none" suppressHydrationWarning>{activeTenant?.avatar || '🏢'}</span>
+                <span className="max-w-[120px] sm:max-w-[170px] truncate text-[var(--text-main)] font-semibold" suppressHydrationWarning>
                   {activeTenant?.name || 'Seleccionar Negocio'}
                 </span>
                 <ChevronDown
@@ -380,8 +385,8 @@ export const Header = () => {
             </div>
           ) : (
             <div className="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] text-xs font-bold text-[var(--text-main)]">
-              <span>{activeTenant?.avatar}</span>
-              <span className="truncate max-w-[140px]">{activeTenant?.name}</span>
+              <span suppressHydrationWarning>{activeTenant?.avatar}</span>
+              <span className="truncate max-w-[140px]" suppressHydrationWarning>{activeTenant?.name}</span>
             </div>
           )}
         </div>
@@ -427,13 +432,16 @@ export const Header = () => {
               }`}
             >
               <Bell className="w-4 h-4" />
-              {unreadCount > 0 ? (
-                <span className="absolute -top-1 -right-1 px-1.5 min-w-[18px] h-[18px] rounded-full text-[9px] font-mono font-black bg-lime-400 text-black flex items-center justify-center shadow-[0_0_8px_rgba(200,255,0,0.5)] animate-pulse">
+              {isHeaderMounted && unreadCount > 0 ? (
+                <span
+                  suppressHydrationWarning
+                  className="absolute -top-1 -right-1 px-1.5 min-w-[18px] h-[18px] rounded-full text-[9px] font-mono font-black bg-lime-400 text-black flex items-center justify-center shadow-[0_0_8px_rgba(200,255,0,0.5)] animate-pulse"
+                >
                   {unreadCount}
                 </span>
-              ) : (
-                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              )}
+              ) : isHeaderMounted ? (
+                <span suppressHydrationWarning className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              ) : null}
             </button>
 
             {/* Notification Popover Dropdown */}
@@ -474,7 +482,7 @@ export const Header = () => {
                         : 'bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
                     }`}
                   >
-                    Todas ({notifications.length})
+                    <span suppressHydrationWarning>Todas ({notifications.length})</span>
                   </button>
                   <button
                     type="button"
@@ -485,7 +493,7 @@ export const Header = () => {
                         : 'bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
                     }`}
                   >
-                    Sin leer ({unreadCount})
+                    <span suppressHydrationWarning>Sin leer ({unreadCount})</span>
                   </button>
                   <span className="text-[10px] font-mono text-[var(--text-faint)] ml-auto">
                     {isAdmin ? 'Cross-Tenant' : 'Espacio Aislado'}

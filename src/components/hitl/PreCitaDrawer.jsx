@@ -27,6 +27,8 @@ import { LEAD_STATUS_ENUM } from '@/utils/constants';
 export const PreCitaDrawer = ({ isOpen, onClose, lead, onApproveAppointment, onOpenChat }) => {
   const [isApproving, setIsApproving] = useState(false);
   const [approvedSuccess, setApprovedSuccess] = useState(false);
+  const [manualOverride, setManualOverride] = useState(false);
+  const [overrideEmail, setOverrideEmail] = useState('');
 
   useEffect(() => {
     if (!isOpen) return;
@@ -44,8 +46,48 @@ export const PreCitaDrawer = ({ isOpen, onClose, lead, onApproveAppointment, onO
   if (!isOpen || !lead) return null;
 
   const isBillable = lead.leadState === LEAD_STATUS_ENUM.BILLABLE_LEAD;
+  const rawEmail = manualOverride && overrideEmail ? overrideEmail : lead.email;
+  const hasValidEmail = Boolean(rawEmail && rawEmail !== 'No capturado' && rawEmail !== 'Pendiente' && rawEmail.includes('@'));
+
+  // Criterios BANT deterministas
+  const identityChecked = Boolean(lead.criteriaAudit?.identityValidated ?? (lead.phone && hasValidEmail));
+  const catalogChecked = Boolean(lead.criteriaAudit?.catalogIdentified ?? (lead.customerNeeds?.intent && !lead.customerNeeds?.intent?.toLowerCase().includes('básica sin datos')));
+  const financialChecked = Boolean(lead.criteriaAudit?.financialClarified ?? (lead.billingStatus === 'BILLABLE' || isBillable));
+  const consentChecked = Boolean(approvedSuccess || isBillable || manualOverride || lead.criteriaAudit?.consentOrBooked);
+
+  const criteriaList = [
+    {
+      id: 'identity',
+      label: '1. Identidad y Teléfono Verificado',
+      checked: identityChecked,
+      desc: `${lead.phone || 'Sin WhatsApp'} • ${hasValidEmail ? rawEmail : 'Correo electrónico pendiente'}`,
+    },
+    {
+      id: 'catalog',
+      label: '2. Interés Específico en Catálogo',
+      checked: catalogChecked,
+      desc: catalogChecked ? (lead.customerNeeds?.intent || 'Servicio o tratamiento definido') : 'Pendiente de definir interés específico en catálogo',
+    },
+    {
+      id: 'financial',
+      label: '3. Aclaración Financiera (Precios/MSI/Aranceles)',
+      checked: financialChecked,
+      desc: financialChecked ? (lead.customerNeeds?.objectionIdentified || 'Precios y aranceles clarificados por la IA') : 'Pendiente de resolver objeción de precio o financiamiento',
+    },
+    {
+      id: 'consent',
+      label: '4. Aceptación Explícita o Cita Confirmada',
+      checked: consentChecked,
+      desc: consentChecked ? 'Cita acordada y consentida por el prospecto' : 'Prospecto en pausa o con evasiva; no ha aceptado fecha de cita',
+    },
+  ];
+
+  const completedCriteriaCount = criteriaList.filter((c) => c.checked).length;
+  // Un lead está "amarrado" cuando es Billable, cumple los 4 criterios con email o se activa override manual
+  const isFullyAmarrado = approvedSuccess || (isBillable && hasValidEmail) || (completedCriteriaCount === 4 && hasValidEmail) || (manualOverride && hasValidEmail);
 
   const handleApprove = () => {
+    if (!isFullyAmarrado) return;
     setIsApproving(true);
     setTimeout(() => {
       setIsApproving(false);
@@ -60,37 +102,13 @@ export const PreCitaDrawer = ({ isOpen, onClose, lead, onApproveAppointment, onO
       } catch (e) {}
 
       if (onApproveAppointment) {
-        onApproveAppointment(lead);
+        onApproveAppointment({
+          ...lead,
+          email: rawEmail || lead.email,
+        });
       }
     }, 700);
   };
-
-  const criteriaList = [
-    {
-      id: 'identity',
-      label: 'Identidad y Contacto E.164 Validado',
-      checked: lead.criteriaAudit?.identityValidated ?? true,
-      desc: `${lead.phone} • ${lead.email || 'Validado'}`,
-    },
-    {
-      id: 'catalog',
-      label: 'Interés Específico en Catálogo',
-      checked: lead.criteriaAudit?.catalogIdentified ?? true,
-      desc: lead.customerNeeds?.intent || 'Servicio / Tratamiento definido',
-    },
-    {
-      id: 'financial',
-      label: 'Aclaración Financiera Completa (Precios/MSI)',
-      checked: lead.criteriaAudit?.financialClarified ?? true,
-      desc: lead.customerNeeds?.objectionIdentified || 'Condiciones y aranceles resueltos por RAG',
-    },
-    {
-      id: 'consent',
-      label: 'Aceptación Explícita o Cita Confirmada',
-      checked: approvedSuccess || isBillable || (lead.criteriaAudit?.consentOrBooked ?? false),
-      desc: 'Consentimiento inambiguo de contacto / franja en agenda',
-    },
-  ];
 
   return (
     <Portal>
@@ -222,44 +240,89 @@ export const PreCitaDrawer = ({ isOpen, onClose, lead, onApproveAppointment, onO
             </div>
 
             {/* Viñeta 4: Despacho Transaccional Gmail API (ADR-001 & ADR-003) */}
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-50/50 via-zinc-50 to-white dark:from-blue-950/20 dark:via-zinc-900/70 dark:to-zinc-900 border border-blue-500/30 shadow-xs space-y-3">
+            <div className={`p-4 rounded-2xl border shadow-xs space-y-3 transition-colors ${
+              hasValidEmail
+                ? 'bg-gradient-to-br from-blue-50/50 via-zinc-50 to-white dark:from-blue-950/20 dark:via-zinc-900/70 dark:to-zinc-900 border-blue-500/30'
+                : 'bg-zinc-100/60 dark:bg-zinc-900/40 border-zinc-200 dark:border-zinc-800'
+            }`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white">
-                  <div className="w-6 h-6 rounded-lg bg-blue-500/20 text-blue-500 flex items-center justify-center">
+                  <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${hasValidEmail ? 'bg-blue-500/20 text-blue-500' : 'bg-zinc-500/20 text-zinc-400'}`}>
                     <Mail className="w-3.5 h-3.5" />
                   </div>
                   <span>4. Correo Gmail Transaccional & Guía</span>
                 </div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 font-bold border border-blue-500/30">
-                  {approvedSuccess ? '✉️ Gmail Enviado' : '✉️ Template Compilado'}
+                <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold border ${
+                  approvedSuccess
+                    ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                    : hasValidEmail
+                    ? 'bg-blue-500/15 text-blue-400 border-blue-500/30'
+                    : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                }`}>
+                  {approvedSuccess
+                    ? '✉️ Gmail Enviado'
+                    : hasValidEmail
+                    ? '✉️ Template Compilado'
+                    : '⚠️ Correo Pendiente'}
                 </span>
               </div>
 
-              <div className="p-3 rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/80 text-xs space-y-2 font-mono">
-                <div className="flex items-center justify-between text-[11px] pb-2 border-b border-zinc-100 dark:border-zinc-800">
-                  <span className="text-zinc-400">Para: <strong>{lead.email || 'contacto@prospecto.com'}</strong></span>
-                  <span className="text-emerald-500 font-bold text-[10px]">Adjunto: cita.ics</span>
+              {hasValidEmail ? (
+                <div className="p-3 rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/80 text-xs space-y-2 font-mono">
+                  <div className="flex items-center justify-between text-[11px] pb-2 border-b border-zinc-100 dark:border-zinc-800">
+                    <span className="text-zinc-400">Para: <strong>{rawEmail}</strong></span>
+                    <span className="text-emerald-500 font-bold text-[10px]">Adjunto: cita.ics</span>
+                  </div>
+                  <div className="text-[11px] text-zinc-600 dark:text-zinc-300 space-y-1 font-sans">
+                    <p className="font-bold text-zinc-900 dark:text-white">
+                      Asunto: Confirmación de Cita: {lead.name} — {lead.customerNeeds?.intent || 'Cita de Valoración'}
+                    </p>
+                    <p className="text-zinc-500 dark:text-zinc-400 text-[11px]">
+                      "Hola {lead.name}, tu espacio ha sido reservado. Por favor preséntate 10 min antes."
+                    </p>
+                  </div>
                 </div>
-                <div className="text-[11px] text-zinc-600 dark:text-zinc-300 space-y-1 font-sans">
-                  <p className="font-bold text-zinc-900 dark:text-white">
-                    Asunto: Confirmación de Cita: {lead.name} — {lead.customerNeeds?.intent || 'Cita de Valoración'}
+              ) : (
+                <div className="p-3 rounded-xl bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/20 text-xs space-y-1">
+                  <p className="font-bold text-amber-400 text-[11px] flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    <span>Sin correo capturado para notificación Gmail</span>
                   </p>
-                  <p className="text-zinc-500 dark:text-zinc-400 text-[11px]">
-                    "Hola {lead.name}, tu espacio ha sido reservado. Por favor preséntate 10 min antes. Si cuentas con estudios previos o radiografías, favor de tenerlos a la mano."
+                  <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
+                    El prospecto aún no comparte su email en WhatsApp. Es necesario solicitarlo en el chat antes de poder despachar el archivo de calendario <code>cita.ics</code>.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Alerta de Gobernanza si el Lead NO está amarrado */}
+            {!isFullyAmarrado && !approvedSuccess && (
+              <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-start gap-3">
+                <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <div className="font-bold text-amber-200">
+                    Gobernanza: Prospecto No Amarrado ({completedCriteriaCount}/4 Criterios)
+                  </div>
+                  <p className="text-[11px] text-amber-300/80 leading-relaxed">
+                    Este lead se encuentra en estado <strong>{lead.status}</strong> y contestó con evasiva. Meter una cita en este estado generará una inasistencia (No-Show). Se recomienda intervenir el chat para asegurar su interés antes de agendar.
                   </p>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Checklist de los 4 Requisitos Booleanos AND */}
             <div className="p-4 rounded-2xl bg-zinc-900/5 dark:bg-black/40 border border-zinc-200 dark:border-zinc-800/80">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-[11px] font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
                   <Lock className="w-3 h-3 text-neon" />
-                  Validación de Calidad (4/4 Criterios Cumplidos)
+                  Validación de Calidad ({completedCriteriaCount}/4 Criterios Cumplidos)
                 </span>
-                <span className="text-[10px] font-mono font-bold text-neon-text">
-                  Valor: $350.00 MXN
+                <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${
+                  isFullyAmarrado
+                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                    : 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                }`}>
+                  {isFullyAmarrado ? 'CALIFICADO PARA CITA' : 'INCOMPLETO (BLOQUEADO)'}
                 </span>
               </div>
 
@@ -267,11 +330,15 @@ export const PreCitaDrawer = ({ isOpen, onClose, lead, onApproveAppointment, onO
                 {criteriaList.map((crit) => (
                   <div
                     key={crit.id}
-                    className="flex items-start gap-2.5 p-2 rounded-xl bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 text-xs"
+                    className={`flex items-start gap-2.5 p-2 rounded-xl border text-xs transition-colors ${
+                      crit.checked
+                        ? 'bg-white dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800'
+                        : 'bg-zinc-100/50 dark:bg-zinc-900/30 border-dashed border-zinc-300 dark:border-zinc-800/60 opacity-80'
+                    }`}
                   >
                     <CheckCircle2
                       className={`w-4 h-4 shrink-0 mt-0.5 ${
-                        crit.checked ? 'text-emerald-500 dark:text-neon' : 'text-zinc-300 dark:text-zinc-700'
+                        crit.checked ? 'text-emerald-500 dark:text-neon' : 'text-zinc-400 dark:text-zinc-700'
                       }`}
                     />
                     <div>
@@ -288,51 +355,114 @@ export const PreCitaDrawer = ({ isOpen, onClose, lead, onApproveAppointment, onO
             </div>
           </div>
 
-          {/* Footer Sticky con Acción Primordial */}
+          {/* Footer Sticky con Acción Inteligente */}
           <div className="p-6 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/90 flex flex-col gap-3">
-            <button
-              onClick={handleApprove}
-              disabled={isApproving || approvedSuccess}
-              className={`w-full py-3.5 px-6 rounded-xl font-heading font-black text-sm flex items-center justify-center gap-2 shadow-lg transition-all ${
-                approvedSuccess
-                  ? 'bg-emerald-600 text-white cursor-default'
-                  : 'bg-neon text-black hover:bg-neon/90 hover:scale-[1.01] active:scale-[0.99] border border-neon/50'
-              }`}
-            >
-              {isApproving ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                  <span>Sincronizando con Google Calendar API...</span>
-                </>
-              ) : approvedSuccess ? (
-                <>
-                  <CheckCircle2 className="w-5 h-5 text-white" />
-                  <span>✅ Cita Aprobada & CAPI SHA256 Despachado</span>
-                </>
-              ) : (
-                <>
-                  <CalendarCheck className="w-5 h-5" />
-                  <span>✅ Aprobar, Agendar Google & Enviar Gmail</span>
-                </>
-              )}
-            </button>
+            {isFullyAmarrado ? (
+              /* CASO A: Lead Calificado / Amarrado -> Botón de Agendamiento Activo */
+              <button
+                onClick={handleApprove}
+                disabled={isApproving || approvedSuccess}
+                className={`w-full py-3.5 px-6 rounded-xl font-heading font-black text-sm flex items-center justify-center gap-2 shadow-lg transition-all ${
+                  approvedSuccess
+                    ? 'bg-emerald-600 text-white cursor-default'
+                    : 'bg-neon text-black hover:bg-neon/90 hover:scale-[1.01] active:scale-[0.99] border border-neon/50'
+                }`}
+              >
+                {isApproving ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                    <span>Sincronizando con Google Calendar API...</span>
+                  </>
+                ) : approvedSuccess ? (
+                  <>
+                    <CheckCircle2 className="w-5 h-5 text-white" />
+                    <span>✅ Cita Aprobada & Google Calendar Sincronizado</span>
+                  </>
+                ) : (
+                  <>
+                    <CalendarCheck className="w-5 h-5" />
+                    <span>✅ Aprobar, Agendar Google & Enviar Gmail</span>
+                  </>
+                )}
+              </button>
+            ) : (
+              /* CASO B: Lead NO Amarrado -> Botón Bloqueado + Acción de Intervenir Chat Destacada */
+              <div className="space-y-2.5">
+                <div
+                  className="w-full py-2.5 px-4 rounded-xl bg-zinc-200/80 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 font-mono text-xs flex items-center justify-center gap-2 cursor-not-allowed select-none"
+                  title="El agendamiento está bloqueado porque el lead no ha confirmado fecha ni correo"
+                >
+                  <Lock className="w-4 h-4 text-amber-500 shrink-0" />
+                  <span>Agendamiento Bloqueado: Lead No Amarrado ({completedCriteriaCount}/4)</span>
+                </div>
+
+                <button
+                  onClick={() => {
+                    onClose();
+                    if (onOpenChat) onOpenChat(lead);
+                  }}
+                  className="w-full py-3.5 px-6 rounded-xl font-heading font-black text-sm bg-neon text-black hover:brightness-110 active:scale-[0.99] flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(231,249,0,0.25)] transition-all"
+                >
+                  <MessageSquare className="w-4 h-4 text-black" />
+                  <span>💬 Intervenir Chat para Amarrar Cita</span>
+                </button>
+
+                {/* Opción de Forzado Manual para cuando el operador habló por llamada */}
+                {!manualOverride ? (
+                  <div className="text-center pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setManualOverride(true)}
+                      className="text-[11px] font-mono text-zinc-500 hover:text-zinc-300 dark:hover:text-neon underline transition-colors cursor-pointer"
+                    >
+                      ¿El cliente ya confirmó por llamada? Completar datos y forzar agendamiento
+                    </button>
+                  </div>
+                ) : (
+                  <div className="p-3 rounded-xl bg-zinc-100 dark:bg-zinc-950 border border-amber-500/40 space-y-2 text-xs font-mono">
+                    <span className="text-[10px] font-bold text-amber-500 uppercase block">
+                      HITL Override: Captura de Correo para Despacho
+                    </span>
+                    <div className="flex gap-2">
+                      <input
+                        type="email"
+                        placeholder="correo@cliente.com"
+                        value={overrideEmail}
+                        onChange={(e) => setOverrideEmail(e.target.value)}
+                        className="flex-1 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-zinc-900 dark:text-white outline-none focus:border-neon"
+                      />
+                      <button
+                        type="button"
+                        disabled={!overrideEmail.includes('@')}
+                        onClick={handleApprove}
+                        className="px-3 py-1.5 rounded-lg bg-amber-400 text-black font-bold text-xs disabled:opacity-50 hover:bg-amber-300"
+                      >
+                        Agendar
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  onClose();
-                  if (onOpenChat) onOpenChat(lead);
-                }}
-                className="flex-1 py-2.5 px-4 rounded-xl bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 text-xs font-bold flex items-center justify-center gap-2 transition-colors"
-              >
-                <MessageSquare className="w-3.5 h-3.5" />
-                <span>Intervenir Chat (Sutura Arcángel)</span>
-              </button>
+              {isFullyAmarrado && (
+                <button
+                  onClick={() => {
+                    onClose();
+                    if (onOpenChat) onOpenChat(lead);
+                  }}
+                  className="flex-1 py-2 px-4 rounded-xl bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 text-xs font-bold flex items-center justify-center gap-2 transition-colors"
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  <span>Abrir Chat de WhatsApp</span>
+                </button>
+              )}
               <button
                 onClick={onClose}
-                className="py-2.5 px-4 rounded-xl border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-bold transition-colors"
+                className="w-full py-2.5 px-4 rounded-xl border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-bold transition-colors"
               >
-                Cerrar
+                Cerrar Dictamen
               </button>
             </div>
           </div>

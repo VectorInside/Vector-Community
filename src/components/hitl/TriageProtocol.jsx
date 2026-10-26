@@ -619,12 +619,12 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
         aiSummary: 'La paciente llegó por anuncio de Instagram. Buscaba financiamiento y fecha inmediata. El bot asignó cita el martes 14:00 hrs.',
         suggestedNextAction: 'Enviar recordatorio de cita 24h antes por WhatsApp con ubicación de Google Maps.',
       },
-      dictamen: '<b>Interés:</b> Implantes Dentales.<br><b>Objeción superada:</b> Pagos a 12 meses sin intereses.<br><b>Estatus:</b> Cita confirmada en Google Calendar para el próximo martes a las 14:00 hrs.<br><b>Facturación:</b> Lead Calificado ($350 MXN) registrado en billing_ledger con hash SHA-256 S2S.',
+      dictamen: '<b>Interés:</b> Implantes Dentales.<br><b>Objeción superada:</b> Pagos a 12 meses sin intereses.<br><b>Estatus:</b> Cita confirmada en Google Calendar para el próximo martes a las 14:00 hrs.<br><b>Facturación:</b> Prospecto Calificado ($350 MXN) registrado contablemente y validado con Meta Ads.',
       capiPayload: {
         event_name: 'Lead',
         event_time: 1772381000,
-        event_id: 'lead_uuid_v4_8f9a2b',
-        action_source: 'system_generated',
+        event_id: 'FOLIO-8F9A2B',
+        action_source: 'atencion_comercial_automatizada',
         user_data: {
           em: ['f660ab912ec121d1b1e928a0bb4bc61b15f5ad44d5efdc4e1c92a25e99b8e44a'],
           ph: ['4c24b2142e0084f23473138380295eb1381387d8d2ef071a938c5208b5e2a220'],
@@ -633,7 +633,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
         custom_data: {
           currency: 'MXN',
           value: 0.0,
-          lead_type: 'BILLABLE_LEAD',
+          lead_type: 'PROSPECTO_CALIFICADO',
           lead_price: 350.0,
         },
       },
@@ -750,12 +750,12 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
         aiSummary: 'BANT Score 97/100. Cuenta con autoridad y presupuesto. Solicitó reunión con Director de Soluciones.',
         suggestedNextAction: 'Enviar brief corporativo y credenciales de Zoom antes del miércoles.',
       },
-      dictamen: '<b>Empresa:</b> Logística Global Monterrey S.A. (180 colaboradores).<br><b>BANT Scoring:</b> 97/100 (Presupuesto $50k USD asignado, decisión inmediata).<br><b>Destino:</b> HubSpot CRM Enterprise.<br><b>Estatus:</b> Discovery Call confirmada vía Zoom para el próximo miércoles a las 10:00 hrs.<br><b>Facturación:</b> Calificado con 4/4 criterios booleanos. Ledger registrado a $350 MXN.',
+      dictamen: '<b>Empresa:</b> Logística Global Monterrey S.A. (180 colaboradores).<br><b>BANT Scoring:</b> 97/100 (Presupuesto $50k USD asignado, decisión inmediata).<br><b>Destino:</b> HubSpot CRM Enterprise.<br><b>Estatus:</b> Discovery Call confirmada vía Zoom para el próximo miércoles a las 10:00 hrs.<br><b>Facturación:</b> Calificado con los 4 criterios comerciales cumplidos. Registro contable por $350 MXN.',
       capiPayload: {
         event_name: 'Lead',
         event_time: 1772382400,
-        event_id: 'lead_uuid_v4_7c3e11',
-        action_source: 'system_generated',
+        event_id: 'FOLIO-7C3E11',
+        action_source: 'atencion_comercial_automatizada',
         user_data: {
           em: ['89a23b12dc121d1b1e928a0bb4bc61b15f5ad44d5efdc4e1c92a25e99b8e44b9'],
           ph: ['112233442e0084f23473138380295eb1381387d8d2ef071a938c5208b5e2a331'],
@@ -764,7 +764,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
         custom_data: {
           currency: 'MXN',
           value: 0.0,
-          lead_type: 'BILLABLE_LEAD',
+          lead_type: 'PROSPECTO_CALIFICADO',
           lead_price: 350.0,
         },
       },
@@ -960,8 +960,8 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
         },
         {
           id: 4,
-          sender: 'Sistema Redis Queue',
-          text: '⏱️ Tarea encolada: LEAD_COLD_24H follow-up programado para hoy a las 16:12 hrs.',
+          sender: 'Asistente de Re-contacto',
+          text: '⏱️ Seguimiento programado: Re-contacto de cortesía tras 24 horas de inactividad (hoy a las 16:12 hrs).',
           isWarning: true,
           time: 'Ayer, 04:12 PM',
         },
@@ -1921,8 +1921,8 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
                       onClick={() => handleInspectCapi(currentChat)}
                       className="px-3 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-cyan-600 dark:text-cyan-300 font-bold text-xs border border-cyan-500/30 flex items-center gap-1.5 transition-colors"
                     >
-                      <Hash className="w-3.5 h-3.5" />
-                      Ver Payload CAPI
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      Ver Comprobante Meta
                     </button>
                   )}
                 </div>
@@ -2697,18 +2697,18 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
               if (e.target === e.currentTarget) setSelectedCapiLead(null);
             }}
           >
-            <div className="w-full max-w-2xl rounded-3xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-neon/50 shadow-2xl p-6 sm:p-8 relative space-y-4 font-mono text-xs max-h-[90vh] overflow-y-auto my-auto animate-scale-up">
+            <div className="w-full max-w-2xl rounded-3xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-neon/50 shadow-2xl p-6 sm:p-8 relative space-y-5 font-sans text-xs max-h-[90vh] overflow-y-auto my-auto animate-scale-up">
             <div className="flex items-start justify-between pb-3 border-b border-zinc-200 dark:border-zinc-800">
               <div className="space-y-1">
-                <span className="text-[10px] font-bold uppercase text-neon tracking-wider flex items-center gap-1.5">
-                  <Hash className="w-3.5 h-3.5" />
-                  Auditoría Criptográfica Server-to-Server (Meta CAPI)
+                <span className="text-[10px] font-bold uppercase text-neon tracking-wider flex items-center gap-1.5 font-mono">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  Comprobante Oficial de Conversión (Meta Ads & WhatsApp)
                 </span>
                 <h3 className="text-lg font-heading font-black text-zinc-900 dark:text-white">
-                  Payload de Conversión S2S: {selectedCapiLead.name}
+                  Comprobante de Prospecto Calificado: {selectedCapiLead.name}
                 </h3>
                 <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
-                  Despachado unívocamente tras cumplir 4/4 criterios booleanos AND sin cookies de navegador.
+                  Registrado automáticamente tras verificar el cumplimiento del 100% de los criterios de calidad comercial.
                 </p>
               </div>
 
@@ -2722,48 +2722,53 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
             </div>
 
             {/* Metadatos del Evento */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px]">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px] font-mono">
               <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-                <span className="text-zinc-500 block">Evento Graph:</span>
-                <span className="text-emerald-600 dark:text-emerald-400 font-bold">Lead (Conversion)</span>
+                <span className="text-zinc-500 block">Tipo de Evento:</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-bold">Prospecto Calificado</span>
               </div>
               <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-                <span className="text-zinc-500 block">Event ID (UUID v4):</span>
-                <span className="text-zinc-900 dark:text-white font-bold">{selectedCapiLead.capiEventId || 'N/A'}</span>
+                <span className="text-zinc-500 block">Folio de Rastreo:</span>
+                <span className="text-zinc-900 dark:text-white font-bold">
+                  {(selectedCapiLead.capiEventId || 'EVT-8F9A2B').replace(/lead_uuid_v4_/g, 'EVT-').toUpperCase()}
+                </span>
               </div>
               <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-                <span className="text-zinc-500 block">Tarifa Lead:</span>
+                <span className="text-zinc-500 block">Costo por Prospecto:</span>
                 <span className="text-neon font-black">$350.00 MXN</span>
               </div>
               <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-                <span className="text-zinc-500 block">Estado Ledger:</span>
-                <span className="text-amber-600 dark:text-amber-400 font-bold">PENDING_INVOICE</span>
+                <span className="text-zinc-500 block">Estado de Facturación:</span>
+                <span className="text-amber-600 dark:text-amber-400 font-bold">
+                  {cleanConcept(selectedCapiLead.billingStatus || 'PENDING_INVOICE')}
+                </span>
               </div>
             </div>
 
-            {/* Bloque JSON S2S Payload */}
+            {/* Bloque Detalle Seguro de Conversión */}
             <div className="space-y-1.5">
-              <span className="text-[10px] text-zinc-600 dark:text-zinc-400 font-bold">
-                Payload JSON Server-to-Server (Datos de Contacto Hasheados con SHA-256):
+              <span className="text-[11px] text-zinc-700 dark:text-zinc-300 font-bold flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5 text-neon" />
+                Detalle Seguro del Evento (Datos de Contacto Protegidos con Cifrado):
               </span>
-              <pre className="p-4 rounded-xl bg-zinc-900 dark:bg-black border border-zinc-800 text-[11px] text-emerald-300 overflow-x-auto leading-relaxed shadow-inner">
+              <pre className="p-4 rounded-xl bg-zinc-900 dark:bg-black border border-zinc-800 text-[11px] font-mono text-emerald-300 overflow-x-auto leading-relaxed shadow-inner">
                 {JSON.stringify(
                   {
-                    data: [
-                      selectedCapiLead.capiPayload || {
-                        event_name: 'Lead',
-                        event_time: 1772381000,
-                        event_id: selectedCapiLead.capiEventId,
-                        action_source: 'system_generated',
-                        user_data: {
-                          em: ['sha256_hashed_email_string'],
-                          ph: ['sha256_hashed_phone_e164'],
-                          fn: ['sha256_hashed_first_name'],
+                    evento: [
+                      {
+                        tipo_evento: 'Prospecto Calificado',
+                        fecha_registro: 'Confirmado en Tiempo Real',
+                        folio_rastreo: (selectedCapiLead.capiEventId || 'EVT-8F9A2B').replace(/lead_uuid_v4_/g, 'EVT-').toUpperCase(),
+                        canal_origen: 'Atención Comercial Automatizada',
+                        datos_contacto_protegidos: {
+                          correo_cifrado: ['SHA-256 (Protegido por Privacidad)'],
+                          telefono_cifrado: ['SHA-256 (Protegido por Privacidad)'],
+                          nombre_cifrado: ['SHA-256 (Protegido por Privacidad)'],
                         },
-                        custom_data: {
-                          currency: 'MXN',
-                          value: 0.0,
-                          lead_type: 'BILLABLE_LEAD',
+                        datos_comerciales: {
+                          moneda: 'MXN',
+                          costo_prospecto: 350.0,
+                          calidad_verificada: '100% Criterios Cumplidos',
                         },
                       },
                     ],
@@ -2774,31 +2779,56 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
               </pre>
             </div>
 
-            {/* Sentencia SQL de Inserción en Ledger */}
-            <div className="space-y-1.5">
-              <span className="text-[10px] text-zinc-600 dark:text-zinc-400 font-bold">
-                Registro Transaccional en Base de Datos (billing_ledger):
+            {/* Tarjeta de Registro Contable y Facturación */}
+            <div className="space-y-2">
+              <span className="text-[11px] text-zinc-700 dark:text-zinc-300 font-bold flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                Registro Contable y Liquidación:
               </span>
-              <pre className="p-3.5 rounded-xl bg-zinc-900 dark:bg-black border border-zinc-800 text-[10px] text-cyan-300 overflow-x-auto shadow-inner">
-{`INSERT INTO billing_ledger (id, tenant_id, lead_id, amount, status, created_at)
-VALUES (
-  gen_random_uuid(),
-  '${activeTenant?.id || 'dental'}',
-  '${selectedCapiLead.id}',
-  350.00,
-  'PENDING_INVOICE',
-  NOW()
-);`}
-              </pre>
+              <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 space-y-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <span className="text-[10px] text-zinc-500 block uppercase font-mono">Folio Contable</span>
+                    <span className="font-mono font-bold text-zinc-900 dark:text-white">
+                      REC-2026-{(selectedCapiLead.id || 'LEAD').replace(/-/g, '').toUpperCase()}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-zinc-500 block uppercase font-mono">Negocio / Sucursal</span>
+                    <span className="font-bold text-zinc-900 dark:text-white">
+                      {activeTenant?.name || 'Negocio Activo'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-zinc-500 block uppercase font-mono">Concepto Facturable</span>
+                    <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                      Prospecto Calificado con Cita Acordada
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-zinc-500 block uppercase font-mono">Importe a Facturar</span>
+                    <span className="text-neon font-black font-mono text-sm">
+                      $350.00 MXN
+                    </span>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between text-[11px]">
+                  <span className="text-zinc-500">Estado de Liquidación:</span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/30 font-bold text-[10px]">
+                    {cleanConcept(selectedCapiLead.billingStatus || 'PENDING_INVOICE')} en Corte Mensual
+                  </span>
+                </div>
+              </div>
             </div>
 
             <div className="flex justify-end gap-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
               <button
                 type="button"
                 onClick={() => setSelectedCapiLead(null)}
-                className="px-6 py-2.5 rounded-xl bg-neon text-black font-bold hover:bg-[var(--neon-hover)] transition-all shadow-neon font-mono text-xs"
+                className="px-6 py-2.5 rounded-xl bg-neon text-black font-bold hover:bg-[var(--neon-hover)] transition-all shadow-neon font-sans text-xs"
               >
-                Cerrar Inspector
+                Cerrar Comprobante
               </button>
             </div>
           </div>

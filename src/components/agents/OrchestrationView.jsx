@@ -483,7 +483,7 @@ export const OrchestrationView = () => {
                 </p>
 
                 <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                  Aplica embudo AIDA, JTBD (beneficio antes de precio) y valida los 4 requisitos booleanos para cobrar $350 MXN (BILLABLE_LEAD).
+                  Aplica embudo de ventas comercial y valida los 4 criterios de calidad para confirmar el prospecto calificado ($350 MXN).
                 </p>
 
                 <div className="mt-3 p-2 rounded-lg bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[10px] font-mono text-[var(--text-muted)] space-y-1">
