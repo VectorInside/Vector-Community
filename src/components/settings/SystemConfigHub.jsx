@@ -18,14 +18,21 @@ import {
 export const SystemConfigHub = ({ initialTab = 'rag', initialMode = 'list' }) => {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [adminMode, setAdminMode] = useState(initialMode); // 'list' | 'wizard'
-  const { tenantsData } = useAuth();
+  const { tenantsData, role, isAdmin, activeTenant } = useAuth();
+
+  // Clientes nunca deben entrar en modo onboarding wizard
+  useEffect(() => {
+    if (!isAdmin && adminMode === 'wizard') {
+      setAdminMode('list');
+    }
+  }, [isAdmin, adminMode]);
 
   // Sync mode if initialMode prop changes (e.g. from query params)
   useEffect(() => {
-    if (initialMode) {
+    if (initialMode && (isAdmin || initialMode !== 'wizard')) {
       setAdminMode(initialMode);
     }
-  }, [initialMode]);
+  }, [initialMode, isAdmin]);
 
   useEffect(() => {
     if (initialTab) {
@@ -36,7 +43,7 @@ export const SystemConfigHub = ({ initialTab = 'rag', initialMode = 'list' }) =>
   return (
     <div className="w-full p-4 sm:p-6 lg:p-8 block animate-fade-in space-y-6">
       {/* Header Contextual Homologado: Sin Selectores Duplicados */}
-      {adminMode === 'wizard' ? (
+      {isAdmin && adminMode === 'wizard' ? (
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-[var(--border-color)] pb-4 gap-4">
           <div>
             <div className="flex items-center gap-2">
@@ -76,34 +83,58 @@ export const SystemConfigHub = ({ initialTab = 'rag', initialMode = 'list' }) =>
                 <ShieldCheck className="w-5 h-5" />
               </span>
               <h2 className="text-2xl sm:text-3xl font-heading font-black uppercase tracking-tight text-[var(--text-main)]">
-                Centro de <span className="text-neon">Configuración & Políticas</span>
+                {isAdmin ? (
+                  <>
+                    Centro de <span className="text-neon">Configuración & Políticas</span>
+                  </>
+                ) : (
+                  <>
+                    Configuración de Negocio · <span className="text-neon">{activeTenant?.shortName || activeTenant?.name}</span>
+                  </>
+                )}
               </h2>
             </div>
             <p className="text-xs font-mono text-[var(--text-muted)] mt-1.5">
-              Gestión unificada de Asistente RAG (4 Pilares), Motores de Sub-Bots (DeepSeek / Groq) y Reglas de Gobernanza Vector Inside.
+              {isAdmin
+                ? 'Gestión unificada de Asistente RAG (4 Pilares), Motores de Sub-Bots (DeepSeek / Groq) y Reglas de Gobernanza Vector Inside.'
+                : `Base de conocimiento RAG, sub-bots y políticas comerciales para ${activeTenant?.name || 'tu empresa'}.`}
             </p>
           </div>
 
-          {/* Ecosistema Status & Action Button (Homologado, sin dropdown duplicado) */}
+          {/* Ecosistema Status & Action Button (Homologado, aislado por Tenant) */}
           <div className="flex flex-wrap items-center gap-3">
-            <div className="px-3.5 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-2.5 shadow-sm">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-xs font-mono text-[var(--text-muted)]">
-                <strong className="text-[var(--text-main)] font-bold">{Object.keys(tenantsData || {}).length} Negocios</strong> Registrados
-              </span>
-            </div>
+            {isAdmin ? (
+              <>
+                <div className="px-3.5 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-2.5 shadow-sm">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-xs font-mono text-[var(--text-muted)]">
+                    <strong className="text-[var(--text-main)] font-bold">{Object.keys(tenantsData || {}).length} Negocios</strong> Registrados
+                  </span>
+                </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('rag');
-                setAdminMode('wizard');
-              }}
-              className="text-xs bg-neon text-black font-mono font-black uppercase px-4 py-2 rounded-xl flex items-center gap-1.5 hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_15px_var(--neon-glow)] active:scale-95"
-            >
-              <Plus className="w-3.5 h-3.5 stroke-[3]" />
-              <span>Alta Nuevo Negocio</span>
-            </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('rag');
+                    setAdminMode('wizard');
+                  }}
+                  className="text-xs bg-neon text-black font-mono font-black uppercase px-4 py-2 rounded-xl flex items-center gap-1.5 hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_15px_var(--neon-glow)] active:scale-95"
+                >
+                  <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                  <span>Alta Nuevo Negocio</span>
+                </button>
+              </>
+            ) : (
+              <div className="px-3.5 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-2.5 shadow-sm font-mono text-xs">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[var(--text-muted)]">
+                  Espacio: <strong className="text-[var(--text-main)] font-bold">{activeTenant?.shortName || activeTenant?.name}</strong>
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded bg-neon/10 text-neon font-bold border border-neon/20">
+                  {activeTenant?.giro}
+                </span>
+              </div>
+            )}
           </div>
         </header>
       )}
@@ -121,7 +152,7 @@ export const SystemConfigHub = ({ initialTab = 'rag', initialMode = 'list' }) =>
             }`}
           >
             <Database className="w-4 h-4" />
-            <span>1. Multi-Tenant RAG (4 Pilares)</span>
+            <span>{isAdmin ? '1. Multi-Tenant RAG (4 Pilares)' : '1. Base de Conocimiento (RAG)'}</span>
           </button>
 
           <button
@@ -147,7 +178,7 @@ export const SystemConfigHub = ({ initialTab = 'rag', initialMode = 'list' }) =>
             }`}
           >
             <Sliders className="w-4 h-4" />
-            <span>3. Reglas de Negocio & Precios</span>
+            <span>{isAdmin ? '3. Reglas de Negocio & Precios' : '3. Mi Acuerdo de Facturación & Reglas'}</span>
           </button>
         </div>
       )}

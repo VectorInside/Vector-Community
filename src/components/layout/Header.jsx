@@ -18,8 +18,13 @@ import {
   Sparkles,
   Menu,
   ArrowRight,
+  KeyRound,
+  ShieldCheck,
+  User,
 } from 'lucide-react';
 import { findModuleByPath } from '@/utils/modulesRegistry';
+import { ChangePasswordModal } from '@/components/common/ChangePasswordModal';
+import { CommandPaletteModal } from '@/components/common/CommandPaletteModal';
 
 export const Header = () => {
   const router = useRouter();
@@ -40,10 +45,30 @@ export const Header = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const popoverRef = useRef(null);
 
+  // Global Command Palette (⌘ K / Ctrl+K)
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+
   // Cross-Tenant Notifications Center
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [notifFilter, setNotifFilter] = useState('all'); // 'all' | 'unread'
   const notifRef = useRef(null);
+
+  // User Profile Menu & Password Management
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const userMenuRef = useRef(null);
+
+  // Global keyboard shortcut: Cmd+K / Ctrl+K
+  useEffect(() => {
+    const handleGlobalKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
 
   const INITIAL_CROSS_TENANT_NOTIFICATIONS = [
     {
@@ -118,15 +143,22 @@ export const Header = () => {
     return INITIAL_CROSS_TENANT_NOTIFICATIONS;
   });
 
+  const targetTenantKey = activeTenantKey || activeTenant?.id;
+
+  const scopedNotifications = useMemo(() => {
+    if (isAdmin) return notifications;
+    return notifications.filter((n) => n.tenantKey === targetTenantKey);
+  }, [notifications, isAdmin, targetTenantKey]);
+
   const unreadCount = useMemo(
-    () => notifications.filter((n) => !n.isRead).length,
-    [notifications]
+    () => scopedNotifications.filter((n) => !n.isRead).length,
+    [scopedNotifications]
   );
 
   const filteredNotifications = useMemo(() => {
-    if (notifFilter === 'unread') return notifications.filter((n) => !n.isRead);
-    return notifications;
-  }, [notifications, notifFilter]);
+    if (notifFilter === 'unread') return scopedNotifications.filter((n) => !n.isRead);
+    return scopedNotifications;
+  }, [scopedNotifications, notifFilter]);
 
   const handleSelectNotification = (notif) => {
     // 1. Mark notification as read
@@ -140,8 +172,10 @@ export const Header = () => {
       } catch (e) {}
     }
 
-    // 2. Switch Tenant Context
-    switchTenantContext(notif.tenantKey);
+    // 2. Switch Tenant Context (Solo si es administrador de agencia)
+    if (isAdmin && notif.tenantKey && switchTenantContext) {
+      switchTenantContext(notif.tenantKey);
+    }
 
     // 3. Close popover and jump to inbox thread
     setIsNotifOpen(false);
@@ -168,6 +202,9 @@ export const Header = () => {
       }
       if (notifRef.current && !notifRef.current.contains(event.target)) {
         setIsNotifOpen(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setIsUserMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -352,23 +389,30 @@ export const Header = () => {
         {/* Right Section: Search / Theme / Status / Role / Logout */}
         <div className="flex items-center gap-2.5 sm:gap-3">
           {/* Quick Search Trigger with Command K */}
-          <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] text-xs text-[var(--text-muted)]">
-            <Search className="w-3.5 h-3.5" />
-            <span className="text-[11px]">Buscar contacto, campaña...</span>
-            <kbd className="px-1.5 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--border-color)] text-[9px] font-mono font-bold text-[var(--text-faint)]">
-              ⌘ K
-            </kbd>
-          </div>
-
-          {/* Theme Switcher Button */}
           <button
             type="button"
-            onClick={toggleTheme}
-            title={`Cambiar a modo ${theme === 'dark' ? 'claro' : 'oscuro'}`}
-            className="p-2 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] hover:border-lime-400 text-[var(--text-muted)] hover:text-lime-400 transition-all"
+            onClick={() => setIsCommandPaletteOpen(true)}
+            className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] hover:border-lime-400 text-xs text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all cursor-pointer group shadow-sm active:scale-95"
+            title="Abrir buscador global y comandos rápidos (⌘ K / Ctrl+K)"
           >
-            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            <Search className="w-3.5 h-3.5 text-lime-400 group-hover:scale-110 transition-transform" />
+            <span className="text-[11px]">Buscar contacto, campaña...</span>
+            <kbd className="px-1.5 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--border-color)] text-[9px] font-mono font-bold text-[var(--text-faint)] group-hover:text-lime-400">
+              ⌘ K
+            </kbd>
           </button>
+
+          {/* Mobile Quick Search Button */}
+          <button
+            type="button"
+            onClick={() => setIsCommandPaletteOpen(true)}
+            className="lg:hidden p-2 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-lime-400 hover:border-lime-400 transition-colors"
+            title="Buscar (⌘ K)"
+            aria-label="Abrir buscador rápido"
+          >
+            <Search className="w-4 h-4" />
+          </button>
+
 
           {/* Cross-Tenant Notification Bell with Popover */}
           <div className="relative" ref={notifRef}>
@@ -444,7 +488,7 @@ export const Header = () => {
                     Sin leer ({unreadCount})
                   </button>
                   <span className="text-[10px] font-mono text-[var(--text-faint)] ml-auto">
-                    Cross-Tenant
+                    {isAdmin ? 'Cross-Tenant' : 'Espacio Aislado'}
                   </span>
                 </div>
 
@@ -531,15 +575,144 @@ export const Header = () => {
             )}
           </div>
 
-          {/* Role Avatar */}
-          <div
-            title={`Perfil actual: ${role === 'admin' ? 'Administrador' : 'Usuario'}`}
-            className="w-8 h-8 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-center font-mono font-black text-xs text-lime-400 shrink-0"
-          >
-            {role === 'admin' ? 'VI' : 'CL'}
+          {/* Role Avatar & User Menu */}
+          <div className="relative" ref={userMenuRef}>
+            <button
+              type="button"
+              onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+              title={`Perfil actual: ${role === 'admin' ? 'Administrador' : 'Usuario'} - Haz clic para ver opciones`}
+              className={`w-8 h-8 rounded-xl border flex items-center justify-center font-mono font-black text-xs shrink-0 transition-all cursor-pointer ${
+                isUserMenuOpen
+                  ? 'bg-lime-400 text-black border-lime-400 shadow-neon-sm ring-2 ring-lime-400/30'
+                  : 'bg-[var(--bg-card)] border-[var(--border-color)] text-lime-400 hover:border-lime-400/60 hover:bg-[var(--bg-panel)]'
+              }`}
+            >
+              {role === 'admin' ? 'VI' : 'CL'}
+            </button>
+
+            {/* Dropdown Menu */}
+            {isUserMenuOpen && (
+              <div className="absolute right-0 top-10 w-72 sm:w-80 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] shadow-2xl p-3 z-50 animate-scale-up space-y-3 font-sans">
+                {/* User Identity Header */}
+                <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-lime-400/15 border border-lime-400/30 flex items-center justify-center font-mono font-black text-sm text-lime-400 shadow-neon-sm shrink-0">
+                    {role === 'admin' ? 'VI' : 'CL'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-[var(--text-main)] truncate">
+                        {role === 'admin' ? 'Agencia Vector Inside' : (activeTenant?.shortName || activeTenant?.name || 'Cliente')}
+                      </span>
+                      <span className="text-[9px] font-mono px-1.5 py-0.5 bg-lime-400/10 text-lime-400 border border-lime-400/20 rounded font-semibold uppercase shrink-0">
+                        {role === 'admin' ? 'Admin' : 'Cliente'}
+                      </span>
+                    </div>
+                    <p className="text-[11px] font-mono text-[var(--text-muted)] truncate">
+                      {role === 'admin' ? 'operaciones@vectorinside.com' : `gerencia@${activeTenant?.id || 'negocio'}.mx`}
+                    </p>
+                    <p className="text-[10px] text-[var(--text-faint)] flex items-center gap-1 mt-0.5">
+                      <span>Espacio:</span>
+                      <strong className="text-[var(--text-main)] truncate">{activeTenant?.name}</strong>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Actions Section */}
+                <div className="space-y-1">
+                  {/* Cambiar Contraseña */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      setIsChangePasswordOpen(true);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-mono text-[var(--text-main)] hover:bg-[var(--bg-card)] hover:text-lime-400 transition-colors cursor-pointer group text-left"
+                  >
+                    <div className="w-6 h-6 rounded-lg bg-lime-400/10 border border-lime-400/20 flex items-center justify-center text-lime-400 group-hover:bg-lime-400 group-hover:text-black transition-colors shrink-0">
+                      <KeyRound className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold">Cambiar Contraseña</div>
+                      <div className="text-[10px] text-[var(--text-muted)]">Cifrado SHA-256 & Sesiones</div>
+                    </div>
+                  </button>
+
+                  {/* Perfil & Preferencias */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      if (role === 'admin') {
+                        router.push('/settings');
+                      } else {
+                        router.push('/profile');
+                      }
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-mono text-[var(--text-main)] hover:bg-[var(--bg-card)] hover:text-lime-400 transition-colors cursor-pointer group text-left"
+                  >
+                    <div className="w-6 h-6 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-center text-[var(--text-muted)] group-hover:text-lime-400 transition-colors shrink-0">
+                      <User className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold">
+                        {role === 'admin' ? 'Ajustes & Configuración' : 'Perfil de Marca & ADN'}
+                      </div>
+                      <div className="text-[10px] text-[var(--text-muted)]">
+                        {role === 'admin' ? 'Políticas y gobernanza de agencia' : 'Identidad, SLA y propuesta de valor'}
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* Modo Oscuro / Claro Toggle */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      toggleTheme();
+                    }}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-mono text-[var(--text-main)] hover:bg-[var(--bg-card)] transition-colors cursor-pointer text-left"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-6 h-6 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-center text-amber-400 shrink-0">
+                        {theme === 'dark' ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
+                      </div>
+                      <div>
+                        <div className="font-bold">Tema Visual</div>
+                        <div className="text-[10px] text-[var(--text-muted)]">
+                          {theme === 'dark' ? 'Modo Oscuro Cyberpunk' : 'Modo Claro Editorial'}
+                        </div>
+                      </div>
+                    </div>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] font-mono">
+                      {theme === 'dark' ? 'Dark' : 'Light'}
+                    </span>
+                  </button>
+                </div>
+
+                {/* Security Badge */}
+                <div className="px-3 py-2 rounded-xl bg-emerald-500/5 border border-emerald-500/20 flex items-center gap-2 text-[10px] font-mono text-emerald-400">
+                  <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+                  <span className="leading-tight">Sesión cifrada con JWT multi-tenant activo</span>
+                </div>
+
+                {/* Logout Divider */}
+                <div className="pt-2 border-t border-[var(--border-color)]">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      router.push('/login');
+                    }}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-mono font-bold transition-all cursor-pointer"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Cerrar Sesión</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Logout */}
+          {/* Logout Direct Button */}
           <button
             type="button"
             onClick={() => router.push('/login')}
@@ -550,6 +723,20 @@ export const Header = () => {
           </button>
         </div>
       </div>
+
+      {/* Change Password Modal */}
+      <ChangePasswordModal
+        isOpen={isChangePasswordOpen}
+        onClose={() => setIsChangePasswordOpen(false)}
+        userEmail={role === 'admin' ? 'operaciones@vectorinside.com' : `gerencia@${activeTenant?.id || 'negocio'}.mx`}
+        userName={role === 'admin' ? 'Agencia Vector Inside' : (activeTenant?.shortName || activeTenant?.name || 'Cliente')}
+      />
+
+      {/* Global Command Palette Modal (⌘ K / Ctrl+K) */}
+      <CommandPaletteModal
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+      />
 
       {/* Demo Status Bar - UX/UI Principle: Never simulate fake real success */}
       <div className="flex items-center justify-between text-[10px] font-mono text-[var(--text-faint)] pt-1 border-t border-[var(--border-color)]/60">

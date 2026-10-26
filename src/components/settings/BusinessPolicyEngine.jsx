@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useTenant } from '@/hooks/useTenant';
 import {
@@ -37,6 +37,8 @@ const formatNumber = (num) => {
 
 export const BusinessPolicyEngine = () => {
   const {
+    role,
+    isAdmin,
     tenantsData,
     activeTenantKey,
     activeTenant: authActiveTenant,
@@ -59,8 +61,15 @@ export const BusinessPolicyEngine = () => {
 
   const tenantId = currentTenant?.id || 'dental';
 
-  // Vista activa: 'active_business' (Políticas del negocio seleccionado) o 'agency_matrix' (Matriz de toda la agencia)
+  // Vista activa: 'active_business' (Políticas del negocio seleccionado) o 'agency_matrix' (Matriz de toda la agencia - Solo Admin)
   const [viewMode, setViewMode] = useState('active_business');
+
+  // Si el usuario es cliente, forzar SIEMPRE la vista del negocio activo (aislamiento multi-tenant estricto)
+  useEffect(() => {
+    if (!isAdmin && viewMode !== 'active_business') {
+      setViewMode('active_business');
+    }
+  }, [isAdmin, viewMode]);
 
   // Estado local para umbrales del sistema
   const [thresholds, setThresholds] = useState(BUSINESS_POLICY_THRESHOLDS);
@@ -140,34 +149,44 @@ export const BusinessPolicyEngine = () => {
           </p>
         </div>
 
-        {/* Botón de guardado y cambio de vista */}
+        {/* Botón de guardado y cambio de vista (Solo Admin puede ver la matriz de toda la agencia) */}
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center p-1 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] font-mono text-xs">
-            <button
-              type="button"
-              onClick={() => setViewMode('active_business')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition-all ${
-                viewMode === 'active_business'
-                  ? 'bg-neon text-black shadow-sm'
-                  : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
-              }`}
-            >
+          {isAdmin ? (
+            <div className="flex items-center p-1 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] font-mono text-xs">
+              <button
+                type="button"
+                onClick={() => setViewMode('active_business')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition-all ${
+                  viewMode === 'active_business'
+                    ? 'bg-neon text-black shadow-sm'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                }`}
+              >
+                <span>{currentTenant?.avatar || '🏢'}</span>
+                <span>{currentTenant?.shortName || 'Negocio Activo'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('agency_matrix')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition-all ${
+                  viewMode === 'agency_matrix'
+                    ? 'bg-neon text-black shadow-sm'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                }`}
+              >
+                <Briefcase className="w-3.5 h-3.5" />
+                <span>Matriz Toda la Agencia</span>
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] font-mono text-xs">
               <span>{currentTenant?.avatar || '🏢'}</span>
-              <span>{currentTenant?.shortName || 'Negocio Activo'}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('agency_matrix')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition-all ${
-                viewMode === 'agency_matrix'
-                  ? 'bg-neon text-black shadow-sm'
-                  : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
-              }`}
-            >
-              <Briefcase className="w-3.5 h-3.5" />
-              <span>Matriz Toda la Agencia</span>
-            </button>
-          </div>
+              <strong className="text-[var(--text-main)]">{currentTenant?.shortName || currentTenant?.name}</strong>
+              <span className="text-[10px] px-2 py-0.5 rounded bg-neon/10 text-neon font-bold uppercase">
+                {currentTenant?.giro}
+              </span>
+            </div>
+          )}
 
           <button
             type="button"
@@ -249,9 +268,15 @@ export const BusinessPolicyEngine = () => {
                       Acuerdo Pay-Per-Lead
                     </h3>
                   </div>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neon/15 text-neon border border-neon/30 font-bold">
-                    Split 70/30
-                  </span>
+                  {isAdmin ? (
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neon/15 text-neon border border-neon/30 font-bold">
+                      Split 70/30
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-bold">
+                      Tarifa Oficial Acordada
+                    </span>
+                  )}
                 </div>
 
                 <p className="text-xs text-[var(--text-muted)] leading-relaxed">
@@ -266,32 +291,46 @@ export const BusinessPolicyEngine = () => {
                     </span>
                     <div className="flex items-center gap-1.5 font-mono">
                       <span className="text-neon font-bold text-sm">$</span>
-                      <input
-                        type="number"
-                        min="50"
-                        step="10"
-                        value={leadPrice}
-                        onChange={(e) =>
-                          updateTenantPolicy &&
-                          updateTenantPolicy(tenantId, { leadPriceMXN: Number(e.target.value) })
-                        }
-                        className="w-24 bg-[var(--bg-card)] border border-neon rounded-lg px-2.5 py-1 text-right font-bold text-sm text-[var(--text-main)] outline-none font-mono"
-                      />
+                      {isAdmin ? (
+                        <input
+                          type="number"
+                          min="50"
+                          step="10"
+                          value={leadPrice}
+                          onChange={(e) =>
+                            updateTenantPolicy &&
+                            updateTenantPolicy(tenantId, { leadPriceMXN: Number(e.target.value) })
+                          }
+                          className="w-24 bg-[var(--bg-card)] border border-neon rounded-lg px-2.5 py-1 text-right font-bold text-sm text-[var(--text-main)] outline-none font-mono"
+                        />
+                      ) : (
+                        <div className="flex items-center gap-1 px-3 py-1 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] font-bold text-sm text-[var(--text-main)]">
+                          <span>{leadPrice}</span>
+                          <Lock className="w-3 h-3 text-[var(--text-muted)]" />
+                        </div>
+                      )}
                       <span className="text-xs text-[var(--text-muted)]">MXN</span>
                     </div>
                   </div>
 
-                  {/* Desglose de Split */}
-                  <div className="pt-2 border-t border-[var(--border-color)] space-y-2 text-xs font-mono">
-                    <div className="flex justify-between items-center text-[11px]">
-                      <span className="text-[var(--text-muted)]">Agencia (70%):</span>
-                      <strong className="text-emerald-400">${agencySplitAmount} MXN</strong>
+                  {/* Desglose de Split (Visible ÚNICAMENTE para Administradores de Agencia) */}
+                  {isAdmin ? (
+                    <div className="pt-2 border-t border-[var(--border-color)] space-y-2 text-xs font-mono">
+                      <div className="flex justify-between items-center text-[11px]">
+                        <span className="text-[var(--text-muted)]">Agencia (70%):</span>
+                        <strong className="text-emerald-400">${agencySplitAmount} MXN</strong>
+                      </div>
+                      <div className="flex justify-between items-center text-[11px]">
+                        <span className="text-[var(--text-muted)]">Plataforma (30%):</span>
+                        <strong className="text-cyan-400">${platformSplitAmount} MXN</strong>
+                      </div>
                     </div>
-                    <div className="flex justify-between items-center text-[11px]">
-                      <span className="text-[var(--text-muted)]">Plataforma (30%):</span>
-                      <strong className="text-cyan-400">${platformSplitAmount} MXN</strong>
+                  ) : (
+                    <div className="pt-2 border-t border-[var(--border-color)] text-[11px] font-mono text-[var(--text-muted)] flex items-center gap-1.5">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      <span>Tarifa auditada sin costos ocultos por prospecto calificado.</span>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Métricas del Mes */}
@@ -615,8 +654,8 @@ export const BusinessPolicyEngine = () => {
         </div>
       )}
 
-      {/* VISTA 2: MATRIZ FINANCIERA CONSOLIDADA DE TODA LA AGENCIA */}
-      {viewMode === 'agency_matrix' && (
+      {/* VISTA 2: MATRIZ FINANCIERA CONSOLIDADA DE TODA LA AGENCIA (ESTRICTAMENTE SOLO ADMIN) */}
+      {isAdmin && viewMode === 'agency_matrix' && (
         <div className="space-y-6">
           <div className="p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border-color)] pb-4">

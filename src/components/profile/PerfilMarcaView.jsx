@@ -244,9 +244,9 @@ export const PerfilMarcaView = () => {
           </p>
         </div>
 
-        {/* Selector de Tenant Rápido (Switcher si hay más de un negocio registrado) */}
+        {/* Selector de Tenant Rápido (Solo Administradores de Agencia pueden conmutar de negocio) */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0 w-full sm:w-auto">
-          {tenantList.length > 1 && (
+          {isAdmin && tenantList.length > 1 ? (
             <div className="flex items-center gap-2 p-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs font-mono">
               <span className="text-[10px] text-[var(--text-muted)] pl-2">Negocio:</span>
               <select
@@ -260,6 +260,17 @@ export const PerfilMarcaView = () => {
                   </option>
                 ))}
               </select>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs font-mono">
+              <span className="text-base">{customAvatar || activeTenant?.avatar || '🏢'}</span>
+              <div className="flex flex-col">
+                <span className="text-[10px] text-[var(--text-muted)] uppercase font-bold">Espacio de Negocio:</span>
+                <strong className="text-[var(--text-main)]">{activeTenant?.shortName || activeTenant?.name}</strong>
+              </div>
+              <span className="ml-1 text-[10px] px-2 py-0.5 rounded bg-neon/10 text-neon font-bold uppercase border border-neon/20">
+                {activeTenant?.giro}
+              </span>
             </div>
           )}
 

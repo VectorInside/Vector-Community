@@ -58,9 +58,24 @@ export const HeroSection = ({ onOpenTrial, lang = 'es' }) => {
   const [chartData, setChartData] = useState(INITIAL_LIVE_DATA);
   const [liveCounter, setLiveCounter] = useState(14892);
   const [revenueCounter, setRevenueCounter] = useState(342850);
+  const [rotatingWordIndex, setRotatingWordIndex] = useState(0);
+  const [isRotating, setIsRotating] = useState(false);
 
   const t = LANDING_TRANSLATIONS[lang].hero;
   const m = LANDING_TRANSLATIONS[lang].metrics;
+
+  const rotatingWords = t.rotatingWords || ['atiende y vende', 'agenda citas', 'modera comentarios', 'resuelve dudas'];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setIsRotating(true);
+      setTimeout(() => {
+        setRotatingWordIndex((prev) => (prev + 1) % rotatingWords.length);
+        setIsRotating(false);
+      }, 250);
+    }, 2800);
+    return () => clearInterval(timer);
+  }, [rotatingWords.length]);
 
   const streamEvents = lang === 'es' ? [
     { id: 'ev-101', type: 'CAPI', msg: 'Match Servidor Meta CAPI Verificado ($1,420.00 MXN)', channel: 'Instagram DM', time: 'Ahora mismo', tag: 'Alto Valor' },
@@ -153,17 +168,17 @@ export const HeroSection = ({ onOpenTrial, lang = 'es' }) => {
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#00F0FF08_1px,transparent_1px),linear-gradient(to_bottom,#00F0FF08_1px,transparent_1px)] bg-[size:3.5rem_3.5rem] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_10%,#000_70%,transparent_100%)] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        {/* Top Floating Cyber Badge */}
-        <div className="flex justify-center mb-5">
-          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-zinc-900/90 via-zinc-900/60 to-zinc-900/90 border border-cyan-500/30 backdrop-blur-2xl shadow-[0_0_25px_rgba(0,240,255,0.2)] hover:border-cyan-400/60 transition-all cursor-pointer">
+        {/* Top Product Announcement Badge */}
+        <div className="flex justify-center mb-6">
+          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-zinc-900/90 border border-emerald-500/30 backdrop-blur-xl shadow-[0_0_20px_rgba(16,185,129,0.12)] hover:border-emerald-400/50 transition-all duration-300">
             <span className="flex h-2 w-2 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-400" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
             </span>
-            <span className="text-[11px] font-mono font-semibold text-zinc-200">
+            <span className="text-xs font-medium text-zinc-200">
               {t.announcement}
             </span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-black whitespace-nowrap shadow-sm">
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 whitespace-nowrap">
               {t.badge}
             </span>
           </div>
@@ -171,9 +186,18 @@ export const HeroSection = ({ onOpenTrial, lang = 'es' }) => {
 
         {/* Hero Title & Value Proposition */}
         <div className="text-center max-w-5xl mx-auto space-y-6">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-[68px] font-heading font-black tracking-tight text-white leading-[1.12]">
-            <span className="block">{t.title1}</span>
-            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-neon via-cyan-300 to-purple-400 drop-shadow-[0_0_40px_rgba(231,249,0,0.3)] mt-1 sm:mt-2">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-[66px] font-heading font-black tracking-tight text-white leading-[1.14]">
+            <span className="block sm:inline">{t.title1}{' '}</span>
+            <span className="inline-block relative">
+              <span
+                className={`inline-block text-transparent bg-clip-text bg-gradient-to-r from-neon via-cyan-300 to-emerald-400 drop-shadow-[0_0_30px_rgba(231,249,0,0.25)] transition-all duration-300 transform ${
+                  isRotating ? 'opacity-0 -translate-y-2 scale-95' : 'opacity-100 translate-y-0 scale-100'
+                }`}
+              >
+                {t.rotatingWords ? t.rotatingWords[rotatingWordIndex] : 'atiende y vende'}
+              </span>
+            </span>
+            <span className="block mt-1 sm:mt-2 text-zinc-100">
               {t.title2}
             </span>
           </h1>
@@ -182,7 +206,7 @@ export const HeroSection = ({ onOpenTrial, lang = 'es' }) => {
             {t.subtitle}
           </p>
 
-          {/* Primary Action Buttons (Vibrant Glows & Micro-interactions) */}
+          {/* Primary Action Buttons (Streamlined to 2 clear actions) */}
           <div className="flex flex-wrap items-center justify-center gap-3.5 pt-2">
             <button
               type="button"
@@ -196,36 +220,28 @@ export const HeroSection = ({ onOpenTrial, lang = 'es' }) => {
 
             <a
               href="#realtime-demo"
-              className="px-6 py-3.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-100 font-sans font-semibold text-xs sm:text-sm border border-[var(--border-color)] hover:border-neon shadow-sm transition-all flex items-center justify-center gap-2 backdrop-blur-md whitespace-nowrap shrink-0 active:scale-95"
+              className="px-6 py-3.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-100 font-sans font-semibold text-xs sm:text-sm border border-[var(--border-color)] hover:border-cyan-400/50 shadow-sm transition-all flex items-center justify-center gap-2 backdrop-blur-md whitespace-nowrap shrink-0 active:scale-95 group"
             >
-              <Play className="w-3.5 h-3.5 text-neon fill-neon shrink-0" />
+              <Play className="w-3.5 h-3.5 text-cyan-400 fill-cyan-400 group-hover:scale-110 transition-transform shrink-0" />
               <span className="whitespace-nowrap">{t.ctaSecondary}</span>
             </a>
-
-            <Link
-              href="/login"
-              className="px-5 py-3.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 hover:text-white font-sans text-xs sm:text-sm font-semibold border border-[var(--border-color)] hover:border-neon shadow-sm transition-all flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 active:scale-95"
-            >
-              <span className="whitespace-nowrap">Iniciar Sesión</span>
-              <ArrowRight className="w-3.5 h-3.5 shrink-0" />
-            </Link>
           </div>
 
-          {/* Trust Highlights Checklist with Holographic Glass Badges */}
-          <div className="pt-3 flex flex-wrap items-center justify-center gap-2.5 sm:gap-4 text-xs text-zinc-300 font-mono">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900/80 border border-neon/30 shadow-[0_0_15px_rgba(231,249,0,0.1)] whitespace-nowrap">
-              <CheckCircle2 className="w-3.5 h-3.5 text-neon shrink-0" />
+          {/* Trust Highlights Checklist */}
+          <div className="pt-3 flex flex-wrap items-center justify-center gap-2.5 sm:gap-4 text-xs text-zinc-300">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900/80 border border-zinc-800 text-zinc-300 hover:border-zinc-700 transition-colors whitespace-nowrap">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
               <span>{t.trust1}</span>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900/80 border border-cyan-500/30 shadow-[0_0_15px_rgba(0,240,255,0.1)] whitespace-nowrap">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900/80 border border-zinc-800 text-zinc-300 hover:border-zinc-700 transition-colors whitespace-nowrap">
               <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
               <span>{t.trust2}</span>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900/80 border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.1)] whitespace-nowrap">
-              <CheckCircle2 className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900/80 border border-zinc-800 text-zinc-300 hover:border-zinc-700 transition-colors whitespace-nowrap">
+              <CheckCircle2 className="w-3.5 h-3.5 text-neon shrink-0" />
               <span>{t.trust3}</span>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900/80 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.1)] whitespace-nowrap">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900/80 border border-zinc-800 text-zinc-300 hover:border-zinc-700 transition-colors whitespace-nowrap">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
               <span>{t.trust4}</span>
             </div>

@@ -50,7 +50,7 @@ export const Sidebar = () => {
   const {
     role,
     isAdmin,
-    switchRole,
+    activeTenant,
     isSidebarCollapsed,
     toggleSidebarCollapse,
     isMobileSidebarOpen,
@@ -61,10 +61,6 @@ export const Sidebar = () => {
 
   const navigationPillars = getNavigationForRole(role);
 
-  const handleRoleChange = (newRole) => {
-    switchRole(newRole);
-    router.push('/dashboard');
-  };
 
   const isLinkActive = (mod) => {
     if (pathname === mod.path) return true;
@@ -156,44 +152,90 @@ export const Sidebar = () => {
           </div>
         )}
 
-        {/* Workspace Indicator & Role Selector */}
+        {/* Workspace Indicator & Multi-Tenant Switcher */}
         <div className="p-3 border-b border-[var(--border-color)] bg-[var(--bg-card)] relative">
           {isSidebarCollapsed ? (
-            <div
-              className="flex flex-col items-center justify-center cursor-pointer p-1 rounded-lg hover:bg-[var(--bg-base)] transition-colors"
-              onClick={() => handleRoleChange(role === 'admin' ? 'client' : 'admin')}
-              title={`Perfil: ${role === 'admin' ? 'Administrador (Agencia)' : 'Usuario (Marca)'} (Clic para alternar)`}
-            >
-              {role === 'admin' ? (
-                <span className="p-1.5 rounded-lg bg-lime-400/15 text-lime-400 border border-lime-400/40 shadow-sm">
-                  <Shield className="w-4 h-4" />
-                </span>
-              ) : (
-                <span className="p-1.5 rounded-lg bg-blue-500/15 text-blue-400 border border-blue-500/40">
-                  <UserCheck className="w-4 h-4" />
-                </span>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono font-bold text-[var(--text-muted)] uppercase tracking-wider">
-                  Espacio Activo
-                </span>
-                <span className="flex items-center gap-1.5 text-[10px] font-mono text-emerald-400 font-semibold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  En Línea
+            isAdmin ? (
+              <div
+                className="flex flex-col items-center justify-center p-1 rounded-lg cursor-pointer"
+                title={`Administrador: Lobo Vectorial — Supervisando: ${activeTenant?.name || 'Negocio'}`}
+              >
+                <span className="p-1.5 rounded-lg bg-lime-400/15 text-lime-400 border border-lime-400/40 shadow-sm text-sm">
+                  {activeTenant?.avatar || '🐺'}
                 </span>
               </div>
-              <label className="sr-only">Perfil Operativo</label>
-              <select
-                value={role}
-                onChange={(e) => handleRoleChange(e.target.value)}
-                className="w-full bg-[var(--bg-base)] border border-[var(--border-color)] hover:border-lime-400 text-xs text-[var(--text-main)] rounded-lg p-2 outline-none focus:border-lime-400 cursor-pointer font-bold transition-all shadow-sm"
+            ) : (
+              <div
+                className="flex flex-col items-center justify-center p-1 rounded-lg"
+                title={`Perfil: Dueño de Negocio (${activeTenant?.name || 'Cliente'}) — Entorno Aislado RLS`}
               >
-                <option value="admin">Administrador (Lobo Vectorial)</option>
-                <option value="client">Usuario (Dueño de Negocio)</option>
-              </select>
+                <span className="p-1.5 rounded-lg bg-cyan-500/15 text-cyan-400 border border-cyan-500/40">
+                  <UserCheck className="w-4 h-4" />
+                </span>
+              </div>
+            )
+          ) : isAdmin ? (
+            <div className="space-y-2">
+              {/* Identidad de Agencia Lobo Vectorial */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-lime-400 animate-pulse" />
+                  <span className="text-[10px] font-mono font-bold text-lime-400 uppercase tracking-wider">
+                    Lobo Vectorial
+                  </span>
+                </div>
+                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-lime-400/10 text-lime-400 border border-lime-400/30 font-bold uppercase">
+                  Admin Agencia
+                </span>
+              </div>
+
+              {/* Tarjeta Visual del Negocio Actual en Supervisión */}
+              <div className="p-2.5 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] flex items-center gap-2.5 text-left shadow-sm">
+                <span className="text-xl shrink-0">{activeTenant?.avatar || '🏢'}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-1">
+                    <p className="text-xs font-bold text-[var(--text-main)] truncate font-sans">
+                      {activeTenant?.shortName || activeTenant?.name}
+                    </p>
+                    {activeTenant?.isAiActive ? (
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" title="IA Activa" />
+                    ) : (
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" title="IA Pausada" />
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between gap-1 mt-0.5">
+                    <span className="text-[9px] text-[var(--text-muted)] truncate font-mono">
+                      {activeTenant?.giro || 'Giro comercial'}
+                    </span>
+                    <span className="text-[8px] font-mono font-bold text-cyan-400 uppercase shrink-0">
+                      En foco
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2 font-mono">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">
+                  Espacio de Negocio
+                </span>
+                <span className="flex items-center gap-1 text-[9px] text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  RLS Aislado
+                </span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] flex items-center gap-2.5">
+                <span className="text-xl shrink-0">{activeTenant?.avatar || '🏢'}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-[var(--text-main)] truncate font-sans">
+                    {activeTenant?.shortName || activeTenant?.name}
+                  </p>
+                  <span className="text-[9px] text-neon font-bold block truncate uppercase">
+                    {activeTenant?.giro || 'Dueño de Negocio'}
+                  </span>
+                </div>
+              </div>
             </div>
           )}
         </div>

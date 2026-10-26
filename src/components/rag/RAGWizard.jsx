@@ -1441,9 +1441,13 @@ export const RAGWizard = ({
     return { total, activeCount, pausedCount };
   }, [tenantsData]);
 
-  // Filtered and searched tenant list
+  // Filtered and searched tenant list (Aislamiento Multi-Tenant Estricto)
   const filteredTenantsList = useMemo(() => {
-    const list = Object.values(tenantsData || {});
+    let list = Object.values(tenantsData || {});
+    // Si el usuario es cliente, filtrar ÚNICAMENTE su propio negocio asignado
+    if (!isAdmin && activeTenant?.id) {
+      list = list.filter((t) => t.id === activeTenant.id);
+    }
     return list.filter((tenant) => {
       // 1. Search Query
       if (tenantSearchQuery.trim()) {

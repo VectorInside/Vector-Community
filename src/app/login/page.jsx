@@ -29,7 +29,7 @@ import { VectorLobo } from '@/components/common/VectorLobo';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { switchRole } = useAuth();
+  const { loginAs } = useAuth();
 
   const [email, setEmail] = useState('admin@vectorinside.com');
   const [password, setPassword] = useState('••••••••••••');
@@ -41,13 +41,20 @@ export default function LoginPage() {
   const handleSelectPersona = (user) => {
     setSelectedPersona(user.id);
     setEmail(user.email);
-    switchRole(user.role);
+    loginAs(user);
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     setLoading(true);
     setAuthStage('Validando credenciales criptográficas...');
+
+    const userToLogin =
+      DEMO_USERS.find((u) => u.id === selectedPersona) ||
+      DEMO_USERS.find((u) => u.email.toLowerCase() === email.toLowerCase()) ||
+      DEMO_USERS[0];
+
+    loginAs(userToLogin);
 
     setTimeout(() => {
       setAuthStage('Cargando permisos y espacio de trabajo...');
@@ -196,7 +203,7 @@ export default function LoginPage() {
                         </p>
                       </div>
                       <p className="text-[10px] text-zinc-400 font-mono truncate">
-                        {isAdmin ? 'Lobo Vectorial' : 'Odonto Integral'}
+                        {isAdmin ? 'Lobo Vectorial (Agencia)' : (usr.tenantName || usr.roleTitle || 'Dueño de Negocio')}
                       </p>
                       <span
                         className={`inline-block text-[9px] font-mono font-black mt-1 px-1.5 py-0.5 rounded uppercase ${

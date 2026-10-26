@@ -523,9 +523,20 @@ export const DEMO_USERS = [
     email: 'contacto@odontointegral.com',
     name: 'Dra. Patricia Morales',
     role: USER_ROLES.CLIENT,
-    roleTitle: 'Dueño de Negocio (Cliente Final)',
+    tenantKey: 'dental',
+    roleTitle: 'Dueño de Negocio (Odontología Integral)',
     badge: 'DUEÑO NEGOCIO',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+  },
+  {
+    id: 'usr-client-03',
+    email: 'gerencia@polanco.mx',
+    name: 'Chef Rodrigo Albarrán',
+    role: USER_ROLES.CLIENT,
+    tenantKey: 'polanco',
+    roleTitle: 'Dueño de Negocio (Polanco Steakhouse)',
+    badge: 'DUEÑO NEGOCIO',
+    avatar: 'https://images.unsplash.com/photo-1583394293214-28ded15ee548?w=150&auto=format&fit=crop&q=80',
   },
 ];
 

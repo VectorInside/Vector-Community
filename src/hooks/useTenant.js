@@ -15,11 +15,19 @@ export const useTenantStore = create((set, get) => ({
   isLoading: false,
 
   setActiveTenantId: (tenantId) => {
-    set({ activeTenantId: tenantId });
     if (typeof window !== 'undefined') {
+      const savedRole = localStorage.getItem('vector_role');
+      if (savedRole === 'client') {
+        const currentSaved = localStorage.getItem('vector_active_tenant_key') || localStorage.getItem('vector_active_tenant_id');
+        if (currentSaved && currentSaved !== tenantId) {
+          console.warn('[RLS Multi-Tenant Guard] Bloqueo en useTenantStore: Usuario con rol Cliente está aislado y no puede conmutar el espacio de negocio.');
+          return;
+        }
+      }
       localStorage.setItem('vector_active_tenant_id', tenantId);
       localStorage.setItem('vector_active_tenant_key', tenantId);
     }
+    set({ activeTenantId: tenantId });
   },
 
   getActiveTenant: () => {
