@@ -212,6 +212,22 @@ export const PerformanceDashboard = () => {
     bounceRate: '65%',
   };
 
+  const mlMetrics = activeTenant?.microLandingMetrics || {
+    visits: 1280,
+    leadsGenerated: 233,
+    conversionRate: '18.2%',
+    costPerLead: '$1.85 MXN',
+    bounceRate: '8.4%',
+    avgLoadTime: '0.65s',
+    ctaClicks: 312,
+    qrScans: 46,
+    sources: {
+      bioLink: '54.2%',
+      directAds: '38.6%',
+      qrPrint: '7.2%',
+    },
+  };
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 block animate-fade-in space-y-6 max-w-7xl mx-auto font-sans">
       {/* Header Contextual Homologado con el Tenant Activo */}
@@ -486,6 +502,26 @@ export const PerformanceDashboard = () => {
               })}
             </div>
           </div>
+
+          {/* Banner de Delimitación: Sitio Web Corporativo (GA4) vs Micro-Landing Vector */}
+          {activeTenant?.hasWebsite && (
+            <div className="p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs font-mono animate-fade-in shadow-sm">
+              <div className="flex items-center gap-2.5 text-[var(--text-main)]">
+                <Globe className="w-4 h-4 text-blue-400 shrink-0" />
+                <span>
+                  <strong>Fuente de Telemetría:</strong> Métricas registradas en tu <strong>Sitio Web Oficial ({activeTenant.websiteUrl})</strong> vía Google Analytics 4.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab('microlanding')}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[var(--bg-panel)] hover:bg-[var(--bg-card)] text-neon font-bold border border-neon/30 text-[11px] transition-all shrink-0 hover:scale-[1.02]"
+              >
+                <Smartphone className="w-3.5 h-3.5" />
+                <span>Ver Telemetría Exclusiva de tu Micro-Landing ({mlMetrics.conversionRate} Conv.) →</span>
+              </button>
+            </div>
+          )}
 
           {/* KPI Cards adaptadas según sitio web o flujo directo */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1152,23 +1188,30 @@ export const PerformanceDashboard = () => {
       {/* ========================================================================= */}
       {activeTab === 'microlanding' && (
         <div className="space-y-6 animate-fade-in">
+          {/* Header de Identidad de Micro-Landing */}
           <div className="p-6 rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
             <div className="flex items-center gap-3">
               <span className="p-3 rounded-2xl bg-neon/10 text-neon border border-neon/30">
                 <Smartphone className="w-6 h-6" />
               </span>
               <div>
-                <h3 className="text-xl font-bold text-[var(--text-main)] tracking-tight flex items-center gap-2">
-                  <span>{activeTenant?.avatar}</span>
-                  <span>Micro-Landing Page de {activeTenant?.name}</span>
-                </h3>
-                <p className="text-xs text-[var(--text-muted)] font-mono">
-                  Diseño móvil ultraligero alojado en: app.vectorinside.com/m/{activeTenant?.microLandingSlug || activeTenant?.id}
+                <div className="flex items-center gap-2">
+                  <h3 className="text-xl font-bold text-[var(--text-main)] tracking-tight flex items-center gap-2">
+                    <span>{activeTenant?.avatar}</span>
+                    <span>Micro-Landing Page de {activeTenant?.name}</span>
+                  </h3>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">
+                    CAPI ACTIVO • 99.4%
+                  </span>
+                </div>
+                <p className="text-xs text-[var(--text-muted)] font-mono mt-0.5">
+                  Embudo ultraligero de alta conversión alojado en:{' '}
+                  <code className="text-neon underline">app.vectorinside.com/m/{activeTenant?.microLandingSlug || activeTenant?.id}</code>
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
                 onClick={handleCopyPublicLink}
@@ -1185,6 +1228,201 @@ export const PerformanceDashboard = () => {
                 <Smartphone className="w-4 h-4" />
                 <span>Previsualización Móvil</span>
               </button>
+            </div>
+          </div>
+
+          {/* =================================================================== */}
+          {/* KPI STAT CARDS EXCLUSIVAS DE LA MICRO-LANDING                       */}
+          {/* =================================================================== */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard
+              title="Visitas a Micro-Landing"
+              value={formatNumber(mlMetrics.visits || 1280)}
+              subvalue="Tráfico de alta intención"
+              change="+24.2%"
+              isPositive={true}
+              icon={Users}
+              badgeText="EMBUDO VECTOR"
+              accentColor="brand"
+            />
+
+            <StatCard
+              title="Conversión a WhatsApp (Chat)"
+              value={mlMetrics.conversionRate || '18.2%'}
+              subvalue={`${mlMetrics.leadsGenerated || 233} chats iniciados`}
+              change="+13x vs Web"
+              isPositive={true}
+              icon={MousePointerClick}
+              badgeText="ALTA CONVERSIÓN"
+              accentColor="emerald"
+            />
+
+            <StatCard
+              title="Costo por Lead (Micro-Landing)"
+              value={mlMetrics.costPerLead || '$1.85 MXN'}
+              subvalue="Costo unitario por conversación"
+              change="-51.3%"
+              isPositive={true}
+              icon={DollarSign}
+              badgeText="ÓPTIMO"
+              accentColor="emerald"
+            />
+
+            <StatCard
+              title="Velocidad Móvil & Retención"
+              value={mlMetrics.avgLoadTime || '0.65s'}
+              subvalue={`Rebote de solo ${mlMetrics.bounceRate || '8.4%'}`}
+              change="-87% vs Web"
+              isPositive={true}
+              icon={TrendingUp}
+              badgeText="0% FRICCIÓN"
+              accentColor="blue"
+            />
+          </div>
+
+          {/* =================================================================== */}
+          {/* MATRIZ COMPARATIVA DUAL: WEB TRADICIONAL VS MICRO-LANDING VECTOR     */}
+          {/* =================================================================== */}
+          <div className="p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-4 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--border-color)]">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="p-1 rounded-lg bg-neon/15 text-neon border border-neon/30">
+                    <Layers className="w-4 h-4" />
+                  </span>
+                  <h3 className="text-base font-heading font-black text-[var(--text-main)]">
+                    Telemetría Dual: Sitio Web Corporativo (GA4) vs. Micro-Landing Vector
+                  </h3>
+                </div>
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                  <strong>Aclaración de Atribución:</strong> El sistema no fusiona los CPC. Se mantiene una separación rigurosa entre el tráfico institucional de tu web externa y los prospectos comerciales de tu Micro-Landing.
+                </p>
+              </div>
+
+              <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 font-bold shrink-0 self-start sm:self-auto">
+                Segmentación de Tráfico Activa
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs font-mono">
+                <thead>
+                  <tr className="border-b border-[var(--border-color)] text-[var(--text-muted)] uppercase text-[10px]">
+                    <th className="py-2.5 px-3">Parámetro Evaluado</th>
+                    <th className="py-2.5 px-3">
+                      <span className="flex items-center gap-1.5">
+                        <Globe className="w-3.5 h-3.5 text-blue-400" />
+                        Sitio Web Tradicional (GA4)
+                      </span>
+                    </th>
+                    <th className="py-2.5 px-3">
+                      <span className="flex items-center gap-1.5 text-neon font-bold">
+                        <Smartphone className="w-3.5 h-3.5 text-neon" />
+                        Micro-Landing Vector (/m/{activeTenant?.microLandingSlug || activeTenant?.id})
+                      </span>
+                    </th>
+                    <th className="py-2.5 px-3 text-right">Ventaja Comercial</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--border-color)] text-[var(--text-main)]">
+                  <tr className="hover:bg-[var(--bg-card)] transition-colors">
+                    <td className="py-3 px-3 font-semibold font-sans">Velocidad de Carga Celular (LCP)</td>
+                    <td className="py-3 px-3 text-amber-500 font-bold">2.9 segundos (Lento)</td>
+                    <td className="py-3 px-3 text-neon font-bold">{mlMetrics.avgLoadTime || '0.65s'} (Instantáneo)</td>
+                    <td className="py-3 px-3 text-right text-emerald-500 font-bold">+346% más veloz</td>
+                  </tr>
+
+                  <tr className="hover:bg-[var(--bg-card)] transition-colors">
+                    <td className="py-3 px-3 font-semibold font-sans">Tasa de Contacto a WhatsApp</td>
+                    <td className="py-3 px-3 text-red-500 font-bold">
+                      {webMetrics.whatsappClickRate || '1.4%'} (⚠️ Fricción)
+                    </td>
+                    <td className="py-3 px-3 text-emerald-400 font-bold">
+                      {mlMetrics.conversionRate || '18.2%'} (🚀 Directo a chat)
+                    </td>
+                    <td className="py-3 px-3 text-right text-emerald-500 font-bold">13x más citas/leads</td>
+                  </tr>
+
+                  <tr className="hover:bg-[var(--bg-card)] transition-colors">
+                    <td className="py-3 px-3 font-semibold font-sans">Costo Unitario de Adquisición</td>
+                    <td className="py-3 px-3 text-[var(--text-muted)]">
+                      {webMetrics.cpc || '$3.80 MXN'} CPC
+                    </td>
+                    <td className="py-3 px-3 text-neon font-bold">
+                      {mlMetrics.costPerLead || '$1.85 MXN'} por Lead
+                    </td>
+                    <td className="py-3 px-3 text-right text-emerald-500 font-bold">-51% costo por prospecto</td>
+                  </tr>
+
+                  <tr className="hover:bg-[var(--bg-card)] transition-colors">
+                    <td className="py-3 px-3 font-semibold font-sans">Tasa de Rebote / Fuga de Visitas</td>
+                    <td className="py-3 px-3 text-amber-500 font-bold">
+                      {webMetrics.bounceRate || '65%'} de abandono
+                    </td>
+                    <td className="py-3 px-3 text-emerald-400 font-bold">
+                      {mlMetrics.bounceRate || '8.4%'} de rebote
+                    </td>
+                    <td className="py-3 px-3 text-right text-emerald-500 font-bold">87% menos fuga</td>
+                  </tr>
+
+                  <tr className="hover:bg-[var(--bg-card)] transition-colors bg-[var(--bg-card)]/50">
+                    <td className="py-3 px-3 font-semibold font-sans">Estrategia Recomendada</td>
+                    <td className="py-3 px-3 text-[var(--text-muted)] text-[11px] font-sans">
+                      Catálogo institucional & Posicionamiento SEO de marca
+                    </td>
+                    <td className="py-3 px-3 text-neon text-[11px] font-sans font-bold">
+                      Destino prioritario de Meta Ads, TikTok y Enlace en Bio
+                    </td>
+                    <td className="py-3 px-3 text-right text-neon font-bold text-[11px] font-sans">
+                      Máxima Rentabilidad
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* =================================================================== */}
+          {/* DISTRIBUCIÓN DE FUENTES DE TRÁFICO DE LA MICRO-LANDING              */}
+          {/* =================================================================== */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
+            <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2 shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-neon font-bold text-xs flex items-center gap-1.5">
+                  <Smartphone className="w-4 h-4" />
+                  Enlace en Bio (Redes)
+                </span>
+                <span className="text-neon font-bold">{mlMetrics.sources?.bioLink || '54.2%'}</span>
+              </div>
+              <p className="text-[var(--text-muted)] font-sans text-xs">
+                Tráfico orgánico proveniente de Instagram Bio, TikTok y perfiles sociales.
+              </p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2 shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-emerald-500 font-bold text-xs flex items-center gap-1.5">
+                  <MousePointerClick className="w-4 h-4" />
+                  Meta Ads Pauta Directa
+                </span>
+                <span className="text-emerald-500 font-bold">{mlMetrics.sources?.directAds || '38.6%'}</span>
+              </div>
+              <p className="text-[var(--text-muted)] font-sans text-xs">
+                Campañas de tráfico pagado en Meta con atribución CAPI server-to-server.
+              </p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2 shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-blue-500 font-bold text-xs flex items-center gap-1.5">
+                  <QrCode className="w-4 h-4" />
+                  Código QR en Mostrador
+                </span>
+                <span className="text-blue-500 font-bold">{mlMetrics.sources?.qrPrint || '7.2%'}</span>
+              </div>
+              <p className="text-[var(--text-muted)] font-sans text-xs">
+                Clientes físicos que escanean el QR en recepción, mesas o material impreso.
+              </p>
             </div>
           </div>
 
