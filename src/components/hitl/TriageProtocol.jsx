@@ -674,9 +674,9 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
       name: 'Roberto Sánchez',
       phone: 'DM Instagram / WhatsApp',
       email: 'roberto.sanchez@yahoo.com',
-      channel: 'ALERTA HITL: Malas palabras detectadas',
+      channel: 'Alerta: Atención Requerida',
       leadState: LEAD_STATUS_ENUM.HITL_INTERVENTION,
-      status: 'Intervención Humana (HITL)',
+      status: 'Intervención de Asesor Humano',
       statusType: 'danger',
       avatar: '😠',
       potentialTicket: '$1,850 MXN (En Disputa)',
@@ -1333,10 +1333,10 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
               <ShieldAlert className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
               <div className="min-w-0 flex-1">
                 <span className="block leading-tight font-black truncate">
-                  ALERTA HITL: Lenguaje Agresivo
+                  Alerta: Atención Humana Requerida
                 </span>
                 <span className="text-[9px] text-rose-600/90 dark:text-rose-400/80 font-normal font-sans block truncate">
-                  Lobo Vectorial pausó el bot para intervención humana
+                  El sistema pausó el asistente para dar paso a un asesor
                 </span>
               </div>
             </div>
@@ -1484,10 +1484,10 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neon/15 text-neon border border-neon/30 text-[11px] font-sans font-semibold uppercase tracking-wider mb-2">
             <Bot className="w-3.5 h-3.5" />
-            Operación · Calificación y Triage en Tiempo Real
+            Operación · Calificación y Clasificación en Tiempo Real
           </div>
           <h2 className="text-2xl sm:text-3xl font-heading font-black tracking-tight text-zinc-900 dark:text-white">
-            Prospectos y Ventas <span className="text-neon">· Calificación HITL</span>
+            Prospectos y Ventas <span className="text-neon">· Calificación & Atención Humana</span>
           </h2>
           <p className="text-xs sm:text-sm font-sans text-zinc-600 dark:text-zinc-400 mt-1 max-w-3xl leading-relaxed">
             Seguimiento comercial y calificación en tiempo real. Protocolo de re-contactación a 24 horas y aprobación de Pre-Citas con dictamen en 1 clic.
@@ -1547,7 +1547,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800/80 shadow-sm">
               <span className="w-2 h-2 rounded-full bg-neon shadow-[0_0_8px_var(--neon-glow)]" />
               <span className="text-[11px] text-zinc-600 dark:text-zinc-400 uppercase tracking-wider font-bold">
-                Leads Activos: <span className="text-zinc-900 dark:text-white font-black">{Object.keys(threads).length}</span>
+                Prospectos Activos: <span className="text-zinc-900 dark:text-white font-black">{Object.keys(threads).length}</span>
               </span>
             </div>
 
@@ -1561,7 +1561,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800/80 shadow-sm">
               <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
               <span className="text-[11px] text-zinc-600 dark:text-zinc-400 uppercase tracking-wider font-bold">
-                Intervención HITL: <span className="text-rose-600 dark:text-rose-400 font-black">{Object.values(threads).filter((t) => t.leadState === LEAD_STATUS_ENUM.HITL_INTERVENTION).length}</span>
+                Atención Requerida: <span className="text-rose-600 dark:text-rose-400 font-black">{Object.values(threads).filter((t) => t.leadState === LEAD_STATUS_ENUM.HITL_INTERVENTION).length}</span>
               </span>
             </div>
           </div>
@@ -2470,7 +2470,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="text-xl font-heading font-black text-white">
-                      Motor Asíncrono de Re-Engagement 24h & Vaca Púrpura
+                      Motor Automático de Re-contacto 24h & Valor Agregado
                     </h3>
                     <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 font-bold uppercase">
                       Regla 95/5 Activa
@@ -2480,7 +2480,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
                     </span>
                   </div>
                   <p className="text-xs text-zinc-400 font-sans mt-0.5">
-                    Sub-Bot Re-Engagement (DeepSeek V3 / Groq Llama 3) sobre Upstash Redis Queue • Costo $0 USD en tokens.
+                    Asistente de Re-contacto Inteligente • Automatización de mensajes programados.
                   </p>
                 </div>
               </div>
@@ -2493,24 +2493,24 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
                   className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold font-mono text-xs flex items-center gap-2 shadow-lg shadow-purple-600/20 transition-all active:scale-95"
                 >
                   <Zap className="w-4 h-4 text-neon" />
-                  <span>⚡ Ejecutar Worker Redis Nocturno (Batch 0ms)</span>
+                  <span>⚡ Enviar Re-contactos Pendientes Ahora</span>
                 </button>
               </div>
             </div>
 
             <p className="text-xs text-zinc-300 font-sans leading-relaxed pt-2 border-t border-zinc-800/80">
-              <strong>Doctrina Comercial Vector Inside:</strong> Según la <em>Regla 95/5 de Ehrenberg-Bass</em>, solo el 5% de tu audiencia está lista para comprar hoy (In-Market). El 95% restante (Out-of-Market) queda en espera tras responder "lo voy a pensar". A las 24 horas exactas de inactividad, el motor asíncrono despacha un micro-mensaje disruptivo bajo el marco de la <strong>Vaca Púrpura (Seth Godin)</strong>: aporta un dato curioso, supera la objeción previa en menos de 40 palabras y cierra con un micro-CTA sin presión agresiva.
+              <strong>Estrategia Comercial:</strong> Según la <em>Regla 95/5</em>, solo el 5% de tu audiencia está lista para comprar hoy. El 95% restante queda en espera tras responder "lo voy a pensar". A las 24 horas exactas de inactividad, el sistema envía un mensaje oportuno con un dato de valor o facilidades de pago para retomar la conversación sin presionar al cliente.
             </p>
           </div>
 
           {/* KPI Summary Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-1 shadow-sm">
-              <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase">Leads Out-of-Market en Espera</span>
+              <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase">Prospectos en Espera de Re-contacto</span>
               <p className="text-2xl font-black text-purple-400">
                 {reengagementList.filter((x) => x.status !== 'FOLLOWUP_SENT').length}
               </p>
-              <span className="text-[10px] text-zinc-400 font-sans">Encolados en Upstash Redis</span>
+              <span className="text-[10px] text-zinc-400 font-sans">Programados para seguimiento</span>
             </div>
 
             <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-1 shadow-sm">

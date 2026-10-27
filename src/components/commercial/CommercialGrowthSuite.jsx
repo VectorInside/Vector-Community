@@ -130,7 +130,7 @@ export const CommercialGrowthSuite = () => {
               )}
             </div>
             <span className="text-[10px] px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20">
-              CAPI Activo
+              Conversiones Meta Activas
             </span>
           </div>
         </div>
@@ -197,7 +197,7 @@ export const CommercialGrowthSuite = () => {
               </div>
             </div>
             <span className="px-3 py-1 rounded-lg bg-emerald-500/15 text-emerald-400 font-mono font-bold text-[11px] border border-emerald-500/30 shrink-0">
-              Protocolo Redis Activo
+              Re-contacto Automático Activo
             </span>
           </div>
 

@@ -56,12 +56,12 @@ export const KANBAN_COLUMNS_CONFIG = [
   },
   {
     id: LEAD_STATUS_ENUM.HITL_INTERVENTION,
-    title: 'Intervención Humana (HITL)',
-    badge: 'SUTURA ARCÁNGEL',
+    title: 'Intervención de Asesor Humano',
+    badge: 'ATENCIÓN HUMANA',
     color: 'from-red-500/25 to-rose-600/10 text-red-400 border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.2)]',
     dotColor: 'bg-red-500 animate-pulse',
-    description: 'IA congelada por bandera de riesgo o lenguaje agresivo. Control humano.',
-    countdownLabel: 'Riesgo Crítico',
+    description: 'Atención pausada por lenguaje agresivo o petición explícita. Asignado a asesor.',
+    countdownLabel: 'Atención Prioritaria',
   },
 ];
 
