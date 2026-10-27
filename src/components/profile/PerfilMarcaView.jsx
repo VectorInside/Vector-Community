@@ -1047,14 +1047,14 @@ export const PerfilMarcaView = () => {
         </div>
 
         {/* =================================================================== */}
-        {/* SECCIÓN 5: POLÍTICA DE CONTACTABILIDAD & SLA DE ATENCIÓN            */}
+        {/* SECCIÓN 6: POLÍTICA DE CONTACTABILIDAD & SLA DE ATENCIÓN            */}
         {/* =================================================================== */}
         <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-4 shadow-sm">
           <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-neon" />
               <h3 className="font-heading font-black text-sm text-[var(--text-main)] uppercase tracking-wide">
-                5. Contactabilidad, SLA & Teléfono HITL
+                6. Contactabilidad, SLA & Atención Humana
               </h3>
             </div>
             <span className="text-[10px] font-mono text-neon font-bold bg-neon/10 px-2.5 py-0.5 rounded border border-neon/20">
@@ -1067,7 +1067,7 @@ export const PerfilMarcaView = () => {
               {/* Teléfono de Escalación Humana */}
               <div>
                 <label className="font-mono text-[10px] text-[var(--text-muted)] uppercase font-bold block mb-1">
-                  Teléfono / WhatsApp de Escalación Humana (HITL) *
+                  Teléfono / WhatsApp de Escalación Humana *
                 </label>
                 <input
                   type="text"
@@ -1154,14 +1154,14 @@ export const PerfilMarcaView = () => {
           </div>
         </div>
         {/* =================================================================== */}
-        {/* SECCIÓN 6: CANALES OFICIALES CONECTADOS                             */}
+        {/* SECCIÓN 7: CANALES OFICIALES CONECTADOS                             */}
         {/* =================================================================== */}
         <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-3 shadow-sm">
           <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
             <div className="flex items-center gap-2">
               <Share2 className="w-4 h-4 text-neon" />
               <h3 className="font-heading font-black text-sm text-[var(--text-main)] uppercase tracking-wide">
-                6. Canales Oficiales del Negocio
+                7. Canales Oficiales del Negocio
               </h3>
             </div>
             <span className="text-[10px] font-mono text-[var(--text-muted)]">
