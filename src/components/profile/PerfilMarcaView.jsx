@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import {
   resolveBrandPreset,
@@ -152,7 +152,7 @@ export const PerfilMarcaView = () => {
   }, [activeTenantKey, activeTenant, currentPreset]);
 
   // Manejador de guardado persistente
-  const handleSave = (e) => {
+  const handleSave = useCallback((e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (updateTenantPolicy && (activeTenantKey || activeTenant?.id)) {
       const targetKey = activeTenantKey || activeTenant?.id;
@@ -192,7 +192,33 @@ export const PerfilMarcaView = () => {
       setSavedNotification(true);
       setTimeout(() => setSavedNotification(false), 4000);
     }
-  };
+  }, [
+    updateTenantPolicy,
+    activeTenantKey,
+    activeTenant,
+    brandPurpose,
+    toneOfVoice,
+    emojiPolicy,
+    slaTarget,
+    brandColors,
+    customAvatar,
+    ownerPhone,
+    offerHook,
+    offerCta,
+    offerValidity,
+    inviolableRules,
+    buyerName,
+    buyerAgeRange,
+    buyerMaritalStatus,
+    buyerLocation,
+    buyerHabits,
+    buyerPainPoint,
+    buyerBuyingTrigger,
+    mixProduct,
+    mixPrice,
+    mixPlace,
+    mixPromotion,
+  ]);
 
   // Manejador de atajo de teclado Ctrl+S / Cmd+S para guardar
   useEffect(() => {
@@ -204,7 +230,7 @@ export const PerfilMarcaView = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [brandPurpose, toneOfVoice, emojiPolicy, slaTarget, brandColors, customAvatar, ownerPhone, offerHook, offerCta, offerValidity, inviolableRules]);
+  }, [handleSave]);
 
   // Cambiar color individual en paleta
   const handleColorChange = (index, newHex) => {
