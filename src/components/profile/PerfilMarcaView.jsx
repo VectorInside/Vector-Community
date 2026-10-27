@@ -76,6 +76,21 @@ export const PerfilMarcaView = () => {
   const [inviolableRules, setInviolableRules] = useState([]);
   const [newRuleInput, setNewRuleInput] = useState('');
 
+  // Buyer Persona
+  const [buyerName, setBuyerName] = useState('');
+  const [buyerAgeRange, setBuyerAgeRange] = useState('');
+  const [buyerMaritalStatus, setBuyerMaritalStatus] = useState('');
+  const [buyerLocation, setBuyerLocation] = useState('');
+  const [buyerHabits, setBuyerHabits] = useState('');
+  const [buyerPainPoint, setBuyerPainPoint] = useState('');
+  const [buyerBuyingTrigger, setBuyerBuyingTrigger] = useState('');
+
+  // Marketing Mix 4 Ps
+  const [mixProduct, setMixProduct] = useState('');
+  const [mixPrice, setMixPrice] = useState('');
+  const [mixPlace, setMixPlace] = useState('');
+  const [mixPromotion, setMixPromotion] = useState('');
+
   // Categoría activa de selector de avatar
   const [selectedAvatarCategory, setSelectedAvatarCategory] = useState(0);
 
@@ -118,6 +133,20 @@ export const PerfilMarcaView = () => {
             ]
       );
 
+      // Buyer Persona & Marketing Mix (4 Ps)
+      setBuyerName(activeTenant.buyerPersona?.name || 'Cliente Ideal Calificado');
+      setBuyerAgeRange(activeTenant.buyerPersona?.ageRange || '28 a 45 años');
+      setBuyerMaritalStatus(activeTenant.buyerPersona?.maritalStatus || 'Profesionista / Familiar');
+      setBuyerLocation(activeTenant.buyerPersona?.location || 'Zona Metropolitana & CP Local');
+      setBuyerHabits(activeTenant.buyerPersona?.digitalHabits || 'Instagram, TikTok y WhatsApp');
+      setBuyerPainPoint(activeTenant.buyerPersona?.mainPainPoint || 'Falta de claridad en costos y desconfianza');
+      setBuyerBuyingTrigger(activeTenant.buyerPersona?.buyingTrigger || 'Garantía, atención inmediata y facilidades de pago');
+
+      setMixProduct(activeTenant.marketingMix4P?.product || '');
+      setMixPrice(activeTenant.marketingMix4P?.price || '');
+      setMixPlace(activeTenant.marketingMix4P?.place || '');
+      setMixPromotion(activeTenant.marketingMix4P?.promotion || '');
+
       setIsDirty(false);
     }
   }, [activeTenantKey, activeTenant, currentPreset]);
@@ -142,6 +171,21 @@ export const PerfilMarcaView = () => {
           validity: offerValidity,
         },
         inviolableRules,
+        buyerPersona: {
+          name: buyerName,
+          ageRange: buyerAgeRange,
+          maritalStatus: buyerMaritalStatus,
+          location: buyerLocation,
+          digitalHabits: buyerHabits,
+          mainPainPoint: buyerPainPoint,
+          buyingTrigger: buyerBuyingTrigger,
+        },
+        marketingMix4P: {
+          product: mixProduct,
+          price: mixPrice,
+          place: mixPlace,
+          promotion: mixPromotion,
+        },
       });
 
       setIsDirty(false);
@@ -789,6 +833,189 @@ export const PerfilMarcaView = () => {
                 <Plus className="w-3.5 h-3.5" />
                 <span>Agregar Regla</span>
               </button>
+            </div>
+          </div>
+        </div>
+
+        {/* =================================================================== */}
+        {/* SECCIÓN 5: DELIMITACIÓN DEL BUYER PERSONA & MARKETING MIX (4 Ps)    */}
+        {/* =================================================================== */}
+        <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-6 shadow-sm font-sans">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[var(--border-color)] pb-3 gap-2">
+            <div className="flex items-center gap-2">
+              <Target className="w-5 h-5 text-neon" />
+              <div>
+                <h3 className="font-heading font-black text-sm text-[var(--text-main)] uppercase tracking-wide">
+                  5. Delimitación del Buyer Persona & Marketing Mix (4 Ps)
+                </h3>
+                <span className="text-[10px] text-[var(--text-muted)] font-mono">
+                  Extraído del manual de identidad para alimentar el bot y los copys de venta
+                </span>
+              </div>
+            </div>
+            <span className="px-2.5 py-0.5 rounded-full bg-neon/10 text-neon font-mono text-[10px] font-bold border border-neon/20 self-start sm:self-auto">
+              Auditoría BANT & AIDA
+            </span>
+          </div>
+
+          {/* Formulario del Buyer Persona */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-xs font-mono font-bold text-neon uppercase">
+              <span>🎯 Perfil Demográfico & Psicográfico</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 text-xs font-sans">
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-[var(--text-muted)]">Nombre del Arquetipo</label>
+                <input
+                  type="text"
+                  value={buyerName}
+                  onChange={(e) => {
+                    setBuyerName(e.target.value);
+                    setIsDirty(true);
+                  }}
+                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-[var(--text-muted)]">Rango de Edad</label>
+                <input
+                  type="text"
+                  value={buyerAgeRange}
+                  onChange={(e) => {
+                    setBuyerAgeRange(e.target.value);
+                    setIsDirty(true);
+                  }}
+                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-[var(--text-muted)]">Estado Civil & Entorno</label>
+                <input
+                  type="text"
+                  value={buyerMaritalStatus}
+                  onChange={(e) => {
+                    setBuyerMaritalStatus(e.target.value);
+                    setIsDirty(true);
+                  }}
+                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs"
+                />
+              </div>
+
+              <div className="space-y-1 sm:col-span-2 lg:col-span-3">
+                <label className="text-[11px] font-bold text-[var(--text-muted)]">Geolocalización & Códigos Postales Prioritarios</label>
+                <input
+                  type="text"
+                  value={buyerLocation}
+                  onChange={(e) => {
+                    setBuyerLocation(e.target.value);
+                    setIsDirty(true);
+                  }}
+                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs"
+                />
+              </div>
+
+              <div className="space-y-1 sm:col-span-2 lg:col-span-3">
+                <label className="text-[11px] font-bold text-[var(--text-muted)]">Hábitos Digitales & Canales de Consumo</label>
+                <input
+                  type="text"
+                  value={buyerHabits}
+                  onChange={(e) => {
+                    setBuyerHabits(e.target.value);
+                    setIsDirty(true);
+                  }}
+                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs"
+                />
+              </div>
+
+              <div className="space-y-1 sm:col-span-1 lg:col-span-1.5">
+                <label className="text-[11px] font-bold text-amber-400">Dolor Principal (Struggling Moment)</label>
+                <textarea
+                  rows={2}
+                  value={buyerPainPoint}
+                  onChange={(e) => {
+                    setBuyerPainPoint(e.target.value);
+                    setIsDirty(true);
+                  }}
+                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-amber-500/30 text-[var(--text-main)] focus:border-amber-400 outline-none text-xs leading-relaxed"
+                />
+              </div>
+
+              <div className="space-y-1 sm:col-span-1 lg:col-span-1.5">
+                <label className="text-[11px] font-bold text-emerald-400">Disparador de Compra (Gancho Irresistible)</label>
+                <textarea
+                  rows={2}
+                  value={buyerBuyingTrigger}
+                  onChange={(e) => {
+                    setBuyerBuyingTrigger(e.target.value);
+                    setIsDirty(true);
+                  }}
+                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-emerald-500/30 text-[var(--text-main)] focus:border-emerald-400 outline-none text-xs leading-relaxed"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Formulario del Marketing Mix (4 Ps) */}
+          <div className="space-y-4 pt-3 border-t border-[var(--border-color)]">
+            <div className="flex items-center gap-2 text-xs font-mono font-bold text-cyan-400 uppercase">
+              <span>📦 Estructura del Marketing Mix (4 Ps Oficiales)</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs font-sans">
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-[var(--text-muted)]">1. PRODUCTO (Propuesta de Valor & Alcance)</label>
+                <textarea
+                  rows={2}
+                  value={mixProduct}
+                  onChange={(e) => {
+                    setMixProduct(e.target.value);
+                    setIsDirty(true);
+                  }}
+                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs leading-relaxed"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-[var(--text-muted)]">2. PRECIO (Aranceles, Rangos & MSI)</label>
+                <textarea
+                  rows={2}
+                  value={mixPrice}
+                  onChange={(e) => {
+                    setMixPrice(e.target.value);
+                    setIsDirty(true);
+                  }}
+                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs leading-relaxed"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-[var(--text-muted)]">3. PLAZA (Canales de Entrega & Locaciones)</label>
+                <textarea
+                  rows={2}
+                  value={mixPlace}
+                  onChange={(e) => {
+                    setMixPlace(e.target.value);
+                    setIsDirty(true);
+                  }}
+                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs leading-relaxed"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-[var(--text-muted)]">4. PROMOCIÓN (Ofertas del Mes, Cupones & 2x1)</label>
+                <textarea
+                  rows={2}
+                  value={mixPromotion}
+                  onChange={(e) => {
+                    setMixPromotion(e.target.value);
+                    setIsDirty(true);
+                  }}
+                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs leading-relaxed"
+                />
+              </div>
             </div>
           </div>
         </div>

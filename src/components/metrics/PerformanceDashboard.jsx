@@ -8,6 +8,8 @@ import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { MicroLandingPreviewModal } from '@/components/common/MicroLandingPreviewModal';
 import { formatCurrency, formatNumber, cleanConcept } from '@/utils/formatters';
+import { OMNICHANNEL_API_CATALOG } from '@/utils/constants';
+import Link from 'next/link';
 import {
   TrendingUp,
   DollarSign,
@@ -37,6 +39,12 @@ import {
   Calendar,
   Clock,
   MessageSquare,
+  Instagram,
+  Video,
+  Linkedin,
+  Play,
+  Share2,
+  Sliders,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -104,6 +112,47 @@ export const PerformanceDashboard = () => {
     } catch (e) {}
     setTimeout(() => setCopiedLink(false), 2500);
   };
+
+  const CHANNEL_ICONS = {
+    Instagram: Instagram,
+    Globe: Globe,
+    MessageSquare: MessageSquare,
+    Video: Video,
+    Linkedin: Linkedin,
+    Play: Play,
+    Share2: Share2,
+    Send: Send,
+  };
+
+  // Solo mostrar los canales que el negocio tenga dados de alta y activos
+  const activeChannelsList = useMemo(() => {
+    const tenantConnected = activeTenant?.connectedChannels || {};
+    const enabledKeys = Object.keys(tenantConnected).filter((k) => tenantConnected[k]?.enabled);
+    if (enabledKeys.length > 0) {
+      return enabledKeys
+        .map((k) => {
+          const cat = OMNICHANNEL_API_CATALOG[k];
+          if (!cat) return null;
+          return {
+            ...cat,
+            tenantConfig: tenantConnected[k],
+          };
+        })
+        .filter(Boolean);
+    }
+    // Fallback inteligente según redes del tenant o default de giro
+    const fallbackKeys = ['meta', 'whatsapp', ...(activeTenant?.hasWebsite ? ['google'] : [])];
+    return fallbackKeys
+      .map((k) => {
+        const cat = OMNICHANNEL_API_CATALOG[k];
+        if (!cat) return null;
+        return {
+          ...cat,
+          tenantConfig: { enabled: true, status: 'connected', latencyMs: 110, lastSync: 'En tiempo real' },
+        };
+      })
+      .filter(Boolean);
+  }, [activeTenant]);
 
   const summary = data?.summary || {
     realRoas: 4.82,
@@ -265,6 +314,138 @@ export const PerformanceDashboard = () => {
               <code className="text-[var(--text-main)] bg-[var(--bg-card)] px-2 py-1 rounded border border-[var(--border-color)] text-[11px]">
                 {activeTenant?.metaPixelId || 'Handshake Servidor Activo'}
               </code>
+            </div>
+          </div>
+
+          {/* ========================================================================= */}
+          {/* SECCIÓN OMNICANAL: SALUD DE CANALES ACTIVOS & FATIGA PUBLICITARIA         */}
+          {/* ========================================================================= */}
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-[var(--border-color)]">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="p-1 rounded-lg bg-neon/15 text-neon border border-neon/30">
+                    <Activity className="w-4 h-4" />
+                  </span>
+                  <h3 className="text-base font-heading font-black text-[var(--text-main)]">
+                    Salud de Canales Oficiales & Atribución
+                  </h3>
+                  <span className="px-2 py-0.5 rounded-full bg-neon/10 text-neon font-mono text-[10px] font-bold border border-neon/20">
+                    {activeChannelsList.length} Canales Activos
+                  </span>
+                </div>
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                  Telemetría de adquisición exclusiva para los medios dados de alta por <strong className="text-[var(--text-main)]">{activeTenant?.shortName || activeTenant?.name}</strong>. Cero saturación de canales no configurados.
+                </p>
+              </div>
+
+              <Link
+                href="/config?tab=channels"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] hover:text-neon border border-[var(--border-color)] hover:border-neon text-xs font-mono font-bold transition-all shrink-0 self-start sm:self-auto shadow-sm"
+              >
+                <Sliders className="w-3.5 h-3.5 text-neon" />
+                <span>Configurar Canales & APIs</span>
+              </Link>
+            </div>
+
+            {/* Grid de Canales Filtrados Estrictamente */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              {activeChannelsList.map((ch) => {
+                const IconComp = CHANNEL_ICONS[ch.iconName] || Globe;
+                const metrics = ch.defaultMetrics || {};
+                const isFatigueAlert = (metrics.adFatigueScore || 1.5) > 3.5;
+                const isRetentionWarning = parseInt(metrics.retentionScore || '80%') < 65;
+
+                return (
+                  <div
+                    key={ch.id}
+                    className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon/40 transition-all flex flex-col justify-between space-y-3 shadow-sm group"
+                  >
+                    <div className="space-y-2.5">
+                      {/* Top Header del Canal */}
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2.5">
+                          <span className={`p-2 rounded-xl bg-gradient-to-br ${ch.color} text-white shadow-sm shrink-0`}>
+                            <IconComp className="w-4 h-4" />
+                          </span>
+                          <div>
+                            <h4 className="font-bold text-xs text-[var(--text-main)] leading-tight">
+                              {ch.name}
+                            </h4>
+                            <span className="text-[10px] text-[var(--text-muted)] font-mono">
+                              {ch.category}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Status API Badge */}
+                        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 text-[10px] font-mono font-bold shrink-0">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          <span>{ch.tenantConfig?.latencyMs || metrics.latencyMs || 120}ms</span>
+                        </div>
+                      </div>
+
+                      {/* Métricas Principales del Canal */}
+                      <div className="grid grid-cols-3 gap-2 py-2 border-y border-[var(--border-color)] font-mono text-center">
+                        <div className="p-1.5 rounded-lg bg-[var(--bg-panel)]">
+                          <span className="text-[9px] text-[var(--text-muted)] block">Interacciones</span>
+                          <span className="text-xs font-bold text-[var(--text-main)]">
+                            {formatNumber(metrics.clicks || 1200)}
+                          </span>
+                        </div>
+                        <div className="p-1.5 rounded-lg bg-[var(--bg-panel)]">
+                          <span className="text-[9px] text-[var(--text-muted)] block">CPC</span>
+                          <span className="text-xs font-bold text-emerald-500">
+                            {metrics.cpc || '$3.50 MXN'}
+                          </span>
+                        </div>
+                        <div className="p-1.5 rounded-lg bg-[var(--bg-panel)]">
+                          <span className="text-[9px] text-[var(--text-muted)] block">Fuga/Rebote</span>
+                          <span className={`text-xs font-bold ${parseFloat(metrics.bounceRate || '2.0%') <= 3.0 ? 'text-emerald-400' : 'text-amber-500'}`}>
+                            {metrics.bounceRate || '1.8%'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Detector de Desgaste y Fatiga Publicitaria */}
+                      <div className="space-y-1.5 font-sans text-xs">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-[var(--text-muted)] flex items-center gap-1 font-mono text-[10px]">
+                            <Flame className="w-3 h-3 text-neon" />
+                            Frecuencia de Anuncio:
+                          </span>
+                          <span className={`font-mono text-[10px] font-bold px-1.5 py-0.2 rounded border ${
+                            isFatigueAlert
+                              ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                              : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                          }`}>
+                            {metrics.adFatigueScore || 1.8}x {isFatigueAlert ? '(Saturado)' : '(Saludable)'}
+                          </span>
+                        </div>
+
+                        {isFatigueAlert ? (
+                          <div className="p-2 rounded-xl bg-rose-500/10 border border-rose-500/30 text-[10px] text-rose-300 leading-snug flex items-start gap-1.5">
+                            <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0 mt-0.5" />
+                            <span>
+                              <strong>Alerta de Fatiga:</strong> Frecuencia superior al umbral de 3.5x. Se sugiere rotar creatividades y refrescar ganchos publicitarios.
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)] font-mono">
+                            <span>Retención de Audiencia:</span>
+                            <span className="text-neon font-bold">{metrics.retentionScore || '82%'}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-[var(--border-color)]/60 flex items-center justify-between text-[10px] font-mono text-[var(--text-muted)]">
+                      <span>Sincronización API:</span>
+                      <span className="text-[var(--text-main)] font-semibold">{ch.tenantConfig?.lastSync || 'En tiempo real'}</span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 

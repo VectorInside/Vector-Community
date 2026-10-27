@@ -1,8 +1,6 @@
-'use client';
-
 import React from 'react';
-import { TriageProtocol } from '@/components/hitl/TriageProtocol';
+import { CommercialGrowthSuite } from '@/components/commercial/CommercialGrowthSuite';
 
 export default function CrmPage() {
-  return <TriageProtocol defaultViewMode="kanban" />;
+  return <CommercialGrowthSuite />;
 }

@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { RAGWizard } from '@/components/rag/RAGWizard';
 import { SubBotsConfig } from '@/components/settings/SubBotsConfig';
 import { BusinessPolicyEngine } from '@/components/settings/BusinessPolicyEngine';
+import { ChannelConnectionsManager } from '@/components/settings/ChannelConnectionsManager';
 import {
   Database,
   Cpu,
@@ -13,6 +14,7 @@ import {
   Plus,
   ArrowLeft,
   Sparkles,
+  Share2,
 } from 'lucide-react';
 
 export const SystemConfigHub = ({ initialTab = 'rag', initialMode = 'list' }) => {
@@ -180,6 +182,19 @@ export const SystemConfigHub = ({ initialTab = 'rag', initialMode = 'list' }) =>
             <Sliders className="w-4 h-4" />
             <span>{isAdmin ? '3. Reglas de Negocio & Precios' : '3. Mi Acuerdo de Facturación & Reglas'}</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('channels')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all shrink-0 ${
+              activeTab === 'channels'
+                ? 'bg-neon text-black shadow-[0_0_12px_var(--neon-glow)]'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] border border-[var(--border-color)]'
+            }`}
+          >
+            <Share2 className="w-4 h-4" />
+            <span>4. Canales & APIs Oficiales</span>
+          </button>
         </div>
       )}
 
@@ -194,6 +209,7 @@ export const SystemConfigHub = ({ initialTab = 'rag', initialMode = 'list' }) =>
         )}
         {activeTab === 'subbots' && <SubBotsConfig />}
         {activeTab === 'policies' && <BusinessPolicyEngine />}
+        {activeTab === 'channels' && <ChannelConnectionsManager />}
       </div>
     </div>
   );

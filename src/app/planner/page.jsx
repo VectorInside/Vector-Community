@@ -1,8 +1,6 @@
-'use client';
-
 import React from 'react';
-import { ContentPlanner } from '@/components/planner/ContentPlanner';
+import { CommercialGrowthSuite } from '@/components/commercial/CommercialGrowthSuite';
 
 export default function PlannerPage() {
-  return <ContentPlanner />;
+  return <CommercialGrowthSuite />;
 }
