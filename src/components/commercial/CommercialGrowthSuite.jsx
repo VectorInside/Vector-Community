@@ -180,29 +180,27 @@ export const CommercialGrowthSuite = () => {
 
       {/* VISTA 1: PIPELINE KANBAN & PROSPECTOS */}
       {activeSuiteTab === 'kanban' && (
-        <div className="space-y-4 animate-fade-in">
-          {/* Banner de Re-contacto y Automatización 24h */}
-          <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-500/10 via-[var(--bg-card)] to-emerald-500/10 border border-[var(--border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-2.5">
-              <span className="p-2 rounded-xl bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                <Clock className="w-4 h-4" />
+        <div className="space-y-3.5 animate-fade-in">
+          {/* Banner de Re-contacto y Automatización 24h Compacto y Elegante */}
+          <div className="py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-500/10 via-[var(--bg-card)] to-emerald-500/10 border border-[var(--border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="p-1.5 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/30 shrink-0">
+                <Clock className="w-3.5 h-3.5" />
               </span>
-              <div>
-                <strong className="text-[var(--text-main)] block">
-                  Automatización de Re-contacto Activa (Ventana de 24 Horas)
-                </strong>
+              <p className="text-[11.5px] text-[var(--text-main)] truncate">
+                <strong className="font-semibold text-white">Re-contacto 24h Activo:</strong>{' '}
                 <span className="text-[var(--text-muted)]">
-                  Los prospectos que vacilen o no compren de inmediato reciben automáticamente seguimiento de valor agregado tras 24h de inactividad.
+                  Seguimiento automático de valor agregado a prospectos tras 24h de inactividad.
                 </span>
-              </div>
+              </p>
             </div>
-            <span className="px-3 py-1 rounded-lg bg-emerald-500/15 text-emerald-400 font-mono font-bold text-[11px] border border-emerald-500/30 shrink-0">
-              Re-contacto Automático Activo
+            <span className="px-2.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 font-mono font-bold text-[10px] border border-emerald-500/30 shrink-0 self-start sm:self-auto">
+              Automático Activo
             </span>
           </div>
 
-          {/* Render del Tablero Kanban */}
-          <TriageProtocol defaultViewMode="kanban" />
+          {/* Render del Tablero Kanban en Modo Integrado */}
+          <TriageProtocol defaultViewMode="kanban" embedded={true} />
         </div>
       )}
 

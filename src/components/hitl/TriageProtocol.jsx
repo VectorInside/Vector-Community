@@ -548,7 +548,7 @@ const CANONICAL_REENGAGEMENT_BY_TENANT = {
   ],
 };
 
-export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
+export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } = {}) => {
   const { triggerModal, activeTenant } = useAuth();
   const [activeTab, setActiveTab] = useState('chats'); // 'chats' | 'meta_comments' | 'redis_queue'
   const [viewMode, setViewMode] = useState(defaultViewMode); // 'kanban' or 'chat'
@@ -1476,157 +1476,209 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban' } = {}) => {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 block animate-fade-in space-y-6 max-w-[1920px] mx-auto">
+    <div className={`${embedded ? 'p-0 space-y-4' : 'p-4 sm:p-6 lg:p-8 space-y-6'} block animate-fade-in max-w-[1920px] mx-auto`}>
       {/* ========================================================================= */}
-      {/* 1. HEADER PRINCIPAL Y CENTRO DE MANDO HITL                                */}
+      {/* 1. HEADER PRINCIPAL Y CENTRO DE MANDO (O SWITCHER COMPACTO SI ES EMBEDDED) */}
       {/* ========================================================================= */}
-      <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 border-b border-zinc-200 dark:border-zinc-800/80 pb-6">
-        <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neon/15 text-neon border border-neon/30 text-[11px] font-sans font-semibold uppercase tracking-wider mb-2">
-            <Bot className="w-3.5 h-3.5" />
-            Operación · Calificación y Clasificación en Tiempo Real
+      {!embedded ? (
+        <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 border-b border-zinc-200 dark:border-zinc-800/80 pb-6">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neon/15 text-neon border border-neon/30 text-[11px] font-sans font-semibold uppercase tracking-wider mb-2">
+              <Bot className="w-3.5 h-3.5" />
+              Operación · Calificación y Clasificación en Tiempo Real
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-heading font-black tracking-tight text-zinc-900 dark:text-white">
+              Prospectos y Ventas <span className="text-neon">· Calificación & Atención Humana</span>
+            </h2>
+            <p className="text-xs sm:text-sm font-sans text-zinc-600 dark:text-zinc-400 mt-1 max-w-3xl leading-relaxed">
+              Seguimiento comercial y calificación en tiempo real. Protocolo de re-contactación a 24 horas y aprobación de Pre-Citas con dictamen en 1 clic.
+            </p>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-heading font-black tracking-tight text-zinc-900 dark:text-white">
-            Prospectos y Ventas <span className="text-neon">· Calificación & Atención Humana</span>
-          </h2>
-          <p className="text-xs sm:text-sm font-sans text-zinc-600 dark:text-zinc-400 mt-1 max-w-3xl leading-relaxed">
-            Seguimiento comercial y calificación en tiempo real. Protocolo de re-contactación a 24 horas y aprobación de Pre-Citas con dictamen en 1 clic.
-          </p>
+
+          {/* Tab Switcher: Chats vs Meta Graph vs Cola Redis 24h */}
+          <div className="flex flex-wrap items-center gap-1.5 bg-zinc-100 dark:bg-zinc-950/90 p-1.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 font-sans text-xs shrink-0 shadow-sm dark:shadow-lg">
+            <button
+              type="button"
+              onClick={() => setActiveTab('chats')}
+              className={`px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 ${
+                activeTab === 'chats'
+                  ? 'bg-neon text-black shadow-neon-sm'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+              }`}
+            >
+              <MessageCircle className="w-4 h-4" />
+              <span>Prospectos ({Object.keys(threads).length})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('meta_comments')}
+              className={`px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 ${
+                activeTab === 'meta_comments'
+                  ? 'bg-neon text-black shadow-neon-sm'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+              }`}
+            >
+              <Instagram className="w-4 h-4 text-pink-500 dark:text-pink-400" />
+              <span>Comentarios Meta</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('redis_queue')}
+              className={`px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 ${
+                activeTab === 'redis_queue'
+                  ? 'bg-neon text-black shadow-neon-sm'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+              }`}
+            >
+              <Clock className="w-4 h-4 text-purple-400" />
+              <span>Recuperación 24h (Regla 95/5)</span>
+            </button>
+          </div>
+        </header>
+      ) : (
+        /* Barra de Sub-Canales Compacta integrada horizontalmente */
+        <div className="flex items-center justify-between gap-3 pb-1 border-b border-zinc-200 dark:border-zinc-800/60 font-sans text-xs">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-mono">
+              Canal de Prospectos:
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5 bg-zinc-100 dark:bg-zinc-950/80 p-1 rounded-xl border border-zinc-200 dark:border-zinc-800">
+            <button
+              type="button"
+              onClick={() => setActiveTab('chats')}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 text-xs ${
+                activeTab === 'chats'
+                  ? 'bg-neon text-black shadow-neon-sm'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+              }`}
+            >
+              <MessageCircle className="w-3.5 h-3.5" />
+              <span>Embudo ({Object.keys(threads).length})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('meta_comments')}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 text-xs ${
+                activeTab === 'meta_comments'
+                  ? 'bg-neon text-black shadow-neon-sm'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+              }`}
+            >
+              <Instagram className="w-3.5 h-3.5 text-pink-500 dark:text-pink-400" />
+              <span>Comentarios Meta</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('redis_queue')}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 text-xs ${
+                activeTab === 'redis_queue'
+                  ? 'bg-neon text-black shadow-neon-sm'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+              }`}
+            >
+              <Clock className="w-3.5 h-3.5 text-purple-400" />
+              <span>Recuperación 24h</span>
+            </button>
+          </div>
         </div>
-
-        {/* Tab Switcher: Chats vs Meta Graph vs Cola Redis 24h */}
-        <div className="flex flex-wrap items-center gap-1.5 bg-zinc-100 dark:bg-zinc-950/90 p-1.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 font-sans text-xs shrink-0 shadow-sm dark:shadow-lg">
-          <button
-            type="button"
-            onClick={() => setActiveTab('chats')}
-            className={`px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 ${
-              activeTab === 'chats'
-                ? 'bg-neon text-black shadow-neon-sm'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
-            }`}
-          >
-            <MessageCircle className="w-4 h-4" />
-            <span>Prospectos ({Object.keys(threads).length})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('meta_comments')}
-            className={`px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 ${
-              activeTab === 'meta_comments'
-                ? 'bg-neon text-black shadow-neon-sm'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
-            }`}
-          >
-            <Instagram className="w-4 h-4 text-pink-500 dark:text-pink-400" />
-            <span>Comentarios Meta</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('redis_queue')}
-            className={`px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 ${
-              activeTab === 'redis_queue'
-                ? 'bg-neon text-black shadow-neon-sm'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
-            }`}
-          >
-            <Clock className="w-4 h-4 text-purple-400" />
-            <span>Recuperación 24h (Regla 95/5)</span>
-          </button>
-        </div>
-      </header>
+      )}
 
       {/* ========================================================================= */}
-      {/* 2. BARRA DE CONTROL DE VISTA Y TELEMETRÍA (CENTRADA Y BALANCEADA)         */}
+      {/* 2. BARRA DE CONTROL DE VISTA Y TELEMETRÍA (COMPACTA & ALINEADA)           */}
       {/* ========================================================================= */}
       {activeTab === 'chats' && (
-        <div className="flex flex-col md:flex-row items-center justify-center gap-4 lg:gap-8 p-3 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800/80 font-mono text-xs shadow-sm dark:shadow-md w-full">
-          {/* Indicadores Operativos Rápidos (Centrados) */}
-          <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-4">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800/80 shadow-sm">
+        <div className={`flex flex-col md:flex-row items-center justify-between gap-3 ${
+          embedded ? 'py-2 px-3.5 rounded-xl' : 'p-3 rounded-2xl'
+        } bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800/80 font-mono text-xs shadow-sm w-full`}>
+          {/* Indicadores Operativos Rápidos */}
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800/80 shadow-sm">
               <span className="w-2 h-2 rounded-full bg-neon shadow-[0_0_8px_var(--neon-glow)]" />
-              <span className="text-[11px] text-zinc-600 dark:text-zinc-400 uppercase tracking-wider font-bold">
-                Prospectos Activos: <span className="text-zinc-900 dark:text-white font-black">{Object.keys(threads).length}</span>
+              <span className="text-[10.5px] text-zinc-600 dark:text-zinc-400 uppercase tracking-wider font-bold">
+                Activos: <span className="text-zinc-900 dark:text-white font-black">{Object.keys(threads).length}</span>
               </span>
             </div>
 
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800/80 shadow-sm">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800/80 shadow-sm">
               <span className="w-2 h-2 rounded-full bg-lime-500" />
-              <span className="text-[11px] text-zinc-600 dark:text-zinc-400 uppercase tracking-wider font-bold">
+              <span className="text-[10.5px] text-zinc-600 dark:text-zinc-400 uppercase tracking-wider font-bold">
                 Calificados: <span className="text-neon font-black">{billableCount}</span>
               </span>
             </div>
 
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800/80 shadow-sm">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800/80 shadow-sm">
               <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-              <span className="text-[11px] text-zinc-600 dark:text-zinc-400 uppercase tracking-wider font-bold">
+              <span className="text-[10.5px] text-zinc-600 dark:text-zinc-400 uppercase tracking-wider font-bold">
                 Atención Requerida: <span className="text-rose-600 dark:text-rose-400 font-black">{Object.values(threads).filter((t) => t.leadState === LEAD_STATUS_ENUM.HITL_INTERVENTION).length}</span>
               </span>
             </div>
           </div>
 
-          {/* Divisor Visual Central (Desktop) */}
-          <div className="h-6 w-px bg-zinc-200 dark:bg-zinc-800 hidden md:block" />
-
-          {/* Selector de Densidad y Modo de Vista (Centrados) */}
-          <div className="flex flex-wrap items-center justify-center gap-2.5">
+          {/* Selector de Densidad y Modo de Vista */}
+          <div className="flex flex-wrap items-center gap-2">
             {/* Control de Densidad (Solo activo en modo Kanban) */}
             {viewMode === 'kanban' && (
-              <div className="flex items-center gap-1 bg-zinc-100 dark:bg-black/70 p-1 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs font-sans shadow-inner">
+              <div className="flex items-center gap-1 bg-zinc-100 dark:bg-black/70 p-0.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-xs font-sans shadow-inner">
                 <button
                   type="button"
                   onClick={() => setKanbanDensity('compact')}
                   title="Vista Compacta: Permite ver más columnas y tarjetas a la vez en pantalla"
-                  className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition-all ${
+                  className={`px-2.5 py-1 rounded-md font-bold flex items-center gap-1 text-[11px] transition-all ${
                     kanbanDensity === 'compact'
                       ? 'bg-neon text-black shadow-neon-sm'
                       : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
                   }`}
                 >
-                  <Minimize2 className="w-3.5 h-3.5" />
+                  <Minimize2 className="w-3 h-3" />
                   <span>Compacto</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setKanbanDensity('standard')}
                   title="Vista Estándar: Mayor ancho y espaciado"
-                  className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition-all ${
+                  className={`px-2.5 py-1 rounded-md font-bold flex items-center gap-1 text-[11px] transition-all ${
                     kanbanDensity === 'standard'
                       ? 'bg-neon text-black shadow-neon-sm'
                       : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
                   }`}
                 >
-                  <Maximize2 className="w-3.5 h-3.5" />
+                  <Maximize2 className="w-3 h-3" />
                   <span>Estándar</span>
                 </button>
               </div>
             )}
 
             {/* Selector de Modo de Vista */}
-            <div className="flex items-center gap-1 bg-zinc-100 dark:bg-black/70 p-1 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-inner font-sans text-xs">
+            <div className="flex items-center gap-1 bg-zinc-100 dark:bg-black/70 p-0.5 rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-inner font-sans text-xs">
               <button
                 type="button"
                 onClick={() => setViewMode('kanban')}
-                className={`px-3.5 py-1.5 rounded-lg font-bold flex items-center gap-2 transition-all ${
+                className={`px-3 py-1 rounded-md font-bold flex items-center gap-1.5 text-[11px] transition-all ${
                   viewMode === 'kanban'
                     ? 'bg-neon text-black shadow-neon-sm'
                     : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
                 }`}
               >
-                <Kanban className="w-4 h-4" />
+                <Kanban className="w-3.5 h-3.5" />
                 <span>Tablero Kanban</span>
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode('chat')}
-                className={`px-3.5 py-1.5 rounded-lg font-bold flex items-center gap-2 transition-all ${
+                className={`px-3 py-1 rounded-md font-bold flex items-center gap-1.5 text-[11px] transition-all ${
                   viewMode === 'chat'
                     ? 'bg-neon text-black shadow-neon-sm'
                     : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
                 }`}
               >
-                <LayoutList className="w-4 h-4" />
+                <LayoutList className="w-3.5 h-3.5" />
                 <span>Bandeja Chat</span>
               </button>
             </div>
