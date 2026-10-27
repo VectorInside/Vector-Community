@@ -27,7 +27,7 @@ export const PricingSection = ({ onOpenTrial, lang = 'es' }) => {
             <Sparkles className="w-3.5 h-3.5" />
             {t.tag}
           </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-black text-white tracking-tight">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-black text-white tracking-tight leading-tight sm:leading-snug pb-1 overflow-visible">
             {t.title}
           </h2>
           <p className="text-zinc-400 text-sm sm:text-base leading-relaxed">

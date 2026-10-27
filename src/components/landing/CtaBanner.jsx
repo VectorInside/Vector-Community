@@ -24,7 +24,7 @@ export const CtaBanner = ({ onOpenTrial, lang = 'es' }) => {
 
           {/* Heading */}
           <div className="max-w-3xl mx-auto space-y-4">
-            <h2 className="text-3xl sm:text-4xl lg:text-6xl font-heading font-black text-white tracking-tight leading-tight">
+            <h2 className="text-3xl sm:text-4xl lg:text-6xl font-heading font-black text-white tracking-tight leading-tight sm:leading-snug pb-1 overflow-visible">
               {t.title}
             </h2>
             <p className="text-zinc-400 text-sm sm:text-lg max-w-2xl mx-auto leading-relaxed">
