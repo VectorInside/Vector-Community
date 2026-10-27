@@ -640,8 +640,9 @@ export const MasterAgenda = () => {
   const [appointments, setAppointments] = useState(INITIAL_DEMO_APPOINTMENTS);
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState(null);
-  const [viewMode, setViewMode] = useState('week_table'); // 'week_table' (Semana Completa) | 'grid' (Horas & Turnos) | 'list'
+  const [viewMode, setViewMode] = useState('month'); // 'month' (Mes Completo) | 'grid' (Zoom Día / Horas) | 'week_table' (Semana) | 'list'
   const [selectedDay, setSelectedDay] = useState('fri'); // Viernes activo
+  const [selectedMonthDate, setSelectedMonthDate] = useState('2026-10-23'); // Fecha seleccionada del mes
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [filterStatus, setFilterStatus] = useState('ALL'); // 'ALL' | 'CONFIRMED' | 'TRIAGE'
   const [gmailSentSuccess, setGmailSentSuccess] = useState(false);
@@ -960,15 +961,15 @@ export const MasterAgenda = () => {
         <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)]">
           <button
             type="button"
-            onClick={() => setViewMode('week_table')}
+            onClick={() => setViewMode('month')}
             className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
-              viewMode === 'week_table'
+              viewMode === 'month'
                 ? 'bg-neon text-black font-bold shadow-[0_0_10px_var(--neon-glow)]'
                 : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
             }`}
           >
-            <CalendarDays className="w-3.5 h-3.5" />
-            <span>📅 Semana Completa (Lunes a Domingo)</span>
+            <CalendarIcon className="w-3.5 h-3.5" />
+            <span>🗓️ Mes Completo (Octubre)</span>
           </button>
 
           <button
@@ -981,7 +982,20 @@ export const MasterAgenda = () => {
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
-            <span>⏱️ Vista Horas & Turnos</span>
+            <span>⏱️ Detalle del Día & Turnos</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setViewMode('week_table')}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
+              viewMode === 'week_table'
+                ? 'bg-neon text-black font-bold shadow-[0_0_10px_var(--neon-glow)]'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+            }`}
+          >
+            <CalendarDays className="w-3.5 h-3.5" />
+            <span>📅 Semana 43</span>
           </button>
 
           <button
@@ -1023,7 +1037,177 @@ export const MasterAgenda = () => {
       </div>
 
       {/* ========================================================================= */}
-      {/* 3. VISTA 1: HORAS Y BLOQUES DINÁMICOS SEGÚN EL GIRO DEL TENANT            */}
+      {/* 2.5 VISTA MES COMPLETO (31 DÍAS CON ZOOM AL DÍA SELECCIONADO)             */}
+      {/* ========================================================================= */}
+      {viewMode === 'month' && (
+        <div className="rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-6 space-y-6 animate-fadeIn shadow-2xl">
+          {/* Cabecera del Mes */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-[var(--border-color)] gap-4">
+            <div>
+              <div className="flex items-center gap-3">
+                <span className="p-2.5 rounded-2xl bg-neon/15 text-lime-700 dark:text-neon border border-neon/30">
+                  <CalendarIcon className="w-5 h-5" />
+                </span>
+                <div>
+                  <h3 className="text-lg font-bold text-[var(--text-main)] flex items-center gap-2">
+                    <span>Octubre 2026</span>
+                    <span className="text-xs font-mono font-normal px-2.5 py-0.5 rounded-full bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-muted)]">
+                      31 Días • Vista Calendario Completo
+                    </span>
+                  </h3>
+                  <p className="text-xs text-[var(--text-muted)] font-mono mt-0.5">
+                    Negocio: <strong>{activeTenant?.name}</strong> • Haz clic en cualquier día para hacer <strong>Zoom</strong> a sus horarios y citas.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-mono px-3 py-1 rounded-xl bg-neon/15 text-lime-800 dark:text-neon border border-neon/30 font-bold">
+                {filteredAppointments.length} Citas del Mes
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowMobileSyncModal(true)}
+                className="px-3.5 py-1.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-xs font-mono font-bold text-[var(--text-main)] flex items-center gap-1.5 transition-all"
+              >
+                <Smartphone className="w-3.5 h-3.5 text-neon" />
+                <span>Móvil Sync</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Días de la semana Header (Lunes a Domingo) */}
+          <div className="grid grid-cols-7 gap-2 text-center text-xs font-mono font-bold uppercase tracking-wider text-[var(--text-muted)] pb-2 border-b border-[var(--border-color)]">
+            <span className="text-lime-700 dark:text-neon">Lun</span>
+            <span>Mar</span>
+            <span>Mié</span>
+            <span>Jue</span>
+            <span>Vie</span>
+            <span>Sáb</span>
+            <span className="text-rose-500/80">Dom</span>
+          </div>
+
+          {/* Grilla de 35 celdas del Mes (Octubre 2026 empieza en Jueves = 3 celdas vacías al inicio) */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2.5">
+            {/* Días previos de Septiembre para rellenar (28, 29, 30) */}
+            {[28, 29, 30].map((d) => (
+              <div
+                key={`prev-${d}`}
+                className="min-h-[105px] p-2.5 rounded-2xl bg-[var(--bg-base)]/40 border border-dashed border-[var(--border-color)]/40 opacity-30 select-none flex flex-col justify-between"
+              >
+                <span className="text-xs font-mono font-bold text-[var(--text-muted)]">{d}</span>
+                <span className="text-[9px] font-mono text-[var(--text-muted)]">Septiembre</span>
+              </div>
+            ))}
+
+            {/* Días 1 al 31 de Octubre 2026 */}
+            {Array.from({ length: 31 }, (_, i) => i + 1).map((dayNum) => {
+              const dayStr = String(dayNum).padStart(2, '0');
+              const fullDate = `2026-10-${dayStr}`;
+              
+              // Mapeo canónico exacto del calendario gregoriano (Octubre 2026)
+              // 1 Oct = Jueves (thu), 4 Oct = Domingo (sun), 5 Oct = Lunes (mon)...
+              const dt = new Date(`2026-10-${dayStr}T12:00:00`);
+              const dayIds = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+              const dayId = dayIds[dt.getDay()];
+              const isOperating = !calendarConfig.operatingDays || calendarConfig.operatingDays.includes(dayId);
+
+              // Citas del día: coinciden por fullDate o por dayId en semana demo activa (19-25 Oct)
+              const aptsOnThisDay = filteredAppointments.filter((a) => {
+                if (a.fullDate === fullDate) return true;
+                if (a.start && a.start.startsWith(fullDate)) return true;
+                const isModelWeek = dayNum >= 19 && dayNum <= 24;
+                return isModelWeek && a.dayId === dayId;
+              });
+
+              const isSelected = selectedMonthDate === fullDate;
+              const hasApts = aptsOnThisDay.length > 0;
+              const dayTotalRevenue = aptsOnThisDay.reduce((acc, curr) => acc + (curr.estimatedValue || 1200), 0);
+
+              return (
+                <div
+                  key={fullDate}
+                  onClick={() => {
+                    setSelectedMonthDate(fullDate);
+                    setSelectedDay(dayId);
+                    setViewMode('grid'); // ¡Zoom interactivo a las horas y turnos de este día!
+                  }}
+                  className={`min-h-[115px] p-3 rounded-2xl border flex flex-col justify-between cursor-pointer transition-all duration-200 group relative overflow-hidden ${
+                    isSelected
+                      ? 'bg-neon/15 border-neon shadow-[0_0_20px_var(--neon-glow)] ring-2 ring-neon/40'
+                      : hasApts
+                      ? 'bg-[var(--bg-card)] border-neon/40 hover:border-neon hover:shadow-lg hover:-translate-y-0.5'
+                      : isOperating
+                      ? 'bg-[var(--bg-card)] border-[var(--border-color)] hover:border-[var(--text-muted)] hover:bg-[var(--bg-card-subtle)]'
+                      : 'bg-[var(--bg-card-subtle)]/60 border-[var(--border-color)]/60 opacity-50'
+                  }`}
+                  title={`Haz clic para ver el zoom y turnos del ${dayNum} de Octubre`}
+                >
+                  {/* Encabezado del número de día */}
+                  <div className="flex items-center justify-between">
+                    <span className={`text-sm font-mono font-black ${hasApts ? 'text-neon' : 'text-[var(--text-main)] group-hover:text-neon transition-colors'}`}>
+                      {dayNum}
+                    </span>
+                    {hasApts ? (
+                      <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-mono font-bold flex items-center gap-1 border border-emerald-500/30">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        {aptsOnThisDay.length}
+                      </span>
+                    ) : !isOperating ? (
+                      <span className="text-[9px] font-mono text-[var(--text-muted)]">Cerrado</span>
+                    ) : null}
+                  </div>
+
+                  {/* Citas preview dentro del día */}
+                  <div className="space-y-1 my-1">
+                    {aptsOnThisDay.slice(0, 2).map((apt) => (
+                      <div
+                        key={apt.id}
+                        className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--bg-panel)] border border-[var(--border-color)] text-[var(--text-main)] truncate"
+                        style={{ borderLeftColor: apt.serviceColor || '#3B82F6', borderLeftWidth: '2px' }}
+                      >
+                        <span className="font-bold text-neon mr-1">{apt.hour}</span>
+                        <span>{apt.client.split(' ')[0]}</span>
+                      </div>
+                    ))}
+                    {aptsOnThisDay.length > 2 && (
+                      <span className="text-[9px] font-mono text-[var(--text-muted)] block text-right">
+                        +{aptsOnThisDay.length - 2} más...
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Footer del día */}
+                  <div className="pt-1.5 border-t border-[var(--border-color)] flex items-center justify-between text-[10px] font-mono">
+                    {hasApts ? (
+                      <span suppressHydrationWarning className="text-emerald-400 font-bold">
+                        ${String(dayTotalRevenue).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                      </span>
+                    ) : (
+                      <span className="text-[var(--text-muted)] text-[9px]">
+                        {isOperating ? 'Libre' : 'No opera'}
+                      </span>
+                    )}
+                    <span className="text-[9px] text-neon opacity-0 group-hover:opacity-100 font-bold transition-opacity">
+                      Zoom →
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Días de Noviembre para completar la fila de 35 (1) */}
+            <div className="min-h-[105px] p-2.5 rounded-2xl bg-[var(--bg-base)]/40 border border-dashed border-[var(--border-color)]/40 opacity-30 select-none flex flex-col justify-between">
+              <span className="text-xs font-mono font-bold text-[var(--text-muted)]">1</span>
+              <span className="text-[9px] font-mono text-[var(--text-muted)]">Noviembre</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 3. VISTA 1: HORAS Y BLOQUES DINÁMICOS SEGÚN EL GIRO DEL TENANT (ZOOM DÍA) */}
       {/* ========================================================================= */}
       {viewMode === 'grid' && (
         <div className="space-y-4 animate-fadeIn">
@@ -1031,12 +1215,21 @@ export const MasterAgenda = () => {
           <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-4 shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--border-color)]">
               <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('month')}
+                  className="px-2.5 py-1 rounded-xl bg-neon/15 hover:bg-neon hover:text-black text-lime-800 dark:text-neon border border-neon/30 text-xs font-mono font-bold flex items-center gap-1 transition-all mr-1 shadow-sm"
+                  title="Volver a la vista del mes completo"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  <span>Volver al Mes</span>
+                </button>
                 <CalendarCheck className="w-5 h-5 text-brand-primary" />
                 <span className="text-sm font-bold text-[var(--text-main)] tracking-wide">
-                  Semana 43 • Octubre 2026
+                  Zoom Detallado • Octubre 2026
                 </span>
                 <span className="px-2 py-0.5 rounded bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[11px] text-[var(--text-muted)] font-mono">
-                  Zona Horaria: Ciudad de México (GMT-6)
+                  Zona Horaria: CDMX (GMT-6)
                 </span>
               </div>
 
@@ -1273,8 +1466,8 @@ export const MasterAgenda = () => {
                       {day.dateStr}
                     </span>
                     {isDayOpen && dayRevenue > 0 && (
-                      <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold block mt-1">
-                        ${dayRevenue.toLocaleString()} MXN
+                      <span suppressHydrationWarning className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold block mt-1">
+                        ${String(dayRevenue).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} MXN
                       </span>
                     )}
                   </div>

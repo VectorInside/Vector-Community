@@ -43,6 +43,32 @@ import { Badge } from '@/components/common/Badge';
 import { Portal } from '@/components/common/Portal';
 import { SOCIAL_NETWORKS_CATALOG } from '@/utils/constants';
 
+// Mapa seguro de iconos de formato (garantiza compatibilidad con persistencia JSON / SSR)
+const POST_TYPE_ICONS = {
+  REEL: Video,
+  VIDEO: Video,
+  CARROUSEL: ImageIcon,
+  CAROUSEL: ImageIcon,
+  CAROUSEL_PDF: FileText,
+  IMAGE: ImageIcon,
+  STORY: Flame,
+  POST: ImageIcon,
+  LINKEDIN: Linkedin,
+  BROADCAST: MessageSquare,
+  DEFAULT: FileText,
+};
+
+const getPostFormatIcon = (post) => {
+  if (post?.formatIcon && typeof post.formatIcon === 'function') {
+    return post.formatIcon;
+  }
+  if (post?.formatIcon && typeof post.formatIcon === 'object' && post.formatIcon.$$typeof) {
+    return post.formatIcon;
+  }
+  const typeKey = (post?.type || '').toUpperCase();
+  return POST_TYPE_ICONS[typeKey] || POST_TYPE_ICONS.DEFAULT;
+};
+
 // =========================================================================
 // CANONICAL MULTI-TENANT MATRICES (ADR-001, ADR-002, ADR-011)
 // =========================================================================
@@ -1143,7 +1169,7 @@ export const ContentPlanner = () => {
           {/* Posts Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {filteredPosts.map((post) => {
-              const IconFormat = post.formatIcon;
+              const IconFormat = getPostFormatIcon(post);
               const isPending = post.status === 'PENDIENTE_CLIENTE';
               const networkCatalog = SOCIAL_NETWORKS_CATALOG[post.network] || {
                 name: post.network || 'Red Social',
@@ -1648,3 +1674,5 @@ export const ContentPlanner = () => {
     </div>
   );
 };
+
+export default ContentPlanner;
