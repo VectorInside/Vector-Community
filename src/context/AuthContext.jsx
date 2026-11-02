@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { INITIAL_TENANTS_DATA } from '@/utils/constants';
 import { useTenantStore } from '@/hooks/useTenant';
+import { tenantService } from '@/services/tenantService';
 
 const AuthContext = createContext(null);
 
@@ -20,7 +21,7 @@ export const AuthProvider = ({ children }) => {
     onAction: null,
   });
 
-  // Sync preferences from localStorage on client mount
+  // Sync preferences from localStorage & Backend PostgreSQL on client mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedTheme = localStorage.getItem('vector_theme');
@@ -34,6 +35,9 @@ export const AuthProvider = ({ children }) => {
       const savedTenant = localStorage.getItem('vector_active_tenant_key');
       if (savedTenant) {
         setActiveTenantKey(savedTenant);
+        try {
+          useTenantStore.getState().setActiveTenantId(savedTenant);
+        } catch (e) {}
       }
       const savedCollapsed = localStorage.getItem('vector_sidebar_collapsed');
       if (savedCollapsed !== null) {
@@ -46,6 +50,35 @@ export const AuthProvider = ({ children }) => {
           setTenantsData((prev) => ({ ...prev, ...parsed }));
         }
       } catch (e) {}
+
+      // Hydrate from Spring Boot Backend (/api/v1/tenants)
+      tenantService
+        .getTenants()
+        .then((backendTenants) => {
+          if (Array.isArray(backendTenants) && backendTenants.length > 0) {
+            setTenantsData((prev) => {
+              const merged = { ...prev };
+              backendTenants.forEach((bt) => {
+                if (!bt?.id) return;
+                const base = merged[bt.id] || INITIAL_TENANTS_DATA[bt.id] || {};
+                merged[bt.id] = {
+                  ...base,
+                  ...bt,
+                  calendarConfig: bt.calendarConfig || base.calendarConfig,
+                  buyerPersona: bt.buyerPersona || base.buyerPersona,
+                  brandDna: bt.brandDna || base.brandDna,
+                  connectedSocialNetworks:
+                    Array.isArray(bt.connectedSocialNetworks) && bt.connectedSocialNetworks.length > 0
+                      ? bt.connectedSocialNetworks
+                      : base.connectedSocialNetworks || ['INSTAGRAM', 'FACEBOOK', 'WHATSAPP'],
+                };
+              });
+              return merged;
+            });
+          }
+        })
+        .catch(() => {});
+
       setIsMounted(true);
     }
   }, []);
@@ -183,13 +216,15 @@ export const AuthProvider = ({ children }) => {
       const target = prev[tenantKey];
       if (!target) return prev;
       const willBeActive = !target.isAiActive;
+      const updated = {
+        ...target,
+        isAiActive: willBeActive,
+        crisisMode: !willBeActive, // If paused, enters crisis/takeover mode
+      };
+      tenantService.updateTenant(tenantKey, updated).catch(() => {});
       return {
         ...prev,
-        [tenantKey]: {
-          ...target,
-          isAiActive: willBeActive,
-          crisisMode: !willBeActive, // If paused, enters crisis/takeover mode
-        },
+        [tenantKey]: updated,
       };
     });
   };
@@ -198,12 +233,14 @@ export const AuthProvider = ({ children }) => {
     setTenantsData((prev) => {
       const target = prev[tenantKey];
       if (!target) return prev;
+      const updated = {
+        ...target,
+        ...updates,
+      };
+      tenantService.updateTenant(tenantKey, updated).catch(() => {});
       return {
         ...prev,
-        [tenantKey]: {
-          ...target,
-          ...updates,
-        },
+        [tenantKey]: updated,
       };
     });
   };
@@ -213,17 +250,19 @@ export const AuthProvider = ({ children }) => {
       const target = prev[tenantKey];
       if (!target) return prev;
       const isEnabled = newStatus === 'trial' || newStatus === 'active';
+      const updated = {
+        ...target,
+        microLandingEnabled: isEnabled,
+        microLandingStatus: newStatus,
+        microLandingTrialDaysLeft:
+          newStatus === 'trial'
+            ? (trialDays !== undefined ? trialDays : (target.microLandingTrialDaysLeft || 90))
+            : (target.microLandingTrialDaysLeft || 0),
+      };
+      tenantService.updateTenant(tenantKey, updated).catch(() => {});
       return {
         ...prev,
-        [tenantKey]: {
-          ...target,
-          microLandingEnabled: isEnabled,
-          microLandingStatus: newStatus,
-          microLandingTrialDaysLeft:
-            newStatus === 'trial'
-              ? (trialDays !== undefined ? trialDays : (target.microLandingTrialDaysLeft || 90))
-              : (target.microLandingTrialDaysLeft || 0),
-        },
+        [tenantKey]: updated,
       };
     });
   };
@@ -233,11 +272,16 @@ export const AuthProvider = ({ children }) => {
       ...prev,
       [newTenant.id]: newTenant,
     }));
+    tenantService.createTenant(newTenant).catch(() => {});
     if (makeActive && newTenant?.id) {
       setActiveTenantKey(newTenant.id);
       if (typeof window !== 'undefined') {
         localStorage.setItem('vector_active_tenant_key', newTenant.id);
+        localStorage.setItem('vector_active_tenant_id', newTenant.id);
       }
+      try {
+        useTenantStore.getState().setActiveTenantId(newTenant.id);
+      } catch (e) {}
     }
   };
 

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTenant } from '@/hooks/useTenant';
 import { calendarService } from '@/services/calendarService';
+import { tenantService } from '@/services/tenantService';
 import { Button } from '@/components/common/Button';
 import { Portal } from '@/components/common/Portal';
 import { Badge } from '@/components/common/Badge';
@@ -694,13 +695,30 @@ export const MasterAgenda = () => {
     });
   };
 
-  // Sincronizar si cambia el tenant activo
+  // Sincronizar si cambia el tenant activo y cargar citas desde PostgreSQL Backend
   useEffect(() => {
     const base = activeTenant?.calendarConfig || DEFAULT_FALLBACK_CONFIG;
     setCalendarConfig({
       ...base,
       shifts: recomputeShiftsHours(base.shifts || [], base.slotDurationMin || 60),
     });
+
+    const tenantKey = activeTenant?.id || activeTenantId || 'dental';
+    calendarService
+      .getAppointments(tenantKey)
+      .then((backendApts) => {
+        if (Array.isArray(backendApts) && backendApts.length > 0) {
+          setAppointments((prev) => {
+            const otherTenants = prev.filter((a) => a.tenantId && a.tenantId !== tenantKey && !(tenantKey === 'dental' && a.tenantId === 'tenant-mex-001'));
+            const existingIds = new Set(backendApts.map((b) => b.id));
+            const localDemoForTenant = INITIAL_DEMO_APPOINTMENTS.filter(
+              (a) => (a.tenantId === tenantKey || (tenantKey === 'dental' && a.tenantId === 'tenant-mex-001')) && !existingIds.has(a.id)
+            );
+            return [...otherTenants, ...backendApts, ...localDemoForTenant];
+          });
+        }
+      })
+      .catch(() => {});
   }, [activeTenantId, activeTenant]);
 
   const handleUpdateDuration = (newDuration) => {
@@ -766,10 +784,12 @@ export const MasterAgenda = () => {
 
   const handleSaveConfig = () => {
     const finalizedShifts = recomputeShiftsHours(calendarConfig.shifts, calendarConfig.slotDurationMin);
-    setCalendarConfig((prev) => ({
-      ...prev,
+    const updatedConfig = {
+      ...calendarConfig,
       shifts: finalizedShifts,
-    }));
+    };
+    setCalendarConfig(updatedConfig);
+    tenantService.updateVerticalConfig(activeKey, updatedConfig).catch(() => {});
     setSavedConfigSuccess(true);
     try {
       confetti({ particleCount: 40, spread: 60, colors: [emailConfig.accentColor || '#D4FF00', '#10B981'] });
@@ -853,6 +873,7 @@ export const MasterAgenda = () => {
       details: 'Agendado manualmente en Master Agenda',
     };
     setAppointments((prev) => [...prev, newApt]);
+    calendarService.createAppointment({ ...newApt, fullDate: currentDayConfig.fullDate }).catch(() => {});
     try {
       confetti({ particleCount: 30, spread: 50, colors: ['#10B981', '#D4FF00'] });
     } catch (e) {}
@@ -1113,13 +1134,15 @@ export const MasterAgenda = () => {
               const dayId = dayIds[dt.getDay()];
               const isOperating = !calendarConfig.operatingDays || calendarConfig.operatingDays.includes(dayId);
 
-              // Citas del día: coinciden por fullDate o por dayId en semana demo activa (19-25 Oct)
-              const aptsOnThisDay = filteredAppointments.filter((a) => {
-                if (a.fullDate === fullDate) return true;
-                if (a.start && a.start.startsWith(fullDate)) return true;
-                const isModelWeek = dayNum >= 19 && dayNum <= 24;
-                return isModelWeek && a.dayId === dayId;
-              });
+              // Citas del día: coinciden por fullDate o por dayId en semana demo activa (19-25 Oct) si el día opera
+              const aptsOnThisDay = !isOperating
+                ? []
+                : filteredAppointments.filter((a) => {
+                    if (a.fullDate === fullDate) return true;
+                    if (a.start && a.start.startsWith(fullDate)) return true;
+                    const isModelWeek = dayNum >= 19 && dayNum <= 24 && !a.fullDate;
+                    return isModelWeek && a.dayId === dayId;
+                  });
 
               const isSelected = selectedMonthDate === fullDate;
               const hasApts = aptsOnThisDay.length > 0;
@@ -1353,7 +1376,9 @@ export const MasterAgenda = () => {
                       {/* Lista de Slots de este Turno */}
                       <div className="space-y-2">
                         {(shift.hours || []).map((hour) => {
-                          const appointment = dayAppointments.find((a) => a.hour === hour);
+                          const appointment = dayAppointments.find(
+                            (a) => a.hour === hour || (calendarConfig.slotDurationMin >= 60 && a.hour?.startsWith(hour.slice(0, 3)))
+                          );
                           return (
                             <SlotRowItem
                               key={hour}

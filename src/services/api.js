@@ -1,19 +1,33 @@
 import axios from 'axios';
 import { useTenantStore } from '@/hooks/useTenant';
 
-export const isBackendAvailable = process.env.NEXT_PUBLIC_ENABLE_BACKEND === 'true';
+export const isBackendAvailable = process.env.NEXT_PUBLIC_ENABLE_BACKEND !== 'false';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1',
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 5000,
+  timeout: 6000,
 });
+
+export const unwrapApiData = (response) => {
+  if (!response) return null;
+  if (response.data && typeof response.data === 'object' && 'success' in response.data && 'data' in response.data) {
+    return response.data.data;
+  }
+  return response.data;
+};
 
 api.interceptors.request.use((config) => {
   try {
-    const { activeTenantId } = useTenantStore.getState();
+    let activeTenantId = useTenantStore.getState()?.activeTenantId;
+    if (typeof window !== 'undefined') {
+      const savedKey = localStorage.getItem('vector_active_tenant_key') || localStorage.getItem('vector_active_tenant_id');
+      if (savedKey) {
+        activeTenantId = savedKey;
+      }
+    }
     const token = typeof window !== 'undefined' ? localStorage.getItem('jwt_token') : null;
 
     if (activeTenantId) {

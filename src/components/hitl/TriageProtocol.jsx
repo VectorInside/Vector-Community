@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { leadService } from '@/services/leadService';
 import {
   MessageSquareWarning,
   Send,
@@ -578,12 +579,38 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
   const [replyText, setReplyText] = useState('');
   const [reengagementFilter, setReengagementFilter] = useState('ALL'); // 'ALL' | 'PENDING' | 'SENT'
 
-  // Automatic tenant synchronizer
+  // Automatic tenant synchronizer & Backend PostgreSQL lead loader
   useEffect(() => {
     const key = activeTenant?.id || 'dental';
     setReengagementList(CANONICAL_REENGAGEMENT_BY_TENANT[key] || CANONICAL_REENGAGEMENT_BY_TENANT.dental);
     setMetaPosts(CANONICAL_META_POSTS_BY_TENANT[key] || CANONICAL_META_POSTS_BY_TENANT.dental);
     setMetaComments(CANONICAL_META_COMMENTS_BY_TENANT[key] || CANONICAL_META_COMMENTS_BY_TENANT.dental);
+
+    leadService
+      .getLeadsByTenant(key)
+      .then((backendLeads) => {
+        if (Array.isArray(backendLeads) && backendLeads.length > 0) {
+          setThreads((prev) => {
+            const next = { ...prev };
+            backendLeads.forEach((bl) => {
+              if (!bl?.id) return;
+              // Match existing thread by id or name, or add under bl.id
+              const existingKey = Object.keys(next).find(
+                (k) => next[k]?.id === bl.id || (bl.name && next[k]?.name?.toLowerCase() === bl.name.toLowerCase())
+              );
+              const targetKey = existingKey || bl.id;
+              const baseThread = next[targetKey] || {};
+              next[targetKey] = {
+                ...baseThread,
+                ...bl,
+                messages: baseThread.messages?.length > 1 ? baseThread.messages : bl.messages,
+              };
+            });
+            return next;
+          });
+        }
+      })
+      .catch(() => {});
   }, [activeTenant]);
 
 
@@ -1197,6 +1224,15 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
 
   const handleApproveDrawerAppointment = (targetLead) => {
     const leadKey = Object.keys(threads).find((k) => threads[k].id === targetLead.id) || activeContact;
+    const allGuards = {
+      identityValidated: true,
+      catalogIdentified: true,
+      financialClarified: true,
+      consentOrBooked: true,
+    };
+    if (targetLead?.id) {
+      leadService.updateLeadCriteria(targetLead.id, allGuards).catch(() => {});
+    }
     setThreads((prev) => ({
       ...prev,
       [leadKey]: {
@@ -1206,12 +1242,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
         statusType: 'success',
         billingAmount: 350.0,
         billingStatus: 'PENDING_INVOICE',
-        criteriaAudit: {
-          identityValidated: true,
-          catalogIdentified: true,
-          financialClarified: true,
-          consentOrBooked: true,
-        },
+        criteriaAudit: allGuards,
         capiEventId: prev[leadKey].capiEventId || `lead_${Date.now()}_sha256`,
         messages: [
           ...prev[leadKey].messages,

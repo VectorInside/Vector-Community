@@ -205,14 +205,14 @@ export const PerformanceDashboard = () => {
 
   const series = data?.dailySeries || [];
 
-  const webMetrics = activeTenant?.webTrafficMetrics || {
+  const webMetrics = data?.dualTelemetry?.webTrafficMetrics || activeTenant?.webTrafficMetrics || {
     sessions: 3420,
     cpc: '$3.80 MXN',
     whatsappClickRate: '1.4%',
     bounceRate: '65%',
   };
 
-  const mlMetrics = activeTenant?.microLandingMetrics || {
+  const mlMetrics = data?.dualTelemetry?.microLandingMetrics || activeTenant?.microLandingMetrics || {
     visits: 1280,
     leadsGenerated: 233,
     conversionRate: '18.2%',

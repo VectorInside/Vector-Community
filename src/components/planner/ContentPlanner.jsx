@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { contentService } from '@/services/contentService';
+import { tenantService } from '@/services/tenantService';
 import {
   LayoutGrid,
   Calendar,
@@ -699,6 +701,24 @@ export const ContentPlanner = () => {
     setViralReels(canonicalViral);
     setProfileAudit(canonicalAudit);
     setSelectedNetworkFilter('ALL');
+
+    // Sync with Backend PostgreSQL (/api/v1/posts)
+    contentService
+      .getPostsByTenant(tenantKey)
+      .then((backendPosts) => {
+        if (Array.isArray(backendPosts) && backendPosts.length > 0) {
+          const hydrated = backendPosts.map((bp) => ({
+            ...bp,
+            formatIcon: POST_TYPE_ICONS[bp.type] || Video,
+          }));
+          setPosts((prev) => {
+            const existingIds = new Set(hydrated.map((p) => p.id));
+            const remaining = prev.filter((p) => !existingIds.has(p.id));
+            return [...hydrated, ...remaining];
+          });
+        }
+      })
+      .catch(() => {});
   }, [tenantKey]);
 
   // Persist edits whenever posts or dna or offer change
@@ -746,6 +766,7 @@ export const ContentPlanner = () => {
       p.id === postId ? { ...p, status: 'APROBADO_PROGRAMADO' } : p
     );
     persistPosts(updated);
+    contentService.approvePost(postId).catch(() => {});
 
     try {
       confetti({
@@ -843,6 +864,7 @@ export const ContentPlanner = () => {
         };
         const updated = [newPost, ...posts];
         persistPosts(updated);
+        contentService.createPost({ ...newPost, tenantId: tenantKey }).catch(() => {});
         try {
           confetti({ particleCount: 45, spread: 65, colors: ['#E7F900', '#8A95B6', '#FFFFFF'] });
         } catch (e) {}
@@ -853,6 +875,7 @@ export const ContentPlanner = () => {
 
   const handleSaveBrandDna = () => {
     persistBrandDna(brandDna);
+    tenantService.updateBrandDna(tenantKey, brandDna).catch(() => {});
     try {
       confetti({
         particleCount: 50,

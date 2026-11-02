@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { INITIAL_TENANTS_DATA } from '@/utils/constants';
+import { performanceService } from '@/services/performanceService';
+import { leadService } from '@/services/leadService';
 import {
   Phone,
   Calendar,
@@ -195,6 +197,10 @@ export default function MicroLandingPage() {
     };
 
     window.addEventListener('message', handleMessage);
+    // Track Micro-Landing Visit in Backend Telemetry
+    if (baseTenant?.id) {
+      performanceService.trackTelemetryEvent(baseTenant.id, 'VISIT').catch(() => {});
+    }
     return () => window.removeEventListener('message', handleMessage);
   }, [baseTenant.id]);
 
@@ -319,6 +325,26 @@ export default function MicroLandingPage() {
     e.preventDefault();
     if (!bookingPhone) return;
     trackConversion('Lead');
+    if (baseTenant?.id) {
+      performanceService.trackTelemetryEvent(baseTenant.id, 'LEAD_GENERATED').catch(() => {});
+      leadService
+        .createLead({
+          tenantId: baseTenant.id,
+          name: bookingName || 'Prospecto Micro-Landing',
+          phone: bookingPhone,
+          channel: 'Micro-Landing Vector',
+          leadState: 'LEAD_WARM_24H',
+          potentialTicket: baseTenant.avgTicketMXN ? `$${baseTenant.avgTicketMXN} MXN` : '$1,500 MXN',
+          criteriaAudit: {
+            identityValidated: true,
+            catalogIdentified: true,
+            financialClarified: false,
+            consentOrBooked: false,
+          },
+          notes: `Interés captado desde Micro-Landing (/m/${slug}): ${selectedOption}`,
+        })
+        .catch(() => {});
+    }
     setBookedSuccess(true);
     try {
       confetti({

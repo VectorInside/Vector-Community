@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { TriageProtocol } from '@/components/hitl/TriageProtocol';
 import { ContentPlanner } from '@/components/planner/ContentPlanner';
@@ -27,11 +27,15 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
-export const CommercialGrowthSuite = () => {
+export const CommercialGrowthSuite = ({ initialTab = 'kanban' }) => {
   const { activeTenant, activeTenantKey, updateTenantPolicy, triggerModal, isAdmin } = useAuth();
-  const [activeSuiteTab, setActiveSuiteTab] = useState('kanban'); // 'kanban' | 'studio' | 'persona_strategy'
+  const [activeSuiteTab, setActiveSuiteTab] = useState(initialTab); // 'kanban' | 'studio' | 'persona_strategy'
   const [leadTariff, setLeadTariff] = useState(activeTenant?.leadPriceMXN || 350);
   const [isEditingTariff, setIsEditingTariff] = useState(false);
+
+  useEffect(() => {
+    setLeadTariff(activeTenant?.leadPriceMXN || 350);
+  }, [activeTenant]);
 
   // Buyer persona y 4Ps del tenant
   const buyerPersona = activeTenant?.buyerPersona || {
