@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useTenant } from '@/hooks/useTenant';
 import { useAuth } from '@/context/AuthContext';
 import { tenantService } from '@/services/tenantService';
+import { aiService } from '@/services/aiService';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { Modal } from '@/components/common/Modal';
@@ -262,12 +263,12 @@ export const SubBotsConfig = () => {
 
     setSaving(true);
     try {
+      // 1. Guardar configuración de negocio y citas (sin llaves en texto plano)
       await tenantService.updateVerticalConfig(tenantId, {
         activeModel: config.activeModel,
         temperature: config.temperature,
         systemPrompt: config.systemPrompt,
         useCustomKeys: Object.values(config.apiKeys || {}).some((k) => k && k.trim().length > 0),
-        apiKeys: config.apiKeys,
         service_appointments: {
           googleCalendarId: config.calendar.googleCalendarId,
           defaultAppointmentDurationMin: config.calendar.slotDurationMin,
@@ -277,13 +278,24 @@ export const SubBotsConfig = () => {
         followUp: config.followUp,
       });
 
+      // 2. Si se configuró API Key propia, persistirla cifrada con AES-256-GCM en el backend
+      const userKey = config.apiKeys?.deepseek || config.apiKeys?.openai || config.apiKeys?.anthropic || config.apiKeys?.groq;
+      if (userKey && userKey.trim().length > 0 && !userKey.startsWith('••••')) {
+        const providerName = config.apiKeys?.deepseek ? 'DEEPSEEK' : (config.apiKeys?.openai ? 'OPENAI' : 'DEEPSEEK');
+        await aiService.saveConfig(tenantId, {
+          provider: providerName,
+          apiKey: userKey.trim(),
+          model: config.activeModel,
+          allowFallbackToGlobal: true,
+        }).catch((err) => console.warn('[SubBotsConfig] No se pudo persistir API key en el backend:', err));
+      }
+
       if (updateTenantPolicy) {
         updateTenantPolicy(tenantId, {
           isAiActive: config.isAiActive,
           activeModel: config.activeModel,
           temperature: config.temperature,
           systemPrompt: config.systemPrompt,
-          apiKeys: config.apiKeys,
           calendarConfig: {
             ...currentTenant.calendarConfig,
             slotDurationMin: config.calendar.slotDurationMin,

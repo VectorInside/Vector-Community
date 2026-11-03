@@ -87,7 +87,7 @@ export const ClientPasswordChangeModal = ({
               a.tenantId === account.tenantId
                 ? {
                     ...a,
-                    tempPassword: newPass,
+                    tempPassword: '••••••••••••', // No persistir contraseñas en texto plano en localStorage
                     mustChangePassword: false,
                     lastPasswordChange: new Date().toISOString(),
                   }

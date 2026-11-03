@@ -180,11 +180,16 @@ export const tenantService = {
   async updateVerticalConfig(tenantId, config) {
     try {
       const existing = await this.getTenantById(tenantId);
+      // HARDENING DEFENSIVO: No persistir apiKeys en texto plano en la tabla pública de tenants.
+      // Las credenciales de IA deben gestionarse exclusivamente a través de aiService con cifrado AES-256-GCM.
+      const sanitizedConfig = { ...config };
+      delete sanitizedConfig.apiKeys;
+
       const updated = await this.updateTenant(tenantId, {
         ...existing,
-        calendarConfig: config,
+        calendarConfig: sanitizedConfig,
       });
-      return { success: true, updatedConfig: updated?.calendarConfig || config };
+      return { success: true, updatedConfig: updated?.calendarConfig || sanitizedConfig };
     } catch (error) {
       return { success: true, updatedConfig: config };
     }

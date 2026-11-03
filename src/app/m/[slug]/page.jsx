@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
-import { INITIAL_TENANTS_DATA } from '@/utils/constants';
+import { getPublicTenantLandingData } from '@/utils/publicLandingsCatalog';
 import { performanceService } from '@/services/performanceService';
 import { leadService } from '@/services/leadService';
 import {
@@ -105,35 +105,9 @@ export default function MicroLandingPage() {
   const params = useParams();
   const slug = params?.slug || 'dental';
 
-  // Active tenant data with local storage synchronization
+  // DTO público saneado (Previene filtración de datos fiscales o financieros en el bundle del cliente)
   const [activeTenantData, setActiveTenantData] = useState(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const savedTenants = localStorage.getItem('vector_tenants_data');
-        if (savedTenants) {
-          const parsed = JSON.parse(savedTenants);
-          const found =
-            parsed[slug] ||
-            Object.values(parsed).find(
-              (t) =>
-                t.id === slug ||
-                t.microLandingSlug === slug ||
-                (t.name && t.name.toLowerCase().includes(slug))
-            );
-          if (found) return found;
-        }
-      } catch (e) {}
-    }
-    return (
-      INITIAL_TENANTS_DATA[slug] ||
-      Object.values(INITIAL_TENANTS_DATA).find(
-        (t) =>
-          t.id === slug ||
-          t.microLandingSlug === slug ||
-          (t.name && t.name.toLowerCase().includes(slug))
-      ) ||
-      INITIAL_TENANTS_DATA.dental
-    );
+    return getPublicTenantLandingData(slug);
   });
 
   useEffect(() => {
@@ -150,7 +124,18 @@ export default function MicroLandingPage() {
                 t.microLandingSlug === slug ||
                 (t.name && t.name.toLowerCase().includes(slug))
             );
-          if (found) setActiveTenantData(found);
+          if (found) {
+            setActiveTenantData({
+              id: found.id || slug,
+              name: found.name || 'Negocio',
+              shortName: found.shortName || found.name,
+              phone: found.phone || '+525512345678',
+              microLandingSlug: found.microLandingSlug || slug,
+              microLandingEnabled: found.microLandingEnabled !== false,
+              metaPixelId: found.metaPixelId || '',
+              ga4MeasurementId: found.ga4MeasurementId || '',
+            });
+          }
         }
       } catch (e) {}
     };
