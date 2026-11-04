@@ -1,26 +1,19 @@
 'use client';
 
 import React, { useState } from 'react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { USER_ROLES, DEMO_USERS } from '@/utils/constants';
+import { DEMO_USERS } from '@/utils/constants';
 import {
   ShieldCheck,
   Lock,
   Mail,
   ArrowRight,
-  Sparkles,
   CheckCircle2,
-  Cpu,
-  Activity,
-  Layers,
   ArrowLeft,
-  KeyRound,
   Eye,
   EyeOff,
-  Terminal,
   Server,
   Zap,
 } from 'lucide-react';
@@ -34,24 +27,17 @@ export default function LoginPage() {
   const [email, setEmail] = useState('admin@vectorinside.com');
   const [password, setPassword] = useState('••••••••••••');
   const [showPassword, setShowPassword] = useState(false);
-  const [selectedPersona, setSelectedPersona] = useState(DEMO_USERS[0]?.id || 'usr-admin-01');
   const [loading, setLoading] = useState(false);
   const [authStage, setAuthStage] = useState('');
-
-  const handleSelectPersona = (user) => {
-    setSelectedPersona(user.id);
-    setEmail(user.email);
-    loginAs(user);
-  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     setLoading(true);
     setAuthStage('Validando credenciales criptográficas...');
 
+    // Busca coincidencia por correo; por defecto asigna el perfil oficial del Lobo Vectorial
     const userToLogin =
-      DEMO_USERS.find((u) => u.id === selectedPersona) ||
-      DEMO_USERS.find((u) => u.email.toLowerCase() === email.toLowerCase()) ||
+      DEMO_USERS.find((u) => u.email.toLowerCase() === email.trim().toLowerCase()) ||
       DEMO_USERS[0];
 
     loginAs(userToLogin);
@@ -103,7 +89,7 @@ export default function LoginPage() {
       </header>
 
       {/* Center Main Stage */}
-      <main className="relative z-10 w-full max-w-xl mx-auto px-4 py-4 flex flex-col items-center">
+      <main className="relative z-10 w-full max-w-lg mx-auto px-4 py-4 flex flex-col items-center">
         {/* Brand Lockup: Crisp Official SVG + Clean Hierarchy */}
         <div className="text-center space-y-3 flex flex-col items-center mb-6">
           <div className="relative group">
@@ -149,79 +135,39 @@ export default function LoginPage() {
         </div>
 
         {/* Master Glassmorphism Auth Card */}
-        <div className="w-full rounded-3xl bg-zinc-950/80 border border-white/10 backdrop-blur-2xl p-6 sm:p-8 shadow-[0_0_60px_rgba(0,0,0,0.8)] space-y-6 relative overflow-hidden">
+        <div className="w-full rounded-3xl bg-zinc-950/85 border border-white/10 backdrop-blur-2xl p-6 sm:p-8 shadow-[0_0_60px_rgba(0,0,0,0.85)] space-y-6 relative overflow-hidden">
           {/* Subtle top edge border glow */}
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-neon/60 to-transparent" />
 
-          {/* Quick Persona Selector: Interactive RBAC switches */}
-          <div className="space-y-2.5">
-            <div className="flex items-center justify-between">
-              <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
-                <KeyRound className="w-3.5 h-3.5 text-neon" />
-                <span>Perfil de Acceso (RBAC)</span>
-              </label>
-              <span className="text-[10px] font-mono text-zinc-500">Selección Rápida</span>
+          {/* Insignia Oficial del Lobo Vectorial - Acceso de Mando Central */}
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-zinc-900/90 via-zinc-900/60 to-zinc-900/90 border border-neon/40 flex items-center gap-3.5 shadow-[0_0_25px_rgba(231,249,0,0.1)] relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-neon/5 rounded-full blur-2xl pointer-events-none" />
+            <div className="p-2.5 rounded-xl bg-black/90 border border-neon/50 flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(231,249,0,0.2)]">
+              <VectorLobo size="md" status="active" />
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {DEMO_USERS.map((usr) => {
-                const isSelected = selectedPersona === usr.id;
-                const isAdmin = usr.role === USER_ROLES.ADMIN;
-                return (
-                  <button
-                    key={usr.id}
-                    type="button"
-                    onClick={() => handleSelectPersona(usr)}
-                    className={`relative flex items-center gap-3 p-3 rounded-2xl text-left border transition-all duration-200 group active:scale-98 ${
-                      isSelected
-                        ? 'bg-zinc-900 border-neon/70 shadow-[0_0_20px_rgba(231,249,0,0.18)]'
-                        : 'bg-zinc-900/40 border-white/5 hover:border-white/20 hover:bg-zinc-900/70 text-zinc-400'
-                    }`}
-                  >
-                    <div className="relative shrink-0">
-                      <div className="h-10 w-10 rounded-xl overflow-hidden border border-white/10 group-hover:border-white/30 transition-colors">
-                        <Image
-                          src={usr.avatar}
-                          alt={usr.name}
-                          width={40}
-                          height={40}
-                          unoptimized
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                      {isSelected && (
-                        <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-neon text-black flex items-center justify-center">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-1 mb-0.5">
-                        <p className={`text-xs font-bold truncate ${isSelected ? 'text-white' : 'text-zinc-300'}`}>
-                          {usr.name}
-                        </p>
-                      </div>
-                      <p className="text-[10px] text-zinc-400 font-mono truncate">
-                        {isAdmin ? 'Lobo Vectorial (Agencia)' : (usr.tenantName || usr.roleTitle || 'Dueño de Negocio')}
-                      </p>
-                      <span
-                        className={`inline-block text-[9px] font-mono font-black mt-1 px-1.5 py-0.5 rounded uppercase ${
-                          isAdmin
-                            ? 'bg-neon/15 text-neon border border-neon/30'
-                            : 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30'
-                        }`}
-                      >
-                        {usr.badge}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-white tracking-wide font-sans">
+                  Lobo Vectorial
+                </h3>
+                <span className="text-[9px] font-mono font-black px-2 py-0.5 rounded bg-neon/15 text-neon border border-neon/30 tracking-wider">
+                  MANDO CENTRAL
+                </span>
+              </div>
+              <p className="text-[11px] font-mono text-zinc-400 mt-0.5">
+                Supervisión Global Cross-Tenant · Núcleo Autónomo
+              </p>
+            </div>
+            <div className="hidden sm:flex flex-col items-end shrink-0 text-right">
+              <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                ONLINE
+              </span>
+              <span className="text-[9px] font-mono text-zinc-500">RBAC ACTIVO</span>
             </div>
           </div>
 
-          {/* Form */}
+          {/* Formulario de Acceso Oficial */}
           <form onSubmit={handleSubmit} className="space-y-4 pt-1">
             {/* Input: Email */}
             <div className="space-y-1.5">
@@ -236,7 +182,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-zinc-900/90 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder-zinc-500 focus:border-neon focus:bg-black focus:outline-none focus:ring-1 focus:ring-neon font-mono transition-all"
-                  placeholder="usuario@vectorinside.com"
+                  placeholder="admin@vectorinside.com"
                 />
               </div>
             </div>

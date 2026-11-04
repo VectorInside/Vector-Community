@@ -68,3 +68,4 @@ export function getPublicTenantLandingData(slug) {
 
   return found || PUBLIC_TENANTS_WHITELIST.dental;
 }
+

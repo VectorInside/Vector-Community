@@ -47,3 +47,4 @@ export function sanitizeSafeMarkup(html) {
 
   return clean;
 }
+

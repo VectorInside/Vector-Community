@@ -1,4 +1,4 @@
-export const USER_ROLES = {
+﻿export const USER_ROLES = {
   ADMIN: 'admin',
   CLIENT: 'client',
   SUPER_ADMIN_AGENCY: 'admin',
@@ -852,10 +852,10 @@ export const DEMO_USERS = [
   {
     id: 'usr-admin-01',
     email: 'admin@vectorinside.com',
-    name: 'Carlos Mendoza',
+    name: 'Lobo Vectorial',
     role: USER_ROLES.ADMIN,
-    roleTitle: 'Lobo Vectorial (Admin Agencia)',
-    badge: 'ADMIN AGENCIA',
+    roleTitle: 'Director General · Lobo Vectorial',
+    badge: 'SUPERADMIN',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
   },
   {
