@@ -10,7 +10,7 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [role, setRole] = useState('admin');
   const [theme, setTheme] = useState('dark');
-  const [activeTenantKey, setActiveTenantKey] = useState('dental');
+  const [activeTenantKey, setActiveTenantKey] = useState(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [modal, setModal] = useState({
@@ -24,6 +24,37 @@ export const AuthProvider = ({ children }) => {
   // Sync preferences from localStorage & Backend PostgreSQL on client mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      // Purga automática de datos demo cacheados si la versión de esquema es previa a v6
+      if (localStorage.getItem('vector_schema_version') !== 'v6_production_clean') {
+        const keysToRemove = [
+          'vector_tenants_data',
+          'vector_active_tenant_key',
+          'vector_active_tenant_id',
+          'vector_active_tenant',
+          'vector_tenant_owner_accounts',
+          'vector_agency_staff_members',
+          'vector_global_notifications',
+          'vector_email_configs_by_tenant',
+          'vector_system_audit_logs',
+          'vector_calendar_appointments_v2',
+          'vector_custom_campaigns',
+        ];
+        keysToRemove.forEach((k) => localStorage.removeItem(k));
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const key = localStorage.key(i);
+          if (
+            key &&
+            (key.startsWith('vector_microlanding_') ||
+              key.startsWith('vector_campaigns_') ||
+              key.startsWith('vector_inbox_') ||
+              key.startsWith('vector_planner_'))
+          ) {
+            localStorage.removeItem(key);
+          }
+        }
+        localStorage.setItem('vector_schema_version', 'v6_production_clean');
+      }
+
       const savedTheme = localStorage.getItem('vector_theme');
       if (savedTheme === 'light' || savedTheme === 'dark') {
         setTheme(savedTheme);
@@ -55,26 +86,28 @@ export const AuthProvider = ({ children }) => {
       tenantService
         .getTenants()
         .then((backendTenants) => {
-          if (Array.isArray(backendTenants) && backendTenants.length > 0) {
-            setTenantsData((prev) => {
-              const merged = { ...prev };
-              backendTenants.forEach((bt) => {
-                if (!bt?.id) return;
-                const base = merged[bt.id] || INITIAL_TENANTS_DATA[bt.id] || {};
-                merged[bt.id] = {
-                  ...base,
-                  ...bt,
-                  calendarConfig: bt.calendarConfig || base.calendarConfig,
-                  buyerPersona: bt.buyerPersona || base.buyerPersona,
-                  brandDna: bt.brandDna || base.brandDna,
-                  connectedSocialNetworks:
-                    Array.isArray(bt.connectedSocialNetworks) && bt.connectedSocialNetworks.length > 0
-                      ? bt.connectedSocialNetworks
-                      : base.connectedSocialNetworks || ['INSTAGRAM', 'FACEBOOK', 'WHATSAPP'],
-                };
-              });
-              return merged;
+          if (Array.isArray(backendTenants)) {
+            const fresh = {};
+            backendTenants.forEach((bt) => {
+              if (bt?.id) fresh[bt.id] = bt;
             });
+            setTenantsData(fresh);
+
+            const keys = Object.keys(fresh);
+            if (keys.length > 0) {
+              const currentKey = localStorage.getItem('vector_active_tenant_key');
+              const nextKey = (currentKey && fresh[currentKey]) ? currentKey : keys[0];
+              setActiveTenantKey(nextKey);
+              localStorage.setItem('vector_active_tenant_key', nextKey);
+              localStorage.setItem('vector_active_tenant_id', nextKey);
+              try {
+                useTenantStore.getState().setActiveTenantId(nextKey);
+              } catch (e) {}
+            } else {
+              setActiveTenantKey(null);
+              localStorage.removeItem('vector_active_tenant_key');
+              localStorage.removeItem('vector_active_tenant_id');
+            }
           }
         })
         .catch(() => {});
@@ -299,7 +332,7 @@ export const AuthProvider = ({ children }) => {
     setActiveTenantKey((currKey) => {
       if (currKey === tenantId) {
         const remainingKeys = Object.keys(tenantsData).filter((k) => k !== tenantId);
-        return remainingKeys[0] || 'dental';
+        return remainingKeys[0] || null;
       }
       return currKey;
     });
@@ -327,10 +360,15 @@ export const AuthProvider = ({ children }) => {
     closeModal();
   };
 
-  const activeTenant = tenantsData[activeTenantKey] || Object.values(tenantsData)[0] || tenantsData.dental;
+  const activeTenant = (activeTenantKey && tenantsData[activeTenantKey]) || Object.values(tenantsData)[0] || null;
 
   const isAdmin = role === 'admin';
   const isClient = role === 'client';
+  const permissions = {
+    canSwitchTenant: isAdmin,
+    canManageTeam: isAdmin,
+    canConfigureAi: isAdmin,
+  };
 
   return (
     <AuthContext.Provider
@@ -338,6 +376,7 @@ export const AuthProvider = ({ children }) => {
         role,
         isAdmin,
         isClient,
+        permissions,
         isMounted,
         switchRole,
         loginAs,

@@ -30,9 +30,7 @@ export const LayoutWrapper = ({ children }) => {
       try {
         const saved = localStorage.getItem('vector_tenant_owner_accounts');
         const list = saved ? JSON.parse(saved) : INITIAL_BUSINESS_ACCOUNTS;
-        const currentAccount =
-          list.find((a) => a.tenantId === activeTenantKey) ||
-          list.find((a) => a.status === 'ACTIVE');
+        const currentAccount = list.find((a) => a.tenantId === activeTenantKey) || null;
 
         if (currentAccount && currentAccount.mustChangePassword) {
           setClientMustChangeAccount(currentAccount);

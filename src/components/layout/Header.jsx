@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
@@ -70,68 +70,7 @@ export const Header = () => {
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, []);
 
-  const INITIAL_CROSS_TENANT_NOTIFICATIONS = [
-    {
-      id: 'notif-pol-01',
-      tenantKey: 'polanco',
-      tenantName: 'Polanco Steakhouse',
-      tenantAvatar: '🥩',
-      channel: 'WhatsApp',
-      channelColor: 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10',
-      title: 'Reserva VIP Terraza (4 personas)',
-      sender: 'Alejandro Bastida',
-      snippet: 'Hola! Queremos reservar hoy a las 9pm en terraza para 4 personas, festejo de aniversario.',
-      time: 'Hace 3 min',
-      slaRemaining: 5,
-      threadId: 'pol-001',
-      isRead: false,
-    },
-    {
-      id: 'notif-dent-01',
-      tenantKey: 'dental',
-      tenantName: 'Odontología Integral',
-      tenantAvatar: '🦷',
-      channel: 'Instagram DM',
-      channelColor: 'border-pink-500/30 text-pink-400 bg-pink-500/10',
-      title: 'Valoración Implante Molar 3D',
-      sender: 'Dra. Mariana Solares',
-      snippet: 'Buenas tardes, me urge cita para valorar un implante con anestesia sin dolor.',
-      time: 'Hace 8 min',
-      slaRemaining: 8,
-      threadId: 'dent-002',
-      isRead: false,
-    },
-    {
-      id: 'notif-urb-01',
-      tenantKey: 'urban',
-      tenantName: 'Urban Sneaks',
-      tenantAvatar: '👟',
-      channel: 'WhatsApp',
-      channelColor: 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10',
-      title: 'Legit Check & Talla 27.5mx',
-      sender: 'Kevin Almonte',
-      snippet: 'Tienen disponible el Jordan 1 Retro High en 27.5mx? Es 100% original con factura?',
-      time: 'Hace 14 min',
-      slaRemaining: 12,
-      threadId: 'urb-001',
-      isRead: false,
-    },
-    {
-      id: 'notif-corp-01',
-      tenantKey: 'corp',
-      tenantName: 'Vector Enterprise',
-      tenantAvatar: '🏢',
-      channel: 'Facebook Messenger',
-      channelColor: 'border-blue-500/30 text-blue-400 bg-blue-500/10',
-      title: 'Auditoría Fuga de Leads B2B',
-      sender: 'Ing. Fernando Arteaga',
-      snippet: 'Quisiéramos agendar la sesión de diagnóstico técnico con un Arquitecto Senior.',
-      time: 'Hace 22 min',
-      slaRemaining: 18,
-      threadId: 'corp-001',
-      isRead: true,
-    },
-  ];
+  const INITIAL_CROSS_TENANT_NOTIFICATIONS = [];
 
   const [notifications, setNotifications] = useState(INITIAL_CROSS_TENANT_NOTIFICATIONS);
   const [isHeaderMounted, setIsHeaderMounted] = useState(false);
@@ -746,12 +685,12 @@ export const Header = () => {
         onClose={() => setIsCommandPaletteOpen(false)}
       />
 
-      {/* Demo Status Bar - UX/UI Principle: Never simulate fake real success */}
+      {/* Operational Status Bar */}
       <div className="flex items-center justify-between text-[10px] font-mono text-[var(--text-faint)] pt-1 border-t border-[var(--border-color)]/60">
         <div className="flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-lime-400" />
-          <span className="text-[var(--text-muted)] font-semibold">PROTOTIPO OPERATIVO</span>
-          <span className="hidden sm:inline">· Datos demostrativos de Vector Inside</span>
+          <span className="text-[var(--text-muted)] font-semibold">SISTEMA OPERATIVO ACTIVO</span>
+          <span className="hidden sm:inline">· Vector Inside OS</span>
         </div>
         <div className="text-[var(--text-faint)]">
           MXN · Ciudad de México

@@ -6,13 +6,15 @@ const getInitialTenantId = () => {
     const key = localStorage.getItem('vector_active_tenant_key') || localStorage.getItem('vector_active_tenant_id');
     if (key) return key;
   }
-  return 'dental';
+  return null;
 };
 
 export const useTenantStore = create((set, get) => ({
-  tenants: INITIAL_TENANTS,
+  tenants: INITIAL_TENANTS || [],
   activeTenantId: getInitialTenantId(),
   isLoading: false,
+
+  setTenants: (tenants) => set({ tenants: Array.isArray(tenants) ? tenants : [] }),
 
   setActiveTenantId: (tenantId) => {
     if (typeof window !== 'undefined') {
@@ -24,20 +26,25 @@ export const useTenantStore = create((set, get) => ({
           return;
         }
       }
-      localStorage.setItem('vector_active_tenant_id', tenantId);
-      localStorage.setItem('vector_active_tenant_key', tenantId);
+      if (tenantId) {
+        localStorage.setItem('vector_active_tenant_id', tenantId);
+        localStorage.setItem('vector_active_tenant_key', tenantId);
+      } else {
+        localStorage.removeItem('vector_active_tenant_id');
+        localStorage.removeItem('vector_active_tenant_key');
+      }
     }
     set({ activeTenantId: tenantId });
   },
 
   getActiveTenant: () => {
     const { tenants, activeTenantId } = get();
-    return tenants.find((t) => t.id === activeTenantId) || tenants[0];
+    return (tenants || []).find((t) => t.id === activeTenantId) || tenants[0] || null;
   },
 
   updateTenantHealth: (tenantId, service, status) => {
     set((state) => ({
-      tenants: state.tenants.map((t) =>
+      tenants: (state.tenants || []).map((t) =>
         t.id === tenantId
           ? { ...t, [`${service}Health`]: status }
           : t
@@ -50,16 +57,19 @@ export const useTenant = () => {
   const tenants = useTenantStore((state) => state.tenants);
   const activeTenantId = useTenantStore((state) => state.activeTenantId);
   const setActiveTenantId = useTenantStore((state) => state.setActiveTenantId);
+  const setTenants = useTenantStore((state) => state.setTenants);
   const updateTenantHealth = useTenantStore((state) => state.updateTenantHealth);
   const activeTenant = useTenantStore((state) =>
-    state.tenants.find((t) => t.id === state.activeTenantId) || state.tenants[0]
+    (state.tenants || []).find((t) => t.id === state.activeTenantId) || state.tenants[0] || null
   );
 
   return {
     tenants,
     activeTenantId,
     activeTenant,
+    currentTenant: activeTenant,
     setActiveTenantId,
+    setTenants,
     updateTenantHealth,
   };
 };

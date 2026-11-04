@@ -109,13 +109,13 @@ export const tenantService = {
     try {
       const response = await api.get('/tenants');
       const data = unwrapApiData(response);
-      if (Array.isArray(data) && data.length > 0) {
+      if (Array.isArray(data)) {
         return data.map(normalizeTenantFromApi).filter(Boolean);
       }
-      return Object.values(INITIAL_TENANTS_DATA);
+      return [];
     } catch (error) {
-      console.warn('[tenantService.getTenants] Fallback to canonical tenants data');
-      return Object.values(INITIAL_TENANTS_DATA);
+      console.warn('[tenantService.getTenants] Fallback to empty list');
+      return [];
     }
   },
 

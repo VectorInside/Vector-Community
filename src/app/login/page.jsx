@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { DEMO_USERS } from '@/utils/constants';
+import { userService } from '@/services/userService';
 import {
   ShieldCheck,
   Lock,
@@ -29,7 +30,7 @@ export default function LoginPage() {
   const [authStage, setAuthStage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage('');
 
@@ -42,26 +43,94 @@ export default function LoginPage() {
     setLoading(true);
     setAuthStage('Validando credenciales criptográficas...');
 
-    // Resolución dinámica de usuario según las credenciales ingresadas
-    const userToLogin = DEMO_USERS.find(
-      (u) => u.email.toLowerCase() === cleanEmail
-    );
+    try {
+      // 1. Intentar autenticación real contra PostgreSQL en el backend
+      const userRes = await userService.login({ email: cleanEmail, password });
+      if (userRes) {
+        const isClient = userRes.role === 'CLIENT_OWNER' || userRes.role === 'client';
+        const userObj = {
+          id: userRes.id,
+          name: userRes.name || userRes.ownerName,
+          email: userRes.email,
+          role: isClient ? 'client' : 'admin',
+          tenantKey: userRes.tenantId || (Array.isArray(userRes.assignedTenants) ? userRes.assignedTenants[0] : null),
+          roleTitle: userRes.roleLabel,
+          avatar: userRes.avatar || userRes.tenantAvatar || '⚡',
+        };
+        loginAs(userObj);
 
-    if (!userToLogin) {
-      setTimeout(() => {
-        setLoading(false);
-        setAuthStage('');
-        setErrorMessage('Credenciales no autorizadas o usuario no registrado.');
-      }, 500);
+        setAuthStage('Cargando permisos y espacio de trabajo...');
+        setTimeout(() => {
+          try {
+            confetti({
+              particleCount: 50,
+              spread: 60,
+              origin: { y: 0.6 },
+              colors: ['#E7F900', '#00F0FF', '#A855F7'],
+            });
+          } catch (err) {}
+          router.push('/dashboard');
+        }, 500);
+        return;
+      }
+    } catch (backendErr) {
+      console.warn('[Login fallback local]', backendErr?.message);
+    }
+
+    // Fallback local (Edgar Admin, cuentas de dueños en localStorage, o DEMO_USERS)
+    let localUser = null;
+    if (cleanEmail === 'edgaradmin@vectorinside.com') {
+      localUser = DEMO_USERS[0];
+    } else if (typeof window !== 'undefined') {
+      const savedOwners = localStorage.getItem('vector_tenant_owner_accounts');
+      if (savedOwners) {
+        try {
+          const ownersList = JSON.parse(savedOwners);
+          const matchOwner = ownersList.find((o) => o.email?.toLowerCase() === cleanEmail);
+          if (matchOwner) {
+            localUser = {
+              id: matchOwner.id,
+              name: matchOwner.ownerName,
+              email: matchOwner.email,
+              role: 'client',
+              tenantKey: matchOwner.tenantId,
+              roleTitle: `Dueño de Negocio (${matchOwner.tenantName})`,
+              avatar: matchOwner.tenantAvatar || '🏢',
+            };
+          }
+        } catch (e) {}
+      }
+      if (!localUser) {
+        const savedStaff = localStorage.getItem('vector_agency_staff_members');
+        if (savedStaff) {
+          try {
+            const staffList = JSON.parse(savedStaff);
+            const matchStaff = staffList.find((s) => s.email?.toLowerCase() === cleanEmail);
+            if (matchStaff) {
+              localUser = {
+                id: matchStaff.id,
+                name: matchStaff.name,
+                email: matchStaff.email,
+                role: matchStaff.role === 'SUPER_ADMIN' || matchStaff.role === 'ADMIN' ? 'admin' : 'client',
+                tenantKey: Array.isArray(matchStaff.assignedTenants) ? matchStaff.assignedTenants[0] : null,
+                roleTitle: matchStaff.roleLabel,
+                avatar: matchStaff.avatar || '💼',
+              };
+            }
+          } catch (e) {}
+        }
+      }
+    }
+
+    if (!localUser) {
+      setLoading(false);
+      setAuthStage('');
+      setErrorMessage('Credenciales no autorizadas o usuario no registrado.');
       return;
     }
 
-    loginAs(userToLogin);
-
-    setTimeout(() => {
-      setAuthStage('Cargando permisos y espacio de trabajo...');
-    }, 400);
-
+    loginAs(localUser);
+    setAuthStage('Cargando permisos y espacio de trabajo...');
     setTimeout(() => {
       try {
         confetti({
@@ -71,9 +140,8 @@ export default function LoginPage() {
           colors: ['#E7F900', '#00F0FF', '#A855F7'],
         });
       } catch (err) {}
-
       router.push('/dashboard');
-    }, 850);
+    }, 600);
   };
 
   return (

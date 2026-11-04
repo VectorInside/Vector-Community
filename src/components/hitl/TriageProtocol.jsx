@@ -1160,7 +1160,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
     }
   };
 
-  const currentChat = threads[activeContact] || threads.ana;
+  const currentChat = (threads && threads[activeContact]) || (threads && Object.values(threads)[0]) || null;
 
   // Calculate qualified leads count
   const billableCount = Object.values(threads).filter(
@@ -1974,6 +1974,20 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
 
           {/* Columna Derecha: Visor de Chat + Auditoría Booleana + Macros (8 cols) */}
           <div className="lg:col-span-8 space-y-4 flex flex-col h-[740px]">
+            {!currentChat ? (
+              <div className="flex-1 flex flex-col items-center justify-center p-8 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 text-center font-sans space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-neon/10 border border-neon/30 text-neon flex items-center justify-center text-xl">
+                  💬
+                </div>
+                <h4 className="text-base font-bold text-zinc-900 dark:text-white">
+                  Sin prospectos en triaje
+                </h4>
+                <p className="text-xs text-zinc-500 max-w-sm">
+                  Las conversaciones activas y prospectos calificados por la IA aparecerán en este panel en tiempo real.
+                </p>
+              </div>
+            ) : (
+              <>
             {/* Barra Superior: 4 Criterios de Calificación del Prospecto */}
             <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950/80 border border-lime-500/40 dark:border-neon/40 space-y-3 font-mono text-xs shadow-sm dark:shadow-md">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-100 dark:border-zinc-800/80 pb-2.5">
@@ -2186,6 +2200,8 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
                 </form>
               </div>
             </div>
+              </>
+            )}
           </div>
         </div>
       )}

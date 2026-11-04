@@ -6,12 +6,25 @@ import { INITIAL_BUSINESS_ACCOUNTS, INITIAL_AGENCY_STAFF } from '@/utils/mockAcc
  * SERVICIO DE GESTIÓN DE IDENTIDADES Y EQUIPO (IAM & USER SERVICE)
  * ============================================================================
  * Maneja la sincronización y persistencia con PostgreSQL 17 (v-community-backend)
- * Módulos REST: /api/v1/users (staff, owners, membresías, soft-delete)
+ * Módulos REST: /api/v1/users (staff, owners, membresías, soft-delete, login)
  * Con fallback resiliente y soporte offline/híbrido.
  * ============================================================================
  */
 
 export const userService = {
+  /**
+   * Autenticación contra PostgreSQL 17
+   */
+  async login({ email, password }) {
+    try {
+      const response = await api.post('/users/login', { email, password });
+      return unwrapApiData(response);
+    } catch (error) {
+      console.warn('[userService.login] Fallback o error en login backend:', error?.message);
+      throw error;
+    }
+  },
+
   /**
    * Obtiene la lista de colaboradores de la agencia (SUPER_ADMIN, ADMIN)
    */
@@ -20,7 +33,7 @@ export const userService = {
     try {
       const response = await api.get('/users/staff');
       const data = unwrapApiData(response);
-      if (Array.isArray(data) && data.length > 0) {
+      if (Array.isArray(data)) {
         return data;
       }
       return INITIAL_AGENCY_STAFF;
@@ -38,7 +51,7 @@ export const userService = {
     try {
       const response = await api.get('/users/owners');
       const data = unwrapApiData(response);
-      if (Array.isArray(data) && data.length > 0) {
+      if (Array.isArray(data)) {
         return data;
       }
       return INITIAL_BUSINESS_ACCOUNTS;
@@ -53,7 +66,17 @@ export const userService = {
    */
   async createStaff(staffData) {
     try {
-      const response = await api.post('/users/staff', staffData);
+      const payload = {
+        name: staffData.name,
+        email: staffData.email,
+        phone: staffData.phone,
+        role: staffData.role,
+        assignedTenants:
+          staffData.assignedTenantsMode === 'all'
+            ? []
+            : (Array.isArray(staffData.customTenants) ? staffData.customTenants : []),
+      };
+      const response = await api.post('/users/staff', payload);
       return unwrapApiData(response);
     } catch (error) {
       console.warn('[userService.createStaff] Fallback local:', error?.message);
@@ -121,10 +144,8 @@ export const userService = {
    */
   async updateAssignedTenants(userId, { assignedTenantsMode, customTenants }) {
     try {
-      const response = await api.put(`/users/${userId}/assigned-tenants`, {
-        assignedTenantsMode,
-        customTenants,
-      });
+      const assignedTenants = assignedTenantsMode === 'all' ? [] : (Array.isArray(customTenants) ? customTenants : []);
+      const response = await api.put(`/users/${userId}/assigned-tenants`, { assignedTenants });
       return unwrapApiData(response);
     } catch (error) {
       console.warn(`[userService.updateAssignedTenants] Fallback para ${userId}:`, error?.message);
@@ -147,4 +168,3 @@ export const userService = {
 };
 
 export default userService;
-
