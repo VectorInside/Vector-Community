@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -24,7 +24,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { loginAs } = useAuth();
 
-  const [email, setEmail] = useState('admin@vectorinside.com');
+  const [email, setEmail] = useState('Edgaradmin@vectorinside.com');
   const [password, setPassword] = useState('••••••••••••');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -35,7 +35,7 @@ export default function LoginPage() {
     setLoading(true);
     setAuthStage('Validando credenciales criptográficas...');
 
-    // Busca coincidencia por correo; por defecto asigna el perfil oficial del Lobo Vectorial
+    // Busca coincidencia por correo; por defecto asigna el perfil oficial del Edgar Lobo Vectorial
     const userToLogin =
       DEMO_USERS.find((u) => u.email.toLowerCase() === email.trim().toLowerCase()) ||
       DEMO_USERS[0];
@@ -139,7 +139,7 @@ export default function LoginPage() {
           {/* Subtle top edge border glow */}
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-neon/60 to-transparent" />
 
-          {/* Insignia Oficial del Lobo Vectorial - Acceso de Mando Central */}
+          {/* Insignia Oficial del Edgar Lobo Vectorial - Acceso de Mando Central */}
           <div className="p-4 rounded-2xl bg-gradient-to-r from-zinc-900/90 via-zinc-900/60 to-zinc-900/90 border border-neon/40 flex items-center gap-3.5 shadow-[0_0_25px_rgba(231,249,0,0.1)] relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-neon/5 rounded-full blur-2xl pointer-events-none" />
             <div className="p-2.5 rounded-xl bg-black/90 border border-neon/50 flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(231,249,0,0.2)]">
@@ -148,7 +148,7 @@ export default function LoginPage() {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-bold text-white tracking-wide font-sans">
-                  Lobo Vectorial
+                  Edgar Lobo Vectorial
                 </h3>
                 <span className="text-[9px] font-mono font-black px-2 py-0.5 rounded bg-neon/15 text-neon border border-neon/30 tracking-wider">
                   MANDO CENTRAL
@@ -182,7 +182,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-zinc-900/90 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder-zinc-500 focus:border-neon focus:bg-black focus:outline-none focus:ring-1 focus:ring-neon font-mono transition-all"
-                  placeholder="admin@vectorinside.com"
+                  placeholder="Edgaradmin@vectorinside.com"
                 />
               </div>
             </div>

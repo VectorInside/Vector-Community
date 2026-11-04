@@ -851,8 +851,8 @@ export const SAMPLE_ONBOARDING_PAYLOAD = {
 export const DEMO_USERS = [
   {
     id: 'usr-admin-01',
-    email: 'admin@vectorinside.com',
-    name: 'Lobo Vectorial',
+    name: 'Edgar Lobo Vectorial',
+    email: 'Edgaradmin@vectorinside.com',
     role: USER_ROLES.ADMIN,
     roleTitle: 'Director General · Lobo Vectorial',
     badge: 'SUPERADMIN',

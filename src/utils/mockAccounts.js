@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Cuentas oficiales de acceso y credenciales maestras por negocio (1 Dueño por Negocio)
  * Modelo 1:1 estricto (1 Tenant = 1 Cuenta Maestra de Cliente)
  * Preparado para mapeo relacional directo en Backend (tabla: tenant_credentials / tenant_owner)
@@ -98,8 +98,8 @@ export const INITIAL_BUSINESS_ACCOUNTS = [
 export const INITIAL_AGENCY_STAFF = [
   {
     id: 'staff-1',
-    name: 'Edgar Gs (Tú)',
-    email: 'edgar@vectorinside.com',
+    name: 'Edgar Lobo Vectorial (Tú)',
+    email: 'Edgaradmin@vectorinside.com',
     role: 'SUPER_ADMIN',
     roleLabel: 'Super Admin',
     avatar: '⚡',
@@ -162,7 +162,7 @@ export const INITIAL_AUDIT_LOGS = [
     id: 'log-1',
     timestamp: 'Hoy a las 19:35 hrs',
     user: 'Edgar Gs (Super Admin)',
-    email: 'edgar@vectorinside.com',
+    email: 'Edgaradmin@vectorinside.com',
     role: 'SUPER_ADMIN',
     action: 'Actualización de API Keys',
     target: 'Polanco Steakhouse & Mixology',

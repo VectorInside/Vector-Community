@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
@@ -609,14 +609,14 @@ export const Header = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-bold text-[var(--text-main)] truncate">
-                        {role === 'admin' ? 'Agencia Vector Inside' : (activeTenant?.shortName || activeTenant?.name || 'Cliente')}
+                        {role === 'admin' ? 'Edgar Lobo Vectorial' : (activeTenant?.shortName || activeTenant?.name || 'Cliente')}
                       </span>
                       <span className="text-[9px] font-mono px-1.5 py-0.5 bg-lime-400/10 text-lime-400 border border-lime-400/20 rounded font-semibold uppercase shrink-0">
                         {role === 'admin' ? 'Admin' : 'Cliente'}
                       </span>
                     </div>
                     <p className="text-[11px] font-mono text-[var(--text-muted)] truncate">
-                      {role === 'admin' ? 'operaciones@vectorinside.com' : `gerencia@${activeTenant?.id || 'negocio'}.mx`}
+                      {role === 'admin' ? 'Edgaradmin@vectorinside.com' : `gerencia@${activeTenant?.id || 'negocio'}.mx`}
                     </p>
                     <p className="text-[10px] text-[var(--text-faint)] flex items-center gap-1 mt-0.5">
                       <span>Espacio:</span>
@@ -736,8 +736,8 @@ export const Header = () => {
       <ChangePasswordModal
         isOpen={isChangePasswordOpen}
         onClose={() => setIsChangePasswordOpen(false)}
-        userEmail={role === 'admin' ? 'operaciones@vectorinside.com' : `gerencia@${activeTenant?.id || 'negocio'}.mx`}
-        userName={role === 'admin' ? 'Agencia Vector Inside' : (activeTenant?.shortName || activeTenant?.name || 'Cliente')}
+        userEmail={role === 'admin' ? 'Edgaradmin@vectorinside.com' : `gerencia@${activeTenant?.id || 'negocio'}.mx`}
+        userName={role === 'admin' ? 'Edgar Lobo Vectorial' : (activeTenant?.shortName || activeTenant?.name || 'Cliente')}
       />
 
       {/* Global Command Palette Modal (⌘ K / Ctrl+K) */}
