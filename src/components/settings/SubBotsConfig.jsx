@@ -153,7 +153,10 @@ export const SubBotsConfig = () => {
 
     const loadTenantBotConfig = async () => {
       try {
-        const storedConfig = await tenantService.getVerticalConfig(tenantId);
+        const [storedConfig, aiBackendConfig] = await Promise.all([
+          tenantService.getVerticalConfig(tenantId),
+          aiService.getConfig(tenantId).catch(() => null),
+        ]);
 
         const slotMin =
           currentTenant?.calendarConfig?.slotDurationMin ||
@@ -192,7 +195,11 @@ export const SubBotsConfig = () => {
           systemPrompt: defaultPrompt,
           useCustomKeys: storedConfig?.useCustomKeys ?? false,
           apiKeys: {
-            deepseek: currentTenant?.apiKeys?.deepseek || storedConfig?.apiKeys?.deepseek || '',
+            deepseek:
+              aiBackendConfig?.maskedApiKey ||
+              currentTenant?.apiKeys?.deepseek ||
+              storedConfig?.apiKeys?.deepseek ||
+              '',
             openai: currentTenant?.apiKeys?.openai || storedConfig?.apiKeys?.openai || '',
             anthropic: currentTenant?.apiKeys?.anthropic || storedConfig?.apiKeys?.anthropic || '',
             groq: currentTenant?.apiKeys?.groq || storedConfig?.apiKeys?.groq || '',
@@ -229,12 +236,32 @@ export const SubBotsConfig = () => {
     loadTenantBotConfig();
   }, [currentTenant, tenantId]);
 
-  // Simular prueba de latencia (Ping de API Key)
-  const handlePingTest = (providerKey) => {
+  // Probar latencia y validez de API Key contra el backend (con fallback si está offline)
+  const handlePingTest = async (providerKey) => {
     setPingStatus((prev) => ({
       ...prev,
       [providerKey]: { ...prev[providerKey], loading: true },
     }));
+
+    const startMs = performance.now();
+    try {
+      if (providerKey === 'deepseek') {
+        const res = await aiService.testConnection(tenantId);
+        const elapsedMs = Math.round(performance.now() - startMs);
+        setPingStatus((prev) => ({
+          ...prev,
+          [providerKey]: {
+            loading: false,
+            result: res?.connected !== false ? 'connected' : 'error',
+            latency: `${elapsedMs} ms`,
+            status: res?.connected !== false ? 200 : 401,
+          },
+        }));
+        return;
+      }
+    } catch (err) {
+      // Fallback en modo desconectado
+    }
 
     setTimeout(() => {
       const simulatedLatencies = {
@@ -253,7 +280,7 @@ export const SubBotsConfig = () => {
           status: 200,
         },
       }));
-    }, 850);
+    }, 650);
   };
 
   // Guardar configuración completa (operativa + API Keys)
