@@ -83,7 +83,7 @@ export const Header = () => {
         if (saved) {
           setNotifications(JSON.parse(saved));
         }
-      } catch (e) {}
+      } catch (e) { }
     }
   }, []);
 
@@ -113,7 +113,7 @@ export const Header = () => {
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem('vector_global_notifications', JSON.stringify(updated));
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // 2. Switch Tenant Context (Solo si es administrador de agencia)
@@ -132,7 +132,7 @@ export const Header = () => {
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem('vector_global_notifications', JSON.stringify(updated));
-      } catch (e) {}
+      } catch (e) { }
     }
   };
 
@@ -218,11 +218,10 @@ export const Header = () => {
               <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className={`flex items-center gap-2 px-2.5 py-1 rounded-xl bg-[var(--bg-base)] border text-xs font-mono font-bold transition-all ${
-                  isOpen
+                className={`flex items-center gap-2 px-2.5 py-1 rounded-xl bg-[var(--bg-base)] border text-xs font-mono font-bold transition-all ${isOpen
                     ? 'border-lime-400 ring-1 ring-lime-400/40 shadow-sm text-[var(--text-main)]'
                     : 'border-[var(--border-color)] hover:border-lime-400 text-[var(--text-main)]'
-                }`}
+                  }`}
                 title="Cambiar espacio de negocio"
               >
                 <span className="text-sm leading-none" suppressHydrationWarning>{activeTenant?.avatar || '🏢'}</span>
@@ -230,9 +229,8 @@ export const Header = () => {
                   {activeTenant?.name || 'Seleccionar Negocio'}
                 </span>
                 <ChevronDown
-                  className={`w-3.5 h-3.5 text-[var(--text-muted)] transition-transform duration-200 ${
-                    isOpen ? 'rotate-180 text-lime-400' : ''
-                  }`}
+                  className={`w-3.5 h-3.5 text-[var(--text-muted)] transition-transform duration-200 ${isOpen ? 'rotate-180 text-lime-400' : ''
+                    }`}
                 />
               </button>
 
@@ -273,11 +271,10 @@ export const Header = () => {
                           key={t.id}
                           type="button"
                           onClick={() => handleSelectTenant(t.id)}
-                          className={`w-full text-left p-2 rounded-xl text-xs font-mono flex items-center justify-between gap-2 transition-all ${
-                            isSelected
+                          className={`w-full text-left p-2 rounded-xl text-xs font-mono flex items-center justify-between gap-2 transition-all ${isSelected
                               ? 'bg-lime-400/15 text-[var(--text-main)] font-bold border border-lime-400/40 shadow-sm'
                               : 'text-[var(--text-muted)] hover:bg-[var(--bg-card-subtle)] hover:text-[var(--text-main)] border border-transparent'
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center gap-2.5 truncate">
                             <span className="text-base shrink-0">{t.avatar || '🏢'}</span>
@@ -364,11 +361,10 @@ export const Header = () => {
               type="button"
               onClick={() => setIsNotifOpen((prev) => !prev)}
               title={`${unreadCount} notificaciones sin atender`}
-              className={`p-2 rounded-xl bg-[var(--bg-base)] border transition-all relative ${
-                isNotifOpen
+              className={`p-2 rounded-xl bg-[var(--bg-base)] border transition-all relative ${isNotifOpen
                   ? 'border-lime-400 ring-1 ring-lime-400/40 text-lime-400 shadow-sm'
                   : 'border-[var(--border-color)] hover:border-lime-400 text-[var(--text-muted)] hover:text-lime-400'
-              }`}
+                }`}
             >
               <Bell className="w-4 h-4" />
               {isHeaderMounted && unreadCount > 0 ? (
@@ -415,22 +411,20 @@ export const Header = () => {
                   <button
                     type="button"
                     onClick={() => setNotifFilter('all')}
-                    className={`px-2 py-0.5 rounded-md font-bold transition-all ${
-                      notifFilter === 'all'
+                    className={`px-2 py-0.5 rounded-md font-bold transition-all ${notifFilter === 'all'
                         ? 'bg-lime-400 text-black'
                         : 'bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
-                    }`}
+                      }`}
                   >
                     <span suppressHydrationWarning>Todas ({notifications.length})</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setNotifFilter('unread')}
-                    className={`px-2 py-0.5 rounded-md font-bold transition-all ${
-                      notifFilter === 'unread'
+                    className={`px-2 py-0.5 rounded-md font-bold transition-all ${notifFilter === 'unread'
                         ? 'bg-lime-400 text-black'
                         : 'bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
-                    }`}
+                      }`}
                   >
                     <span suppressHydrationWarning>Sin leer ({unreadCount})</span>
                   </button>
@@ -451,11 +445,10 @@ export const Header = () => {
                         key={notif.id}
                         type="button"
                         onClick={() => handleSelectNotification(notif)}
-                        className={`w-full text-left p-2.5 rounded-xl transition-all flex items-start gap-2.5 pt-2.5 ${
-                          notif.isRead
+                        className={`w-full text-left p-2.5 rounded-xl transition-all flex items-start gap-2.5 pt-2.5 ${notif.isRead
                             ? 'hover:bg-[var(--bg-card)]/50 opacity-75'
                             : 'bg-[var(--bg-card)]/80 hover:bg-[var(--bg-card)] border border-lime-400/20'
-                        }`}
+                          }`}
                       >
                         {/* Tenant Avatar */}
                         <div className="w-8 h-8 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] flex items-center justify-center text-base shrink-0 mt-0.5">
@@ -528,11 +521,10 @@ export const Header = () => {
               type="button"
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
               title={`Perfil actual: ${role === 'admin' ? 'Administrador' : 'Usuario'} - Haz clic para ver opciones`}
-              className={`w-8 h-8 rounded-xl border flex items-center justify-center font-mono font-black text-xs shrink-0 transition-all cursor-pointer ${
-                isUserMenuOpen
+              className={`w-8 h-8 rounded-xl border flex items-center justify-center font-mono font-black text-xs shrink-0 transition-all cursor-pointer ${isUserMenuOpen
                   ? 'bg-lime-400 text-black border-lime-400 shadow-neon-sm ring-2 ring-lime-400/30'
                   : 'bg-[var(--bg-card)] border-[var(--border-color)] text-lime-400 hover:border-lime-400/60 hover:bg-[var(--bg-panel)]'
-              }`}
+                }`}
             >
               {role === 'admin' ? 'VI' : 'CL'}
             </button>

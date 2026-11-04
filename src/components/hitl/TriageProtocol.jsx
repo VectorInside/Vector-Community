@@ -610,7 +610,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
           });
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [activeTenant]);
 
 
@@ -1002,16 +1002,16 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
       prev.map((c) =>
         c.id === comment.id
           ? {
-              ...c,
-              status: 'DM Despachado (Graph API v20.0)',
-              aiAction: `DM verificado enviado vía Webhook Meta Graph a ${c.author}`,
-            }
+            ...c,
+            status: 'DM Despachado (Graph API v20.0)',
+            aiAction: `DM verificado enviado vía Webhook Meta Graph a ${c.author}`,
+          }
           : c
       )
     );
     try {
       confetti({ particleCount: 35, spread: 65, colors: ['#00F0FF', '#E7F900', '#EC4899'] });
-    } catch (e) {}
+    } catch (e) { }
     triggerModal(
       'Trigger Meta Graph API Exitoso',
       `<b>Destinatario:</b> ${comment.author}<br><b>Canal:</b> Instagram Direct Graph API v20.0<br><b>Webhook Status:</b> 200 OK (Latencia: 248ms)<br><b>Acción Despachada:</b> "${comment.aiAction}"`
@@ -1024,10 +1024,10 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
       prev.map((c) =>
         c.id === commentId
           ? {
-              ...c,
-              status: 'Respondido en Hilo',
-              operatorReply: replyText,
-            }
+            ...c,
+            status: 'Respondido en Hilo',
+            operatorReply: replyText,
+          }
           : c
       )
     );
@@ -1035,7 +1035,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
     setReplyText('');
     try {
       confetti({ particleCount: 25, spread: 50, colors: ['#E7F900', '#10B981'] });
-    } catch (e) {}
+    } catch (e) { }
     triggerModal(
       'Respuesta Pública Publicada en Hilo',
       'Tu respuesta ha sido transmitida vía Meta Graph API directamente al comentario en el Reel/Post.'
@@ -1100,7 +1100,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
     setMetaComments((prev) => [newComment, ...prev]);
     try {
       confetti({ particleCount: 40, spread: 70, colors: ['#00F0FF', '#E7F900'] });
-    } catch (e) {}
+    } catch (e) { }
     triggerModal(
       'Simulación Meta Webhook Inbound (0ms)',
       `<b>Nuevo Comentario Recibido:</b> "${newComment.text}"<br><b>Autor:</b> ${newComment.author}<br><b>Clasificación IA:</b> ${newComment.intent}<br><b>Acción Inmediata:</b> ${newComment.aiAction}`
@@ -1117,7 +1117,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
     );
     try {
       confetti({ particleCount: 50, spread: 80, colors: ['#A855F7', '#E7F900', '#10B981'] });
-    } catch (e) {}
+    } catch (e) { }
     triggerModal(
       'Worker Redis Nocturno Ejecutado en Batch (0ms)',
       `<b>Job ID:</b> upstash_cron_${Date.now()}<br><b>Mensajes Despachados:</b> ${reengagementList.length} micro-mensajes Vaca Púrpura.<br><b>Motor IA:</b> Groq Llama 3 Batching.<br><b>Costo en Tokens:</b> $0.00 USD.<br><b>Resultado:</b> Todos los prospectos Out-of-Market recibieron su estímulo no invasivo a las 24h exactas.`
@@ -1211,7 +1211,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
       () => {
         try {
           confetti({ particleCount: 30, spread: 50, colors: ['#E7F900', '#FFFFFF', '#8A95B6'] });
-        } catch (e) {}
+        } catch (e) { }
       },
       'Entendido'
     );
@@ -1231,7 +1231,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
       consentOrBooked: true,
     };
     if (targetLead?.id) {
-      leadService.updateLeadCriteria(targetLead.id, allGuards).catch(() => {});
+      leadService.updateLeadCriteria(targetLead.id, allGuards).catch(() => { });
     }
     setThreads((prev) => ({
       ...prev,
@@ -1279,7 +1279,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
       () => {
         try {
           confetti({ particleCount: 25, spread: 45, colors: ['#E7F900', '#8A95B6', '#FFFFFF'] });
-        } catch (e) {}
+        } catch (e) { }
       },
       'Aceptar'
     );
@@ -1307,37 +1307,33 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
     return (
       <div
         key={leadKey}
-        className={`${
-          isExecutiveGrid
+        className={`${isExecutiveGrid
             ? 'p-4 space-y-3.5 shadow-sm dark:shadow-md'
             : isCompact
-            ? 'p-3 space-y-2'
-            : 'p-4 space-y-3'
-        } rounded-2xl transition-all font-mono text-xs group relative flex flex-col justify-between ${getLeadCardGradient(item.leadState)}`}
+              ? 'p-3 space-y-2'
+              : 'p-4 space-y-3'
+          } rounded-2xl transition-all font-mono text-xs group relative flex flex-col justify-between ${getLeadCardGradient(item.leadState)}`}
       >
         <div className="space-y-3">
           {/* Card Top: Avatar, Nombre, Teléfono & Ticket */}
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0 flex-1">
               <div
-                className={`${
-                  isExecutiveGrid ? 'w-10 h-10 text-xl' : isCompact ? 'w-7 h-7 text-sm' : 'w-9 h-9 text-lg'
-                } rounded-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shrink-0 shadow-inner`}
+                className={`${isExecutiveGrid ? 'w-10 h-10 text-xl' : isCompact ? 'w-7 h-7 text-sm' : 'w-9 h-9 text-lg'
+                  } rounded-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shrink-0 shadow-inner`}
               >
                 {item.avatar}
               </div>
               <div className="min-w-0 flex-1">
                 <h5
-                  className={`font-heading font-black ${
-                    isExecutiveGrid ? 'text-sm' : isCompact ? 'text-xs' : 'text-sm'
-                  } text-zinc-900 dark:text-white truncate leading-tight`}
+                  className={`font-heading font-black ${isExecutiveGrid ? 'text-sm' : isCompact ? 'text-xs' : 'text-sm'
+                    } text-zinc-900 dark:text-white truncate leading-tight`}
                 >
                   {item.name}
                 </h5>
                 <span
-                  className={`${
-                    isExecutiveGrid ? 'text-[10px]' : isCompact ? 'text-[9px]' : 'text-[10px]'
-                  } text-zinc-500 dark:text-zinc-400 block truncate font-mono mt-0.5`}
+                  className={`${isExecutiveGrid ? 'text-[10px]' : isCompact ? 'text-[9px]' : 'text-[10px]'
+                    } text-zinc-500 dark:text-zinc-400 block truncate font-mono mt-0.5`}
                 >
                   {item.phone} {isExecutiveGrid && item.channel ? `• ${item.channel.split(' ')[0]}` : ''}
                 </span>
@@ -1346,9 +1342,8 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
 
             {/* Ticket Price Pill (Fondo oscuro con texto neon para contraste supremo en ambos modos) */}
             <span
-              className={`px-2.5 py-1 rounded-xl bg-zinc-900 dark:bg-zinc-950 border border-neon/40 text-neon font-black font-mono ${
-                isExecutiveGrid ? 'text-xs' : isCompact ? 'text-[10px]' : 'text-[11px]'
-              } shrink-0 whitespace-nowrap shadow-sm`}
+              className={`px-2.5 py-1 rounded-xl bg-zinc-900 dark:bg-zinc-950 border border-neon/40 text-neon font-black font-mono ${isExecutiveGrid ? 'text-xs' : isCompact ? 'text-[10px]' : 'text-[11px]'
+                } shrink-0 whitespace-nowrap shadow-sm`}
             >
               {item.potentialTicket}
             </span>
@@ -1357,9 +1352,8 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
           {/* Alerta Roja de Riesgo Crítico (HITL) */}
           {isRisk && (
             <div
-              className={`${
-                isCompact ? 'p-2 text-[10px]' : 'p-2.5 text-[11px]'
-              } rounded-xl bg-rose-100/80 dark:bg-rose-500/15 border border-rose-300 dark:border-rose-500/40 text-rose-800 dark:text-rose-300 font-bold flex items-center gap-2 shadow-inner`}
+              className={`${isCompact ? 'p-2 text-[10px]' : 'p-2.5 text-[11px]'
+                } rounded-xl bg-rose-100/80 dark:bg-rose-500/15 border border-rose-300 dark:border-rose-500/40 text-rose-800 dark:text-rose-300 font-bold flex items-center gap-2 shadow-inner`}
             >
               <ShieldAlert className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
               <div className="min-w-0 flex-1">
@@ -1376,9 +1370,8 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
           {/* Reloj Regresivo 24h para Leads Fríos / Templados */}
           {item.countdown24h && (
             <div
-              className={`${
-                isCompact ? 'p-1.5 text-[10px]' : 'p-2 text-[11px]'
-              } flex items-center justify-between rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/25 text-blue-700 dark:text-blue-300 font-mono`}
+              className={`${isCompact ? 'p-1.5 text-[10px]' : 'p-2 text-[11px]'
+                } flex items-center justify-between rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/25 text-blue-700 dark:text-blue-300 font-mono`}
             >
               <span className="flex items-center gap-1.5 truncate">
                 <Clock className="w-3 h-3 text-blue-600 dark:text-blue-400 shrink-0" />
@@ -1392,16 +1385,14 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
 
           {/* Indicador de Criterios de Calificación */}
           <div
-            className={`${
-              isCompact ? 'p-2 space-y-1' : 'p-2.5 space-y-1.5'
-            } rounded-xl bg-zinc-50 dark:bg-black/60 border border-zinc-200 dark:border-zinc-800/80`}
+            className={`${isCompact ? 'p-2 space-y-1' : 'p-2.5 space-y-1.5'
+              } rounded-xl bg-zinc-50 dark:bg-black/60 border border-zinc-200 dark:border-zinc-800/80`}
           >
             <div className="flex items-center justify-between text-[9px]">
               <span className="text-zinc-600 dark:text-zinc-400 font-medium">Criterios de Calificación:</span>
               <span
-                className={`font-black ${
-                  critCount === 4 ? 'text-neon' : 'text-amber-600 dark:text-amber-400'
-                }`}
+                className={`font-black ${critCount === 4 ? 'text-neon' : 'text-amber-600 dark:text-amber-400'
+                  }`}
               >
                 {critCount}/4 Cumplidos
               </span>
@@ -1411,44 +1402,39 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
             <div className="grid grid-cols-4 gap-1 pt-0.5">
               <div
                 title="C1: Identidad & Teléfono Verificado"
-                className={`h-1.5 rounded-full transition-all ${
-                  item.criteriaAudit?.identityValidated
+                className={`h-1.5 rounded-full transition-all ${item.criteriaAudit?.identityValidated
                     ? 'bg-neon shadow-[0_0_6px_var(--neon-glow)]'
                     : 'bg-zinc-200 dark:bg-zinc-800'
-                }`}
+                  }`}
               />
               <div
                 title="C2: Interés Específico en Catálogo"
-                className={`h-1.5 rounded-full transition-all ${
-                  item.criteriaAudit?.catalogIdentified
+                className={`h-1.5 rounded-full transition-all ${item.criteriaAudit?.catalogIdentified
                     ? 'bg-neon shadow-[0_0_6px_var(--neon-glow)]'
                     : 'bg-zinc-200 dark:bg-zinc-800'
-                }`}
+                  }`}
               />
               <div
                 title="C3: Aclaración Financiera (Precios / MSI)"
-                className={`h-1.5 rounded-full transition-all ${
-                  item.criteriaAudit?.financialClarified
+                className={`h-1.5 rounded-full transition-all ${item.criteriaAudit?.financialClarified
                     ? 'bg-neon shadow-[0_0_6px_var(--neon-glow)]'
                     : 'bg-zinc-200 dark:bg-zinc-800'
-                }`}
+                  }`}
               />
               <div
                 title="C4: Consentimiento Explícito o Cita Agendada"
-                className={`h-1.5 rounded-full transition-all ${
-                  item.criteriaAudit?.consentOrBooked
+                className={`h-1.5 rounded-full transition-all ${item.criteriaAudit?.consentOrBooked
                     ? 'bg-neon shadow-[0_0_6px_var(--neon-glow)]'
                     : 'bg-zinc-200 dark:bg-zinc-800'
-                }`}
+                  }`}
               />
             </div>
           </div>
 
           {/* Extracto del Último Mensaje (Estilo Globo de Chat) */}
           <div
-            className={`${
-              isCompact ? 'p-2 text-[10px]' : 'p-2.5 text-[11px]'
-            } rounded-xl bg-zinc-50 dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800/80 text-zinc-700 dark:text-zinc-300 font-sans italic relative`}
+            className={`${isCompact ? 'p-2 text-[10px]' : 'p-2.5 text-[11px]'
+              } rounded-xl bg-zinc-50 dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800/80 text-zinc-700 dark:text-zinc-300 font-sans italic relative`}
           >
             <p className="line-clamp-2 leading-relaxed">
               "{item.messages[item.messages.length - 1]?.text}"
@@ -1461,13 +1447,11 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
           <button
             type="button"
             onClick={() => handleOpenLeadInChat(leadKey)}
-            className={`w-full ${
-              isCompact ? 'py-1.5 px-2 text-[11px]' : 'py-2 px-3 text-xs'
-            } rounded-xl font-bold font-mono flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm ${
-              isRisk
+            className={`w-full ${isCompact ? 'py-1.5 px-2 text-[11px]' : 'py-2 px-3 text-xs'
+              } rounded-xl font-bold font-mono flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm ${isRisk
                 ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.4)]'
                 : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-neon hover:text-black text-zinc-900 dark:text-white border border-zinc-200 dark:border-zinc-700'
-            }`}
+              }`}
           >
             <Zap className="w-3 h-3 text-neon group-hover:text-black transition-colors shrink-0" />
             <span className="truncate">
@@ -1479,9 +1463,8 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
             <button
               type="button"
               onClick={() => handleShowDictamen(item)}
-              className={`flex-1 ${
-                isCompact ? 'py-1 px-1.5 text-[9px]' : 'py-1.5 px-2 text-[10px]'
-              } rounded-xl bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700/80 font-bold font-mono flex items-center justify-center gap-1 transition-colors`}
+              className={`flex-1 ${isCompact ? 'py-1 px-1.5 text-[9px]' : 'py-1.5 px-2 text-[10px]'
+                } rounded-xl bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700/80 font-bold font-mono flex items-center justify-center gap-1 transition-colors`}
             >
               <FileText className="w-3 h-3 text-cyan-600 dark:text-cyan-400 shrink-0" />
               <span className="truncate">Dictamen</span>
@@ -1491,9 +1474,8 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
               <button
                 type="button"
                 onClick={() => handleInspectCapi(item)}
-                className={`${
-                  isCompact ? 'py-1 px-1.5 text-[9px]' : 'py-1.5 px-2 text-[10px]'
-                } rounded-xl bg-neon/15 hover:bg-neon hover:text-black text-neon border border-neon/40 font-black font-mono flex items-center justify-center gap-1 transition-colors shadow-sm`}
+                className={`${isCompact ? 'py-1 px-1.5 text-[9px]' : 'py-1.5 px-2 text-[10px]'
+                  } rounded-xl bg-neon/15 hover:bg-neon hover:text-black text-neon border border-neon/40 font-black font-mono flex items-center justify-center gap-1 transition-colors shadow-sm`}
                 title="Inspeccionar Evento Meta CAPI"
               >
                 <Hash className="w-3 h-3 shrink-0" />
@@ -1531,11 +1513,10 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
             <button
               type="button"
               onClick={() => setActiveTab('chats')}
-              className={`px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 ${
-                activeTab === 'chats'
+              className={`px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'chats'
                   ? 'bg-neon text-black shadow-neon-sm'
                   : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
-              }`}
+                }`}
             >
               <MessageCircle className="w-4 h-4" />
               <span>Prospectos ({Object.keys(threads).length})</span>
@@ -1544,11 +1525,10 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
             <button
               type="button"
               onClick={() => setActiveTab('meta_comments')}
-              className={`px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 ${
-                activeTab === 'meta_comments'
+              className={`px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'meta_comments'
                   ? 'bg-neon text-black shadow-neon-sm'
                   : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
-              }`}
+                }`}
             >
               <Instagram className="w-4 h-4 text-pink-500 dark:text-pink-400" />
               <span>Comentarios Meta</span>
@@ -1557,11 +1537,10 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
             <button
               type="button"
               onClick={() => setActiveTab('redis_queue')}
-              className={`px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 ${
-                activeTab === 'redis_queue'
+              className={`px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'redis_queue'
                   ? 'bg-neon text-black shadow-neon-sm'
                   : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
-              }`}
+                }`}
             >
               <Clock className="w-4 h-4 text-purple-400" />
               <span>Recuperación 24h (Regla 95/5)</span>
@@ -1582,11 +1561,10 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
             <button
               type="button"
               onClick={() => setActiveTab('chats')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 text-xs ${
-                activeTab === 'chats'
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 text-xs ${activeTab === 'chats'
                   ? 'bg-neon text-black shadow-neon-sm'
                   : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
-              }`}
+                }`}
             >
               <MessageCircle className="w-3.5 h-3.5" />
               <span>Embudo ({Object.keys(threads).length})</span>
@@ -1595,11 +1573,10 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
             <button
               type="button"
               onClick={() => setActiveTab('meta_comments')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 text-xs ${
-                activeTab === 'meta_comments'
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 text-xs ${activeTab === 'meta_comments'
                   ? 'bg-neon text-black shadow-neon-sm'
                   : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
-              }`}
+                }`}
             >
               <Instagram className="w-3.5 h-3.5 text-pink-500 dark:text-pink-400" />
               <span>Comentarios Meta</span>
@@ -1608,11 +1585,10 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
             <button
               type="button"
               onClick={() => setActiveTab('redis_queue')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 text-xs ${
-                activeTab === 'redis_queue'
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 text-xs ${activeTab === 'redis_queue'
                   ? 'bg-neon text-black shadow-neon-sm'
                   : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
-              }`}
+                }`}
             >
               <Clock className="w-3.5 h-3.5 text-purple-400" />
               <span>Recuperación 24h</span>
@@ -1625,9 +1601,8 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
       {/* 2. BARRA DE CONTROL DE VISTA Y TELEMETRÍA (COMPACTA & ALINEADA)           */}
       {/* ========================================================================= */}
       {activeTab === 'chats' && (
-        <div className={`flex flex-col md:flex-row items-center justify-between gap-3 ${
-          embedded ? 'py-2 px-3.5 rounded-xl' : 'p-3 rounded-2xl'
-        } bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800/80 font-mono text-xs shadow-sm w-full`}>
+        <div className={`flex flex-col md:flex-row items-center justify-between gap-3 ${embedded ? 'py-2 px-3.5 rounded-xl' : 'p-3 rounded-2xl'
+          } bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800/80 font-mono text-xs shadow-sm w-full`}>
           {/* Indicadores Operativos Rápidos */}
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800/80 shadow-sm">
@@ -1661,11 +1636,10 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
                   type="button"
                   onClick={() => setKanbanDensity('compact')}
                   title="Vista Compacta: Permite ver más columnas y tarjetas a la vez en pantalla"
-                  className={`px-2.5 py-1 rounded-md font-bold flex items-center gap-1 text-[11px] transition-all ${
-                    kanbanDensity === 'compact'
+                  className={`px-2.5 py-1 rounded-md font-bold flex items-center gap-1 text-[11px] transition-all ${kanbanDensity === 'compact'
                       ? 'bg-neon text-black shadow-neon-sm'
                       : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
-                  }`}
+                    }`}
                 >
                   <Minimize2 className="w-3 h-3" />
                   <span>Compacto</span>
@@ -1674,11 +1648,10 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
                   type="button"
                   onClick={() => setKanbanDensity('standard')}
                   title="Vista Estándar: Mayor ancho y espaciado"
-                  className={`px-2.5 py-1 rounded-md font-bold flex items-center gap-1 text-[11px] transition-all ${
-                    kanbanDensity === 'standard'
+                  className={`px-2.5 py-1 rounded-md font-bold flex items-center gap-1 text-[11px] transition-all ${kanbanDensity === 'standard'
                       ? 'bg-neon text-black shadow-neon-sm'
                       : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
-                  }`}
+                    }`}
                 >
                   <Maximize2 className="w-3 h-3" />
                   <span>Estándar</span>
@@ -1691,11 +1664,10 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
               <button
                 type="button"
                 onClick={() => setViewMode('kanban')}
-                className={`px-3 py-1 rounded-md font-bold flex items-center gap-1.5 text-[11px] transition-all ${
-                  viewMode === 'kanban'
+                className={`px-3 py-1 rounded-md font-bold flex items-center gap-1.5 text-[11px] transition-all ${viewMode === 'kanban'
                     ? 'bg-neon text-black shadow-neon-sm'
                     : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
-                }`}
+                  }`}
               >
                 <Kanban className="w-3.5 h-3.5" />
                 <span>Tablero Kanban</span>
@@ -1703,11 +1675,10 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
               <button
                 type="button"
                 onClick={() => setViewMode('chat')}
-                className={`px-3 py-1 rounded-md font-bold flex items-center gap-1.5 text-[11px] transition-all ${
-                  viewMode === 'chat'
+                className={`px-3 py-1 rounded-md font-bold flex items-center gap-1.5 text-[11px] transition-all ${viewMode === 'chat'
                     ? 'bg-neon text-black shadow-neon-sm'
                     : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
-                }`}
+                  }`}
               >
                 <LayoutList className="w-3.5 h-3.5" />
                 <span>Bandeja Chat</span>
@@ -1732,11 +1703,10 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
               <button
                 type="button"
                 onClick={() => setSelectedColumnFilter('ALL')}
-                className={`px-3 py-1 rounded-lg transition-all font-bold ${
-                  selectedColumnFilter === 'ALL'
+                className={`px-3 py-1 rounded-lg transition-all font-bold ${selectedColumnFilter === 'ALL'
                     ? 'bg-neon text-black shadow-neon-sm'
                     : 'bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white border border-zinc-200 dark:border-zinc-800'
-                }`}
+                  }`}
               >
                 Todas ({Object.keys(threads).length})
               </button>
@@ -1752,11 +1722,10 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
                     key={col.id}
                     type="button"
                     onClick={() => setSelectedColumnFilter(col.id)}
-                    className={`px-3 py-1 rounded-lg transition-all flex items-center gap-1.5 font-bold ${
-                      isSelected
+                    className={`px-3 py-1 rounded-lg transition-all flex items-center gap-1.5 font-bold ${isSelected
                         ? 'bg-zinc-900 dark:bg-white text-white dark:text-black shadow-sm'
                         : 'bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white border border-zinc-200 dark:border-zinc-800'
-                    }`}
+                      }`}
                   >
                     <span className={`w-2 h-2 rounded-full ${col.dotColor}`} />
                     <span>{col.title.split('/')[0].trim()}</span>
@@ -1855,11 +1824,10 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
                 return (
                   <div
                     key={col.id}
-                    className={`${
-                      isCompact
+                    className={`${isCompact
                         ? 'min-w-[260px] max-w-[280px] w-[270px]'
                         : 'min-w-[320px] max-w-[350px] w-[340px]'
-                    } flex-shrink-0 flex flex-col rounded-2xl ${getColumnContainerStyle(col.id)} shadow-sm dark:shadow-xl backdrop-blur-md relative overflow-hidden snap-start transition-all`}
+                      } flex-shrink-0 flex flex-col rounded-2xl ${getColumnContainerStyle(col.id)} shadow-sm dark:shadow-xl backdrop-blur-md relative overflow-hidden snap-start transition-all`}
                   >
                     {/* Top Accent Stripe */}
                     <div className={`h-1.5 w-full bg-gradient-to-r ${getColumnAccent()}`} />
@@ -1928,13 +1896,12 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
                   <div
                     key={key}
                     onClick={() => setActiveContact(key)}
-                    className={`p-3.5 rounded-2xl cursor-pointer transition-all space-y-2 ${
-                      isSelected
+                    className={`p-3.5 rounded-2xl cursor-pointer transition-all space-y-2 ${isSelected
                         ? 'bg-lime-50/60 dark:bg-zinc-900 border-2 border-lime-500 dark:border-neon shadow-sm dark:shadow-[0_0_20px_var(--neon-glow)]'
                         : isRisk
-                        ? 'bg-rose-50 dark:bg-rose-950/20 border border-rose-300 dark:border-rose-500/50 hover:border-rose-400'
-                        : 'bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800/80 hover:border-zinc-300 dark:hover:border-zinc-700'
-                    }`}
+                          ? 'bg-rose-50 dark:bg-rose-950/20 border border-rose-300 dark:border-rose-500/50 hover:border-rose-400'
+                          : 'bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800/80 hover:border-zinc-300 dark:hover:border-zinc-700'
+                      }`}
                   >
                     <div className="flex justify-between items-center gap-2">
                       <span className="font-heading font-black text-xs text-zinc-900 dark:text-white flex items-center gap-2 truncate">
@@ -1942,13 +1909,12 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
                         <span className="truncate">{item.name}</span>
                       </span>
                       <span
-                        className={`text-[9px] font-mono px-2 py-0.5 rounded font-bold shrink-0 ${
-                          isRisk
+                        className={`text-[9px] font-mono px-2 py-0.5 rounded font-bold shrink-0 ${isRisk
                             ? 'bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-500/40'
                             : item.leadState === LEAD_STATUS_ENUM.BILLABLE_LEAD
-                            ? 'bg-neon/15 text-neon border border-neon/30'
-                            : 'bg-zinc-200/80 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
-                        }`}
+                              ? 'bg-neon/15 text-neon border border-neon/30'
+                              : 'bg-zinc-200/80 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
+                          }`}
                       >
                         {item.status.split('/')[0].trim()}
                       </span>
@@ -1988,218 +1954,214 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
               </div>
             ) : (
               <>
-            {/* Barra Superior: 4 Criterios de Calificación del Prospecto */}
-            <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950/80 border border-lime-500/40 dark:border-neon/40 space-y-3 font-mono text-xs shadow-sm dark:shadow-md">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-100 dark:border-zinc-800/80 pb-2.5">
-                <div className="flex items-center gap-2">
-                  <span className="p-1.5 rounded-lg bg-neon/20 text-neon border border-neon/30">
-                    <ShieldCheck className="w-4 h-4" />
-                  </span>
-                  <span className="text-xs text-neon font-black uppercase tracking-wider">
-                    Criterios de Calificación del Prospecto (4 Criterios)
-                  </span>
-                </div>
+                {/* Barra Superior: 4 Criterios de Calificación del Prospecto */}
+                <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950/80 border border-lime-500/40 dark:border-neon/40 space-y-3 font-mono text-xs shadow-sm dark:shadow-md">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-100 dark:border-zinc-800/80 pb-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="p-1.5 rounded-lg bg-neon/20 text-neon border border-neon/30">
+                        <ShieldCheck className="w-4 h-4" />
+                      </span>
+                      <span className="text-xs text-neon font-black uppercase tracking-wider">
+                        Criterios de Calificación del Prospecto (4 Criterios)
+                      </span>
+                    </div>
 
-                <div className="flex items-center gap-2">
-                  {currentChat.leadState === LEAD_STATUS_ENUM.BILLABLE_LEAD ? (
-                    <span className="px-3 py-1 rounded-lg bg-neon text-black font-black text-xs shadow-neon flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      LEAD CALIFICADO
-                    </span>
-                  ) : (
-                    <span className="px-3 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold text-xs">
-                      Estado: {cleanConcept(currentChat.leadState)}
-                    </span>
-                  )}
-
-                  {currentChat.capiPayload && (
-                    <button
-                      type="button"
-                      onClick={() => handleInspectCapi(currentChat)}
-                      className="px-3 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-cyan-600 dark:text-cyan-300 font-bold text-xs border border-cyan-500/30 flex items-center gap-1.5 transition-colors"
-                    >
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                      Ver Comprobante Meta
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* 4 Cajas de Criterios Booleanos AND */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5">
-                {QUALIFIED_LEAD_CRITERIA.map((crit) => {
-                  const isPassed = currentChat.criteriaAudit?.[crit.key];
-                  return (
-                    <div
-                      key={crit.id}
-                      className={`p-2.5 rounded-xl border flex items-start gap-2.5 transition-all ${
-                        isPassed
-                          ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-500/40 text-emerald-800 dark:text-emerald-300 shadow-sm'
-                          : 'bg-zinc-50 dark:bg-zinc-900/40 border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-500'
-                      }`}
-                    >
-                      {isPassed ? (
-                        <CheckSquare className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                    <div className="flex items-center gap-2">
+                      {currentChat.leadState === LEAD_STATUS_ENUM.BILLABLE_LEAD ? (
+                        <span className="px-3 py-1 rounded-lg bg-neon text-black font-black text-xs shadow-neon flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          LEAD CALIFICADO
+                        </span>
                       ) : (
-                        <Square className="w-4 h-4 text-zinc-400 dark:text-zinc-600 shrink-0 mt-0.5" />
+                        <span className="px-3 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold text-xs">
+                          Estado: {cleanConcept(currentChat.leadState)}
+                        </span>
                       )}
+
+                      {currentChat.capiPayload && (
+                        <button
+                          type="button"
+                          onClick={() => handleInspectCapi(currentChat)}
+                          className="px-3 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-cyan-600 dark:text-cyan-300 font-bold text-xs border border-cyan-500/30 flex items-center gap-1.5 transition-colors"
+                        >
+                          <ShieldCheck className="w-3.5 h-3.5" />
+                          Ver Comprobante Meta
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 4 Cajas de Criterios Booleanos AND */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5">
+                    {QUALIFIED_LEAD_CRITERIA.map((crit) => {
+                      const isPassed = currentChat.criteriaAudit?.[crit.key];
+                      return (
+                        <div
+                          key={crit.id}
+                          className={`p-2.5 rounded-xl border flex items-start gap-2.5 transition-all ${isPassed
+                              ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-500/40 text-emerald-800 dark:text-emerald-300 shadow-sm'
+                              : 'bg-zinc-50 dark:bg-zinc-900/40 border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-500'
+                            }`}
+                        >
+                          {isPassed ? (
+                            <CheckSquare className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                          ) : (
+                            <Square className="w-4 h-4 text-zinc-400 dark:text-zinc-600 shrink-0 mt-0.5" />
+                          )}
+                          <div>
+                            <span className="text-[11px] font-bold block leading-tight">
+                              {crit.label}
+                            </span>
+                            <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-sans leading-tight mt-0.5 block">
+                              {crit.description}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Ventana de Conversación Interactiva */}
+                <div className="rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800/80 p-5 flex flex-col flex-1 overflow-hidden shadow-sm dark:shadow-lg">
+                  {/* Header de la Conversación */}
+                  <div className="flex flex-wrap justify-between items-center pb-3 border-b border-zinc-100 dark:border-zinc-800 mb-3 gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-xl shrink-0">
+                        {currentChat.avatar}
+                      </div>
                       <div>
-                        <span className="text-[11px] font-bold block leading-tight">
-                          {crit.label}
-                        </span>
-                        <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-sans leading-tight mt-0.5 block">
-                          {crit.description}
-                        </span>
+                        <h4 className="font-heading font-black text-sm text-zinc-900 dark:text-white flex items-center gap-2">
+                          <span>{currentChat.name}</span>
+                          {isBotPaused && (
+                            <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-500/40 font-bold">
+                              SUTURA ARCÁNGEL (HUMANO ACTIVO)
+                            </span>
+                          )}
+                        </h4>
+                        <p className="text-[11px] font-mono text-zinc-500 dark:text-zinc-400">
+                          {currentChat.phone} • {currentChat.channel} • Email: {currentChat.email}
+                        </p>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
 
-            {/* Ventana de Conversación Interactiva */}
-            <div className="rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800/80 p-5 flex flex-col flex-1 overflow-hidden shadow-sm dark:shadow-lg">
-              {/* Header de la Conversación */}
-              <div className="flex flex-wrap justify-between items-center pb-3 border-b border-zinc-100 dark:border-zinc-800 mb-3 gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-xl shrink-0">
-                    {currentChat.avatar}
-                  </div>
-                  <div>
-                    <h4 className="font-heading font-black text-sm text-zinc-900 dark:text-white flex items-center gap-2">
-                      <span>{currentChat.name}</span>
-                      {isBotPaused && (
-                        <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-500/40 font-bold">
-                          SUTURA ARCÁNGEL (HUMANO ACTIVO)
-                        </span>
-                      )}
-                    </h4>
-                    <p className="text-[11px] font-mono text-zinc-500 dark:text-zinc-400">
-                      {currentChat.phone} • {currentChat.channel} • Email: {currentChat.email}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleShowDictamen(currentChat)}
-                    className="text-xs bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 px-3.5 py-2 rounded-xl hover:border-lime-500 text-zinc-800 dark:text-white transition-colors flex items-center gap-1.5 font-mono font-bold"
-                  >
-                    <FileText className="w-3.5 h-3.5 text-neon" />
-                    <span>Ver Dictamen</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleAssumeControl}
-                    className={`text-xs px-4 py-2 rounded-xl font-bold font-mono transition-colors shadow-sm flex items-center gap-1.5 ${
-                      isBotPaused
-                        ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                        : 'bg-rose-600 hover:bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.3)]'
-                    }`}
-                  >
-                    <Zap className="w-3.5 h-3.5" />
-                    <span>{isBotPaused ? 'Reanudar IA' : 'Sutura Arcángel'}</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Mensajes del Hilo */}
-              <div className="flex-1 overflow-y-auto space-y-3 p-3 bg-zinc-50/70 dark:bg-black/40 border border-zinc-200 dark:border-zinc-800/80 rounded-xl mb-3 text-xs scrollbar-thin">
-                {currentChat.messages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`p-3.5 rounded-xl max-w-[85%] leading-relaxed ${
-                      msg.isUser
-                        ? msg.isDanger
-                          ? 'bg-rose-100/90 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-500/60 text-rose-950 dark:text-white shadow-xs'
-                          : 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white shadow-xs'
-                        : msg.isBot
-                        ? 'bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-500/30 text-emerald-900 dark:text-emerald-200 ml-auto text-right'
-                        : msg.isWarning
-                        ? 'bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-500/40 text-amber-900 dark:text-amber-200 ml-auto text-right'
-                        : 'bg-neon/20 dark:bg-neon/15 border border-lime-600 dark:border-neon text-zinc-900 dark:text-white ml-auto text-right'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-4 mb-1">
-                      <span
-                        className={`text-[9px] font-mono uppercase font-bold ${
-                          msg.isUser
-                            ? msg.isDanger
-                              ? 'text-rose-600 dark:text-rose-400'
-                              : 'text-zinc-500 dark:text-zinc-400'
-                            : msg.isBot
-                            ? 'text-emerald-700 dark:text-emerald-400'
-                            : msg.isWarning
-                            ? 'text-amber-700 dark:text-amber-400'
-                            : 'text-neon'
-                        }`}
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleShowDictamen(currentChat)}
+                        className="text-xs bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 px-3.5 py-2 rounded-xl hover:border-lime-500 text-zinc-800 dark:text-white transition-colors flex items-center gap-1.5 font-mono font-bold"
                       >
-                        {msg.sender}
-                      </span>
-                      <span className="text-[9px] text-zinc-400 dark:text-zinc-500 font-mono">
-                        {msg.time}
-                      </span>
+                        <FileText className="w-3.5 h-3.5 text-neon" />
+                        <span>Ver Dictamen</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleAssumeControl}
+                        className={`text-xs px-4 py-2 rounded-xl font-bold font-mono transition-colors shadow-sm flex items-center gap-1.5 ${isBotPaused
+                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                            : 'bg-rose-600 hover:bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.3)]'
+                          }`}
+                      >
+                        <Zap className="w-3.5 h-3.5" />
+                        <span>{isBotPaused ? 'Reanudar IA' : 'Sutura Arcángel'}</span>
+                      </button>
                     </div>
-                    <p className="font-sans text-xs">{msg.text}</p>
                   </div>
-                ))}
-              </div>
 
-              {/* Barra de Entrada y Macros 1-Clic */}
-              <div className="space-y-2.5">
-                <div className="flex flex-wrap items-center gap-1.5 font-mono text-[10px]">
-                  <span className="text-zinc-500 font-bold">Macros Sutura Arcángel:</span>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setInputMessage(
-                        '¡Hola! Te comparto el enlace directo a nuestra agenda para que elijas tu horario: https://agenda.vectorinside.com/'
-                      )
-                    }
-                    className="px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
-                  >
-                    📅 Enviar Link Agenda
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setInputMessage(
-                        'Entendemos tu inquietud. Cuentas con nuestra garantía de satisfacción total y plan de meses sin intereses.'
-                      )
-                    }
-                    className="px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
-                  >
-                    🛡️ Garantía & MSI
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleApplySuggestedAction}
-                    className="px-2.5 py-1 rounded-lg bg-neon/15 hover:bg-neon hover:text-black text-neon border border-neon/30 transition-colors font-bold"
-                  >
-                    💡 Acción Sugerida IA
-                  </button>
+                  {/* Mensajes del Hilo */}
+                  <div className="flex-1 overflow-y-auto space-y-3 p-3 bg-zinc-50/70 dark:bg-black/40 border border-zinc-200 dark:border-zinc-800/80 rounded-xl mb-3 text-xs scrollbar-thin">
+                    {currentChat.messages.map((msg) => (
+                      <div
+                        key={msg.id}
+                        className={`p-3.5 rounded-xl max-w-[85%] leading-relaxed ${msg.isUser
+                            ? msg.isDanger
+                              ? 'bg-rose-100/90 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-500/60 text-rose-950 dark:text-white shadow-xs'
+                              : 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white shadow-xs'
+                            : msg.isBot
+                              ? 'bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-500/30 text-emerald-900 dark:text-emerald-200 ml-auto text-right'
+                              : msg.isWarning
+                                ? 'bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-500/40 text-amber-900 dark:text-amber-200 ml-auto text-right'
+                                : 'bg-neon/20 dark:bg-neon/15 border border-lime-600 dark:border-neon text-zinc-900 dark:text-white ml-auto text-right'
+                          }`}
+                      >
+                        <div className="flex items-center justify-between gap-4 mb-1">
+                          <span
+                            className={`text-[9px] font-mono uppercase font-bold ${msg.isUser
+                                ? msg.isDanger
+                                  ? 'text-rose-600 dark:text-rose-400'
+                                  : 'text-zinc-500 dark:text-zinc-400'
+                                : msg.isBot
+                                  ? 'text-emerald-700 dark:text-emerald-400'
+                                  : msg.isWarning
+                                    ? 'text-amber-700 dark:text-amber-400'
+                                    : 'text-neon'
+                              }`}
+                          >
+                            {msg.sender}
+                          </span>
+                          <span className="text-[9px] text-zinc-400 dark:text-zinc-500 font-mono">
+                            {msg.time}
+                          </span>
+                        </div>
+                        <p className="font-sans text-xs">{msg.text}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Barra de Entrada y Macros 1-Clic */}
+                  <div className="space-y-2.5">
+                    <div className="flex flex-wrap items-center gap-1.5 font-mono text-[10px]">
+                      <span className="text-zinc-500 font-bold">Macros Sutura Arcángel:</span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setInputMessage(
+                            '¡Hola! Te comparto el enlace directo a nuestra agenda para que elijas tu horario: https://agenda.vectorinside.com/'
+                          )
+                        }
+                        className="px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
+                      >
+                        📅 Enviar Link Agenda
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setInputMessage(
+                            'Entendemos tu inquietud. Cuentas con nuestra garantía de satisfacción total y plan de meses sin intereses.'
+                          )
+                        }
+                        className="px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
+                      >
+                        🛡️ Garantía & MSI
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleApplySuggestedAction}
+                        className="px-2.5 py-1 rounded-lg bg-neon/15 hover:bg-neon hover:text-black text-neon border border-neon/30 transition-colors font-bold"
+                      >
+                        💡 Acción Sugerida IA
+                      </button>
+                    </div>
+
+                    <form onSubmit={handleSendMessage} className="flex gap-2">
+                      <input
+                        type="text"
+                        value={inputMessage}
+                        onChange={(e) => setInputMessage(e.target.value)}
+                        placeholder="Escribe una respuesta quirúrgica como operador humano..."
+                        className="flex-1 bg-zinc-50 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 text-xs text-zinc-900 dark:text-white rounded-xl px-4 py-3 outline-none focus:border-neon font-sans placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+                      />
+                      <button
+                        type="submit"
+                        className="bg-neon text-black text-xs font-bold px-5 py-3 rounded-xl hover:bg-[var(--neon-hover)] transition-all shadow-neon flex items-center gap-1.5 font-mono active:scale-95 shrink-0"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                        <span>Enviar</span>
+                      </button>
+                    </form>
+                  </div>
                 </div>
-
-                <form onSubmit={handleSendMessage} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
-                    placeholder="Escribe una respuesta quirúrgica como operador humano..."
-                    className="flex-1 bg-zinc-50 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 text-xs text-zinc-900 dark:text-white rounded-xl px-4 py-3 outline-none focus:border-neon font-sans placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
-                  />
-                  <button
-                    type="submit"
-                    className="bg-neon text-black text-xs font-bold px-5 py-3 rounded-xl hover:bg-[var(--neon-hover)] transition-all shadow-neon flex items-center gap-1.5 font-mono active:scale-95 shrink-0"
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                    <span>Enviar</span>
-                  </button>
-                </form>
-              </div>
-            </div>
               </>
             )}
           </div>
@@ -2324,7 +2286,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
                     );
                     try {
                       confetti({ particleCount: 30, spread: 60, colors: ['#00F0FF', '#E7F900'] });
-                    } catch (e) {}
+                    } catch (e) { }
                     triggerModal(
                       'DMs en Lote Despachados',
                       `Se procesaron y despacharon automáticamente <strong>${pendingCount || 1}</strong> DMs a leads con intención de compra mediante Meta Graph API.`
@@ -2368,11 +2330,10 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
                     key={f.id}
                     type="button"
                     onClick={() => setCommentSentimentFilter(f.id)}
-                    className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 font-bold ${
-                      isSelected
+                    className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 font-bold ${isSelected
                         ? 'bg-zinc-900 dark:bg-white text-white dark:text-black shadow-sm'
                         : 'bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white border border-zinc-200 dark:border-zinc-800'
-                    }`}
+                      }`}
                   >
                     {f.dot && <span className={`w-2 h-2 rounded-full ${f.dot}`} />}
                     <span>{f.label}</span>
@@ -2401,13 +2362,12 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
                   return (
                     <div
                       key={comm.id}
-                      className={`p-4 rounded-2xl border transition-all space-y-3 ${
-                        isToxic
+                      className={`p-4 rounded-2xl border transition-all space-y-3 ${isToxic
                           ? 'bg-rose-50/50 dark:bg-gradient-to-r dark:from-rose-950/20 dark:via-zinc-900/60 dark:to-zinc-900 border-rose-200 dark:border-rose-900/40 opacity-80'
                           : isLead
-                          ? 'bg-gradient-to-r from-emerald-50/60 via-white to-lime-50/30 dark:from-emerald-950/20 dark:via-zinc-900/80 dark:to-zinc-900 border-emerald-200 dark:border-emerald-500/30 shadow-sm'
-                          : 'bg-zinc-50/80 dark:bg-zinc-900/80 border-zinc-200 dark:border-zinc-800'
-                      }`}
+                            ? 'bg-gradient-to-r from-emerald-50/60 via-white to-lime-50/30 dark:from-emerald-950/20 dark:via-zinc-900/80 dark:to-zinc-900 border-emerald-200 dark:border-emerald-500/30 shadow-sm'
+                            : 'bg-zinc-50/80 dark:bg-zinc-900/80 border-zinc-200 dark:border-zinc-800'
+                        }`}
                     >
                       {/* Top Info */}
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px]">
@@ -2465,13 +2425,12 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
 
                         <div className="flex flex-wrap items-center gap-2 shrink-0">
                           <span
-                            className={`px-2.5 py-1 rounded-lg font-medium ${
-                              isToxic
+                            className={`px-2.5 py-1 rounded-lg font-medium ${isToxic
                                 ? 'bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30'
                                 : isLead
-                                ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
-                                : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-300'
-                            }`}
+                                  ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
+                                  : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-300'
+                              }`}
                           >
                             {comm.sentiment}
                           </span>
@@ -2654,11 +2613,10 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
                     key={tab.id}
                     type="button"
                     onClick={() => setReengagementFilter(tab.id)}
-                    className={`px-3 py-1 rounded-xl transition-all font-bold ${
-                      isSelected
+                    className={`px-3 py-1 rounded-xl transition-all font-bold ${isSelected
                         ? 'bg-purple-600 text-white shadow-sm'
                         : 'bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:text-white border border-zinc-200 dark:border-zinc-800'
-                    }`}
+                      }`}
                   >
                     <span>{tab.label}</span>
                     <span className="ml-1 text-[10px] opacity-80">({tab.count})</span>
@@ -2682,11 +2640,10 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
                 return (
                   <div
                     key={item.id}
-                    className={`p-5 rounded-2xl border transition-all flex flex-col justify-between shadow-sm ${
-                      isSent
+                    className={`p-5 rounded-2xl border transition-all flex flex-col justify-between shadow-sm ${isSent
                         ? 'bg-gradient-to-br from-zinc-50 via-white to-emerald-50/20 dark:from-zinc-950 dark:via-zinc-900/60 dark:to-emerald-950/20 border-emerald-300 dark:border-emerald-500/40'
                         : 'bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800/90 hover:border-purple-500/50'
-                    }`}
+                      }`}
                   >
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
@@ -2694,11 +2651,10 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
                           {item.clientName}
                         </span>
                         <span
-                          className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold shrink-0 ${
-                            isSent
+                          className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold shrink-0 ${isSent
                               ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/40'
                               : 'bg-purple-500/15 text-purple-400 border border-purple-500/30'
-                          }`}
+                            }`}
                         >
                           {isSent ? '✅ DESPACHADO' : `⏳ ${item.timeRemaining}`}
                         </span>
@@ -2762,17 +2718,16 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
                           );
                           try {
                             confetti({ particleCount: 35, spread: 60, colors: ['#A855F7', '#E7F900'] });
-                          } catch (e) {}
+                          } catch (e) { }
                           triggerModal(
                             'Disparo de Prueba 24h Ejecutado (0ms)',
                             `<b>Destinatario:</b> ${item.clientName} (${item.phone})<br><b>Mensaje:</b> "${item.vacaPurpuraMessage}"<br><b>Estado:</b> Mutado a FOLLOWUP_SENT en Upstash Redis. Transición a embudo de consideración exitosa.`
                           );
                         }}
-                        className={`flex-1 px-3 py-2 rounded-xl font-bold text-[10px] flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 ${
-                          isSent
+                        className={`flex-1 px-3 py-2 rounded-xl font-bold text-[10px] flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 ${isSent
                             ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
                             : 'bg-purple-600 hover:bg-purple-500 text-white'
-                        }`}
+                          }`}
                       >
                         <Zap className="w-3 h-3" />
                         <span>{isSent ? 'Re-enviar Disparo (0ms)' : 'Simular Disparo (0ms)'}</span>
@@ -2797,141 +2752,141 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
             }}
           >
             <div className="w-full max-w-2xl rounded-3xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-neon/50 shadow-2xl p-6 sm:p-8 relative space-y-5 font-sans text-xs max-h-[90vh] overflow-y-auto my-auto animate-scale-up">
-            <div className="flex items-start justify-between pb-3 border-b border-zinc-200 dark:border-zinc-800">
-              <div className="space-y-1">
-                <span className="text-[10px] font-bold uppercase text-neon tracking-wider flex items-center gap-1.5 font-mono">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  Comprobante Oficial de Conversión (Meta Ads & WhatsApp)
-                </span>
-                <h3 className="text-lg font-heading font-black text-zinc-900 dark:text-white">
-                  Comprobante de Prospecto Calificado: {selectedCapiLead.name}
-                </h3>
-                <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
-                  Registrado automáticamente tras verificar el cumplimiento del 100% de los criterios de calidad comercial.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setSelectedCapiLead(null)}
-                className="text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-lg font-bold p-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Metadatos del Evento */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px] font-mono">
-              <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-                <span className="text-zinc-500 block">Tipo de Evento:</span>
-                <span className="text-emerald-600 dark:text-emerald-400 font-bold">Prospecto Calificado</span>
-              </div>
-              <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-                <span className="text-zinc-500 block">Folio de Rastreo:</span>
-                <span className="text-zinc-900 dark:text-white font-bold">
-                  {(selectedCapiLead.capiEventId || 'EVT-8F9A2B').replace(/lead_uuid_v4_/g, 'EVT-').toUpperCase()}
-                </span>
-              </div>
-              <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-                <span className="text-zinc-500 block">Costo por Prospecto:</span>
-                <span className="text-neon font-black">$350.00 MXN</span>
-              </div>
-              <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-                <span className="text-zinc-500 block">Estado de Facturación:</span>
-                <span className="text-amber-600 dark:text-amber-400 font-bold">
-                  {cleanConcept(selectedCapiLead.billingStatus || 'PENDING_INVOICE')}
-                </span>
-              </div>
-            </div>
-
-            {/* Bloque Detalle Seguro de Conversión */}
-            <div className="space-y-1.5">
-              <span className="text-[11px] text-zinc-700 dark:text-zinc-300 font-bold flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5 text-neon" />
-                Detalle Seguro del Evento (Datos de Contacto Protegidos con Cifrado):
-              </span>
-              <pre className="p-4 rounded-xl bg-zinc-900 dark:bg-black border border-zinc-800 text-[11px] font-mono text-emerald-300 overflow-x-auto leading-relaxed shadow-inner">
-                {JSON.stringify(
-                  {
-                    evento: [
-                      {
-                        tipo_evento: 'Prospecto Calificado',
-                        fecha_registro: 'Confirmado en Tiempo Real',
-                        folio_rastreo: (selectedCapiLead.capiEventId || 'EVT-8F9A2B').replace(/lead_uuid_v4_/g, 'EVT-').toUpperCase(),
-                        canal_origen: 'Atención Comercial Automatizada',
-                        datos_contacto_protegidos: {
-                          correo_cifrado: ['SHA-256 (Protegido por Privacidad)'],
-                          telefono_cifrado: ['SHA-256 (Protegido por Privacidad)'],
-                          nombre_cifrado: ['SHA-256 (Protegido por Privacidad)'],
-                        },
-                        datos_comerciales: {
-                          moneda: 'MXN',
-                          costo_prospecto: 350.0,
-                          calidad_verificada: '100% Criterios Cumplidos',
-                        },
-                      },
-                    ],
-                  },
-                  null,
-                  2
-                )}
-              </pre>
-            </div>
-
-            {/* Tarjeta de Registro Contable y Facturación */}
-            <div className="space-y-2">
-              <span className="text-[11px] text-zinc-700 dark:text-zinc-300 font-bold flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                Registro Contable y Liquidación:
-              </span>
-              <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 space-y-2.5">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div>
-                    <span className="text-[10px] text-zinc-500 block uppercase font-mono">Folio Contable</span>
-                    <span className="font-mono font-bold text-zinc-900 dark:text-white">
-                      REC-2026-{(selectedCapiLead.id || 'LEAD').replace(/-/g, '').toUpperCase()}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-zinc-500 block uppercase font-mono">Negocio / Sucursal</span>
-                    <span className="font-bold text-zinc-900 dark:text-white">
-                      {activeTenant?.name || 'Negocio Activo'}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-zinc-500 block uppercase font-mono">Concepto Facturable</span>
-                    <span className="font-medium text-zinc-700 dark:text-zinc-300">
-                      Prospecto Calificado con Cita Acordada
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-zinc-500 block uppercase font-mono">Importe a Facturar</span>
-                    <span className="text-neon font-black font-mono text-sm">
-                      $350.00 MXN
-                    </span>
-                  </div>
+              <div className="flex items-start justify-between pb-3 border-b border-zinc-200 dark:border-zinc-800">
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold uppercase text-neon tracking-wider flex items-center gap-1.5 font-mono">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    Comprobante Oficial de Conversión (Meta Ads & WhatsApp)
+                  </span>
+                  <h3 className="text-lg font-heading font-black text-zinc-900 dark:text-white">
+                    Comprobante de Prospecto Calificado: {selectedCapiLead.name}
+                  </h3>
+                  <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
+                    Registrado automáticamente tras verificar el cumplimiento del 100% de los criterios de calidad comercial.
+                  </p>
                 </div>
 
-                <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between text-[11px]">
-                  <span className="text-zinc-500">Estado de Liquidación:</span>
-                  <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/30 font-bold text-[10px]">
-                    {cleanConcept(selectedCapiLead.billingStatus || 'PENDING_INVOICE')} en Corte Mensual
+                <button
+                  type="button"
+                  onClick={() => setSelectedCapiLead(null)}
+                  className="text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-lg font-bold p-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Metadatos del Evento */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px] font-mono">
+                <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+                  <span className="text-zinc-500 block">Tipo de Evento:</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">Prospecto Calificado</span>
+                </div>
+                <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+                  <span className="text-zinc-500 block">Folio de Rastreo:</span>
+                  <span className="text-zinc-900 dark:text-white font-bold">
+                    {(selectedCapiLead.capiEventId || 'EVT-8F9A2B').replace(/lead_uuid_v4_/g, 'EVT-').toUpperCase()}
+                  </span>
+                </div>
+                <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+                  <span className="text-zinc-500 block">Costo por Prospecto:</span>
+                  <span className="text-neon font-black">$350.00 MXN</span>
+                </div>
+                <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+                  <span className="text-zinc-500 block">Estado de Facturación:</span>
+                  <span className="text-amber-600 dark:text-amber-400 font-bold">
+                    {cleanConcept(selectedCapiLead.billingStatus || 'PENDING_INVOICE')}
                   </span>
                 </div>
               </div>
-            </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
-              <button
-                type="button"
-                onClick={() => setSelectedCapiLead(null)}
-                className="px-6 py-2.5 rounded-xl bg-neon text-black font-bold hover:bg-[var(--neon-hover)] transition-all shadow-neon font-sans text-xs"
-              >
-                Cerrar Comprobante
-              </button>
+              {/* Bloque Detalle Seguro de Conversión */}
+              <div className="space-y-1.5">
+                <span className="text-[11px] text-zinc-700 dark:text-zinc-300 font-bold flex items-center gap-1.5">
+                  <Lock className="w-3.5 h-3.5 text-neon" />
+                  Detalle Seguro del Evento (Datos de Contacto Protegidos con Cifrado):
+                </span>
+                <pre className="p-4 rounded-xl bg-zinc-900 dark:bg-black border border-zinc-800 text-[11px] font-mono text-emerald-300 overflow-x-auto leading-relaxed shadow-inner">
+                  {JSON.stringify(
+                    {
+                      evento: [
+                        {
+                          tipo_evento: 'Prospecto Calificado',
+                          fecha_registro: 'Confirmado en Tiempo Real',
+                          folio_rastreo: (selectedCapiLead.capiEventId || 'EVT-8F9A2B').replace(/lead_uuid_v4_/g, 'EVT-').toUpperCase(),
+                          canal_origen: 'Atención Comercial Automatizada',
+                          datos_contacto_protegidos: {
+                            correo_cifrado: ['SHA-256 (Protegido por Privacidad)'],
+                            telefono_cifrado: ['SHA-256 (Protegido por Privacidad)'],
+                            nombre_cifrado: ['SHA-256 (Protegido por Privacidad)'],
+                          },
+                          datos_comerciales: {
+                            moneda: 'MXN',
+                            costo_prospecto: 350.0,
+                            calidad_verificada: '100% Criterios Cumplidos',
+                          },
+                        },
+                      ],
+                    },
+                    null,
+                    2
+                  )}
+                </pre>
+              </div>
+
+              {/* Tarjeta de Registro Contable y Facturación */}
+              <div className="space-y-2">
+                <span className="text-[11px] text-zinc-700 dark:text-zinc-300 font-bold flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                  Registro Contable y Liquidación:
+                </span>
+                <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 space-y-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <span className="text-[10px] text-zinc-500 block uppercase font-mono">Folio Contable</span>
+                      <span className="font-mono font-bold text-zinc-900 dark:text-white">
+                        REC-2026-{(selectedCapiLead.id || 'LEAD').replace(/-/g, '').toUpperCase()}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-zinc-500 block uppercase font-mono">Negocio / Sucursal</span>
+                      <span className="font-bold text-zinc-900 dark:text-white">
+                        {activeTenant?.name || 'Negocio Activo'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-zinc-500 block uppercase font-mono">Concepto Facturable</span>
+                      <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                        Prospecto Calificado con Cita Acordada
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-zinc-500 block uppercase font-mono">Importe a Facturar</span>
+                      <span className="text-neon font-black font-mono text-sm">
+                        $350.00 MXN
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between text-[11px]">
+                    <span className="text-zinc-500">Estado de Liquidación:</span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/30 font-bold text-[10px]">
+                      {cleanConcept(selectedCapiLead.billingStatus || 'PENDING_INVOICE')} en Corte Mensual
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => setSelectedCapiLead(null)}
+                  className="px-6 py-2.5 rounded-xl bg-neon text-black font-bold hover:bg-[var(--neon-hover)] transition-all shadow-neon font-sans text-xs"
+                >
+                  Cerrar Comprobante
+                </button>
+              </div>
             </div>
           </div>
-        </div>
         </Portal>
       )}
 

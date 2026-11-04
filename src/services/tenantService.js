@@ -109,121 +109,121 @@ export const tenantService = {
     try {
       const response = await api.get('/tenants');
       const data = unwrapApiData(response);
-      if (Array.isArray(data)) {
-        return data.map(normalizeTenantFromApi).filter(Boolean);
+        if (Array.isArray(data)) {
+          return data.map(normalizeTenantFromApi).filter(Boolean);
+        }
+        return [];
+      } catch (error) {
+        console.warn('[tenantService.getTenants] Fallback to empty list');
+        return [];
       }
-      return [];
-    } catch (error) {
-      console.warn('[tenantService.getTenants] Fallback to empty list');
-      return [];
-    }
-  },
+    },
 
   async getTenantById(id) {
-    if (!isBackendAvailable) {
-      return INITIAL_TENANTS_DATA[id] || INITIAL_TENANTS.find((t) => t.id === id) || INITIAL_TENANTS_DATA.dental;
-    }
-    try {
-      const response = await api.get(`/tenants/${id}`);
-      const data = unwrapApiData(response);
-      return normalizeTenantFromApi(data);
-    } catch (error) {
-      console.warn(`[tenantService.getTenantById] Fallback for ${id}`);
-      return INITIAL_TENANTS_DATA[id] || INITIAL_TENANTS.find((t) => t.id === id) || INITIAL_TENANTS_DATA.dental;
-    }
-  },
+      if (!isBackendAvailable) {
+        return INITIAL_TENANTS_DATA[id] || INITIAL_TENANTS.find((t) => t.id === id) || INITIAL_TENANTS_DATA.dental;
+      }
+      try {
+        const response = await api.get(`/tenants/${id}`);
+        const data = unwrapApiData(response);
+        return normalizeTenantFromApi(data);
+      } catch (error) {
+        console.warn(`[tenantService.getTenantById] Fallback for ${id}`);
+        return INITIAL_TENANTS_DATA[id] || INITIAL_TENANTS.find((t) => t.id === id) || INITIAL_TENANTS_DATA.dental;
+      }
+    },
 
   async createTenant(tenantData) {
-    try {
-      const payload = serializeTenantToApi(tenantData);
-      const response = await api.post('/tenants', payload);
-      return normalizeTenantFromApi(unwrapApiData(response));
-    } catch (error) {
-      console.warn('[tenantService.createTenant] Fallback to local state:', error?.message);
-      return tenantData;
-    }
-  },
+      try {
+        const payload = serializeTenantToApi(tenantData);
+        const response = await api.post('/tenants', payload);
+        return normalizeTenantFromApi(unwrapApiData(response));
+      } catch (error) {
+        console.warn('[tenantService.createTenant] Fallback to local state:', error?.message);
+        return tenantData;
+      }
+    },
 
   async updateTenant(id, tenantData) {
-    try {
-      const payload = serializeTenantToApi({ ...tenantData, id });
-      const response = await api.put(`/tenants/${id}`, payload);
-      return normalizeTenantFromApi(unwrapApiData(response));
-    } catch (error) {
-      console.warn(`[tenantService.updateTenant] Fallback for ${id}:`, error?.message);
-      return tenantData;
-    }
-  },
+      try {
+        const payload = serializeTenantToApi({ ...tenantData, id });
+        const response = await api.put(`/tenants/${id}`, payload);
+        return normalizeTenantFromApi(unwrapApiData(response));
+      } catch (error) {
+        console.warn(`[tenantService.updateTenant] Fallback for ${id}:`, error?.message);
+        return tenantData;
+      }
+    },
 
   async updateBrandDna(id, brandDna) {
-    try {
-      const response = await api.put(`/tenants/${id}/dna`, brandDna);
-      return normalizeTenantFromApi(unwrapApiData(response));
-    } catch (error) {
-      console.warn(`[tenantService.updateBrandDna] Fallback for ${id}:`, error?.message);
-      return null;
-    }
-  },
+      try {
+        const response = await api.put(`/tenants/${id}/dna`, brandDna);
+        return normalizeTenantFromApi(unwrapApiData(response));
+      } catch (error) {
+        console.warn(`[tenantService.updateBrandDna] Fallback for ${id}:`, error?.message);
+        return null;
+      }
+    },
 
   async getVerticalConfig(tenantId) {
-    if (!isBackendAvailable) {
-      return INITIAL_VERTICAL_CONFIGS[tenantId] || INITIAL_VERTICAL_CONFIGS['tenant-mex-001'];
-    }
-    try {
-      const tenant = await this.getTenantById(tenantId);
-      return tenant?.calendarConfig || INITIAL_VERTICAL_CONFIGS[tenantId] || INITIAL_VERTICAL_CONFIGS['tenant-mex-001'];
-    } catch (error) {
-      return INITIAL_VERTICAL_CONFIGS[tenantId] || INITIAL_VERTICAL_CONFIGS['tenant-mex-001'];
-    }
-  },
+      if (!isBackendAvailable) {
+        return INITIAL_VERTICAL_CONFIGS[tenantId] || INITIAL_VERTICAL_CONFIGS['tenant-mex-001'];
+      }
+      try {
+        const tenant = await this.getTenantById(tenantId);
+        return tenant?.calendarConfig || INITIAL_VERTICAL_CONFIGS[tenantId] || INITIAL_VERTICAL_CONFIGS['tenant-mex-001'];
+      } catch (error) {
+        return INITIAL_VERTICAL_CONFIGS[tenantId] || INITIAL_VERTICAL_CONFIGS['tenant-mex-001'];
+      }
+    },
 
   async updateVerticalConfig(tenantId, config) {
-    try {
-      const existing = await this.getTenantById(tenantId);
-      // HARDENING DEFENSIVO: No persistir apiKeys en texto plano en la tabla pública de tenants.
-      // Las credenciales de IA deben gestionarse exclusivamente a través de aiService con cifrado AES-256-GCM.
-      const sanitizedConfig = { ...config };
-      delete sanitizedConfig.apiKeys;
+      try {
+        const existing = await this.getTenantById(tenantId);
+        // HARDENING DEFENSIVO: No persistir apiKeys en texto plano en la tabla pública de tenants.
+        // Las credenciales de IA deben gestionarse exclusivamente a través de aiService con cifrado AES-256-GCM.
+        const sanitizedConfig = { ...config };
+        delete sanitizedConfig.apiKeys;
 
-      const updated = await this.updateTenant(tenantId, {
-        ...existing,
-        calendarConfig: sanitizedConfig,
-      });
-      return { success: true, updatedConfig: updated?.calendarConfig || sanitizedConfig };
-    } catch (error) {
-      return { success: true, updatedConfig: config };
-    }
-  },
+        const updated = await this.updateTenant(tenantId, {
+          ...existing,
+          calendarConfig: sanitizedConfig,
+        });
+        return { success: true, updatedConfig: updated?.calendarConfig || sanitizedConfig };
+      } catch (error) {
+        return { success: true, updatedConfig: config };
+      }
+    },
 
   async deleteTenant(id) {
-    try {
-      await api.delete(`/tenants/${id}`);
-      return { success: true };
-    } catch (error) {
-      console.warn(`[tenantService.deleteTenant] Fallback para ${id}:`, error?.message);
-      return { success: true, localOnly: true };
-    }
-  },
+      try {
+        await api.delete(`/tenants/${id}`);
+        return { success: true };
+      } catch (error) {
+        console.warn(`[tenantService.deleteTenant] Fallback para ${id}:`, error?.message);
+        return { success: true, localOnly: true };
+      }
+    },
 
   async checkWebhooksHealth() {
-    try {
-      const response = await api.get('/health');
-      const data = unwrapApiData(response);
-      return {
-        meta: data?.status === 'UP' ? 'HEALTHY' : 'DEGRADED',
-        whatsapp: 'HEALTHY',
-        googleCalendar: 'HEALTHY',
-        latencyMs: 28,
-        lastSync: data?.timestamp || new Date().toISOString(),
-      };
-    } catch (error) {
-      return {
-        meta: 'HEALTHY',
-        whatsapp: 'HEALTHY',
-        googleCalendar: 'HEALTHY',
-        latencyMs: 42,
-        lastSync: new Date().toISOString(),
-      };
-    }
-  },
-};
+      try {
+        const response = await api.get('/health');
+        const data = unwrapApiData(response);
+        return {
+          meta: data?.status === 'UP' ? 'HEALTHY' : 'DEGRADED',
+          whatsapp: 'HEALTHY',
+          googleCalendar: 'HEALTHY',
+          latencyMs: 28,
+          lastSync: data?.timestamp || new Date().toISOString(),
+        };
+      } catch (error) {
+        return {
+          meta: 'HEALTHY',
+          whatsapp: 'HEALTHY',
+          googleCalendar: 'HEALTHY',
+          latencyMs: 42,
+          lastSync: new Date().toISOString(),
+        };
+      }
+    },
+  };

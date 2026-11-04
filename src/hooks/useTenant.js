@@ -44,11 +44,11 @@ export const useTenantStore = create((set, get) => ({
 
   updateTenantHealth: (tenantId, service, status) => {
     set((state) => ({
-      tenants: (state.tenants || []).map((t) =>
-        t.id === tenantId
-          ? { ...t, [`${service}Health`]: status }
-          : t
-      ),
+        tenants: (state.tenants || []).map((t) =>
+          t.id === tenantId
+            ? { ...t, [`${service}Health`]: status }
+            : t
+        ),
     }));
   },
 }));
@@ -60,7 +60,7 @@ export const useTenant = () => {
   const setTenants = useTenantStore((state) => state.setTenants);
   const updateTenantHealth = useTenantStore((state) => state.updateTenantHealth);
   const activeTenant = useTenantStore((state) =>
-    (state.tenants || []).find((t) => t.id === state.activeTenantId) || state.tenants[0] || null
+      (state.tenants || []).find((t) => t.id === state.activeTenantId) || state.tenants[0] || null
   );
 
   return {
