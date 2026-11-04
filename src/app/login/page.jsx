@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -10,35 +10,51 @@ import {
   Lock,
   Mail,
   ArrowRight,
-  CheckCircle2,
   ArrowLeft,
   Eye,
   EyeOff,
   Server,
-  Zap,
+  AlertCircle,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { VectorLobo } from '@/components/common/VectorLobo';
 
 export default function LoginPage() {
   const router = useRouter();
   const { loginAs } = useAuth();
 
-  const [email, setEmail] = useState('Edgaradmin@vectorinside.com');
-  const [password, setPassword] = useState('••••••••••••');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [authStage, setAuthStage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setErrorMessage('');
+
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !password) {
+      setErrorMessage('Por favor ingresa tu correo y contraseña.');
+      return;
+    }
+
     setLoading(true);
     setAuthStage('Validando credenciales criptográficas...');
 
-    // Busca coincidencia por correo; por defecto asigna el perfil oficial del Edgar Lobo Vectorial
-    const userToLogin =
-      DEMO_USERS.find((u) => u.email.toLowerCase() === email.trim().toLowerCase()) ||
-      DEMO_USERS[0];
+    // Resolución dinámica de usuario según las credenciales ingresadas
+    const userToLogin = DEMO_USERS.find(
+      (u) => u.email.toLowerCase() === cleanEmail
+    );
+
+    if (!userToLogin) {
+      setTimeout(() => {
+        setLoading(false);
+        setAuthStage('');
+        setErrorMessage('Credenciales no autorizadas o usuario no registrado.');
+      }, 500);
+      return;
+    }
 
     loginAs(userToLogin);
 
@@ -139,35 +155,25 @@ export default function LoginPage() {
           {/* Subtle top edge border glow */}
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-neon/60 to-transparent" />
 
-          {/* Insignia Oficial del Edgar Lobo Vectorial - Acceso de Mando Central */}
-          <div className="p-4 rounded-2xl bg-gradient-to-r from-zinc-900/90 via-zinc-900/60 to-zinc-900/90 border border-neon/40 flex items-center gap-3.5 shadow-[0_0_25px_rgba(231,249,0,0.1)] relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-neon/5 rounded-full blur-2xl pointer-events-none" />
-            <div className="p-2.5 rounded-xl bg-black/90 border border-neon/50 flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(231,249,0,0.2)]">
-              <VectorLobo size="md" status="active" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-white tracking-wide font-sans">
-                  Edgar Lobo Vectorial
-                </h3>
-                <span className="text-[9px] font-mono font-black px-2 py-0.5 rounded bg-neon/15 text-neon border border-neon/30 tracking-wider">
-                  MANDO CENTRAL
-                </span>
-              </div>
-              <p className="text-[11px] font-mono text-zinc-400 mt-0.5">
-                Supervisión Global Cross-Tenant · Núcleo Autónomo
-              </p>
-            </div>
-            <div className="hidden sm:flex flex-col items-end shrink-0 text-right">
-              <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                ONLINE
-              </span>
-              <span className="text-[9px] font-mono text-zinc-500">RBAC ACTIVO</span>
-            </div>
+          {/* Header del Formulario */}
+          <div className="space-y-1">
+            <h2 className="text-base sm:text-lg font-bold text-white tracking-wide">
+              Iniciar Sesión
+            </h2>
+            <p className="text-xs text-zinc-400 font-mono">
+              Ingresa tus credenciales autorizadas para acceder a la plataforma.
+            </p>
           </div>
 
-          {/* Formulario de Acceso Oficial */}
+          {/* Feedback de Error si las credenciales fallan */}
+          {errorMessage && (
+            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center gap-2.5 text-xs text-rose-400 font-mono animate-fade-in">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+              <span>{errorMessage}</span>
+            </div>
+          )}
+
+          {/* Formulario de Acceso Limpio */}
           <form onSubmit={handleSubmit} className="space-y-4 pt-1">
             {/* Input: Email */}
             <div className="space-y-1.5">
@@ -182,7 +188,8 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-zinc-900/90 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder-zinc-500 focus:border-neon focus:bg-black focus:outline-none focus:ring-1 focus:ring-neon font-mono transition-all"
-                  placeholder="Edgaradmin@vectorinside.com"
+                  placeholder="usuario@vectorinside.com"
+                  autoComplete="email"
                 />
               </div>
             </div>
@@ -191,7 +198,7 @@ export default function LoginPage() {
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="block text-xs font-mono font-medium text-zinc-300">
-                  Contraseña Criptográfica
+                  Contraseña
                 </label>
                 <span className="text-[10px] font-mono text-zinc-500 hover:text-neon transition-colors cursor-pointer">
                   ¿Olvidaste tu contraseña?
@@ -204,7 +211,9 @@ export default function LoginPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-zinc-900/90 border border-white/10 rounded-xl pl-10 pr-10 py-3 text-xs text-white placeholder-zinc-500 focus:border-neon focus:bg-black focus:outline-none focus:ring-1 focus:ring-neon font-mono transition-all tracking-wider"
+                  className="w-full bg-zinc-900/90 border border-white/10 rounded-xl pl-10 pr-10 py-3 text-xs text-white placeholder-zinc-500 focus:border-neon focus:bg-black focus:outline-none focus:ring-1 focus:ring-neon font-mono transition-all"
+                  placeholder="Ingresa tu contraseña"
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"
@@ -220,7 +229,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 bg-gradient-to-r from-neon via-[#D9EA00] to-cyan-400 text-black font-mono font-black text-xs uppercase tracking-wider py-3.5 rounded-xl hover:brightness-110 transition-all duration-200 shadow-[0_0_25px_rgba(231,249,0,0.35)] flex items-center justify-center gap-2 active:scale-98 disabled:opacity-80"
+              className="w-full mt-2 bg-gradient-to-r from-neon via-[#D9EA00] to-cyan-400 text-black font-mono font-black text-xs uppercase tracking-wider py-3.5 rounded-xl hover:brightness-110 transition-all duration-200 shadow-[0_0_25px_rgba(231,249,0,0.35)] flex items-center justify-center gap-2 active:scale-98 disabled:opacity-80 cursor-pointer"
             >
               {loading ? (
                 <>
