@@ -25,9 +25,12 @@ import {
   KeyRound,
   Copy,
   Check,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Portal } from '@/components/common/Portal';
+import { userService } from '@/services/userService';
 
 const ROLE_DEFINITIONS = {
   SUPER_ADMIN: {
@@ -66,6 +69,25 @@ export const AgencyStaffView = () => {
     }
   }, [staffList]);
 
+  // Hydrate from PostgreSQL 17 Backend (/api/v1/users/staff)
+  useEffect(() => {
+    userService
+      .getAgencyStaff()
+      .then((backendStaff) => {
+        if (Array.isArray(backendStaff) && backendStaff.length > 0) {
+          setStaffList((prev) => {
+            const map = new Map();
+            prev.forEach((s) => map.set(s.id, s));
+            backendStaff.forEach((b) => {
+              map.set(b.id, { ...map.get(b.id), ...b });
+            });
+            return Array.from(map.values());
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   // Search and Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -74,6 +96,8 @@ export const AgencyStaffView = () => {
   // Modals & Feedback
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [editingStaffTenants, setEditingStaffTenants] = useState(null);
+  const [deleteModalStaff, setDeleteModalStaff] = useState(null);
+  const [isDeletingStaff, setIsDeletingStaff] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
   const [copiedId, setCopiedId] = useState(null);
 
@@ -133,16 +157,22 @@ export const AgencyStaffView = () => {
 
   // Toggle status (Active / Suspended)
   const handleToggleStatus = (id) => {
+    let targetMember = staffList.find((m) => m.id === id);
+    const next = targetMember?.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
+
     setStaffList((prev) =>
       prev.map((member) => {
         if (member.id === id) {
-          const next = member.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
-          showToast(`Acceso de ${member.name} ${next === 'ACTIVE' ? 'reactivado' : 'suspendido'}`);
           return { ...member, status: next };
         }
         return member;
       })
     );
+
+    if (targetMember) {
+      userService.updateUserStatus(id, next).catch(() => {});
+      showToast(`Acceso de ${targetMember.name} ${next === 'ACTIVE' ? 'reactivado' : 'suspendido'}`);
+    }
   };
 
   // Submit new staff invitation
@@ -179,6 +209,16 @@ export const AgencyStaffView = () => {
     setIsInviteModalOpen(false);
     showToast(`Invitación enviada a ${newMember.email}`);
 
+    // Persist to PostgreSQL 17 Backend
+    userService.createStaff({
+      name: newMember.name,
+      email: newMember.email,
+      phone: newMember.phone,
+      role: newMember.role,
+      assignedTenantsMode: inviteForm.assignedTenantsMode,
+      customTenants: inviteForm.customTenants,
+    }).catch(() => {});
+
     try {
       confetti({
         particleCount: 35,
@@ -205,6 +245,43 @@ export const AgencyStaffView = () => {
     );
     setEditingStaffTenants(null);
     showToast('Negocios asignados actualizados correctamente');
+
+    // Persist to PostgreSQL 17 Backend
+    userService.updateAssignedTenants(staffId, {
+      assignedTenantsMode: assigned === 'all' ? 'all' : 'custom',
+      customTenants: Array.isArray(assigned) ? assigned : [],
+    }).catch(() => {});
+  };
+
+  // Delete staff confirmation (Soft delete IAM)
+  const handleDeleteStaffConfirm = async () => {
+    if (!deleteModalStaff) return;
+
+    // Blindaje Maestro: Inmunidad para Edgar Lobo Vectorial
+    const isMaster =
+      deleteModalStaff.id === 'usr-admin-01' ||
+      deleteModalStaff.id === 'staff-1' ||
+      deleteModalStaff.email?.toLowerCase().includes('edgaradmin') ||
+      (deleteModalStaff.role === 'SUPER_ADMIN' && deleteModalStaff.name?.toLowerCase().includes('edgar'));
+
+    if (isMaster) {
+      showToast('Operación denegada: La cuenta del Super Admin Maestro es inmutable.');
+      setDeleteModalStaff(null);
+      return;
+    }
+
+    setIsDeletingStaff(true);
+    try {
+      await userService.deleteUser(deleteModalStaff.id);
+      setStaffList((prev) => prev.filter((s) => s.id !== deleteModalStaff.id));
+      showToast(`Colaborador ${deleteModalStaff.name} eliminado del equipo.`);
+      setDeleteModalStaff(null);
+    } catch (err) {
+      console.error('Error al eliminar colaborador:', err);
+      showToast('Error al eliminar colaborador');
+    } finally {
+      setIsDeletingStaff(false);
+    }
   };
 
   return (
@@ -515,6 +592,30 @@ export const AgencyStaffView = () => {
                         {isSuspended ? 'Reactivar' : 'Suspender'}
                       </span>
                     </button>
+
+                    {/* Master Super Admin Immutable Shield vs Delete Button */}
+                    {member.id === 'usr-admin-01' ||
+                    member.id === 'staff-1' ||
+                    member.email?.toLowerCase().includes('edgaradmin') ||
+                    (member.role === 'SUPER_ADMIN' && member.name?.toLowerCase().includes('edgar')) ? (
+                      <div
+                        className="px-3 py-2 rounded-xl bg-neon/10 border border-neon/30 text-neon flex items-center gap-1.5 min-h-[44px] cursor-not-allowed select-none opacity-90"
+                        title="Cuenta Fundadora Maestra Inmutable (Protegida por Gobernanza WORM)"
+                      >
+                        <ShieldAlert className="w-3.5 h-3.5 text-neon" />
+                        <span className="text-[11px] font-bold">Protegido</span>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setDeleteModalStaff(member)}
+                        className="px-3 py-2 rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] hover:border-rose-500/50 hover:bg-rose-500/10 text-[var(--text-muted)] hover:text-rose-400 transition-all flex items-center gap-1.5 min-h-[44px]"
+                        title="Eliminar colaborador del equipo"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                        <span className="hidden sm:inline">Eliminar</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -717,6 +818,18 @@ export const AgencyStaffView = () => {
           onSave={handleSaveAssignedTenants}
         />
       )}
+
+      {/* MODAL: CONFIRMAR ELIMINACIÓN DE COLABORADOR */}
+      {deleteModalStaff && (
+        <DeleteStaffModal
+          staffMember={deleteModalStaff}
+          isDeleting={isDeletingStaff}
+          onConfirm={handleDeleteStaffConfirm}
+          onClose={() => {
+            if (!isDeletingStaff) setDeleteModalStaff(null);
+          }}
+        />
+      )}
     </div>
   );
 };
@@ -815,6 +928,94 @@ const EditAssignedTenantsModal = ({ staffMember, allTenants, onClose, onSave }) 
               </button>
             </div>
           </form>
+        </div>
+      </div>
+    </Portal>
+  );
+};
+
+// Componente Modal para confirmación de Eliminación de Colaborador (IAM Soft Delete)
+const DeleteStaffModal = ({ staffMember, isDeleting, onConfirm, onClose }) => {
+  if (!staffMember) return null;
+
+  return (
+    <Portal>
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fade-in font-sans">
+        <div className="relative w-full max-w-md bg-[var(--bg-panel)] border border-rose-500/30 rounded-3xl p-6 sm:p-7 space-y-5 shadow-2xl animate-scale-up">
+          {/* Header */}
+          <div className="flex items-start justify-between border-b border-[var(--border-color)] pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-2xl bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-heading font-black text-[var(--text-main)]">
+                  Eliminar Colaborador
+                </h3>
+                <p className="text-xs text-rose-400 font-mono">
+                  Revocación de Credenciales & Acceso IAM
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isDeleting}
+              className="p-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-white transition-colors disabled:opacity-50"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Member Card */}
+          <div className="p-3.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-3">
+            <span className="text-3xl p-2 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)]">
+              {staffMember.avatar || '💼'}
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-heading font-black text-[var(--text-main)] truncate">
+                {staffMember.name}
+              </div>
+              <div className="text-xs text-[var(--text-muted)] truncate">
+                {staffMember.email}
+              </div>
+              <div className="text-[10px] font-mono text-blue-400 mt-0.5">
+                {staffMember.roleLabel || staffMember.role}
+              </div>
+            </div>
+          </div>
+
+          {/* Security Alert Notice */}
+          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-sans space-y-1.5">
+            <div className="flex items-center gap-1.5 font-bold font-mono text-[11px] text-rose-400">
+              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+              <span>Acción de Seguridad IAM</span>
+            </div>
+            <p className="text-[11px] text-zinc-300 leading-relaxed">
+              Se revocarán inmediatamente todos los tokens JWT activos y se cancelarán los permisos en los negocios asignados. Por gobernanza y auditoría criptográfica, los registros de actividad histórica permanecerán preservados en la base de datos PostgreSQL 17.
+            </p>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-[var(--border-color)]">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isDeleting}
+              className="px-4 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-muted)] hover:text-white transition-colors disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={onConfirm}
+              disabled={isDeleting}
+              className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-mono font-bold text-xs transition-all shadow-sm flex items-center gap-1.5 cursor-pointer shadow-rose-900/30 disabled:opacity-50"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>{isDeleting ? 'Revocando...' : 'Revocar & Eliminar Miembro'}</span>
+            </button>
+          </div>
         </div>
       </div>
     </Portal>

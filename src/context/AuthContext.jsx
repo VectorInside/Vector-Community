@@ -293,6 +293,8 @@ export const AuthProvider = ({ children }) => {
       return updated;
     });
 
+    tenantService.deleteTenant(tenantId).catch(() => {});
+
     // Si el tenant eliminado era el activo, cambiar automáticamente al primero disponible
     setActiveTenantKey((currKey) => {
       if (currKey === tenantId) {

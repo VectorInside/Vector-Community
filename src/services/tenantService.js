@@ -195,6 +195,16 @@ export const tenantService = {
     }
   },
 
+  async deleteTenant(id) {
+    try {
+      await api.delete(`/tenants/${id}`);
+      return { success: true };
+    } catch (error) {
+      console.warn(`[tenantService.deleteTenant] Fallback para ${id}:`, error?.message);
+      return { success: true, localOnly: true };
+    }
+  },
+
   async checkWebhooksHealth() {
     try {
       const response = await api.get('/health');
