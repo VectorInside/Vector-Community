@@ -23,7 +23,7 @@ const buildShiftHours = (startStr, endStr, slotDurationMin = 60) => {
 
 export const normalizeTenantFromApi = (rawTenant) => {
   if (!rawTenant || typeof rawTenant !== 'object') return null;
-  const preset = INITIAL_TENANTS_DATA[rawTenant.id] || INITIAL_TENANTS_DATA.dental || {};
+  const preset = (rawTenant.id && INITIAL_TENANTS_DATA[rawTenant.id]) || {};
 
   let parsedCalendarConfig = rawTenant.calendarConfig;
   if (typeof parsedCalendarConfig === 'string') {
@@ -105,33 +105,32 @@ export const serializeTenantToApi = (tenant) => {
 
 export const tenantService = {
   async getTenants() {
-    if (!isBackendAvailable) return Object.values(INITIAL_TENANTS_DATA);
+    if (!isBackendAvailable) return [];
     try {
       const response = await api.get('/tenants');
       const data = unwrapApiData(response);
-        if (Array.isArray(data)) {
-          return data.map(normalizeTenantFromApi).filter(Boolean);
-        }
-        return [];
-      } catch (error) {
-        console.warn('[tenantService.getTenants] Fallback to empty list');
-        return [];
+      if (Array.isArray(data)) {
+        return data.map(normalizeTenantFromApi).filter(Boolean);
       }
-    },
+      return [];
+    } catch (error) {
+      console.warn('[tenantService.getTenants] Error al consultar tenants:', error?.message);
+      return [];
+    }
+  },
 
   async getTenantById(id) {
-      if (!isBackendAvailable) {
-        return INITIAL_TENANTS_DATA[id] || INITIAL_TENANTS.find((t) => t.id === id) || INITIAL_TENANTS_DATA.dental;
-      }
-      try {
-        const response = await api.get(`/tenants/${id}`);
-        const data = unwrapApiData(response);
-        return normalizeTenantFromApi(data);
-      } catch (error) {
-        console.warn(`[tenantService.getTenantById] Fallback for ${id}`);
-        return INITIAL_TENANTS_DATA[id] || INITIAL_TENANTS.find((t) => t.id === id) || INITIAL_TENANTS_DATA.dental;
-      }
-    },
+    if (!id) return null;
+    if (!isBackendAvailable) return null;
+    try {
+      const response = await api.get(`/tenants/${id}`);
+      const data = unwrapApiData(response);
+      return normalizeTenantFromApi(data);
+    } catch (error) {
+      console.warn(`[tenantService.getTenantById] Error para ${id}:`, error?.message);
+      return null;
+    }
+  },
 
   async createTenant(tenantData) {
       try {

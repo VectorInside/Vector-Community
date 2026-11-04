@@ -52,8 +52,8 @@ export const serializePostToApi = (post) => {
 };
 
 export const contentService = {
-  async getPostsByTenant(tenantId = 'dental') {
-    if (!isBackendAvailable) return null;
+  async getPostsByTenant(tenantId) {
+    if (!isBackendAvailable) return [];
     try {
       const response = await api.get('/posts', { params: { tenantId } });
       const data = unwrapApiData(response);
@@ -62,8 +62,7 @@ export const contentService = {
       }
       return [];
     } catch (error) {
-      console.warn(`[contentService.getPostsByTenant] Fallback to local storage for ${tenantId}`);
-      return null;
+      return [];
     }
   },
 

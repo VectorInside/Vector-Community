@@ -33,33 +33,33 @@ export const userService = {
     try {
       const response = await api.get('/users/staff');
       const data = unwrapApiData(response);
-        if (Array.isArray(data)) {
-          return data;
-        }
-        return INITIAL_AGENCY_STAFF;
-      } catch (error) {
-        console.warn('[userService.getAgencyStaff] Fallback a datos locales:', error?.message);
-        return INITIAL_AGENCY_STAFF;
+      if (Array.isArray(data) && data.length > 0) {
+        return data;
       }
-    },
+      return INITIAL_AGENCY_STAFF;
+    } catch (error) {
+      console.warn('[userService.getAgencyStaff] Fallback a personal fundador:', error?.message);
+      return INITIAL_AGENCY_STAFF;
+    }
+  },
 
   /**
    * Obtiene la lista de cuentas de dueños de negocio (1:1 Tenant Owner)
    */
   async getTenantOwners() {
-      if (!isBackendAvailable) return INITIAL_BUSINESS_ACCOUNTS;
-      try {
-        const response = await api.get('/users/owners');
-        const data = unwrapApiData(response);
-          if (Array.isArray(data)) {
-            return data;
-          }
-          return INITIAL_BUSINESS_ACCOUNTS;
-        } catch (error) {
-          console.warn('[userService.getTenantOwners] Fallback a datos locales:', error?.message);
-          return INITIAL_BUSINESS_ACCOUNTS;
-        }
-      },
+    if (!isBackendAvailable) return [];
+    try {
+      const response = await api.get('/users/owners');
+      const data = unwrapApiData(response);
+      if (Array.isArray(data)) {
+        return data;
+      }
+      return [];
+    } catch (error) {
+      console.warn('[userService.getTenantOwners] Error al consultar dueños de negocio:', error?.message);
+      return [];
+    }
+  },
 
   /**
    * Registra e invita a un nuevo miembro al equipo interno

@@ -30,52 +30,8 @@ import {
 // ============================================================================
 // CANONICAL TENANT DATA FOR QUICK SEARCH (STRICT MULTI-TENANT ISOLATION)
 // ============================================================================
-const TENANT_CONTACTS_INDEX = {
-  dental: [
-    { id: 'dent-001', name: 'Carlos Mendoza', need: 'Implante Dental 3D Sin Dolor', channel: 'WhatsApp', phone: '+52 55 4912 3840', tag: 'Alta Intención' },
-    { id: 'dent-002', name: 'Dra. Mariana Solares', need: 'Valoración Implante Molar 3D', channel: 'Instagram DM', phone: '+52 55 8812 9031', tag: 'Cita Pendiente' },
-    { id: 'dent-003', name: 'Valeria Cordero', need: 'Diseño de Sonrisa & Carillas', channel: 'Facebook', phone: '+52 55 9821 4433', tag: 'Re-engagement' },
-  ],
-  polanco: [
-    { id: 'pol-001', name: 'Alejandro Bastida', need: 'Cena Maridaje 4 Tiempos (4 Pax)', channel: 'WhatsApp', phone: '+52 55 3341 8920', tag: 'Reserva VIP' },
-    { id: 'pol-002', name: 'Regina Covarrubias', need: 'Mesa Salón Privado 8 Personas', channel: 'Instagram DM', phone: '+52 55 7712 0099', tag: 'Cena Corporativa' },
-    { id: 'pol-003', name: 'Mauricio Treviño', need: 'Menú Degustación & Maridaje', channel: 'Facebook', phone: '+52 55 6601 3322', tag: 'Reserva Confirmada' },
-  ],
-  urban: [
-    { id: 'urb-001', name: 'Kevin Almonte', need: 'Jordan 1 Retro High Talla 27.5mx', channel: 'WhatsApp', phone: '+52 55 9876 5432', tag: 'Checkout Listo' },
-    { id: 'urb-002', name: 'Sofía Valenzuela', need: 'Dunk Low Panda Preventa', channel: 'Instagram DM', phone: '+52 55 3322 1100', tag: 'Talla Especial' },
-    { id: 'urb-003', name: 'Rodrigo Montes', need: 'Apartado Preventa Drop Limitado', channel: 'Web Chat', phone: '+52 55 1199 4433', tag: 'Pedido Despachado' },
-  ],
-  corp: [
-    { id: 'corp-001', name: 'Ing. Fernando Arteaga', need: 'Auditoría Fuga de Leads B2B', channel: 'LinkedIn', phone: '+52 55 1234 5678', tag: 'Enterprise SMR' },
-    { id: 'corp-002', name: 'Rodrigo Elizondo', need: 'Licenciamiento Multi-Tenant (4 Subs)', channel: 'WhatsApp', phone: '+52 55 9012 3456', tag: 'Compliance TI' },
-  ],
-  creator: [
-    { id: 'cre-001', name: 'Camila Duarte (PR Agencia)', need: 'Patrocinio Video Integrado 60s', channel: 'TikTok', phone: '+52 55 7766 5544', tag: 'Brand Deal' },
-    { id: 'cre-002', name: 'Santiago Vélez', need: 'Mentoría 1-on-1 Growth Tech', channel: 'Instagram DM', phone: '+52 55 8899 0011', tag: 'Membresía VIP' },
-  ],
-};
-
-const TENANT_CAMPAIGNS_INDEX = {
-  dental: [
-    { id: 'camp-dent-1', name: 'Ortodoncia Invisible 3D & Alineadores', channel: 'Meta Ads', budget: '$18,000 MXN', status: 'Activa' },
-    { id: 'camp-dent-2', name: 'Implantes Dentales & Carga Inmediata', channel: 'Google Search', budget: '$14,000 MXN', status: 'Activa' },
-  ],
-  polanco: [
-    { id: 'camp-pol-1', name: 'Reel: El Ritual de la Brasa', channel: 'Instagram Reels', budget: '$14,000 MXN', status: 'Activa' },
-    { id: 'camp-pol-2', name: 'Campaña Cenas de Fin de Semana & Maridaje', channel: 'Meta Ads', budget: '$12,500 MXN', status: 'Activa' },
-  ],
-  urban: [
-    { id: 'camp-urb-1', name: 'Drop Exclusivo Streetwear 2026', channel: 'TikTok Ads', budget: '$15,000 MXN', status: 'Activa' },
-    { id: 'camp-urb-2', name: 'Retargeting Carritos Abandonados', channel: 'Meta Ads', budget: '$8,000 MXN', status: 'Activa' },
-  ],
-  corp: [
-    { id: 'camp-corp-1', name: 'Integración CRM & Meta CAPI Enterprise', channel: 'LinkedIn B2B', budget: '$18,000 MXN', status: 'Activa' },
-  ],
-  creator: [
-    { id: 'camp-cre-1', name: 'Lanzamiento Mini-Curso Automatización IA', channel: 'YouTube Shorts', budget: '$6,000 MXN', status: 'Activa' },
-  ],
-};
+const TENANT_CONTACTS_INDEX = {};
+const TENANT_CAMPAIGNS_INDEX = {};
 
 export const CommandPaletteModal = ({ isOpen, onClose }) => {
   const router = useRouter();
@@ -194,7 +150,7 @@ export const CommandPaletteModal = ({ isOpen, onClose }) => {
 
   // 2. Contacts / Leads (Strictly isolated by tenant)
   const tenantContacts = useMemo(() => {
-    const rawList = TENANT_CONTACTS_INDEX[tenantKey] || TENANT_CONTACTS_INDEX.dental;
+    const rawList = (tenantKey && TENANT_CONTACTS_INDEX[tenantKey]) || [];
     return rawList.map((contact) => ({
       id: `contact-${contact.id}`,
       category: 'PROSPECTOS & CONVERSACIONES',
@@ -211,7 +167,7 @@ export const CommandPaletteModal = ({ isOpen, onClose }) => {
 
   // 3. Campaigns (Strictly isolated by tenant)
   const tenantCampaigns = useMemo(() => {
-    const rawList = TENANT_CAMPAIGNS_INDEX[tenantKey] || TENANT_CAMPAIGNS_INDEX.dental;
+    const rawList = (tenantKey && TENANT_CAMPAIGNS_INDEX[tenantKey]) || [];
     return rawList.map((camp) => ({
       id: `camp-${camp.id}`,
       category: 'CAMPAÑAS ACTIVAS',

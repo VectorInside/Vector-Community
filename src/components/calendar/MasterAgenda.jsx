@@ -226,419 +226,12 @@ const DEFAULT_FALLBACK_CONFIG = {
   breakInterval: { start: '14:00', end: '15:00', label: 'Receso / Cambio de Turno' },
 };
 
-// Citas precargadas dinámicas multitenant para toda la semana (Lunes a Domingo)
-const INITIAL_DEMO_APPOINTMENTS = [
-  // ===================== DENTAL (Odontología Integral) =====================
-  {
-    id: 'apt-d01',
-    tenantId: 'dental',
-    dayId: 'mon',
-    hour: '09:30',
-    title: 'Lucía Méndez — Valoración Ortodoncia Invisible',
-    client: 'Lucía Méndez',
-    clientEmail: 'lucia.mendez@gmail.com',
-    phone: '+52 55 4412 8890',
-    specialist: 'Dra. Claudia Ortiz (Ortodoncia)',
-    serviceName: 'Ortodoncia Invisible',
-    serviceColor: '#3B82F6',
-    estimatedValue: 2400,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-19T09:30:00',
-    end: '2026-10-19T10:30:00',
-    details: 'Escaneo intraoral 3D agendado por WhatsApp Bot con confirmación de anticipo.',
-  },
-  {
-    id: 'apt-d02',
-    tenantId: 'dental',
-    dayId: 'tue',
-    hour: '12:00',
-    title: 'Carlos Villaseñor — Limpieza Ultrasónica',
-    client: 'Carlos Villaseñor',
-    clientEmail: 'carlos.villasenor@gmail.com',
-    phone: '+52 55 7719 3321',
-    specialist: 'Dra. Claudia Ortiz (Ortodoncia)',
-    serviceName: 'Limpieza Dental',
-    serviceColor: '#3B82F6',
-    estimatedValue: 1200,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-20T12:00:00',
-    end: '2026-10-20T13:00:00',
-    details: 'Pago en Recepción verificado vía WhatsApp AI Bot.',
-  },
-  {
-    id: 'apt-d03',
-    tenantId: 'dental',
-    dayId: 'wed',
-    hour: '11:00',
-    title: 'Eduardo Garza — Cirugía Implante Unitario',
-    client: 'Ing. Eduardo Garza',
-    clientEmail: 'eduardo.garza@hotmail.com',
-    phone: '+52 55 6671 2233',
-    specialist: 'Dr. Roberto Peña (Maxilofacial)',
-    serviceName: 'Cirugía de Implante',
-    serviceColor: '#10B981',
-    estimatedValue: 8500,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-21T11:00:00',
-    end: '2026-10-21T12:30:00',
-    details: 'Estudio tomográfico verificado. Sillón quirúrgico 1 preparado.',
-  },
-  {
-    id: 'apt-d04',
-    tenantId: 'dental',
-    dayId: 'thu',
-    hour: '10:00',
-    title: 'Ana Martínez — Valoración Implante Dental',
-    client: 'Ana Martínez',
-    clientEmail: 'ana.martinez@gmail.com',
-    phone: '+52 55 1234 5678',
-    specialist: 'Dr. Roberto Peña (Maxilofacial)',
-    serviceName: 'Valoración Implante',
-    serviceColor: '#10B981',
-    estimatedValue: 3500,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-22T10:00:00',
-    end: '2026-10-22T11:00:00',
-    details: 'Anticipo Verificado con Google Calendar Sync.',
-  },
-  {
-    id: 'apt-d05',
-    tenantId: 'dental',
-    dayId: 'fri',
-    hour: '11:00',
-    title: 'Carlos Mendoza — Profilaxis y Diagnóstico 3D',
-    client: 'Carlos Mendoza',
-    clientEmail: 'carlos.mendoza@gmail.com',
-    phone: '+52 55 8899 0011',
-    specialist: 'Dr. Roberto Peña (Maxilofacial)',
-    serviceName: 'Profilaxis Ultrasónica',
-    serviceColor: '#D4FF00',
-    estimatedValue: 850,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-23T11:00:00',
-    end: '2026-10-23T11:45:00',
-    details: 'Arancel bonificado $850 MXN en sillón 3. Cita de prospecto calificado y confirmada.',
-  },
-  {
-    id: 'apt-d06',
-    tenantId: 'dental',
-    dayId: 'fri',
-    hour: '16:00',
-    title: 'Mariana Solares — Implante Molar y Corona',
-    client: 'Dra. Mariana Solares',
-    clientEmail: 'mariana.solares@outlook.com',
-    phone: '+52 55 8812 9031',
-    specialist: 'Dr. Roberto Peña (Maxilofacial)',
-    serviceName: 'Implante Dental',
-    serviceColor: '#10B981',
-    estimatedValue: 4800,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-23T16:00:00',
-    end: '2026-10-23T17:00:00',
-    details: 'Anticipo verificado $1,500 MXN en Stripe / WhatsApp.',
-  },
-  {
-    id: 'apt-d07',
-    tenantId: 'dental',
-    dayId: 'sat',
-    hour: '10:30',
-    title: 'Sofía Benítez — Blanqueamiento Láser LED',
-    client: 'Sofía Benítez',
-    clientEmail: 'sofia.benitez@gmail.com',
-    phone: '+52 55 3322 1100',
-    specialist: 'Dra. Claudia Ortiz (Ortodoncia)',
-    serviceName: 'Blanqueamiento Dental',
-    serviceColor: '#38BDF8',
-    estimatedValue: 3200,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-24T10:30:00',
-    end: '2026-10-24T11:30:00',
-    details: 'Paquete de sonrisa estética de fin de semana.',
-  },
-
-  // ===================== POLANCO (Restaurante de Cortes & Mixología) =====================
-  {
-    id: 'apt-p01',
-    tenantId: 'polanco',
-    dayId: 'tue',
-    hour: '14:00',
-    title: 'Mauricio Diez — Almuerzo de Negocios (4 personas)',
-    client: 'Mauricio Diez',
-    clientEmail: 'mdiez@holdingmex.com',
-    phone: '+52 55 9911 2233',
-    specialist: 'Capitán de Meseros: Sergio M.',
-    serviceName: 'Comida Ejecutiva Terraza',
-    serviceColor: '#F59E0B',
-    estimatedValue: 3200,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-20T14:00:00',
-    end: '2026-10-20T16:00:00',
-    details: 'Reserva Mesa 8 Terraza Jardín con menú degustación sugerido.',
-  },
-  {
-    id: 'apt-p02',
-    tenantId: 'polanco',
-    dayId: 'wed',
-    hour: '20:00',
-    title: 'Cata Sommelier — Salón Cava Privada (6 personas)',
-    client: 'Familia Slim Domit',
-    clientEmail: 'reserva.cava@polancosteak.mx',
-    phone: '+52 55 4433 2211',
-    specialist: 'Sommelier: Andrea Fuentes',
-    serviceName: 'Maridaje y Cortes Prime',
-    serviceColor: '#EC4899',
-    estimatedValue: 9800,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-21T20:00:00',
-    end: '2026-10-21T23:00:00',
-    details: 'Descorche y maridaje de 5 etiquetas de Valle de Guadalupe.',
-  },
-  {
-    id: 'apt-p03',
-    tenantId: 'polanco',
-    dayId: 'thu',
-    hour: '21:00',
-    title: 'Guillermo Ochoa — Mesa VIP Tomahawk Black Onyx',
-    client: 'Guillermo Ochoa',
-    clientEmail: 'gochoa@sportsmex.com',
-    phone: '+52 55 1209 8877',
-    specialist: 'Capitán de Meseros: Sergio M.',
-    serviceName: 'Tomahawk Flameado en Mesa',
-    serviceColor: '#F59E0B',
-    estimatedValue: 4600,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-22T21:00:00',
-    end: '2026-10-22T23:00:00',
-    details: 'Flameado en mesa con mantequilla de romero y tuétano asado.',
-  },
-  {
-    id: 'apt-p04',
-    tenantId: 'polanco',
-    dayId: 'fri',
-    hour: '14:30',
-    title: 'Alejandro Bastida — Terraza VIP (4 personas)',
-    client: 'Alejandro Bastida',
-    clientEmail: 'alejandro.bastida@empresa.mx',
-    phone: '+52 55 3341 8920',
-    specialist: 'Capitán de Meseros: Sergio M.',
-    serviceName: 'Reserva Comida & Degustación',
-    serviceColor: '#F59E0B',
-    estimatedValue: 3800,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-23T14:30:00',
-    end: '2026-10-23T16:00:00',
-    details: 'Consumo mínimo verificado. Mesa 4 Terraza VIP.',
-  },
-  {
-    id: 'apt-p05',
-    tenantId: 'polanco',
-    dayId: 'fri',
-    hour: '20:30',
-    title: 'Cena Aniversario — Salón Central (2 personas)',
-    client: 'Lic. Rodrigo Elizondo',
-    clientEmail: 'rodrigo.elizondo@holding.com',
-    phone: '+52 55 4120 7890',
-    specialist: 'Sommelier: Andrea Fuentes',
-    serviceName: 'Cena Maridaje 5 Tiempos',
-    serviceColor: '#EC4899',
-    estimatedValue: 4200,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-23T20:30:00',
-    end: '2026-10-23T22:00:00',
-    details: 'Botella de vino espumoso de cortesía reservada.',
-  },
-  {
-    id: 'apt-p06',
-    tenantId: 'polanco',
-    dayId: 'sat',
-    hour: '15:00',
-    title: 'Javier Hernández — Almuerzo Terraza Vista (6 pers)',
-    client: 'Javier Hernández',
-    clientEmail: 'jhernandez@ch14.com',
-    phone: '+52 55 7788 9900',
-    specialist: 'Capitán de Meseros: Sergio M.',
-    serviceName: 'Cortes Sonora Prime',
-    serviceColor: '#F59E0B',
-    estimatedValue: 5600,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-24T15:00:00',
-    end: '2026-10-24T17:30:00',
-    details: 'Mesa 1 panorámica confirmada con depósito de garantía.',
-  },
-
-  // ===================== URBAN (E-Commerce / Fitting Room VIP) =====================
-  {
-    id: 'apt-u01',
-    tenantId: 'urban',
-    dayId: 'mon',
-    hour: '11:00',
-    title: 'Kevin Roldán — Fitting Privado Cyberpunk Drop',
-    client: 'Kevin Roldán',
-    clientEmail: 'kevin.roldan@urbanwear.mx',
-    phone: '+52 55 2211 4455',
-    specialist: 'Stylist VIP: Mateo Ramos',
-    serviceName: 'Fitting Room High-Tops 27.5 MX',
-    serviceColor: '#A855F7',
-    estimatedValue: 2800,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-19T11:00:00',
-    end: '2026-10-19T12:00:00',
-    details: 'Prueba exclusiva de sneakers talla 27.5 con pago diferido Kueski Pay.',
-  },
-  {
-    id: 'apt-u02',
-    tenantId: 'urban',
-    dayId: 'wed',
-    hour: '15:30',
-    title: 'Diego Santoro — Asesoría Streetwear & Customización',
-    client: 'Diego Santoro',
-    clientEmail: 'diego.santoro@gmail.com',
-    phone: '+52 55 8877 6655',
-    specialist: 'Sneaker Artist: Brenda L.',
-    serviceName: 'Custom Sneakers & Hoodies 450 GSM',
-    serviceColor: '#EC4899',
-    estimatedValue: 3500,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-21T15:30:00',
-    end: '2026-10-21T16:30:00',
-    details: 'Grabado láser y ajuste personalizado de cordones reflectivos 3M.',
-  },
-  {
-    id: 'apt-u03',
-    tenantId: 'urban',
-    dayId: 'fri',
-    hour: '13:00',
-    title: 'Mateo Cárdenas — Pick-up Drop Exclusivo Tokio Run',
-    client: 'Mateo Cárdenas',
-    clientEmail: 'mateo.cardenas@outlook.com',
-    phone: '+52 55 3344 5566',
-    specialist: 'Concierge VIP: Mateo Ramos',
-    serviceName: 'Entrega en Showroom Privado',
-    serviceColor: '#A855F7',
-    estimatedValue: 4200,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-23T13:00:00',
-    end: '2026-10-23T13:45:00',
-    details: 'Unboxing en showroom con certificado de autenticidad NFT y tarjeta de garantía.',
-  },
-  {
-    id: 'apt-u04',
-    tenantId: 'urban',
-    dayId: 'sat',
-    hour: '12:00',
-    title: 'Sebastián Yatra — Experiencia Sneakerhead VIP',
-    client: 'Sebastián Yatra',
-    clientEmail: 'syatra@musicagency.com',
-    phone: '+52 55 9900 1122',
-    specialist: 'Director Creativo: Alan V.',
-    serviceName: 'Showroom Privado a Puerta Cerrada',
-    serviceColor: '#10B981',
-    estimatedValue: 12000,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-24T12:00:00',
-    end: '2026-10-24T14:00:00',
-    details: 'Reserva exclusiva del showroom completo para selección de vestuario de tour.',
-  },
-
-  // ===================== CORP (Vector Inside Enterprise B2B) =====================
-  {
-    id: 'apt-c01',
-    tenantId: 'corp',
-    dayId: 'mon',
-    hour: '10:00',
-    title: 'Alberto Slim — Validación Multi-Tenant Holding 4 Razones',
-    client: 'Ing. Alberto Slim',
-    clientEmail: 'aslim@holdingcorp.com',
-    phone: '+52 55 1122 3344',
-    specialist: 'Director de Soluciones: Marcos V.',
-    serviceName: 'Demo Arquitectura Enterprise RLS',
-    serviceColor: '#3B82F6',
-    estimatedValue: 50000,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-19T10:00:00',
-    end: '2026-10-19T11:00:00',
-    details: 'Validación técnica de aislamiento criptográfico PostgreSQL por tenant_id.',
-  },
-  {
-    id: 'apt-c02',
-    tenantId: 'corp',
-    dayId: 'tue',
-    hour: '11:30',
-    title: 'Claudia Morales — Auditoría Meta CAPI Server-to-Server',
-    client: 'Directora Claudia Morales',
-    clientEmail: 'cmorales@retailmex.com',
-    phone: '+52 55 9988 7766',
-    specialist: 'Lead AI Engineer: Víctor Hugo',
-    serviceName: 'Prueba de Carga CAPI S2S',
-    serviceColor: '#10B981',
-    estimatedValue: 35000,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-20T11:30:00',
-    end: '2026-10-20T12:30:00',
-    details: 'Demostración de telemetría de eventos Purchase y AddPaymentInfo sin cookies.',
-  },
-  {
-    id: 'apt-c03',
-    tenantId: 'corp',
-    dayId: 'thu',
-    hour: '10:00',
-    title: 'Holding Femsa Norte — Sesión de Cierre Contrato Anual',
-    client: 'Lic. Fernando Garza (CFO)',
-    clientEmail: 'fgarza@femsanorte.com',
-    phone: '+52 55 5544 3322',
-    specialist: 'VP Enterprise: Marcos V.',
-    serviceName: 'Firma de Contrato & SLA 99.9%',
-    serviceColor: '#D4FF00',
-    estimatedValue: 60000,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-22T10:00:00',
-    end: '2026-10-22T11:30:00',
-    details: 'Revisión final de cláusulas de gobernanza IA y despliegue en AWS dedicado.',
-  },
-  {
-    id: 'apt-c04',
-    tenantId: 'corp',
-    dayId: 'fri',
-    hour: '11:00',
-    title: 'Discovery Call B2B — Logística Global Monterrey',
-    client: 'Lic. Rodrigo Elizondo (VP Operaciones)',
-    clientEmail: 'rodrigo.elizondo@logisticaglobal.com',
-    phone: '+52 55 4120 7890',
-    specialist: 'Director de Soluciones: Marcos V.',
-    serviceName: 'Discovery Call ($45k USD Pipeline)',
-    serviceColor: '#3B82F6',
-    estimatedValue: 45000,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-23T11:00:00',
-    end: '2026-10-23T11:30:00',
-    details: 'Enlace Google Meet autogenerado con BANT calificado al 100%.',
-  },
-];
+// Citas precargadas vacías para producción (Zero-State)
+const INITIAL_DEMO_APPOINTMENTS = [];
 
 export const MasterAgenda = () => {
   const { activeTenantId, activeTenant } = useTenant();
-  const [appointments, setAppointments] = useState(INITIAL_DEMO_APPOINTMENTS);
+  const [appointments, setAppointments] = useState([]);
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState(null);
   const [viewMode, setViewMode] = useState('month'); // 'month' (Mes Completo) | 'grid' (Zoom Día / Horas) | 'week_table' (Semana) | 'list'
@@ -703,22 +296,20 @@ export const MasterAgenda = () => {
       shifts: recomputeShiftsHours(base.shifts || [], base.slotDurationMin || 60),
     });
 
-    const tenantKey = activeTenant?.id || activeTenantId || 'dental';
+    const tenantKey = activeTenant?.id || activeTenantId;
+    if (!tenantKey) {
+      setAppointments([]);
+      return;
+    }
+
     calendarService
       .getAppointments(tenantKey)
       .then((backendApts) => {
-        if (Array.isArray(backendApts) && backendApts.length > 0) {
-          setAppointments((prev) => {
-            const otherTenants = prev.filter((a) => a.tenantId && a.tenantId !== tenantKey && !(tenantKey === 'dental' && a.tenantId === 'tenant-mex-001'));
-            const existingIds = new Set(backendApts.map((b) => b.id));
-            const localDemoForTenant = INITIAL_DEMO_APPOINTMENTS.filter(
-              (a) => (a.tenantId === tenantKey || (tenantKey === 'dental' && a.tenantId === 'tenant-mex-001')) && !existingIds.has(a.id)
-            );
-            return [...otherTenants, ...backendApts, ...localDemoForTenant];
-          });
-        }
+        setAppointments(Array.isArray(backendApts) ? backendApts : []);
       })
-      .catch(() => {});
+      .catch(() => {
+        setAppointments([]);
+      });
   }, [activeTenantId, activeTenant]);
 
   const handleUpdateDuration = (newDuration) => {
@@ -1632,7 +1223,16 @@ export const MasterAgenda = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredAppointments.map((apt) => (
+            {filteredAppointments.length === 0 ? (
+              <div className="col-span-full p-12 text-center rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-3">
+                <CalendarCheck className="w-12 h-12 text-[var(--text-muted)] mx-auto opacity-40" />
+                <h4 className="text-base font-bold text-[var(--text-main)]">Sin citas agendadas</h4>
+                <p className="text-xs text-[var(--text-muted)] max-w-md mx-auto">
+                  {!activeTenant ? 'Selecciona un negocio para ver su calendario y agenda de citas.' : 'Este negocio aún no cuenta con citas programadas. Las citas confirmadas aparecerán aquí sincronizadas en tiempo real.'}
+                </p>
+              </div>
+            ) : (
+              filteredAppointments.map((apt) => (
               <div
                 key={apt.id}
                 onClick={() => setSelectedAppointment(apt)}
@@ -1669,7 +1269,7 @@ export const MasterAgenda = () => {
                   </div>
                 </div>
               </div>
-            ))}
+            )))}
           </div>
         </div>
       )}

@@ -19,24 +19,24 @@ export const normalizeTelemetryFromApi = (raw) => {
   if (!raw || typeof raw !== 'object') return null;
   return {
     webTrafficMetrics: {
-      sessions: Number(raw.webSessions ?? 3420),
-      cpc: `$${Number(raw.webCpc ?? 3.8).toFixed(2)} MXN`,
-      whatsappClickRate: `${Number(raw.webWhatsappRate ?? 1.4).toFixed(1)}%`,
-      bounceRate: `${Math.round(Number(raw.webBounceRate ?? 65))}%`,
+      sessions: Number(raw.webSessions ?? 0),
+      cpc: raw.webCpc != null ? `$${Number(raw.webCpc).toFixed(2)} MXN` : '$0.00 MXN',
+      whatsappClickRate: raw.webWhatsappRate != null ? `${Number(raw.webWhatsappRate).toFixed(1)}%` : '0.0%',
+      bounceRate: raw.webBounceRate != null ? `${Math.round(Number(raw.webBounceRate))}%` : '0%',
     },
     microLandingMetrics: {
-      visits: Number(raw.microVisits ?? 1280),
-      leadsGenerated: Number(raw.microLeads ?? 233),
-      conversionRate: `${Number(raw.microConvRate ?? 18.2).toFixed(1)}%`,
-      costPerLead: `$${Number(raw.microCpl ?? 1.85).toFixed(2)} MXN`,
-      bounceRate: `${Number(raw.microBounceRate ?? 8.4).toFixed(1)}%`,
-      avgLoadTime: `${Number(raw.avgLoadTimeSec ?? 0.65).toFixed(2)}s`,
-      ctaClicks: Number(raw.ctaClicks ?? 312),
-      qrScans: Number(raw.qrScans ?? 46),
+      visits: Number(raw.microVisits ?? 0),
+      leadsGenerated: Number(raw.microLeads ?? 0),
+      conversionRate: raw.microConvRate != null ? `${Number(raw.microConvRate).toFixed(1)}%` : '0.0%',
+      costPerLead: raw.microCpl != null ? `$${Number(raw.microCpl).toFixed(2)} MXN` : '$0.00 MXN',
+      bounceRate: raw.microBounceRate != null ? `${Number(raw.microBounceRate).toFixed(1)}%` : '0.0%',
+      avgLoadTime: raw.avgLoadTimeSec != null ? `${Number(raw.avgLoadTimeSec).toFixed(2)}s` : '0.00s',
+      ctaClicks: Number(raw.ctaClicks ?? 0),
+      qrScans: Number(raw.qrScans ?? 0),
       sources: {
-        bioLink: `${Number(raw.sourceBioPct ?? 54.2).toFixed(1)}%`,
-        directAds: `${Number(raw.sourceAdsPct ?? 38.6).toFixed(1)}%`,
-        qrPrint: `${Number(raw.sourceQrPct ?? 7.2).toFixed(1)}%`,
+        bioLink: raw.sourceBioPct != null ? `${Number(raw.sourceBioPct).toFixed(1)}%` : '0.0%',
+        directAds: raw.sourceAdsPct != null ? `${Number(raw.sourceAdsPct).toFixed(1)}%` : '0.0%',
+        qrPrint: raw.sourceQrPct != null ? `${Number(raw.sourceQrPct).toFixed(1)}%` : '0.0%',
       },
     },
     rawTelemetry: raw,
@@ -44,26 +44,28 @@ export const normalizeTelemetryFromApi = (raw) => {
 };
 
 export const performanceService = {
-  async getDualTelemetry(tenantId = 'dental') {
+  async getDualTelemetry(tenantId) {
+    if (!tenantId) return null;
     if (!isBackendAvailable) return null;
     try {
       const response = await api.get(`/analytics/${tenantId}`);
       const data = unwrapApiData(response);
       return normalizeTelemetryFromApi(data);
     } catch (error) {
-      console.warn(`[performanceService.getDualTelemetry] Fallback for ${tenantId}`);
+      console.warn(`[performanceService.getDualTelemetry] Error para ${tenantId}:`, error?.message);
       return null;
     }
   },
 
-  async trackTelemetryEvent(tenantId = 'dental', eventType = 'VISIT') {
+  async trackTelemetryEvent(tenantId, eventType = 'VISIT') {
+    if (!tenantId) return null;
     if (!isBackendAvailable) return null;
     try {
       const response = await api.post('/analytics/track', { tenantId, eventType });
       const data = unwrapApiData(response);
       return normalizeTelemetryFromApi(data);
     } catch (error) {
-      console.warn(`[performanceService.trackTelemetryEvent] Fallback for ${tenantId} (${eventType})`);
+      console.warn(`[performanceService.trackTelemetryEvent] Error para ${tenantId} (${eventType}):`, error?.message);
       return null;
     }
   },

@@ -115,8 +115,8 @@ export const serializeLeadToApi = (item) => {
 };
 
 export const leadService = {
-  async getLeadsByTenant(tenantId = 'dental') {
-    if (!isBackendAvailable) return null;
+  async getLeadsByTenant(tenantId) {
+    if (!isBackendAvailable) return [];
     try {
       const response = await api.get('/leads', { params: { tenantId } });
       const data = unwrapApiData(response);
@@ -125,8 +125,7 @@ export const leadService = {
       }
       return [];
     } catch (error) {
-      console.warn(`[leadService.getLeadsByTenant] Fallback to local threads for ${tenantId}`);
-      return null;
+      return [];
     }
   },
 

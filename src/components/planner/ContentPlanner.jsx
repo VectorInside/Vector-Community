@@ -141,499 +141,9 @@ const CANONICAL_DNA_BY_TENANT = {
     },
   };
 
-  const CANONICAL_POSTS_BY_TENANT = {
-    dental: [
-      {
-        id: 'post-dent-01',
-        network: 'INSTAGRAM',
-        type: 'REEL',
-        channel: 'Instagram Reels',
-        publishDate: 'Mañana • 19:30 hrs (Hora Pico)',
-        title: '3 Señales de que necesitas atender tu salud dental hoy mismo',
-        hookText: '¿Sabías que un dolor leve puede convertirse en un tratamiento 3x más costoso en 6 meses?',
-        copy: 'En Odontología Integral usamos escaneo 3D sin dolor para diagnosticarte en 15 minutos. 🦷✨ Comenta "VALORACION" y el bot te agendará con 20% de descuento.',
-        hashtags: '#SaludDental #ImplantesDentales #OdontologiaCDMX #DientesSanos',
-        status: 'PENDIENTE_CLIENTE',
-        formatIcon: Video,
-        estimatedReach: '18.5k - 25k visualizaciones',
-        aiConfidence: 96,
-      },
-      {
-        id: 'post-dent-02',
-        network: 'FACEBOOK',
-        type: 'CARROUSEL',
-        channel: 'Facebook & Instagram Feed',
-        publishDate: 'Viernes • 13:00 hrs',
-        title: 'Mitos vs Realidades de los Implantes Dentales',
-        hookText: 'Mito: "Los implantes duelen mucho". Realidad: Se colocan con anestesia computarizada.',
-        copy: 'Desliza para conocer los 4 mitos más comunes antes de realizarte un implante. Si tienes dudas, déjanos un mensaje y te atendemos de inmediato.',
-        hashtags: '#MitosDentales #ImplantesSinDolor #SonrisaPerfecta',
-        status: 'APROBADO_PROGRAMADO',
-        formatIcon: ImageIcon,
-        estimatedReach: '12k - 16k cuentas alcanzadas',
-        aiConfidence: 94,
-      },
-      {
-        id: 'post-dent-03',
-        network: 'INSTAGRAM',
-        type: 'STORY',
-        channel: 'Instagram Stories (Interactivo)',
-        publishDate: 'Sábado • 11:00 hrs',
-        title: 'Sticker Interactivo: ¿Cuándo fue tu última limpieza dental?',
-        hookText: 'Encuesta: [Menos de 6 meses] vs [Ya ni me acuerdo 🙈]',
-        copy: 'Responde a la encuesta y te enviamos un pase de cortesía para tu valoración diagnóstica.',
-        hashtags: '#CuidadoBucal #Encuesta',
-        status: 'APROBADO_PROGRAMADO',
-        formatIcon: Flame,
-        estimatedReach: '4.5k vistas en Stories',
-        aiConfidence: 98,
-      },
-      {
-        id: 'post-dent-04',
-        network: 'TIKTOK',
-        type: 'REEL',
-        channel: 'TikTok & Reels',
-        publishDate: 'Lunes Próximo • 20:00 hrs',
-        title: 'Transformación de Sonrisa: Caso Real Paciente Implante Molar',
-        hookText: 'De no poder masticar a comer sin dolor en solo 2 citas.',
-        copy: 'Así fue el proceso de recuperación de nuestro paciente Carlos. Tecnología guiada por computadora.',
-        hashtags: '#AntesYDespues #CasoClinico #OdontologiaDigital',
-        status: 'PENDIENTE_CLIENTE',
-        formatIcon: Video,
-        estimatedReach: '30k - 45k visualizaciones',
-        aiConfidence: 97,
-      },
-      {
-        id: 'post-dent-05',
-        network: 'LINKEDIN',
-        type: 'CAROUSEL_PDF',
-        channel: 'LinkedIn Corporativo (Decisores B2B)',
-        publishDate: 'Miércoles • 09:00 hrs (Hora Ejecutiva)',
-        title: 'El Impacto del Bienestar y Salud Dental en el Rendimiento Ejecutivo',
-        hookText: 'El 68% de las ausencias no programadas en puestos de liderazgo derivan de problemas dentales desatendidos.',
-        copy: 'Desliza este documento ejecutivo para descubrir cómo estructuramos convenios corporativos de salud preventiva para directivos y equipos clave sin costo administrativo para RH. ¿Te interesa el programa para tu empresa?',
-        hashtags: '#Liderazgo #RecursosHumanos #SaludCorporativa #ExecutiveWellness',
-        status: 'PENDIENTE_CLIENTE',
-        formatIcon: Linkedin,
-        estimatedReach: '5.2k directores y líderes de RH',
-        aiConfidence: 99,
-      },
-    ],
-    polanco: [
-      {
-        id: 'post-pol-01',
-        network: 'INSTAGRAM',
-        type: 'REEL',
-        channel: 'Instagram Reels',
-        publishDate: 'Jueves • 20:00 hrs (Hora Pico)',
-        title: 'El Ritual del Tomahawk: Sellado a 800°C frente a tu mesa',
-        hookText: '¿Por qué la carne en Polanco Steakhouse tiene ese crujido exterior imposible de replicar en casa?',
-        copy: 'Mantequilla de romero infusionada, sal negra volcánica y corte al instante. 🔥🥩 Reserva tu mesa en terraza y vive la experiencia sensorial de nuestra parrilla abierta. Envía "RESERVA" por WhatsApp.',
-        hashtags: '#PolancoEats #TomahawkSteak #CDMXRestaurantes #FoodieCDMX #CarnesPrime',
-        status: 'PENDIENTE_CLIENTE',
-        formatIcon: Video,
-        estimatedReach: '34k - 52k reproducciones',
-        aiConfidence: 98,
-      },
-      {
-        id: 'post-pol-02',
-        network: 'FACEBOOK',
-        type: 'CARROUSEL',
-        channel: 'Facebook & Instagram Feed',
-        publishDate: 'Viernes • 14:00 hrs',
-        title: 'Guía Secreta de Maridaje: 4 Cortes de Autor y sus Vinos Ideales',
-        hookText: 'Pedir el vino incorrecto puede opacar por completo un corte Rib Eye Prime de 600g.',
-        copy: 'Desliza para ver la recomendación de nuestro Sommelier en Jefe. Al reservar tu cena para 4 personas este fin de semana, te obsequiamos una botella de maridaje de bienvenida.',
-        hashtags: '#SommelierCDMX #MaridajePerfecto #GastronomiaPolanco #VinoTinto',
-        status: 'APROBADO_PROGRAMADO',
-        formatIcon: ImageIcon,
-        estimatedReach: '16k - 22k comensales alcanzados',
-        aiConfidence: 95,
-      },
-      {
-        id: 'post-pol-03',
-        network: 'INSTAGRAM',
-        type: 'STORY',
-        channel: 'Instagram Stories (Interactivo)',
-        publishDate: 'Sábado • 16:30 hrs',
-        title: 'Encuesta: ¿Prefieres cóctel ahumado con Mezcal o Gin herbal en Terraza?',
-        hookText: 'Sticker Interactivo: [Mezcal Ahumado 🥃] vs [Gin de Frutos 🍸]',
-        copy: 'Vota en la historia y te regalamos tu primer cóctel al confirmar tu reservación para hoy en el turno de cena.',
-        hashtags: '#MixologiaPolanco #TerrazaVIP #WeekendVibes',
-        status: 'APROBADO_PROGRAMADO',
-        formatIcon: Flame,
-        estimatedReach: '7.8k vistas en Stories',
-        aiConfidence: 97,
-      },
-      {
-        id: 'post-pol-04',
-        network: 'TIKTOK',
-        type: 'REEL',
-        channel: 'TikTok Viral Food',
-        publishDate: 'Domingo • 13:00 hrs',
-        title: 'ASMR Puro: Cortando el Rib Eye añejado en seco de 45 días',
-        hookText: 'Escucha este sonido antes de elegir dónde comer hoy en CDMX.',
-        copy: 'Maduración controlada en cámara de sal del Himalaya. Si amas la buena carne, etiqueta a la persona que te debe una comida aquí este fin de semana.',
-        hashtags: '#ASMRFood #Steakhouse #FoodPornCDMX #PolancoTrends',
-        status: 'PENDIENTE_CLIENTE',
-        formatIcon: Video,
-        estimatedReach: '65k - 90k visualizaciones',
-        aiConfidence: 99,
-      },
-    ],
-    urban: [
-      {
-        id: 'post-urb-01',
-        network: 'INSTAGRAM',
-        type: 'REEL',
-        channel: 'Instagram Reels',
-        publishDate: 'Martes • 18:30 hrs (Drop Alert)',
-        title: '3 Formas Infalibles de detectar un Sneaker Fake en 10 segundos',
-        hookText: 'El 42% de los Jordan 1 en marketplace son réplicas sin que el comprador lo note.',
-        copy: 'En Urban Sneaks cada par pasa por doble verificación física y luz UV con tag holográfico serializado. 🔥👟 Comenta "DROP" para recibir acceso preferencial a los lanzamientos semanales con envío gratis.',
-        hashtags: '#SneakerheadMexico #LegitCheck #StreetwearCDMX #Jordan1 #Hypebeast',
-        status: 'PENDIENTE_CLIENTE',
-        formatIcon: Video,
-        estimatedReach: '42k - 60k reproducciones',
-        aiConfidence: 98,
-      },
-      {
-        id: 'post-urb-02',
-        network: 'FACEBOOK',
-        type: 'CARROUSEL',
-        channel: 'Facebook & Instagram Feed',
-        publishDate: 'Miércoles • 15:00 hrs',
-        title: 'Top 5 Siluetas Indispensables para elevar tu Outfit Urbano este Mes',
-        hookText: 'Desliza para descubrir cuáles pares aumentarán su valor de reventa en los próximos 3 meses.',
-        copy: 'Desde clásicos retro hasta colaboraciones limitadas. Contamos con MSI y envío express garantizado a toda la república en 24-48 hrs.',
-        hashtags: '#KicksOfTheDay #UrbanStyle #SneakersOriginales #SneakerCulture',
-        status: 'APROBADO_PROGRAMADO',
-        formatIcon: ImageIcon,
-        estimatedReach: '20k - 28k compradores potenciales',
-        aiConfidence: 93,
-      },
-      {
-        id: 'post-urb-03',
-        network: 'TIKTOK',
-        type: 'REEL',
-        channel: 'TikTok Streetwear',
-        publishDate: 'Viernes • 20:00 hrs',
-        title: 'Unboxing Sin Filtro: Llegó el par más codiciado de la temporada',
-        hookText: 'Huele a cuero auténtico y viene con sellos intactos. ¿Vale los $8,500 MXN de reventa?',
-        copy: 'Mira cada costura a detalle. Tallas 26 a 29 mx disponibles entrega inmediata en Ciudad de México. DM con la palabra "SNEAKERS" para apartar tu talla.',
-        hashtags: '#UnboxingSneakers #HypeDrops #SneakerCommunity #StreetFashion',
-        status: 'PENDIENTE_CLIENTE',
-        formatIcon: Video,
-        estimatedReach: '50k - 80k visualizaciones',
-        aiConfidence: 96,
-      },
-    ],
-    corp: [
-      {
-        id: 'post-corp-01',
-        network: 'LINKEDIN',
-        type: 'CAROUSEL_PDF',
-        channel: 'LinkedIn Corporativo (Decisores B2B)',
-        publishDate: 'Martes • 08:30 hrs (Hora Ejecutiva)',
-        title: 'La Trampa de los Chatbots Genéricos: Por qué el 73% de empresas pierden leads calificados',
-        hookText: 'Un bot que solo responde "en un momento te atiendo" destruye el 60% del valor de tu inversión publicitaria.',
-        copy: 'Desliza este informe ejecutivo para entender cómo las empresas líderes implementan agentes de IA con protocolo HITL y sincronización CAPI directa a WhatsApp. ¿Tu equipo de ventas atiende en menos de 2 minutos?',
-        hashtags: '#B2B #SaaS #TransformacionDigital #InteligenciaArtificial #RevenueOps',
-        status: 'PENDIENTE_CLIENTE',
-        formatIcon: Linkedin,
-        estimatedReach: '8.4k directores de ventas y operaciones',
-        aiConfidence: 99,
-      },
-      {
-        id: 'post-corp-02',
-        network: 'LINKEDIN',
-        type: 'POST',
-        channel: 'LinkedIn Thought Leadership',
-        publishDate: 'Jueves • 09:00 hrs',
-        title: 'Calculadora de Fuga de Ingresos: El costo oculto del tiempo de respuesta B2B',
-        hookText: 'Un lead B2B no contactado en los primeros 5 minutos tiene 10x menos probabilidad de calificar a demo.',
-        copy: 'Presentamos la arquitectura de Vector Inside: orquestación de sub-bots especializados, soberanía de datos y escalabilidad sin fricción técnica. Descarga el dossier técnico en el enlace directo.',
-        hashtags: '#SoberaniaTecnologica #EnterpriseAI #CSuite #OperacionesB2B',
-        status: 'APROBADO_PROGRAMADO',
-        formatIcon: Linkedin,
-        estimatedReach: '6.1k ejecutivos C-Level',
-        aiConfidence: 97,
-      },
-      {
-        id: 'post-corp-03',
-        network: 'WHATSAPP',
-        type: 'BROADCAST',
-        channel: 'WhatsApp Cloud API Direct Broadcast',
-        publishDate: 'Lunes • 11:00 hrs',
-        title: 'Invitación Exclusiva: Sesión Privada de Diagnóstico Operativo con Arquitecto Senior',
-        hookText: 'Acceso reservado para directores de operaciones y tecnología.',
-        copy: 'Hola [Nombre], identificamos una ventana de optimización del 35% en los flujos conversacionales de tu industria. Te compartimos la invitación a una sesión 1-on-1 de 30 minutos sin costo para evaluar tu stack actual.',
-        hashtags: '#B2BNurturing #AccountBasedMarketing',
-        status: 'PENDIENTE_CLIENTE',
-        formatIcon: MessageSquare,
-        estimatedReach: '240 directores de cuentas target',
-        aiConfidence: 98,
-      },
-    ],
-  };
-
-  const CANONICAL_VIRAL_REELS_BY_TENANT = {
-    dental: [
-      {
-        id: 'vr-dent-01',
-        title: '¿Por qué postergar tu implante te costará el triple en 6 meses?',
-        views: '48,200',
-        hookRate: '46.8%',
-        retentionRate: '38.2%',
-        dmsGenerated: 312,
-        platform: 'Instagram Reels',
-        psychologicalTrigger: 'Aversión a la Pérdida (Loss Aversion) + Urgencia Financiera',
-        visualHook: 'Primer plano a radiografía 3D con acercamiento rápido en el segundo 0:01.',
-        ctaKeyword: 'PREVENCION',
-        whyItWorked: 'Tocó el dolor financiero antes que el dolor médico. La gente pospone por miedo al gasto, y este video demostró que posponer es lo que realmente cuesta dinero.',
-      },
-      {
-        id: 'vr-dent-02',
-        title: '3 Mitos que ningún dentista tradicional te dice sobre anestesia',
-        views: '64,100',
-        hookRate: '52.4%',
-        retentionRate: '41.5%',
-        dmsGenerated: 485,
-        platform: 'TikTok & Reels',
-        psychologicalTrigger: 'Revelación de Secreto de la Industria + Curiosidad',
-        visualHook: 'Texto en pantalla: "No te dejes engañar" + sonido ASMR de instrumental estéril.',
-        ctaKeyword: 'INFO',
-        whyItWorked: 'Generó polarización positiva atacando el dolor universal del miedo al dentista, ofreciendo solución con anestesia computarizada indolora.',
-      },
-    ],
-    polanco: [
-      {
-        id: 'vr-pol-01',
-        title: 'La Regla de Oro de los 800°C: Por qué nunca debes pedir un Tomahawk bien cocido',
-        views: '128,400',
-        hookRate: '58.2%',
-        retentionRate: '49.1%',
-        dmsGenerated: 740,
-        platform: 'Instagram Reels & TikTok',
-        psychologicalTrigger: 'Polarización Gastronómica + Autoridad y Curiosidad Provocativa',
-        visualHook: 'Cuchillo de chef rebanando carne tierna en cámara lenta con mantequilla hirviendo sobre la costra.',
-        ctaKeyword: 'RESERVA',
-        whyItWorked: 'Desató debate en comentarios entre defensores del término medio y término 3/4, multiplicando el alcance orgánico y llevando reservas al WhatsApp.',
-      },
-      {
-        id: 'vr-pol-02',
-        title: 'El Cóctel Secreto que no está en la carta de Polanco Steakhouse',
-        views: '92,300',
-        hookRate: '51.7%',
-        retentionRate: '44.0%',
-        dmsGenerated: 520,
-        platform: 'Instagram Reels',
-        psychologicalTrigger: 'Exclusividad de Acceso Secreto + FOMO Hedonista',
-        visualHook: 'Campana de cristal levantándose para liberar humo de madera de manzano sobre copa de cristal tallado.',
-        ctaKeyword: 'SECRETO',
-        whyItWorked: 'La gente adora sentir que tiene información privilegiada antes de visitar un lugar de alta gama.',
-      },
-    ],
-    urban: [
-      {
-        id: 'vr-urb-01',
-        title: 'Probé un sneaker réplica de $1,200 vs el original de $8,000 bajo luz ultravioleta',
-        views: '215,600',
-        hookRate: '63.4%',
-        retentionRate: '53.2%',
-        dmsGenerated: 980,
-        platform: 'TikTok & Reels',
-        psychologicalTrigger: 'Doble Prueba Visual Extrema + Miedo a la Estafa',
-        visualHook: 'Luz UV revelando costuras invisibles y tinta oculta en la lengüeta en los primeros 2 segundos.',
-        ctaKeyword: 'ORIGINAL',
-        whyItWorked: 'El miedo a pagar caro por un producto pirata es el dolor #1 de la comunidad sneakerhead. El video probó la autoridad absoluta de la tienda.',
-      },
-      {
-        id: 'vr-urb-02',
-        title: 'El par que nadie quería en 2021 y hoy vale más de $15,000 MXN',
-        views: '142,000',
-        hookRate: '48.9%',
-        retentionRate: '42.7%',
-        dmsGenerated: 610,
-        platform: 'Instagram Reels',
-        psychologicalTrigger: 'Inversión y Especulación + Arrepentimiento Pasado',
-        visualHook: 'Pantalla dividida con precio histórico vs precio de bolsa de reventa actual con gráfica.',
-        ctaKeyword: 'CATALOGO',
-        whyItWorked: 'Posicionó al calzado como un activo de colección y no solo como ropa de moda.',
-      },
-    ],
-    corp: [
-      {
-        id: 'vr-corp-01',
-        title: 'Cómo esta empresa perdió $45,000 USD por responder un lead 4 horas tarde',
-        views: '38,900',
-        hookRate: '44.5%',
-        retentionRate: '39.8%',
-        dmsGenerated: 184,
-        platform: 'LinkedIn Video & YouTube Shorts',
-        psychologicalTrigger: 'Aversión al Desperdicio Financiero Operativo + Evidencia C-Level',
-        visualHook: 'Captura de pantalla de CRM con lead cerrado perdido por la competencia ante falta de respuesta.',
-        ctaKeyword: 'AUDITORIA',
-        whyItWorked: 'Golpeó el indicador más doloroso de un Director de Ventas: leads calificados que se enfrían por fricción humana.',
-      },
-      {
-        id: 'vr-corp-02',
-        title: 'Chatbots tradicionales vs Agentes Soberanos HITL: La diferencia técnica',
-        views: '29,400',
-        hookRate: '49.1%',
-        retentionRate: '43.2%',
-        dmsGenerated: 142,
-        platform: 'LinkedIn Video',
-        psychologicalTrigger: 'Claridad Arquitectónica + Desmitificación de IA',
-        visualHook: 'Diagrama de flujo animado comparando webhook frágil vs protocolo de contingencia segura.',
-        ctaKeyword: 'DOSSIER',
-        whyItWorked: 'Resonó de inmediato con Directores de Tecnología (CTO) cansados de herramientas que se rompen con cada actualización de API.',
-      },
-    ],
-  };
-
-  const CANONICAL_AUDIT_BY_TENANT = {
-    dental: {
-      handle: '@odontologiaintegral_cdmx',
-      network: 'Instagram Business & TikTok Health',
-      score: 88,
-      checks: [
-        {
-          id: 'c1',
-          title: 'Biografía con Gancho de Valor Inmediato',
-          status: 'WARNING',
-          diagnosis: 'Comunica el servicio odontológico pero el llamado a la acción no especifica el beneficio inmediato sin dolor.',
-          recommendation: 'Reemplazar "Agenda tu cita" por "👇 Diagnóstico 3D Gratis + Escaneo sin dolor en el enlace directo".',
-        },
-        {
-          id: 'c2',
-          title: 'Enlace de Conversión (Micro-Landing Vector)',
-          status: 'PASSED',
-          diagnosis: 'Enlace configurado correctamente hacia https://app.vectorinside.com/m/dental con UTMs limpias.',
-          recommendation: '100% Sincronizado sin fugas de rebote web.',
-        },
-        {
-          id: 'c3',
-          title: 'Historias Destacadas (Highlights Médicos)',
-          status: 'WARNING',
-          diagnosis: 'Cuenta con álbumes activos pero falta uno exclusivo para "Precios / MSI" y "Casos Clínicos Antes/Después".',
-          recommendation: 'Añadir Highlights con portadas en color de marca (#0D0F12 + Neón) con testimonios de pacientes.',
-        },
-        {
-          id: 'c4',
-          title: 'Publicaciones Ancladas (Pinned Posts)',
-          status: 'PASSED',
-          diagnosis: '3 posts anclados con el reel más viral, presentación del doctor especialista y oferta del mes vigente.',
-          recommendation: 'Mantener actualizados mensualmente conforme rote la oferta comercial.',
-        },
-      ],
-    },
-    polanco: {
-      handle: '@polancosteakhouse',
-      network: 'Instagram Business & TikTok Foodie',
-      score: 92,
-      checks: [
-        {
-          id: 'c1',
-          title: 'Biografía y Propuesta Sensorial',
-          status: 'PASSED',
-          diagnosis: 'Propuesta gastronómica clara: "Cortes Prime a 800°C, Mixología de Autor y Terraza VIP en Polanco".',
-          recommendation: 'Excelente promesa de experiencia. Mantener el CTA hacia reserva directa de mesas.',
-        },
-        {
-          id: 'c2',
-          title: 'Enlace de Conversión Direct-to-WhatsApp',
-          status: 'PASSED',
-          diagnosis: 'Enlace directo al Micro-Landing y WhatsApp Business: https://app.vectorinside.com/m/polanco sin fricción.',
-          recommendation: 'Atribución CAPI for Messaging activa con 18.4% de tasa de click.',
-        },
-        {
-          id: 'c3',
-          title: 'Historias Destacadas (Menú & Experiencia)',
-          status: 'PASSED',
-          diagnosis: 'Destacados organizados en "Menú de Temporada", "Mixología", "Terraza" y "Cenas Privadas".',
-          recommendation: 'Todo en orden. Agregar código QR al pie de cada historia.',
-        },
-        {
-          id: 'c4',
-          title: 'Publicaciones Ancladas (Reels de Alto Impacto)',
-          status: 'WARNING',
-          diagnosis: 'Los 3 posts anclados tienen buena estética pero solo 1 incluye llamado a reservar mesa para fin de semana.',
-          recommendation: 'Anclar el Reel viral del Tomahawk con CTA directo en los comentarios fijados.',
-        },
-      ],
-    },
-    urban: {
-      handle: '@urbansneaks_mx',
-      network: 'Instagram Shopping & TikTok Streetwear',
-      score: 85,
-      checks: [
-        {
-          id: 'c1',
-          title: 'Biografía y Garantía de Autenticidad Blindada',
-          status: 'PASSED',
-          diagnosis: 'Garantía comunicada con contundencia: "100% Originales o te devolvemos 3x tu dinero • Envíos México".',
-          recommendation: 'Genera confianza inmediata contra el dolor de réplicas en el mercado.',
-        },
-        {
-          id: 'c2',
-          title: 'Enlace de Catálogo & Checkout Rápido',
-          status: 'WARNING',
-          diagnosis: 'El enlace actual dirige a un home general en lugar de una sección de lanzamientos de temporada.',
-          recommendation: 'Vincular directo a https://urbansneaks.shop/drops con tracking UTM de campaña.',
-        },
-        {
-          id: 'c3',
-          title: 'Historias Destacadas (Guía de Tallas & Envíos)',
-          status: 'WARNING',
-          diagnosis: 'Falta un Highlight explícito explicando la equivalencia entre tallas US y CM para evitar devoluciones.',
-          recommendation: 'Crear álbum "Tallas & Fit" con tabla comparativa visual para reducir dudas en DM.',
-        },
-        {
-          id: 'c4',
-          title: 'Publicaciones Ancladas (Legit Check & Drops)',
-          status: 'PASSED',
-          diagnosis: 'Post anclado de cómo distinguir tenis auténticos + video de unboxing de par exclusivo.',
-          recommendation: 'Mantener fijado para maximizar conversión de nuevos visitantes.',
-        },
-      ],
-    },
-    corp: {
-      handle: '@vectorinside_enterprise',
-      network: 'LinkedIn Corporate & YouTube Tech',
-      score: 95,
-      checks: [
-        {
-          id: 'c1',
-          title: 'Tagline y Posicionamiento de Autoridad B2B',
-          status: 'PASSED',
-          diagnosis: 'Comunica soberanía de datos y retorno de inversión claro: "Soberanía de IA & Automatización de Ventas B2B sin fricción".',
-          recommendation: 'Excelente alineación con decisores C-Level y Directores de Tecnología.',
-        },
-        {
-          id: 'c2',
-          title: 'Enlace a Sesión de Diagnóstico 1-on-1',
-          status: 'PASSED',
-          diagnosis: 'Enlace directo al calendario ejecutivo de Zoom en https://app.vectorinside.com/m/corp.',
-          recommendation: 'Sin intermediarios ni formularios burocráticos.',
-        },
-        {
-          id: 'c3',
-          title: 'Contenido Destacado (Casos de Estudio & ROI)',
-          status: 'PASSED',
-          diagnosis: 'Sección Featured de LinkedIn con PDFs descargables de casos reales y métricas de aceleración comercial.',
-          recommendation: 'Actualizar trimestralmente con nuevos testimonios corporativos.',
-        },
-        {
-          id: 'c4',
-          title: 'Validación de Empleados y Autoridad Técnica',
-          status: 'PASSED',
-          diagnosis: 'Perfiles del equipo técnico y consultores vinculados correctamente a la página empresarial.',
-          recommendation: 'Consistencia de marca 100% verificada.',
-        },
-      ],
-    },
-  };
+  const CANONICAL_POSTS_BY_TENANT = { dental: [], polanco: [], urban: [], corp: [] };
+  const CANONICAL_VIRAL_REELS_BY_TENANT = { dental: [], polanco: [], urban: [], corp: [] };
+  const CANONICAL_AUDIT_BY_TENANT = { dental: { score: 0, items: [] }, polanco: { score: 0, items: [] }, urban: { score: 0, items: [] }, corp: { score: 0, items: [] } };
 
 export const ContentPlanner = () => {
   const { activeTenant, isAdmin, isClient, triggerModal } = useAuth();
@@ -657,9 +167,7 @@ export const ContentPlanner = () => {
     return CANONICAL_OFFERS_BY_TENANT[tenantKey] || CANONICAL_OFFERS_BY_TENANT.dental;
   });
 
-  const [posts, setPosts] = useState(() => {
-    return CANONICAL_POSTS_BY_TENANT[tenantKey] || CANONICAL_POSTS_BY_TENANT.dental;
-  });
+  const [posts, setPosts] = useState([]);
 
   const [viralReels, setViralReels] = useState(() => {
     return CANONICAL_VIRAL_REELS_BY_TENANT[tenantKey] || CANONICAL_VIRAL_REELS_BY_TENANT.dental;
@@ -703,23 +211,28 @@ export const ContentPlanner = () => {
     setSelectedNetworkFilter('ALL');
 
     // Sync with Backend PostgreSQL (/api/v1/posts)
+    if (!activeTenant?.id) {
+      setPosts([]);
+      return;
+    }
+
     contentService
-      .getPostsByTenant(tenantKey)
+      .getPostsByTenant(activeTenant.id)
       .then((backendPosts) => {
-        if (Array.isArray(backendPosts) && backendPosts.length > 0) {
+        if (Array.isArray(backendPosts)) {
           const hydrated = backendPosts.map((bp) => ({
             ...bp,
             formatIcon: POST_TYPE_ICONS[bp.type] || Video,
           }));
-          setPosts((prev) => {
-            const existingIds = new Set(hydrated.map((p) => p.id));
-            const remaining = prev.filter((p) => !existingIds.has(p.id));
-            return [...hydrated, ...remaining];
-          });
+          setPosts(hydrated);
+        } else {
+          setPosts([]);
         }
       })
-      .catch(() => {});
-  }, [tenantKey]);
+      .catch(() => {
+        setPosts([]);
+      });
+  }, [activeTenant?.id]);
 
   // Persist edits whenever posts or dna or offer change
   const persistPosts = (newPosts) => {
@@ -1191,7 +704,16 @@ export const ContentPlanner = () => {
 
           {/* Posts Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {filteredPosts.map((post) => {
+            {filteredPosts.length === 0 ? (
+              <div className="col-span-full p-12 text-center rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-3">
+                <LayoutGrid className="w-12 h-12 text-[var(--text-muted)] mx-auto opacity-40" />
+                <h4 className="text-base font-bold text-[var(--text-main)]">Sin publicaciones en la parrilla</h4>
+                <p className="text-xs text-[var(--text-muted)] max-w-md mx-auto">
+                  {!activeTenant ? 'Selecciona un negocio para ver su parrilla editorial.' : 'Este negocio aún no tiene piezas editoriales programadas. Utiliza el Generador de IA para comenzar.'}
+                </p>
+              </div>
+            ) : (
+              filteredPosts.map((post) => {
               const IconFormat = getPostFormatIcon(post);
               const isPending = post.status === 'PENDIENTE_CLIENTE';
               const networkCatalog = SOCIAL_NETWORKS_CATALOG[post.network] || {
@@ -1300,7 +822,7 @@ export const ContentPlanner = () => {
                   </div>
                 </div>
               );
-            })}
+            }))}
           </div>
         </div>
       )}

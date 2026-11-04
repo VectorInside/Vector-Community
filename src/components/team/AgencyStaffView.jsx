@@ -75,14 +75,9 @@ export const AgencyStaffView = () => {
       .getAgencyStaff()
       .then((backendStaff) => {
         if (Array.isArray(backendStaff) && backendStaff.length > 0) {
-          setStaffList((prev) => {
-            const map = new Map();
-            prev.forEach((s) => map.set(s.id, s));
-            backendStaff.forEach((b) => {
-              map.set(b.id, { ...map.get(b.id), ...b });
-            });
-            return Array.from(map.values());
-          });
+          setStaffList(backendStaff);
+        } else if (Array.isArray(backendStaff)) {
+          setStaffList(INITIAL_AGENCY_STAFF);
         }
       })
       .catch(() => {});

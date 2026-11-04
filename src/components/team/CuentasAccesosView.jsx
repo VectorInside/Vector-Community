@@ -68,16 +68,8 @@ export const CuentasAccesosView = () => {
     userService
       .getTenantOwners()
       .then((backendOwners) => {
-        if (Array.isArray(backendOwners) && backendOwners.length > 0) {
-          setAccounts((prev) => {
-            const map = new Map();
-            prev.forEach((a) => map.set(a.tenantId || a.id, a));
-            backendOwners.forEach((b) => {
-              const key = b.tenantId || b.id;
-              map.set(key, { ...map.get(key), ...b });
-            });
-            return Array.from(map.values());
-          });
+        if (Array.isArray(backendOwners)) {
+          setAccounts(backendOwners);
         }
       })
       .catch(() => {});

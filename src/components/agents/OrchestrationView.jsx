@@ -74,11 +74,18 @@ export const OrchestrationView = () => {
     setIsSimulating(true);
     setSimulationOutput(null);
 
-    const tenantId = activeTenant?.id || 'dental';
-    const tenantName = activeTenant?.name || 'Odontología Integral';
+    const tenantId = activeTenant?.id;
+    const tenantName = activeTenant?.name || 'Tu Negocio';
 
     setTimeout(() => {
       setIsSimulating(false);
+      if (!tenantId) {
+        setSimulationOutput({
+          status: 'ZERO_STATE',
+          message: 'Selecciona o registra un negocio en el selector superior para probar la orquestación de agentes con su Brand DNA propio.',
+        });
+        return;
+      }
       if (agentKey === 'supervisor') {
         const supervisorData = {
           dental: {
@@ -445,7 +452,7 @@ export const OrchestrationView = () => {
             </p>
 
             <div className="mt-4 pt-3 border-t border-[var(--border-color)] flex items-center justify-between text-[11px] font-mono text-[var(--text-muted)]">
-              <span className="text-emerald-600 dark:text-emerald-400 font-bold">● {SUB_AGENTS_METRICS_MOCK.supervisor.status}</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-bold">● {SUB_AGENTS_METRICS_MOCK?.supervisor?.status || 'Activo'}</span>
               <span className="group-hover:text-lime-700 dark:group-hover:text-neon transition-colors font-bold">
                 Auditar Prompt XML & Schema →
               </span>
@@ -499,7 +506,7 @@ export const OrchestrationView = () => {
               </div>
 
               <div className="mt-4 pt-3 border-t border-[var(--border-color)] flex items-center justify-between text-[11px] font-mono text-[var(--text-muted)] group-hover:text-amber-500 dark:group-hover:text-amber-400 transition-colors">
-                <span>14 Leads Calificados</span>
+                <span>0 Leads Calificados</span>
                 <span className="font-bold">Ver Prompt →</span>
               </div>
             </div>
@@ -537,13 +544,13 @@ export const OrchestrationView = () => {
                   </div>
                   <div className="flex justify-between">
                     <span>Cola Redis:</span>
-                    <strong className="text-purple-600 dark:text-purple-400 font-bold">{SUB_AGENTS_METRICS_MOCK.reengagement.active24hQueueCount} leads en espera</strong>
+                    <strong className="text-purple-600 dark:text-purple-400 font-bold">{SUB_AGENTS_METRICS_MOCK?.reengagement?.active24hQueueCount ?? 0} leads en espera</strong>
                   </div>
                 </div>
               </div>
 
               <div className="mt-4 pt-3 border-t border-[var(--border-color)] flex items-center justify-between text-[11px] font-mono text-[var(--text-muted)] group-hover:text-purple-500 dark:group-hover:text-purple-400 transition-colors">
-                <span>39.1% Tasa Reactivación</span>
+                <span>0.0% Tasa Reactivación</span>
                 <span className="font-bold">Ver Prompt →</span>
               </div>
             </div>
@@ -587,7 +594,7 @@ export const OrchestrationView = () => {
               </div>
 
               <div className="mt-4 pt-3 border-t border-[var(--border-color)] flex items-center justify-between text-[11px] font-mono text-[var(--text-muted)] group-hover:text-cyan-500 dark:group-hover:text-cyan-400 transition-colors">
-                <span>ROAS Real: 5.82x</span>
+                <span>ROAS Real: 0.0x</span>
                 <span className="font-bold">Ver Prompt →</span>
               </div>
             </div>

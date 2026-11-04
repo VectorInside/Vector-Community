@@ -1,5 +1,5 @@
 import api, { isBackendAvailable, unwrapApiData } from './api';
-import { INITIAL_CALENDAR_EVENTS } from '@/utils/mockData';
+
 
 const HEX_TO_PALETTE = {
   '#10b981': 'emerald',
@@ -96,9 +96,9 @@ export const serializeAppointmentToApi = (apt) => {
 };
 
 export const calendarService = {
-  async getAppointments(tenantId = 'dental') {
+  async getAppointments(tenantId) {
     if (!isBackendAvailable) {
-      return INITIAL_CALENDAR_EVENTS.filter((e) => !tenantId || e.tenantId === tenantId);
+      return [];
     }
     try {
       const response = await api.get('/appointments', { params: { tenantId } });
@@ -108,12 +108,11 @@ export const calendarService = {
       }
       return [];
     } catch (error) {
-      console.warn('[calendarService.getAppointments] Fallback to local appointments');
-      return null;
+      return [];
     }
   },
 
-  async getAppointmentsByDate(tenantId = 'dental', date) {
+  async getAppointmentsByDate(tenantId, date) {
     try {
       const response = await api.get('/appointments/by-date', { params: { tenantId, date } });
       const data = unwrapApiData(response);
@@ -149,7 +148,7 @@ export const calendarService = {
     return normalizeAppointmentFromApi(unwrapApiData(response));
   },
 
-  async triggerGoogleCalendarSync(tenantId = 'dental') {
+  async triggerGoogleCalendarSync(tenantId) {
     try {
       const appointments = await this.getAppointments(tenantId);
       return {
