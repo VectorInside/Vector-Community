@@ -29,11 +29,13 @@ import {
   Trash2,
   AlertTriangle,
   Pencil,
+  Eye,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Portal } from '@/components/common/Portal';
 import { userService } from '@/services/userService';
 import { isValidEmail, normalizePhone10, formatPhoneDisplay } from '@/utils/formatters';
+import { StaffInvitationModal } from './StaffInvitationModal';
 
 const ROLE_DEFINITIONS = {
   SUPER_ADMIN: {
@@ -135,6 +137,7 @@ export const AgencyStaffView = () => {
 
   // Modals & Feedback
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [invitationModalData, setInvitationModalData] = useState(null);
   const [editingStaffTenants, setEditingStaffTenants] = useState(null);
   const [editingStaffProfile, setEditingStaffProfile] = useState(null);
   const [deleteModalStaff, setDeleteModalStaff] = useState(null);
@@ -216,9 +219,57 @@ export const AgencyStaffView = () => {
     }
   };
 
+  const generateSecureStaffPassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+    let pwd = 'Vec#';
+    for (let i = 0; i < 6; i++) {
+      pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return pwd + '!';
+  };
+
+  const handlePreviewInvite = () => {
+    if (!inviteForm.name.trim() || !inviteForm.email.trim()) {
+      showToast('Completa el nombre y correo para previsualizar');
+      return;
+    }
+    if (!isValidEmail(inviteForm.email.trim())) {
+      showToast('Ingresa un correo electrónico válido con dominio');
+      return;
+    }
+    const cleanPhone = normalizePhone10(inviteForm.phone);
+    const assignedSummary =
+      inviteForm.role === 'SUPER_ADMIN'
+        ? 'Acceso Global a Todos los Negocios'
+        : inviteForm.assignedTenantsMode === 'all'
+        ? 'Todos los Negocios'
+        : `${inviteForm.customTenants.length} Negocios Específicos`;
+
+    setInvitationModalData({
+      name: inviteForm.name.trim(),
+      email: inviteForm.email.trim().toLowerCase(),
+      phone: cleanPhone,
+      role: inviteForm.role,
+      roleLabel: ROLE_DEFINITIONS[inviteForm.role]?.label || 'Administrador',
+      assignedSummary,
+      tempPassword: generateSecureStaffPassword(),
+      isPendingSave: true,
+    });
+  };
+
+  const handleConfirmFromModal = () => {
+    if (!invitationModalData) return;
+    if (invitationModalData.isPendingSave) {
+      handleInviteSubmit({ preventDefault: () => {} });
+    } else {
+      setInvitationModalData(null);
+      showToast('Invitación y credenciales registradas.');
+    }
+  };
+
   // Submit new staff invitation
   const handleInviteSubmit = (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     if (!inviteForm.name.trim() || !inviteForm.email.trim()) {
       showToast('Completa el nombre y correo electrónico');
       return;
@@ -240,6 +291,14 @@ export const AgencyStaffView = () => {
         ? inviteForm.customTenants
         : 'all';
 
+    const tempPassword = generateSecureStaffPassword();
+    const assignedSummary =
+      inviteForm.role === 'SUPER_ADMIN'
+        ? 'Acceso Global a Todos los Negocios'
+        : inviteForm.assignedTenantsMode === 'all'
+        ? 'Todos los Negocios'
+        : `${inviteForm.customTenants.length} Negocios Específicos`;
+
     const newMember = {
       id: `staff-${Date.now()}`,
       name: inviteForm.name.trim(),
@@ -253,6 +312,7 @@ export const AgencyStaffView = () => {
       lastLogin: 'Invitación enviada (Listo para ingresar)',
       createdAt: new Date().toISOString(),
       twoFactorEnabled: false,
+      tempPassword,
     };
 
     setStaffList((prev) => [newMember, ...prev]);
@@ -277,6 +337,18 @@ export const AgencyStaffView = () => {
         colors: ['#C3F400', '#3B82F6', '#A855F7'],
       });
     } catch (err) {}
+
+    // Open official invitation card with generated credentials
+    setInvitationModalData({
+      name: newMember.name,
+      email: newMember.email,
+      phone: newMember.phone,
+      role: newMember.role,
+      roleLabel: newMember.roleLabel,
+      assignedSummary,
+      tempPassword,
+      isPendingSave: false,
+    });
 
     setInviteForm({
       name: '',
@@ -740,6 +812,33 @@ export const AgencyStaffView = () => {
                   <div className="flex items-center gap-2 font-mono text-xs shrink-0">
                     <button
                       type="button"
+                      onClick={() => {
+                        const assignedSummary =
+                          member.assignedTenants === 'all'
+                            ? 'Todos los Negocios'
+                            : Array.isArray(member.assignedTenants)
+                            ? `${member.assignedTenants.length} Negocios Asignados`
+                            : 'Negocios Asignados';
+                        setInvitationModalData({
+                          name: member.name,
+                          email: member.email,
+                          phone: member.phone,
+                          role: member.role,
+                          roleLabel: member.roleLabel || member.role,
+                          assignedSummary,
+                          tempPassword: member.tempPassword || 'Vec#Auth2026!',
+                          isPendingSave: false,
+                        });
+                      }}
+                      className="px-3 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-cyan-400 text-[var(--text-muted)] hover:text-cyan-400 transition-all flex items-center gap-1.5 min-h-[44px]"
+                      title="Ver ficha de invitación oficial y plantilla de correo"
+                    >
+                      <Mail className="w-3.5 h-3.5 text-cyan-400" />
+                      <span className="font-bold">Ficha</span>
+                    </button>
+
+                    <button
+                      type="button"
                       onClick={() => setEditingStaffProfile(member)}
                       className="px-3.5 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon text-[var(--text-muted)] hover:text-neon transition-all flex items-center gap-1.5 min-h-[44px]"
                       title="Editar teléfono y nombre en PostgreSQL"
@@ -968,26 +1067,48 @@ export const AgencyStaffView = () => {
                   )}
                 </div>
 
-                <div className="flex items-center justify-end gap-3 pt-4 border-t border-[var(--border-color)]">
+                <div className="flex items-center justify-between gap-3 pt-4 border-t border-[var(--border-color)]">
                   <button
                     type="button"
-                    onClick={() => setIsInviteModalOpen(false)}
-                    className="px-4 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-muted)] hover:text-white font-mono"
+                    onClick={handlePreviewInvite}
+                    className="px-3.5 py-2.5 rounded-xl bg-[var(--bg-card)] border border-cyan-500/30 text-cyan-400 hover:text-white hover:border-cyan-400 text-xs font-mono font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                    title="Previsualizar el formato HTML oficial que recibirá el colaborador"
                   >
-                    Cancelar
+                    <Eye className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>Previsualizar Correo</span>
                   </button>
-                  <button
-                    type="submit"
-                    className="px-5 py-2.5 rounded-xl bg-neon text-black font-mono font-bold text-xs hover:bg-[var(--neon-hover)] transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(195,244,0,0.3)]"
-                  >
-                    <Send className="w-4 h-4" />
-                    <span>Enviar Invitación</span>
-                  </button>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setIsInviteModalOpen(false)}
+                      className="px-4 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-muted)] hover:text-white font-mono cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-5 py-2.5 rounded-xl bg-neon text-black font-mono font-bold text-xs hover:bg-[var(--neon-hover)] transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(195,244,0,0.3)] cursor-pointer active:scale-95"
+                    >
+                      <Send className="w-4 h-4 text-black" />
+                      <span>Enviar Invitación</span>
+                    </button>
+                  </div>
                 </div>
               </form>
             </div>
           </div>
         </Portal>
+      )}
+
+      {/* MODAL: FICHA OFICIAL DE INVITACIÓN & PREVISUALIZACIÓN DE CORREO */}
+      {invitationModalData && (
+        <StaffInvitationModal
+          isOpen={Boolean(invitationModalData)}
+          onClose={() => setInvitationModalData(null)}
+          invitationData={invitationModalData}
+          onConfirmSend={handleConfirmFromModal}
+        />
       )}
 
       {/* MODAL: EDITAR TELÉFONO Y PERFIL EN POSTGRESQL */}
