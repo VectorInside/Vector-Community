@@ -679,7 +679,8 @@ export const AgencyStaffView = () => {
           filteredStaff.map((member) => {
             const roleInfo = ROLE_DEFINITIONS[member.role] || ROLE_DEFINITIONS.SUPER_ADMIN;
             const isSuspended = member.status === 'SUSPENDED';
-            const isPending = member.status === 'PENDING_INVITE';
+            const isPending = member.status === 'PENDING_INVITE' ||
+              (typeof member.lastLogin === 'string' && member.lastLogin.toLowerCase().includes('invitación enviada'));
 
             return (
               <div
@@ -810,32 +811,35 @@ export const AgencyStaffView = () => {
 
                   {/* Right Column: Actions */}
                   <div className="flex items-center gap-2 font-mono text-xs shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const assignedSummary =
-                          member.assignedTenants === 'all'
-                            ? 'Todos los Negocios'
-                            : Array.isArray(member.assignedTenants)
-                            ? `${member.assignedTenants.length} Negocios Asignados`
-                            : 'Negocios Asignados';
-                        setInvitationModalData({
-                          name: member.name,
-                          email: member.email,
-                          phone: member.phone,
-                          role: member.role,
-                          roleLabel: member.roleLabel || member.role,
-                          assignedSummary,
-                          tempPassword: member.tempPassword || 'Vec#Auth2026!',
-                          isPendingSave: false,
-                        });
-                      }}
-                      className="px-3 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-cyan-400 text-[var(--text-muted)] hover:text-cyan-400 transition-all flex items-center gap-1.5 min-h-[44px]"
-                      title="Ver ficha de invitación oficial y plantilla de correo"
-                    >
-                      <Mail className="w-3.5 h-3.5 text-cyan-400" />
-                      <span className="font-bold">Ficha</span>
-                    </button>
+                    {/* Botón de Ficha: SOLO visible mientras el colaborador esté pendiente de aceptar la invitación */}
+                    {isPending && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const assignedSummary =
+                            member.assignedTenants === 'all'
+                              ? 'Todos los Negocios'
+                              : Array.isArray(member.assignedTenants)
+                              ? `${member.assignedTenants.length} Negocios Asignados`
+                              : 'Negocios Asignados';
+                          setInvitationModalData({
+                            name: member.name,
+                            email: member.email,
+                            phone: member.phone,
+                            role: member.role,
+                            roleLabel: member.roleLabel || member.role,
+                            assignedSummary,
+                            tempPassword: member.tempPassword || 'Vec#Auth2026!',
+                            isPendingSave: false,
+                          });
+                        }}
+                        className="px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 hover:border-amber-400 text-amber-400 hover:text-white transition-all flex items-center gap-1.5 min-h-[44px]"
+                        title="Reenviar invitación o consultar ficha provisional (Pendiente de ingreso)"
+                      >
+                        <Mail className="w-3.5 h-3.5 text-amber-400" />
+                        <span className="font-bold">Reenviar Ficha</span>
+                      </button>
+                    )}
 
                     <button
                       type="button"
