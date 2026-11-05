@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
@@ -11,7 +11,8 @@ import { INITIAL_BUSINESS_ACCOUNTS } from '@/utils/mockAccounts';
 
 export const LayoutWrapper = ({ children }) => {
   const pathname = usePathname();
-  const { closeMobileSidebar, role, activeTenantKey } = useAuth();
+  const router = useRouter();
+  const { closeMobileSidebar, role, activeTenantKey, isAuthenticated, authChecking } = useAuth();
   const [clientMustChangeAccount, setClientMustChangeAccount] = useState(null);
 
   const isMicroLanding = pathname?.startsWith('/m/') || pathname === '/m';
@@ -23,6 +24,14 @@ export const LayoutWrapper = ({ children }) => {
       closeMobileSidebar();
     }
   }, [pathname, closeMobileSidebar]);
+
+  // Guard estricto de sesión y conexión a PostgreSQL:
+  // Si no está autenticado contra PostgreSQL (o la BD está apagada), redirigir a /login
+  useEffect(() => {
+    if (!isMicroLanding && !isStandalonePage && !authChecking && !isAuthenticated) {
+      router.replace('/login');
+    }
+  }, [isMicroLanding, isStandalonePage, authChecking, isAuthenticated, router]);
 
   // Check if current client user must change their temporary password
   useEffect(() => {
@@ -58,6 +67,16 @@ export const LayoutWrapper = ({ children }) => {
     );
   }
 
+  // Mientras se verifica la sesión contra PostgreSQL o si fue redirigido, no renderizar el dashboard
+  if (authChecking || !isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#07080A] text-white flex flex-col items-center justify-center gap-3 font-mono text-xs">
+        <div className="w-6 h-6 border-2 border-[#c3f400] border-t-transparent rounded-full animate-spin" />
+        <span className="text-zinc-400">Verificando sesión y conexión con PostgreSQL...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen overflow-hidden selection:bg-[#c3f400] selection:text-black">
       <GeneralModal />
@@ -84,4 +103,3 @@ export const LayoutWrapper = ({ children }) => {
     </div>
   );
 };
-

@@ -21,6 +21,8 @@ import {
   KeyRound,
   ShieldCheck,
   User,
+  Phone,
+  Pencil,
 } from 'lucide-react';
 import { findModuleByPath } from '@/utils/modulesRegistry';
 import { ChangePasswordModal } from '@/components/common/ChangePasswordModal';
@@ -31,6 +33,9 @@ export const Header = () => {
   const pathname = usePathname();
   const {
     role,
+    currentUser,
+    logout,
+    updateCurrentUserProfile,
     isAdmin,
     activeTenantKey,
     activeTenant,
@@ -53,10 +58,47 @@ export const Header = () => {
   const [notifFilter, setNotifFilter] = useState('all'); // 'all' | 'unread'
   const notifRef = useRef(null);
 
-  // User Profile Menu & Password Management
+  // User Profile Menu, Phone/Name Edition & Password Management
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [editProfileName, setEditProfileName] = useState('');
+  const [editProfilePhone, setEditProfilePhone] = useState('');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileSaveMsg, setProfileSaveMsg] = useState('');
   const userMenuRef = useRef(null);
+
+  const handleOpenEditProfile = () => {
+    setEditProfileName(
+      currentUser?.name || (role === 'admin' ? 'Edgar Lobo Vectorial' : activeTenant?.name || 'Cliente')
+    );
+    setEditProfilePhone(
+      currentUser?.phone === '+52 55 1234 5678' ? '' : (currentUser?.phone || '')
+    );
+    setProfileSaveMsg('');
+    setIsEditProfileOpen(true);
+  };
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    setIsSavingProfile(true);
+    setProfileSaveMsg('');
+    try {
+      await updateCurrentUserProfile({
+        name: editProfileName.trim(),
+        phone: editProfilePhone.trim(),
+      });
+      setProfileSaveMsg('Guardado en PostgreSQL');
+      setTimeout(() => {
+        setIsEditProfileOpen(false);
+        setProfileSaveMsg('');
+      }, 900);
+    } catch (err) {
+      setProfileSaveMsg('Error: Verifica conexión a PostgreSQL');
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
 
   // Global keyboard shortcut: Cmd+K / Ctrl+K
   useEffect(() => {
@@ -533,31 +575,130 @@ export const Header = () => {
             {isUserMenuOpen && (
               <div className="absolute right-0 top-10 w-72 sm:w-80 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] shadow-2xl p-3 z-50 animate-scale-up space-y-3 font-sans">
                 {/* User Identity Header */}
-                <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-lime-400/15 border border-lime-400/30 flex items-center justify-center font-mono font-black text-sm text-lime-400 shadow-neon-sm shrink-0">
-                    {role === 'admin' ? 'VI' : 'CL'}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-bold text-[var(--text-main)] truncate">
-                        {role === 'admin' ? 'Edgar Lobo Vectorial' : (activeTenant?.shortName || activeTenant?.name || 'Cliente')}
-                      </span>
-                      <span className="text-[9px] font-mono px-1.5 py-0.5 bg-lime-400/10 text-lime-400 border border-lime-400/20 rounded font-semibold uppercase shrink-0">
-                        {role === 'admin' ? 'Admin' : 'Cliente'}
-                      </span>
+                <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-lime-400/15 border border-lime-400/30 flex items-center justify-center font-mono font-black text-sm text-lime-400 shadow-neon-sm shrink-0">
+                      {role === 'admin' ? 'VI' : 'CL'}
                     </div>
-                    <p className="text-[11px] font-mono text-[var(--text-muted)] truncate">
-                      {role === 'admin' ? 'Edgaradmin@vectorinside.com' : `gerencia@${activeTenant?.id || 'negocio'}.mx`}
-                    </p>
-                    <p className="text-[10px] text-[var(--text-faint)] flex items-center gap-1 mt-0.5">
-                      <span>Espacio:</span>
-                      <strong className="text-[var(--text-main)] truncate">{activeTenant?.name || 'Sin negocio seleccionado'}</strong>
-                    </p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-bold text-[var(--text-main)] truncate">
+                          {currentUser?.name ||
+                            (role === 'admin'
+                              ? 'Edgar Lobo Vectorial'
+                              : activeTenant?.shortName || activeTenant?.name || 'Cliente')}
+                        </span>
+                        <span className="text-[9px] font-mono px-1.5 py-0.5 bg-lime-400/10 text-lime-400 border border-lime-400/20 rounded font-semibold uppercase shrink-0">
+                          {role === 'admin' ? 'Admin' : 'Cliente'}
+                        </span>
+                      </div>
+                      <p className="text-[11px] font-mono text-[var(--text-muted)] truncate">
+                        {currentUser?.email ||
+                          (role === 'admin'
+                            ? 'Edgaradmin@vectorinside.com'
+                            : `gerencia@${activeTenant?.id || 'negocio'}.mx`)}
+                      </p>
+                      <div className="flex items-center justify-between gap-1 mt-0.5">
+                        <span className="text-[10px] font-mono text-[var(--text-faint)] flex items-center gap-1 truncate">
+                          <Phone className="w-2.5 h-2.5 text-lime-400 shrink-0" />
+                          <span>
+                            {currentUser?.phone && currentUser.phone !== '+52 55 1234 5678'
+                              ? currentUser.phone
+                              : 'Sin teléfono registrado'}
+                          </span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleOpenEditProfile}
+                          className="text-[10px] font-mono text-lime-400 hover:underline flex items-center gap-0.5 shrink-0 cursor-pointer"
+                        >
+                          <Pencil className="w-2.5 h-2.5" />
+                          <span>Editar</span>
+                        </button>
+                      </div>
+                      <p className="text-[10px] text-[var(--text-faint)] flex items-center gap-1 mt-0.5">
+                        <span>Espacio:</span>
+                        <strong className="text-[var(--text-main)] truncate">
+                          {activeTenant?.name || 'Sin negocio seleccionado'}
+                        </strong>
+                      </p>
+                    </div>
                   </div>
+
+                  {/* Inline Editor for Profile & Phone in PostgreSQL */}
+                  {isEditProfileOpen && (
+                    <form
+                      onSubmit={handleSaveProfile}
+                      className="pt-2 border-t border-[var(--border-color)] space-y-2 font-mono text-xs"
+                    >
+                      <div>
+                        <label className="block text-[10px] text-[var(--text-muted)] mb-0.5">
+                          Nombre Completo
+                        </label>
+                        <input
+                          type="text"
+                          value={editProfileName}
+                          onChange={(e) => setEditProfileName(e.target.value)}
+                          placeholder="Tu nombre completo"
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-[var(--bg-base)] border border-[var(--border-color)] text-xs text-[var(--text-main)] focus:border-lime-400 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-[var(--text-muted)] mb-0.5">
+                          Teléfono / WhatsApp Real
+                        </label>
+                        <input
+                          type="tel"
+                          value={editProfilePhone}
+                          onChange={(e) => setEditProfilePhone(e.target.value)}
+                          placeholder="Ej: +52 55 8899 0011 (o vacío)"
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-[var(--bg-base)] border border-[var(--border-color)] text-xs text-[var(--text-main)] focus:border-lime-400 focus:outline-none"
+                        />
+                      </div>
+                      {profileSaveMsg && (
+                        <p className="text-[10px] text-lime-400 font-bold">{profileSaveMsg}</p>
+                      )}
+                      <div className="flex items-center justify-end gap-1.5 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setIsEditProfileOpen(false)}
+                          className="px-2.5 py-1 rounded-lg bg-[var(--bg-base)] border border-[var(--border-color)] text-[10px] text-[var(--text-muted)] hover:text-white cursor-pointer"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={isSavingProfile}
+                          className="px-2.5 py-1 rounded-lg bg-lime-400 text-black font-bold text-[10px] hover:brightness-110 cursor-pointer disabled:opacity-60"
+                        >
+                          {isSavingProfile ? 'Guardando...' : 'Guardar en BD'}
+                        </button>
+                      </div>
+                    </form>
+                  )}
                 </div>
 
                 {/* Actions Section */}
                 <div className="space-y-1">
+                  {/* Editar Teléfono y Perfil */}
+                  <button
+                    type="button"
+                    onClick={handleOpenEditProfile}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-mono text-[var(--text-main)] hover:bg-[var(--bg-card)] hover:text-lime-400 transition-colors cursor-pointer group text-left"
+                  >
+                    <div className="w-6 h-6 rounded-lg bg-lime-400/10 border border-lime-400/20 flex items-center justify-center text-lime-400 group-hover:bg-lime-400 group-hover:text-black transition-colors shrink-0">
+                      <Phone className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold">Editar Teléfono & Perfil</div>
+                      <div className="text-[10px] text-[var(--text-muted)] truncate">
+                        {currentUser?.phone && currentUser.phone !== '+52 55 1234 5678'
+                          ? `Actual: ${currentUser.phone}`
+                          : 'Configurar tu número real en BD'}
+                      </div>
+                    </div>
+                  </button>
+
                   {/* Cambiar Contraseña */}
                   <button
                     type="button"
@@ -630,7 +771,7 @@ export const Header = () => {
                 {/* Security Badge */}
                 <div className="px-3 py-2 rounded-xl bg-emerald-500/5 border border-emerald-500/20 flex items-center gap-2 text-[10px] font-mono text-emerald-400">
                   <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
-                  <span className="leading-tight">Sesión cifrada con JWT multi-tenant activo</span>
+                  <span className="leading-tight">Sesión validada contra PostgreSQL 17</span>
                 </div>
 
                 {/* Logout Divider */}
@@ -639,6 +780,7 @@ export const Header = () => {
                     type="button"
                     onClick={() => {
                       setIsUserMenuOpen(false);
+                      logout();
                       router.push('/login');
                     }}
                     className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-mono font-bold transition-all cursor-pointer"
@@ -654,7 +796,10 @@ export const Header = () => {
           {/* Logout Direct Button */}
           <button
             type="button"
-            onClick={() => router.push('/login')}
+            onClick={() => {
+              logout();
+              router.push('/login');
+            }}
             title="Cerrar Sesión"
             className="p-2 rounded-xl bg-[var(--bg-base)] hover:bg-rose-500/10 border border-[var(--border-color)] hover:border-rose-500/40 text-[var(--text-muted)] hover:text-rose-500 transition-colors"
           >

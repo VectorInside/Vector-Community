@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { DEMO_USERS } from '@/utils/constants';
 import { userService } from '@/services/userService';
 import {
   ShieldCheck,
@@ -29,120 +28,92 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [authStage, setAuthStage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [dbOnline, setDbOnline] = useState(null); // null = verificando, true = online, false = offline
 
-    const handleSubmit = async (e) => {
-      e.preventDefault();
-      setErrorMessage('');
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const reason = sessionStorage.getItem('vector_auth_redirect_reason');
+      if (reason) {
+        setErrorMessage(reason);
+        sessionStorage.removeItem('vector_auth_redirect_reason');
+      }
+    }
+    userService
+      .getAgencyStaff()
+      .then(() => setDbOnline(true))
+      .catch(() => setDbOnline(false));
+  }, []);
 
-      const cleanEmail = email.trim().toLowerCase();
-      if (!cleanEmail || !password) {
-        setErrorMessage('Por favor ingresa tu correo y contraseña.');
-        return;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setErrorMessage('');
+
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !password) {
+      setErrorMessage('Por favor ingresa tu correo y contraseña.');
+      return;
+    }
+
+    setLoading(true);
+    setAuthStage('Validando credenciales en PostgreSQL...');
+
+    try {
+      // Autenticación estricta en tiempo real contra PostgreSQL en el backend
+      const userRes = await userService.login({ email: cleanEmail, password });
+      if (!userRes || !userRes.id) {
+        throw new Error('Respuesta de autenticación inválida desde el servidor.');
       }
 
-      setLoading(true);
-      setAuthStage('Validando credenciales criptográficas...');
+      setDbOnline(true);
+      const isClient = userRes.role === 'CLIENT_OWNER' || userRes.role === 'client';
+      const userObj = {
+        id: userRes.id,
+        name: userRes.name || userRes.ownerName || 'Usuario Vector',
+        email: userRes.email,
+        phone: userRes.phone === '+52 55 1234 5678' ? '' : (userRes.phone || ''),
+        role: isClient ? 'client' : 'admin',
+        globalRole: userRes.role || (isClient ? 'CLIENT_OWNER' : 'SUPER_ADMIN'),
+        tenantKey:
+          userRes.tenantId ||
+          (Array.isArray(userRes.assignedTenants) ? userRes.assignedTenants[0] : null),
+        roleTitle: userRes.roleLabel || (isClient ? 'Dueño de Negocio' : 'Super Admin'),
+        avatar: userRes.avatar || userRes.tenantAvatar || '⚡',
+      };
+      loginAs(userObj);
 
-      try {
-        // 1. Intentar autenticación real contra PostgreSQL en el backend
-        const userRes = await userService.login({ email: cleanEmail, password });
-        if (userRes) {
-          const isClient = userRes.role === 'CLIENT_OWNER' || userRes.role === 'client';
-          const userObj = {
-            id: userRes.id,
-            name: userRes.name || userRes.ownerName,
-            email: userRes.email,
-            role: isClient ? 'client' : 'admin',
-            tenantKey: userRes.tenantId || (Array.isArray(userRes.assignedTenants) ? userRes.assignedTenants[0] : null),
-            roleTitle: userRes.roleLabel,
-            avatar: userRes.avatar || userRes.tenantAvatar || '⚡',
-          };
-          loginAs(userObj);
+      setAuthStage('Cargando permisos y espacio de trabajo desde PostgreSQL...');
+      setTimeout(() => {
+        try {
+          confetti({
+            particleCount: 50,
+            spread: 60,
+            origin: { y: 0.6 },
+            colors: ['#E7F900', '#00F0FF', '#A855F7'],
+          });
+        } catch (err) {}
+        router.push('/dashboard');
+      }, 400);
+    } catch (backendErr) {
+      setLoading(false);
+      setAuthStage('');
+      const isNetworkOrDbDown =
+        !backendErr?.response ||
+        backendErr?.code === 'ERR_NETWORK' ||
+        backendErr?.response?.status >= 500;
 
-            setAuthStage('Cargando permisos y espacio de trabajo...');
-            setTimeout(() => {
-              try {
-                confetti({
-                  particleCount: 50,
-                  spread: 60,
-                  origin: { y: 0.6 },
-                  colors: ['#E7F900', '#00F0FF', '#A855F7'],
-                });
-              } catch (err) { }
-              router.push('/dashboard');
-            }, 500);
-            return;
-          }
-        } catch (backendErr) {
-          console.warn('[Login fallback local]', backendErr?.message);
-        }
-
-        // Fallback local (Edgar Admin, cuentas de dueños en localStorage, o DEMO_USERS)
-        let localUser = null;
-        if (cleanEmail === 'edgaradmin@vectorinside.com') {
-          localUser = DEMO_USERS[0];
-        } else if (typeof window !== 'undefined') {
-          const savedOwners = localStorage.getItem('vector_tenant_owner_accounts');
-          if (savedOwners) {
-            try {
-              const ownersList = JSON.parse(savedOwners);
-              const matchOwner = ownersList.find((o) => o.email?.toLowerCase() === cleanEmail);
-              if (matchOwner) {
-                localUser = {
-                  id: matchOwner.id,
-                  name: matchOwner.ownerName,
-                  email: matchOwner.email,
-                  role: 'client',
-                  tenantKey: matchOwner.tenantId,
-                  roleTitle: `Dueño de Negocio (${matchOwner.tenantName})`,
-                  avatar: matchOwner.tenantAvatar || '🏢',
-                };
-              }
-            } catch (e) { }
-          }
-          if (!localUser) {
-            const savedStaff = localStorage.getItem('vector_agency_staff_members');
-            if (savedStaff) {
-              try {
-                const staffList = JSON.parse(savedStaff);
-                const matchStaff = staffList.find((s) => s.email?.toLowerCase() === cleanEmail);
-                if (matchStaff) {
-                  localUser = {
-                    id: matchStaff.id,
-                    name: matchStaff.name,
-                    email: matchStaff.email,
-                    role: matchStaff.role === 'SUPER_ADMIN' || matchStaff.role === 'ADMIN' ? 'admin' : 'client',
-                    tenantKey: Array.isArray(matchStaff.assignedTenants) ? matchStaff.assignedTenants[0] : null,
-                    roleTitle: matchStaff.roleLabel,
-                    avatar: matchStaff.avatar || '💼',
-                  };
-                }
-              } catch (e) { }
-            }
-          }
-        }
-
-        if (!localUser) {
-          setLoading(false);
-          setAuthStage('');
-          setErrorMessage('Credenciales no autorizadas o usuario no registrado.');
-          return;
-        }
-
-        loginAs(localUser);
-        setAuthStage('Cargando permisos y espacio de trabajo...');
-        setTimeout(() => {
-          try {
-            confetti({
-              particleCount: 50,
-              spread: 60,
-              origin: { y: 0.6 },
-              colors: ['#E7F900', '#00F0FF', '#A855F7'],
-            });
-          } catch (err) { }
-          router.push('/dashboard');
-      }, 600);
-    };
+      if (isNetworkOrDbDown) {
+        setDbOnline(false);
+        setErrorMessage(
+          'No hay conexión con el servidor o la base de datos PostgreSQL. Verifica que el backend (puerto 8080) y PostgreSQL estén encendidos antes de iniciar sesión.'
+        );
+      } else {
+        setErrorMessage(
+          backendErr?.response?.data?.message ||
+            'Credenciales no autorizadas o usuario no registrado en la base de datos.'
+        );
+      }
+    }
+  };
 
     return (
       <div className="min-h-screen bg-[#07080A] text-white flex flex-col justify-between relative overflow-hidden font-sans selection:bg-[#E7F900] selection:text-black">
@@ -165,10 +136,32 @@ export default function LoginPage() {
           </Link>
 
           {/* Live cluster indicator */}
-          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900/80 border border-emerald-500/30 text-[10px] font-mono text-emerald-400 backdrop-blur-md">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="hidden sm:inline">NÚCLEO 2026:</span>
-            <span>ONLINE (8ms)</span>
+          <div
+            className={`flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900/80 border text-[10px] font-mono backdrop-blur-md ${
+              dbOnline === false
+                ? 'border-rose-500/40 text-rose-400'
+                : dbOnline === true
+                ? 'border-emerald-500/30 text-emerald-400'
+                : 'border-amber-500/30 text-amber-400'
+            }`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                dbOnline === false
+                  ? 'bg-rose-500'
+                  : dbOnline === true
+                  ? 'bg-emerald-400 animate-pulse'
+                  : 'bg-amber-400 animate-pulse'
+              }`}
+            />
+            <span className="hidden sm:inline">POSTGRESQL 17:</span>
+            <span>
+              {dbOnline === false
+                ? 'OFFLINE (SIN CONEXIÓN)'
+                : dbOnline === true
+                ? 'ONLINE (CONECTADO)'
+                : 'VERIFICANDO...'}
+            </span>
           </div>
         </header>
 

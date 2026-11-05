@@ -1,170 +1,129 @@
-import api, { isBackendAvailable, unwrapApiData } from './api';
-import { INITIAL_BUSINESS_ACCOUNTS, INITIAL_AGENCY_STAFF } from '@/utils/mockAccounts';
+import api, { unwrapApiData } from './api';
 
 /**
  * ============================================================================
  * SERVICIO DE GESTIÓN DE IDENTIDADES Y EQUIPO (IAM & USER SERVICE)
  * ============================================================================
- * Maneja la sincronización y persistencia con PostgreSQL 17 (v-community-backend)
- * Módulos REST: /api/v1/users (staff, owners, membresías, soft-delete, login)
- * Con fallback resiliente y soporte offline/híbrido.
+ * Maneja la sincronización y persistencia estricta con PostgreSQL 17 (v-community-backend)
+ * Módulos REST: /api/v1/users (staff, owners, perfil, membresías, soft-delete, login)
  * ============================================================================
  */
 
 export const userService = {
   /**
-   * Autenticación contra PostgreSQL 17
+   * Autenticación estricta contra PostgreSQL 17
+   * Lanza error si el servidor backend o la base de datos PostgreSQL están apagados.
    */
   async login({ email, password }) {
-    try {
-      const response = await api.post('/users/login', { email, password });
-      return unwrapApiData(response);
-    } catch (error) {
-      console.warn('[userService.login] Fallback o error en login backend:', error?.message);
-      throw error;
+    const response = await api.post('/users/login', { email, password });
+    const data = unwrapApiData(response);
+    if (data && data.phone === '+52 55 1234 5678') {
+      data.phone = '';
     }
+    return data;
   },
 
   /**
-   * Obtiene la lista de colaboradores de la agencia (SUPER_ADMIN, ADMIN)
+   * Verifica la sesión activa y obtiene el perfil real del usuario desde PostgreSQL 17
+   */
+  async getCurrentUser(userId) {
+    if (!userId) {
+      throw new Error('ID de usuario no proporcionado para verificación de sesión.');
+    }
+    const response = await api.get(`/users/${userId}`);
+    const data = unwrapApiData(response);
+    if (data && data.phone === '+52 55 1234 5678') {
+      data.phone = '';
+    }
+    return data;
+  },
+
+  /**
+   * Actualiza los datos de perfil (nombre, teléfono, correo, cargo, avatar) en PostgreSQL 17
+   */
+  async updateUserProfile(userId, profileData) {
+    const targetId = userId || 'usr-admin-01';
+    const response = await api.put(`/users/${targetId}/profile`, profileData);
+    return unwrapApiData(response);
+  },
+
+  /**
+   * Obtiene la lista de colaboradores de la agencia (SUPER_ADMIN, ADMIN) desde PostgreSQL 17
    */
   async getAgencyStaff() {
-    if (!isBackendAvailable) return INITIAL_AGENCY_STAFF;
-    try {
-      const response = await api.get('/users/staff');
-      const data = unwrapApiData(response);
-      if (Array.isArray(data) && data.length > 0) {
-        return data;
-      }
-      return INITIAL_AGENCY_STAFF;
-    } catch (error) {
-      console.warn('[userService.getAgencyStaff] Fallback a personal fundador:', error?.message);
-      return INITIAL_AGENCY_STAFF;
+    const response = await api.get('/users/staff');
+    const data = unwrapApiData(response);
+    if (Array.isArray(data)) {
+      return data.map((member) => ({
+        ...member,
+        phone: member.phone === '+52 55 1234 5678' ? '' : (member.phone || ''),
+      }));
     }
+    return [];
   },
 
   /**
-   * Obtiene la lista de cuentas de dueños de negocio (1:1 Tenant Owner)
+   * Obtiene la lista de cuentas de dueños de negocio (1:1 Tenant Owner) desde PostgreSQL 17
    */
   async getTenantOwners() {
-    if (!isBackendAvailable) return [];
-    try {
-      const response = await api.get('/users/owners');
-      const data = unwrapApiData(response);
-      if (Array.isArray(data)) {
-        return data;
-      }
-      return [];
-    } catch (error) {
-      console.warn('[userService.getTenantOwners] Error al consultar dueños de negocio:', error?.message);
-      return [];
-    }
+    const response = await api.get('/users/owners');
+    const data = unwrapApiData(response);
+    return Array.isArray(data) ? data : [];
   },
 
   /**
-   * Registra e invita a un nuevo miembro al equipo interno
+   * Registra e invita a un nuevo miembro al equipo interno en PostgreSQL 17
    */
   async createStaff(staffData) {
-        try {
-          const payload = {
-            name: staffData.name,
-            email: staffData.email,
-            phone: staffData.phone,
-            role: staffData.role,
-            assignedTenants:
-              staffData.assignedTenantsMode === 'all'
-                ? []
-                : (Array.isArray(staffData.customTenants) ? staffData.customTenants : []),
-          };
-          const response = await api.post('/users/staff', payload);
-          return unwrapApiData(response);
-        } catch (error) {
-          console.warn('[userService.createStaff] Fallback local:', error?.message);
-          return {
-            id: `staff-${Date.now()}`,
-            name: staffData.name,
-            email: staffData.email,
-            phone: staffData.phone,
-            role: staffData.role,
-            roleLabel: staffData.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Administrador',
-            avatar: staffData.role === 'SUPER_ADMIN' ? '⚡' : '💼',
-            status: 'PENDING_INVITE',
-            assignedTenants: staffData.assignedTenantsMode === 'all' ? 'all' : (staffData.customTenants || []),
-            lastLogin: 'Invitación enviada por correo',
-            createdAt: new Date().toISOString(),
-            twoFactorEnabled: false,
-          };
-        }
-      },
+    const payload = {
+      name: staffData.name,
+      email: staffData.email,
+      phone: staffData.phone || '',
+      role: staffData.role,
+      assignedTenants:
+        staffData.assignedTenantsMode === 'all'
+          ? []
+          : (Array.isArray(staffData.customTenants) ? staffData.customTenants : []),
+    };
+    const response = await api.post('/users/staff', payload);
+    return unwrapApiData(response);
+  },
 
   /**
-   * Registra y vincula la cuenta dueña de un negocio
+   * Registra y vincula la cuenta dueña de un negocio en PostgreSQL 17
    */
   async createTenantOwner(ownerData) {
-        try {
-          const response = await api.post('/users/owners', ownerData);
-          return unwrapApiData(response);
-        } catch (error) {
-          console.warn('[userService.createTenantOwner] Fallback local:', error?.message);
-          return {
-            id: `acc-${ownerData.tenantId}`,
-            tenantId: ownerData.tenantId,
-            tenantName: ownerData.tenantName,
-            tenantAvatar: '🏢',
-            giro: 'Servicios',
-            ownerName: ownerData.ownerName,
-            email: ownerData.email,
-            phone: ownerData.phone,
-            tempPassword: ownerData.password || 'TempPass#2026',
-            mustChangePassword: true,
-            status: 'ACTIVE',
-            lastLogin: 'Invitación enviada (Sin ingresar)',
-            twoFactorEnabled: false,
-            createdAt: new Date().toISOString(),
-            notes: ownerData.notes || '',
-          };
-        }
-      },
+    const response = await api.post('/users/owners', ownerData);
+    return unwrapApiData(response);
+  },
 
   /**
-   * Actualiza el estado de un usuario (ACTIVE, SUSPENDED, PENDING_INVITE)
+   * Actualiza el estado de un usuario (ACTIVE, SUSPENDED, PENDING_INVITE) en PostgreSQL 17
    */
   async updateUserStatus(userId, status) {
-        try {
-          const response = await api.put(`/users/${userId}/status`, { status });
-          return unwrapApiData(response);
-        } catch (error) {
-          console.warn(`[userService.updateUserStatus] Fallback para ${userId}:`, error?.message);
-          return { success: true, userId, status, localOnly: true };
-        }
-      },
+    const response = await api.put(`/users/${userId}/status`, { status });
+    return unwrapApiData(response);
+  },
 
   /**
-   * Actualiza los tenants asignados a un colaborador
+   * Actualiza los tenants asignados a un colaborador en PostgreSQL 17
    */
   async updateAssignedTenants(userId, { assignedTenantsMode, customTenants }) {
-        try {
-          const assignedTenants = assignedTenantsMode === 'all' ? [] : (Array.isArray(customTenants) ? customTenants : []);
-          const response = await api.put(`/users/${userId}/assigned-tenants`, { assignedTenants });
-          return unwrapApiData(response);
-        } catch (error) {
-          console.warn(`[userService.updateAssignedTenants] Fallback para ${userId}:`, error?.message);
-          return { success: true, userId, localOnly: true };
-        }
-      },
+    const assignedTenants =
+      assignedTenantsMode === 'all'
+        ? []
+        : (Array.isArray(customTenants) ? customTenants : []);
+    const response = await api.put(`/users/${userId}/assigned-tenants`, { assignedTenants });
+    return unwrapApiData(response);
+  },
 
   /**
-   * Soft Delete: Borrado lógico seguro de un usuario o cuenta
+   * Soft Delete: Borrado lógico seguro de un usuario o cuenta en PostgreSQL 17
    */
   async deleteUser(userId) {
-        try {
-          await api.delete(`/users/${userId}`);
-          return { success: true };
-        } catch (error) {
-          console.warn(`[userService.deleteUser] Fallback para ${userId}:`, error?.message);
-          return { success: true, localOnly: true };
-        }
-      },
-    };
+    await api.delete(`/users/${userId}`);
+    return { success: true };
+  },
+};
 
-    export default userService;
+export default userService;

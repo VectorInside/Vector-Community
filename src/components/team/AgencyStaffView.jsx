@@ -27,6 +27,7 @@ import {
   Check,
   Trash2,
   AlertTriangle,
+  Pencil,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Portal } from '@/components/common/Portal';
@@ -48,7 +49,7 @@ const ROLE_DEFINITIONS = {
 };
 
 export const AgencyStaffView = () => {
-  const { tenantsData } = useAuth();
+  const { tenantsData, currentUser, updateCurrentUserProfile } = useAuth();
 
   // Persist agency staff in localStorage for interactive session
   const [staffList, setStaffList] = useState(() => {
@@ -56,7 +57,13 @@ export const AgencyStaffView = () => {
       const saved = localStorage.getItem('vector_agency_staff_members');
       if (saved) {
         try {
-          return JSON.parse(saved);
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            return parsed.map((m) => ({
+              ...m,
+              phone: m.phone === '+52 55 1234 5678' ? '' : (m.phone || ''),
+            }));
+          }
         } catch (e) {}
       }
     }
@@ -68,6 +75,24 @@ export const AgencyStaffView = () => {
       localStorage.setItem('vector_agency_staff_members', JSON.stringify(staffList));
     }
   }, [staffList]);
+
+  // Sincronizar si el usuario actual actualiza su teléfono desde el Header
+  useEffect(() => {
+    if (currentUser?.id) {
+      setStaffList((prev) =>
+        prev.map((m) =>
+          m.id === currentUser.id ||
+          (currentUser.id === 'usr-admin-01' && m.email?.toLowerCase() === currentUser.email?.toLowerCase())
+            ? {
+                ...m,
+                name: currentUser.name || m.name,
+                phone: currentUser.phone === '+52 55 1234 5678' ? '' : (currentUser.phone ?? m.phone),
+              }
+            : m
+        )
+      );
+    }
+  }, [currentUser?.id, currentUser?.name, currentUser?.phone, currentUser?.email]);
 
   // Hydrate from PostgreSQL 17 Backend (/api/v1/users/staff)
   useEffect(() => {
@@ -91,6 +116,7 @@ export const AgencyStaffView = () => {
   // Modals & Feedback
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [editingStaffTenants, setEditingStaffTenants] = useState(null);
+  const [editingStaffProfile, setEditingStaffProfile] = useState(null);
   const [deleteModalStaff, setDeleteModalStaff] = useState(null);
   const [isDeletingStaff, setIsDeletingStaff] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
@@ -189,7 +215,7 @@ export const AgencyStaffView = () => {
       id: `staff-${Date.now()}`,
       name: inviteForm.name.trim(),
       email: inviteForm.email.trim().toLowerCase(),
-      phone: inviteForm.phone.trim() || '+52 55 0000 0000',
+      phone: inviteForm.phone.trim(),
       role: inviteForm.role,
       roleLabel: ROLE_DEFINITIONS[inviteForm.role]?.label || 'Administrador',
       avatar: inviteForm.role === 'SUPER_ADMIN' ? '⚡' : '💼',
@@ -231,6 +257,49 @@ export const AgencyStaffView = () => {
       assignedTenantsMode: 'all',
       customTenants: [],
     });
+  };
+
+  // Update staff profile (phone & name) in PostgreSQL 17
+  const handleSaveStaffProfile = async (staffId, { name, phone }) => {
+    const cleanPhone = (phone || '').trim();
+    const cleanName = (name || '').trim();
+
+    try {
+      const isCurrentUser =
+        staffId === currentUser?.id ||
+        staffId === 'usr-admin-01' ||
+        staffId === 'staff-1';
+
+      if (isCurrentUser && updateCurrentUserProfile) {
+        await updateCurrentUserProfile({
+          id: staffId,
+          name: cleanName,
+          phone: cleanPhone,
+        });
+      } else {
+        await userService.updateUserProfile(staffId, {
+          name: cleanName,
+          phone: cleanPhone,
+        });
+      }
+
+      setStaffList((prev) =>
+        prev.map((m) =>
+          m.id === staffId
+            ? {
+                ...m,
+                name: cleanName || m.name,
+                phone: cleanPhone,
+              }
+            : m
+        )
+      );
+      setEditingStaffProfile(null);
+      showToast('Teléfono y perfil guardados en PostgreSQL');
+    } catch (err) {
+      showToast('Error al guardar en PostgreSQL: verifica que la base de datos esté encendida.');
+      throw err;
+    }
   };
 
   // Update assigned tenants modal submit
@@ -490,9 +559,23 @@ export const AgencyStaffView = () => {
                         )}
                       </div>
 
-                      <p className="text-xs text-[var(--text-muted)]">
-                        {roleInfo.label} • {member.phone}
-                      </p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-xs text-[var(--text-muted)]">
+                          {roleInfo.label} •{' '}
+                          {member.phone && member.phone !== '+52 55 1234 5678'
+                            ? member.phone
+                            : 'Sin teléfono registrado'}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setEditingStaffProfile(member)}
+                          className="text-[10px] font-mono text-neon hover:underline flex items-center gap-1 cursor-pointer"
+                          title="Editar número telefónico y nombre en PostgreSQL"
+                        >
+                          <Pencil className="w-2.5 h-2.5" />
+                          <span>Editar teléfono</span>
+                        </button>
+                      </div>
 
                       <div className="flex items-center gap-1.5 font-mono text-xs pt-0.5">
                         <Mail className="w-3.5 h-3.5 text-[var(--text-muted)] shrink-0" />
@@ -562,6 +645,16 @@ export const AgencyStaffView = () => {
 
                   {/* Right Column: Actions */}
                   <div className="flex items-center gap-2 font-mono text-xs shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setEditingStaffProfile(member)}
+                      className="px-3.5 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon text-[var(--text-muted)] hover:text-neon transition-all flex items-center gap-1.5 min-h-[44px]"
+                      title="Editar teléfono y nombre en PostgreSQL"
+                    >
+                      <Phone className="w-3.5 h-3.5 text-neon" />
+                      <span className="font-bold">Teléfono</span>
+                    </button>
+
                     <button
                       type="button"
                       onClick={() => setEditingStaffTenants(member)}
@@ -804,6 +897,15 @@ export const AgencyStaffView = () => {
         </Portal>
       )}
 
+      {/* MODAL: EDITAR TELÉFONO Y PERFIL EN POSTGRESQL */}
+      {editingStaffProfile && (
+        <EditStaffProfileModal
+          staffMember={editingStaffProfile}
+          onClose={() => setEditingStaffProfile(null)}
+          onSave={handleSaveStaffProfile}
+        />
+      )}
+
       {/* MODAL: EDITAR NEGOCIOS ASIGNADOS */}
       {editingStaffTenants && (
         <EditAssignedTenantsModal
@@ -826,6 +928,107 @@ export const AgencyStaffView = () => {
         />
       )}
     </div>
+  );
+};
+
+const EditStaffProfileModal = ({ staffMember, onClose, onSave }) => {
+  const [name, setName] = useState(staffMember.name || '');
+  const [phone, setPhone] = useState(
+    staffMember.phone === '+52 55 1234 5678' ? '' : (staffMember.phone || '')
+  );
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await onSave(staffMember.id, { name, phone });
+    } catch {
+      // handled in parent toast
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Portal>
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fade-in font-sans">
+        <div className="relative w-full max-w-md bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-3xl p-6 space-y-4 shadow-2xl animate-scale-up">
+          <div className="flex items-start justify-between border-b border-[var(--border-color)] pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-neon/15 text-neon">
+                <Phone className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-heading font-black text-[var(--text-main)]">
+                  Editar Teléfono & Perfil
+                </h3>
+                <p className="text-[11px] text-[var(--text-muted)] font-mono">
+                  {staffMember.email} • Persistencia en PostgreSQL 17
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-white"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4 font-mono text-xs">
+            <div className="space-y-1.5">
+              <label className="block text-[11px] text-[var(--text-muted)] font-semibold uppercase tracking-wider">
+                Nombre Completo
+              </label>
+              <input
+                type="text"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-main)] focus:border-neon focus:outline-none"
+                placeholder="Ej. Edgar Lobo Vectorial"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-[11px] text-[var(--text-muted)] font-semibold uppercase tracking-wider">
+                Número Telefónico / WhatsApp Real
+              </label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-main)] focus:border-neon focus:outline-none"
+                placeholder="Ej. +52 55 8899 0011 (o déjalo vacío)"
+              />
+              <p className="text-[10px] text-[var(--text-muted)] font-sans">
+                Se guarda directamente en la tabla <code className="text-neon">users</code> de PostgreSQL.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-[var(--border-color)]">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-muted)] hover:text-white"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={saving}
+                className="px-4 py-2 rounded-xl bg-neon text-black font-mono font-bold text-xs hover:bg-[var(--neon-hover)] transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-60"
+              >
+                <Check className="w-3.5 h-3.5" />
+                <span>{saving ? 'Guardando en BD...' : 'Guardar en PostgreSQL'}</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Portal>
   );
 };
 

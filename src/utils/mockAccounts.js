@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Cuentas oficiales de acceso y credenciales maestras por negocio (1 Dueño por Negocio)
  * Modelo 1:1 estricto (1 Tenant = 1 Cuenta Maestra de Cliente)
  * Preparado para mapeo relacional directo en Backend (tabla: tenant_credentials / tenant_owner)
@@ -20,7 +20,7 @@ export const INITIAL_AGENCY_STAFF = [
     status: 'ACTIVE',
     assignedTenants: 'all',
     lastLogin: 'Sesión activa',
-    phone: '+52 55 1234 5678',
+    phone: '',
     createdAt: '2026-01-15T10:00:00Z',
     twoFactorEnabled: true,
   },
