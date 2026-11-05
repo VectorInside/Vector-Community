@@ -45,7 +45,7 @@ export const normalizeAppointmentFromApi = (apt) => {
   const hourStr = apt.hour || '10:00';
   return {
     id: apt.id,
-    tenantId: apt.tenantId || 'dental',
+    tenantId: apt.tenantId || null,
     dayId: (apt.dayId || 'fri').toLowerCase(),
     fullDate: dateStr,
     appointmentDate: dateStr,
@@ -77,7 +77,7 @@ export const serializeAppointmentToApi = (apt) => {
 
   return {
     id: apt.id || undefined,
-    tenantId: apt.tenantId || 'dental',
+    tenantId: apt.tenantId || null,
     dayId: (apt.dayId || 'fri').toLowerCase(),
     appointmentDate: dateStr,
     hour: hourStr,

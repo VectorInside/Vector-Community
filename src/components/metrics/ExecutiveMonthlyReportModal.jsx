@@ -32,13 +32,31 @@ export const ExecutiveMonthlyReportModal = ({
   if (!isOpen) return null;
 
   const currentTenant = tenant || {
-    id: 'dental',
-    name: 'Clínica Odontológica Integral',
-    industry: 'Salud & Odontología',
-    mer: '5.6x',
-    cac: '$185',
-    ltv: '$2,450',
-    citas: 34,
+    id: '',
+    name: 'Sin Negocio Seleccionado',
+    industry: 'General',
+    mer: '0.0x',
+    cac: '$0 MXN',
+    ltv: '$0 MXN',
+    citas: 0,
+  };
+
+  const zeroMetrics = {
+    period: new Intl.DateTimeFormat('es-MX', { month: 'long', year: 'numeric' }).format(new Date()),
+    adSpend: '$0 MXN',
+    realRevenue: '$0 MXN',
+    mer: '0.0x',
+    cac: '$0 MXN',
+    ltv: '$0 MXN',
+    closedConversions: 0,
+    conversionsLabel: 'Conversiones / Citas Concluidas',
+    avgTicket: '$0 MXN',
+    capiMatchRate: '0.0%',
+    humanHoursSaved: '0 hrs',
+    messagesProcessed: '0 mensajes',
+    topChannel: 'Sin actividad registrada',
+    deepSeekSummary: 'Sin registros de telemetría previos para este negocio.',
+    channelBreakdown: [],
   };
 
   // Canonical monthly metrics by tenant
@@ -135,8 +153,8 @@ export const ExecutiveMonthlyReportModal = ({
 
   const metrics =
     reportData ||
-    tenantMetrics[currentTenant.id] ||
-    tenantMetrics.dental;
+    (currentTenant.id && tenantMetrics[currentTenant.id]) ||
+    zeroMetrics;
 
   const reportId = `REP-${new Date().getFullYear()}-09-VI-${(currentTenant.id || 'DENT').toUpperCase()}`;
   const shaHash = `0x9f8b4c${Date.now().toString(16).slice(-6)}e2a1`;

@@ -35,9 +35,9 @@ export const AgentOrchestrationReportModal = ({
   if (!isOpen) return null;
 
   const currentTenant = tenant || {
-    id: 'dental',
-    name: 'Clínica Odontológica Integral',
-    verticalLabel: 'Service Appointments (Salud)',
+    id: '',
+    name: 'Sin Negocio Seleccionado',
+    verticalLabel: 'General',
   };
 
   const reportId = `AUD-${new Date().getFullYear()}-GOV-VI-${(currentTenant.id || 'DENT').toUpperCase()}`;

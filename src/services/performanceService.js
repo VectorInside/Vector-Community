@@ -1,18 +1,52 @@
 import api, { isBackendAvailable, unwrapApiData } from './api';
 import { INITIAL_PERFORMANCE_METRICS } from '@/utils/mockData';
 
-const TENANT_METRICS_MAP = {
-  polanco: 'tenant-mex-001',
-  dental: 'tenant-med-002',
-  urban: 'tenant-eco-003',
-  corp: 'tenant-mex-001',
-  creator: 'tenant-mex-001',
-  gym: 'tenant-fit-004',
-  patrimonial: 'tenant-mex-001',
-};
+const TENANT_METRICS_MAP = {};
 
 const resolveMetricsKey = (tenantId) => {
-  return TENANT_METRICS_MAP[tenantId] || tenantId || 'tenant-mex-001';
+  if (!tenantId) return null;
+  return TENANT_METRICS_MAP[tenantId] || tenantId;
+};
+
+export const ZERO_TELEMETRY = {
+  webTrafficMetrics: {
+    sessions: 0,
+    cpc: '$0.00 MXN',
+    whatsappClickRate: '0.0%',
+    bounceRate: '0%',
+  },
+  microLandingMetrics: {
+    visits: 0,
+    leadsGenerated: 0,
+    conversionRate: '0.0%',
+    costPerLead: '$0.00 MXN',
+    bounceRate: '0.0%',
+    avgLoadTime: '0.00s',
+    ctaClicks: 0,
+    qrScans: 0,
+    sources: {
+      bioLink: '0.0%',
+      directAds: '0.0%',
+      qrPrint: '0.0%',
+    },
+  },
+  rawTelemetry: null,
+};
+
+export const ZERO_PERFORMANCE_METRICS = {
+  summary: {
+    realRoas: 0.0,
+    metaReportedRoas: 0.0,
+    realCac: 0,
+    blendedCpa: 0,
+    totalSpend: 0,
+    backendAttributedRevenue: 0,
+    capiSyncRate: 0,
+    avgHookRate: 0,
+  },
+  dailySeries: [],
+  dualTelemetry: ZERO_TELEMETRY,
+  capiLogs: [],
 };
 
 export const normalizeTelemetryFromApi = (raw) => {
@@ -45,15 +79,15 @@ export const normalizeTelemetryFromApi = (raw) => {
 
 export const performanceService = {
   async getDualTelemetry(tenantId) {
-    if (!tenantId) return null;
-    if (!isBackendAvailable) return null;
+    if (!tenantId) return ZERO_TELEMETRY;
+    if (!isBackendAvailable) return ZERO_TELEMETRY;
     try {
       const response = await api.get(`/analytics/${tenantId}`);
       const data = unwrapApiData(response);
-      return normalizeTelemetryFromApi(data);
+      return normalizeTelemetryFromApi(data) || ZERO_TELEMETRY;
     } catch (error) {
       console.warn(`[performanceService.getDualTelemetry] Error para ${tenantId}:`, error?.message);
-      return null;
+      return ZERO_TELEMETRY;
     }
   },
 
@@ -71,8 +105,9 @@ export const performanceService = {
   },
 
   async getPerformanceMetrics(tenantId) {
+    if (!tenantId) return ZERO_PERFORMANCE_METRICS;
     const key = resolveMetricsKey(tenantId);
-    const fallback = INITIAL_PERFORMANCE_METRICS[key] || INITIAL_PERFORMANCE_METRICS['tenant-mex-001'];
+    const fallback = (key && INITIAL_PERFORMANCE_METRICS[key]) || ZERO_PERFORMANCE_METRICS;
     if (!isBackendAvailable) {
       return fallback;
     }
@@ -91,12 +126,14 @@ export const performanceService = {
   },
 
   async getCapiAttributionLogs(tenantId) {
+    if (!tenantId) return [];
     const key = resolveMetricsKey(tenantId);
-    const tenantData = INITIAL_PERFORMANCE_METRICS[key] || INITIAL_PERFORMANCE_METRICS['tenant-mex-001'];
+    const tenantData = (key && INITIAL_PERFORMANCE_METRICS[key]) || null;
     return tenantData?.capiLogs || [];
   },
 
-  async emitTestCapiSignal(tenantId = 'dental', eventName = 'Purchase_Verified') {
+  async emitTestCapiSignal(tenantId, eventName = 'Purchase_Verified') {
+    if (!tenantId) return null;
     try {
       await this.trackTelemetryEvent(tenantId, 'CTA_CLICK');
     } catch {
@@ -107,8 +144,8 @@ export const performanceService = {
       eventId: `ev_${Math.random().toString(36).substring(2, 9)}`,
       event: eventName,
       timestamp: 'Justo ahora',
-      value: '$3,850 MXN',
-      status: 'MATCHED_CAPI_99.8%',
+      value: '$0.00 MXN',
+      status: 'MATCHED_CAPI_100%',
       signalSource: 'Meta Conversions API + Vector Backend SDOP',
     };
   },

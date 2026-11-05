@@ -38,21 +38,22 @@ export const CommercialGrowthSuite = ({ initialTab = 'kanban' }) => {
   }, [activeTenant]);
 
   // Buyer persona y 4Ps del tenant
+  const hasCustomPersona = !!activeTenant?.buyerPersona;
   const buyerPersona = activeTenant?.buyerPersona || {
     name: 'Cliente Ideal Calificado',
-    ageRange: '25 a 50 años',
-    maritalStatus: 'Profesionista / Familiar',
-    location: 'Zona Metropolitana & Entorno Local',
-    digitalHabits: 'Navega en Instagram, interactúa por WhatsApp y busca soluciones rápidas sin fricción.',
-    mainPainPoint: 'Falta de tiempo y desconfianza por precios ocultos o promesas infladas.',
-    buyingTrigger: 'Atención personalizada inmediata, claridad de precios y garantía de satisfacción.',
+    ageRange: activeTenant ? 'Por definir' : '--',
+    maritalStatus: activeTenant ? 'Por definir' : '--',
+    location: activeTenant ? 'Por definir' : '--',
+    digitalHabits: activeTenant ? 'Por definir en Perfil de Marca' : '--',
+    mainPainPoint: activeTenant ? 'Por definir en Perfil de Marca' : '--',
+    buyingTrigger: activeTenant ? 'Por definir en Perfil de Marca' : '--',
   };
 
   const marketingMix = activeTenant?.marketingMix4P || {
-    product: 'Solución insignia de alto valor con atención especializada y tecnología de punta.',
-    price: `Tarifa base comercial con costo por prospecto calificado de $${leadTariff} MXN.`,
-    place: 'Omnicanal: Atención inmediata en WhatsApp, confirmación en Google Calendar y atención física.',
-    promotion: 'Beneficio exclusivo por primer contacto, financiamiento preferencial y garantía de servicio.',
+    product: activeTenant ? 'Por definir en Perfil de Marca' : '--',
+    price: activeTenant ? `Tarifa base comercial con costo por prospecto calificado de $${leadTariff} MXN.` : '--',
+    place: activeTenant ? 'Omnicanal: Atención inmediata en WhatsApp y Google Calendar.' : '--',
+    promotion: activeTenant ? 'Por definir en Perfil de Marca' : '--',
   };
 
   const handleSaveTariff = (newPrice) => {
@@ -82,7 +83,7 @@ export const CommercialGrowthSuite = ({ initialTab = 'kanban' }) => {
               Suite Comercial & Estudio de Contenido Integrado
             </span>
             <span className="text-xs text-[var(--text-muted)] font-mono">
-              • {activeTenant?.avatar} {activeTenant?.shortName || activeTenant?.name}
+              • {activeTenant?.avatar || '🏢'} {activeTenant?.shortName || activeTenant?.name || 'Sin negocio seleccionado'}
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-heading font-black text-[var(--text-main)]">
@@ -241,6 +242,15 @@ export const CommercialGrowthSuite = ({ initialTab = 'kanban' }) => {
 
       {/* VISTA 3: BUYER PERSONA, MARKETING MIX & ASESOR DE GIRO */}
       {activeSuiteTab === 'persona_strategy' && (
+        !activeTenant ? (
+          <div className="p-12 text-center rounded-3xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-3 font-mono text-xs">
+            <Target className="w-10 h-10 text-lime-400 opacity-40 mx-auto" />
+            <h3 className="text-sm font-heading font-black text-[var(--text-main)]">Sin Negocio Seleccionado</h3>
+            <p className="text-[var(--text-muted)] max-w-md mx-auto">
+              Selecciona un negocio en el selector superior para consultar o definir su Buyer Persona Oficial, Matriz 4Ps y directrices de IA comercial.
+            </p>
+          </div>
+        ) : (
         <div className="space-y-6 animate-fade-in">
           {/* Card Destacada del Buyer Persona */}
           <div className="p-6 rounded-3xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-5 shadow-sm">
@@ -392,6 +402,7 @@ export const CommercialGrowthSuite = ({ initialTab = 'kanban' }) => {
             </div>
           </div>
         </div>
+        )
       )}
     </div>
   );

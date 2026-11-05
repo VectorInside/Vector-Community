@@ -134,7 +134,7 @@ export const OrchestrationView = () => {
           },
         };
 
-        setSimulationOutput(supervisorData[tenantId] || supervisorData.dental);
+        setSimulationOutput(supervisorData[tenantId] || null);
       } else if (agentKey === 'closer') {
         const closerData = {
           dental: {
@@ -197,7 +197,7 @@ export const OrchestrationView = () => {
           },
         };
 
-        setSimulationOutput(closerData[tenantId] || closerData.dental);
+        setSimulationOutput(closerData[tenantId] || null);
       } else if (agentKey === 'reengagement') {
         const reengagementData = {
           dental: {
@@ -234,7 +234,7 @@ export const OrchestrationView = () => {
           },
         };
 
-        setSimulationOutput(reengagementData[tenantId] || reengagementData.dental);
+        setSimulationOutput(reengagementData[tenantId] || null);
       } else if (agentKey === 'analyst') {
         const analystData = {
           dental: {
@@ -281,7 +281,7 @@ export const OrchestrationView = () => {
           },
         };
 
-        setSimulationOutput(analystData[tenantId] || analystData.dental);
+        setSimulationOutput(analystData[tenantId] || null);
       }
       try {
         confetti({

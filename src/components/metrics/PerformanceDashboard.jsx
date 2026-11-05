@@ -69,10 +69,10 @@ export const PerformanceDashboard = () => {
     if (tenantsData && activeTenantKey && tenantsData[activeTenantKey]) {
       return tenantsData[activeTenantKey];
     }
-    return tenantsData ? Object.values(tenantsData)[0] : null;
+    return null;
   }, [authTenant, activeTenantKey, tenantsData]);
 
-  const activeTenantId = activeTenant?.id || activeTenantKey || 'dental';
+  const activeTenantId = activeTenant?.id || activeTenantKey || null;
 
   const [data, setData] = useState(null);
   const [capiLogs, setCapiLogs] = useState([]);
@@ -164,6 +164,8 @@ export const PerformanceDashboard = () => {
 
   // Solo mostrar los canales que el negocio tenga dados de alta y activos
   const activeChannelsList = useMemo(() => {
+    if (!activeTenant) return [];
+
     const tenantConnected = activeTenant?.connectedChannels || {};
     const enabledKeys = Object.keys(tenantConnected).filter((k) => tenantConnected[k]?.enabled);
     if (enabledKeys.length > 0) {
@@ -178,7 +180,7 @@ export const PerformanceDashboard = () => {
         })
         .filter(Boolean);
     }
-    // Fallback inteligente según redes del tenant o default de giro
+    // Fallback inteligente con métricas limpias
     const fallbackKeys = ['meta', 'whatsapp', ...(activeTenant?.hasWebsite ? ['google'] : [])];
     return fallbackKeys
       .map((k) => {
@@ -186,45 +188,45 @@ export const PerformanceDashboard = () => {
         if (!cat) return null;
         return {
           ...cat,
-          tenantConfig: { enabled: true, status: 'connected', latencyMs: 110, lastSync: 'En tiempo real' },
+          tenantConfig: { enabled: true, status: 'connected', latencyMs: 0, lastSync: 'En tiempo real' },
         };
       })
       .filter(Boolean);
   }, [activeTenant]);
 
   const summary = data?.summary || {
-    realRoas: 4.82,
-    metaReportedRoas: 3.41,
-    realCac: 14.2,
-    blendedCpa: 16.8,
-    totalSpend: 3450,
-    backendAttributedRevenue: 16629,
-    capiSyncRate: 99.4,
-    avgHookRate: 41.8,
+    realRoas: 0.0,
+    metaReportedRoas: 0.0,
+    realCac: 0,
+    blendedCpa: 0,
+    totalSpend: 0,
+    backendAttributedRevenue: 0,
+    capiSyncRate: 0,
+    avgHookRate: 0,
   };
 
   const series = data?.dailySeries || [];
 
   const webMetrics = data?.dualTelemetry?.webTrafficMetrics || activeTenant?.webTrafficMetrics || {
-    sessions: 3420,
-    cpc: '$3.80 MXN',
-    whatsappClickRate: '1.4%',
-    bounceRate: '65%',
+    sessions: 0,
+    cpc: '$0.00 MXN',
+    whatsappClickRate: '0.0%',
+    bounceRate: '0%',
   };
 
   const mlMetrics = data?.dualTelemetry?.microLandingMetrics || activeTenant?.microLandingMetrics || {
-    visits: 1280,
-    leadsGenerated: 233,
-    conversionRate: '18.2%',
-    costPerLead: '$1.85 MXN',
-    bounceRate: '8.4%',
-    avgLoadTime: '0.65s',
-    ctaClicks: 312,
-    qrScans: 46,
+    visits: 0,
+    leadsGenerated: 0,
+    conversionRate: '0.0%',
+    costPerLead: '$0.00 MXN',
+    bounceRate: '0.0%',
+    avgLoadTime: '0.00s',
+    ctaClicks: 0,
+    qrScans: 0,
     sources: {
-      bioLink: '54.2%',
-      directAds: '38.6%',
-      qrPrint: '7.2%',
+      bioLink: '0.0%',
+      directAds: '0.0%',
+      qrPrint: '0.0%',
     },
   };
 
@@ -341,7 +343,19 @@ export const PerformanceDashboard = () => {
                 </div>
                 <p className="text-[var(--text-muted)] text-xs mt-0.5 font-sans">
                   URL:{' '}
-                  {activeTenant?.hasWebsite ? (
+                  {!activeTenant ? (
+              <div className="p-8 text-center text-xs font-mono text-[var(--text-muted)] space-y-2">
+                <Activity className="w-8 h-8 opacity-30 mx-auto text-lime-400" />
+                <p className="text-[var(--text-main)] font-bold">Sin Negocio Seleccionado</p>
+                <p>Selecciona un negocio en el selector superior para monitorear su embudo de conversión y puntos de fuga en tiempo real.</p>
+              </div>
+            ) : (!data?.dualTelemetry && Number(mlMetrics.visits) === 0 && Number(webMetrics.sessions) === 0) ? (
+              <div className="p-8 text-center text-xs font-mono text-[var(--text-muted)] space-y-2">
+                <Activity className="w-8 h-8 opacity-30 mx-auto text-lime-400" />
+                <p className="text-[var(--text-main)] font-bold">Sin Telemetría Registrada</p>
+                <p>No se han registrado eventos de tráfico ni conversiones para <strong>{activeTenant.name}</strong>. Se registrarán conforme los prospectos interactúen con los anuncios o la micro-landing.</p>
+              </div>
+            ) : activeTenant?.hasWebsite ? (
                     <a
                       href={activeTenant.websiteUrl}
                       target="_blank"
@@ -528,26 +542,28 @@ export const PerformanceDashboard = () => {
             <StatCard
               title={activeTenant?.hasWebsite ? 'Sesiones Web Totales' : 'Clics a WhatsApp (Pauta)'}
               value={
-                activeTenant?.hasWebsite
-                  ? (webMetrics.sessions ? String(webMetrics.sessions).replace(/\B(?=(\d{3})+(?!\d))/g, ',') : '3,420')
-                  : '2,450'
+                !activeTenant
+                  ? '0'
+                  : activeTenant?.hasWebsite
+                  ? (webMetrics.sessions ? String(webMetrics.sessions).replace(/\B(?=(\d{3})+(?!\d))/g, ',') : '0')
+                  : String(mlMetrics.ctaClicks || 0)
               }
-              subvalue={activeTenant?.hasWebsite ? 'Tráfico calificado de pago' : 'Conversaciones iniciadas'}
-              change="+18.4%"
+              subvalue={!activeTenant ? 'Sin negocio seleccionado' : (activeTenant?.hasWebsite ? 'Tráfico calificado de pago' : 'Conversaciones iniciadas')}
+              change={!activeTenant || !webMetrics.sessions ? '0%' : '+18.4%'}
               isPositive={true}
               icon={Users}
-              badgeText={activeTenant?.hasWebsite ? 'ANALÍTICA WEB' : 'DIRECT ADS'}
+              badgeText={!activeTenant ? 'INACTIVO' : (activeTenant?.hasWebsite ? 'ANALÍTICA WEB' : 'DIRECT ADS')}
               accentColor="blue"
             />
 
             <StatCard
               title={activeTenant?.hasWebsite ? 'Costo por Clic (CPC Web)' : 'Costo por Conversación'}
-              value={webMetrics.cpc || (activeTenant?.hasWebsite ? '$3.80 MXN' : '$2.10 MXN')}
-              subvalue="Costo unitario por prospecto"
-              change="-8.2%"
+              value={!activeTenant ? '$0.00 MXN' : (webMetrics.cpc || '$0.00 MXN')}
+              subvalue={!activeTenant ? 'Sin negocio seleccionado' : 'Costo unitario por prospecto'}
+              change={!activeTenant ? '0%' : '-8.2%'}
               isPositive={true}
               icon={DollarSign}
-              badgeText="ÓPTIMO"
+              badgeText={!activeTenant ? 'INACTIVO' : 'ÓPTIMO'}
               accentColor="emerald"
             />
 
@@ -848,7 +864,19 @@ export const PerformanceDashboard = () => {
               </Badge>
             </div>
 
-            {activeTenant?.hasWebsite ? (
+            {!activeTenant ? (
+              <div className="p-8 text-center text-xs font-mono text-[var(--text-muted)] space-y-2">
+                <Activity className="w-8 h-8 opacity-30 mx-auto text-lime-400" />
+                <p className="text-[var(--text-main)] font-bold">Sin Negocio Seleccionado</p>
+                <p>Selecciona un negocio en el selector superior para monitorear su embudo de conversión y puntos de fuga en tiempo real.</p>
+              </div>
+            ) : (!data?.dualTelemetry && Number(mlMetrics.visits) === 0 && Number(webMetrics.sessions) === 0) ? (
+              <div className="p-8 text-center text-xs font-mono text-[var(--text-muted)] space-y-2">
+                <Activity className="w-8 h-8 opacity-30 mx-auto text-lime-400" />
+                <p className="text-[var(--text-main)] font-bold">Sin Telemetría Registrada</p>
+                <p>No se han registrado eventos de tráfico ni conversiones para <strong>{activeTenant.name}</strong>. Se registrarán conforme los prospectos interactúen con los anuncios o la micro-landing.</p>
+              </div>
+            ) : activeTenant?.hasWebsite ? (
               <div className="space-y-3 font-mono text-xs">
                 {/* Step 1 */}
                 <div>

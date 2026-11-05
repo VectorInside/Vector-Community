@@ -60,7 +60,7 @@ export const CuentasAccesosView = () => {
         } catch (e) {}
       }
     }
-    return INITIAL_BUSINESS_ACCOUNTS;
+    return [];
   });
 
   // Hydrate from PostgreSQL 17 Backend (/api/v1/users/owners)

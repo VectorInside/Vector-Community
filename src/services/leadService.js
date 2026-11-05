@@ -41,7 +41,7 @@ export const normalizeLeadFromApi = (lead) => {
 
   return {
     id: lead.id,
-    tenantId: lead.tenantId || 'dental',
+    tenantId: lead.tenantId || null,
     name: lead.name || 'Prospecto Sin Nombre',
     email: lead.email || '',
     phone: lead.phone || '+52 55 0000 0000',
@@ -98,7 +98,7 @@ export const serializeLeadToApi = (item) => {
 
   return {
     id: item.id || undefined,
-    tenantId: item.tenantId || 'dental',
+    tenantId: item.tenantId || null,
     name: item.name || 'Nuevo Prospecto',
     email: item.email || '',
     phone: item.phone || '',

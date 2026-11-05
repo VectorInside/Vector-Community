@@ -2322,11 +2322,15 @@ export const RAGWizard = ({
                 <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
               </div>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-xl font-heading font-black text-cyan-400">94.2%</span>
-                <span className="text-[10px] text-cyan-500 font-bold">Antifrágil</span>
+                <span className="text-xl font-heading font-black text-cyan-400">
+                  {activeTenant ? '94.2%' : '0%'}
+                </span>
+                <span className="text-[10px] text-cyan-500 font-bold">
+                  {activeTenant ? 'Antifrágil' : 'Sin Indexar'}
+                </span>
               </div>
               <span className="text-[9px] text-[var(--text-muted)] block truncate">
-                4/4 Pilares Indexados en Vector DB
+                {activeTenant ? '4/4 Pilares Indexados en Vector DB' : '0/4 Pilares Indexados en Vector DB'}
               </span>
             </div>
 
@@ -2338,11 +2342,11 @@ export const RAGWizard = ({
               <div className="flex items-center gap-1.5 truncate">
                 <span className="text-base shrink-0">{activeTenant?.avatar || '🏢'}</span>
                 <span className="font-heading font-bold text-xs text-[var(--text-main)] truncate">
-                  {activeTenant?.name || 'Clínica Odontológica'}
+                  {activeTenant ? activeTenant.name : 'Sin Negocio Activo'}
                 </span>
               </div>
               <span className="text-[9px] text-neon font-bold font-mono block truncate">
-                ID: {activeTenant?.id || 'dental'}
+                ID: {activeTenant ? activeTenant.id : 'N/A'}
               </span>
             </div>
           </div>

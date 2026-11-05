@@ -9,7 +9,7 @@ export const normalizePostFromApi = (post) => {
 
   return {
     id: post.id,
-    tenantId: post.tenantId || 'dental',
+    tenantId: post.tenantId || null,
     network: post.network || 'INSTAGRAM',
     type: post.type || 'Reel 9:16',
     channel: post.channel || 'WHATSAPP',
@@ -36,7 +36,7 @@ export const serializePostToApi = (post) => {
 
   return {
     id: post.id || undefined,
-    tenantId: post.tenantId || 'dental',
+    tenantId: post.tenantId || null,
     network: post.network || 'INSTAGRAM',
     type: post.type || 'Reel 9:16',
     channel: post.channel || 'WHATSAPP',

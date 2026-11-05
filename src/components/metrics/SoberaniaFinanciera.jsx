@@ -97,7 +97,7 @@ export const SoberaniaFinanciera = () => {
 
   const handleGenerateScript = () => {
     triggerModal(
-      `Generación de Guion Viral (DeepSeek R1) — ${activeTenant?.name}`,
+      `Generación de Guion Viral (DeepSeek R1) — ${activeTenant?.name || 'Sin negocio seleccionado'}`,
       `<b>Guion Viral (30 Segundos - Reels / TikTok):</b><br><br>
       <b>[0-3s Gancho]:</b> "${creative.scriptHook}"<br><br>
       <b>[4-15s Demostración]:</b> "${creative.scriptDemo}"<br><br>
@@ -128,7 +128,7 @@ export const SoberaniaFinanciera = () => {
           </h2>
           <p className="text-xs sm:text-sm font-sans text-[var(--text-muted)] mt-1">
             Atribución multicanal, retorno de inversión (ROAS) y costo por lead conciliado para:{' '}
-            <strong className="text-[var(--text-main)] font-semibold">{activeTenant?.name}</strong>
+            <strong className="text-[var(--text-main)] font-semibold">{activeTenant?.name || 'Sin negocio seleccionado'}</strong>
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -151,29 +151,51 @@ export const SoberaniaFinanciera = () => {
       <div className="mb-6 p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex flex-col sm:flex-row items-center justify-between gap-4 font-sans text-xs">
         <div className="flex items-center gap-3">
           <span className="p-2.5 rounded-xl bg-neon/10 text-neon border border-neon/20">
-            {activeTenant?.hasWebsite ? <Globe className="w-5 h-5" /> : <Smartphone className="w-5 h-5" />}
+            {!activeTenant ? (
+              <Smartphone className="w-5 h-5 text-zinc-400" />
+            ) : activeTenant.hasWebsite ? (
+              <Globe className="w-5 h-5" />
+            ) : (
+              <Smartphone className="w-5 h-5" />
+            )}
           </span>
           <div>
             <div className="flex items-center gap-2">
               <span className="text-[var(--text-main)] font-bold text-sm">
-                {activeTenant?.hasWebsite
+                {!activeTenant
+                  ? 'Sin Negocio Seleccionado'
+                  : activeTenant.hasWebsite
                   ? 'Presencia: Sitio Web Oficial Sincronizado'
                   : 'Presencia: Ecosistema Puro en WhatsApp (SIN Web)'}
               </span>
-              <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
-                {activeTenant?.hasWebsite ? 'Medición Web GA4 (Sin costo)' : 'Micro-Landing Activa'}
+              <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                !activeTenant
+                  ? 'bg-zinc-500/15 text-zinc-400 border-zinc-500/30'
+                  : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30'
+              }`}>
+                {!activeTenant
+                  ? 'Inactivo'
+                  : activeTenant.hasWebsite
+                  ? 'Medición Web GA4 (Sin costo)'
+                  : 'Micro-Landing Activa'}
               </span>
             </div>
             <p className="text-[var(--text-muted)] text-xs mt-0.5 font-sans">
               Micro-Landing Oficial:{' '}
-              <a
-                href={`/m/${activeTenant?.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-neon underline hover:text-[var(--neon-hover)]"
-              >
-                app.vectorinside.com/m/{activeTenant?.id}
-              </a>
+              {activeTenant?.id ? (
+                <a
+                  href={`/m/${activeTenant.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-neon underline hover:text-[var(--neon-hover)]"
+                >
+                  app.vectorinside.com/m/{activeTenant.id}
+                </a>
+              ) : (
+                <span className="text-[var(--text-muted)] italic">
+                  Selecciona un negocio para generar su micro-landing
+                </span>
+              )}
             </p>
           </div>
         </div>
@@ -205,7 +227,7 @@ export const SoberaniaFinanciera = () => {
             MER (ROAS Global)
           </p>
           <p className="text-2xl font-black text-[var(--text-main)] font-sans tabular-nums">
-            {activeTenant?.mer || '5.6x'}
+            {!activeTenant ? '0.0x' : (activeTenant.mer || '0.0x')}
           </p>
         </div>
 
@@ -214,7 +236,7 @@ export const SoberaniaFinanciera = () => {
             CAC (Costo Adquisición)
           </p>
           <p className="text-2xl font-black text-[var(--text-main)] font-sans tabular-nums">
-            {activeTenant?.cac || '$185'}{' '}
+            {!activeTenant ? '$0' : (activeTenant.cac ? `$${activeTenant.cac}` : '$0')}{' '}
             <span className="text-xs font-normal text-[var(--text-muted)]">MXN</span>
           </p>
         </div>
@@ -224,7 +246,7 @@ export const SoberaniaFinanciera = () => {
             LTV (Valor Vida Cliente)
           </p>
           <p className="text-2xl font-black text-neon font-sans tabular-nums">
-            {activeTenant?.ltv || '$2,450'}{' '}
+            {!activeTenant ? '$0' : (activeTenant.ltv ? `$${activeTenant.ltv}` : '$0')}{' '}
             <span className="text-xs font-normal text-[var(--text-muted)]">MXN</span>
           </p>
         </div>
@@ -235,7 +257,11 @@ export const SoberaniaFinanciera = () => {
           </p>
           <p className="text-2xl font-black text-[var(--text-main)] font-sans tabular-nums flex items-center gap-2">
             <CalendarCheck className="w-5 h-5 text-[var(--success)]" />
-            <span>{activeTenant?.citas || 34}</span>
+            <span>
+              {!activeTenant
+                ? 0
+                : (activeTenant.citas ?? leads.filter((l) => l.temperature === 'CALIENTE' || l.status === 'Calificado').length ?? 0)}
+            </span>
           </p>
         </div>
       </div>
@@ -249,7 +275,7 @@ export const SoberaniaFinanciera = () => {
               <div>
                 <h3 className="text-sm font-bold uppercase tracking-wider flex items-center gap-2 text-[var(--text-main)]">
                   <Users className="w-4 h-4 text-neon" />
-                  <span>Radar de Prospectos (Leads) — {activeTenant?.name}</span>
+                  <span>Radar de Prospectos (Leads) — {activeTenant?.name || 'Sin negocio seleccionado'}</span>
                 </h3>
                 <p className="text-[10px] font-mono text-[var(--text-muted)] mt-1">
                   Calificación de intención y origen Meta CAPI en tiempo real.
@@ -358,27 +384,49 @@ export const SoberaniaFinanciera = () => {
                     Reporte Creativo IA
                   </h4>
                   <p className="text-[9px] font-mono text-purple-700 dark:text-[#a855f7]">
-                    DeepSeek R1 Analista • {activeTenant?.name}
+                    DeepSeek R1 Analista • {activeTenant?.name || 'Sin negocio seleccionado'}
                   </p>
                 </div>
               </div>
 
               <div className="bg-white/70 dark:bg-black/40 border border-purple-500/20 dark:border-[#a855f7]/30 p-4 rounded-xl text-sm mb-4 space-y-3">
-                <div>
-                  <span className="text-[10px] font-bold uppercase text-[var(--danger)] tracking-wider flex items-center gap-1 mb-1 font-mono">
-                    <AlertTriangle className="w-3 h-3" /> Fatiga Detectada
-                  </span>
-                  <p className="text-xs text-purple-950 dark:text-[#d8b4fe] leading-relaxed">
-                    El anuncio <strong className="text-[var(--text-main)]">"{creative.fatiguedAdName}"</strong> superó la frecuencia de {creative.frequency}. Costos de adquisición en aumento.
-                  </p>
-                </div>
+                {!activeTenant ? (
+                  <div>
+                    <span className="text-[10px] font-bold uppercase text-[var(--text-muted)] tracking-wider flex items-center gap-1 mb-1 font-mono">
+                      <BrainCircuit className="w-3 h-3 text-purple-400" /> Monitoreo en Pausa
+                    </span>
+                    <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+                      Selecciona un negocio para auditar la fatiga de anuncios publicitarios y disparar guiones de optimización comercial.
+                    </p>
+                  </div>
+                ) : creative?.fatiguedAdName ? (
+                  <div>
+                    <span className="text-[10px] font-bold uppercase text-[var(--danger)] tracking-wider flex items-center gap-1 mb-1 font-mono">
+                      <AlertTriangle className="w-3 h-3" /> Fatiga Detectada
+                    </span>
+                    <p className="text-xs text-purple-950 dark:text-[#d8b4fe] leading-relaxed">
+                      El anuncio <strong className="text-[var(--text-main)]">"{creative.fatiguedAdName}"</strong> superó la frecuencia de {creative.frequency}. Costos de adquisición en aumento.
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <span className="text-[10px] font-bold uppercase text-emerald-400 tracking-wider flex items-center gap-1 mb-1 font-mono">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-400" /> Rendimiento Creativo Saludable
+                    </span>
+                    <p className="text-xs text-purple-950 dark:text-[#d8b4fe] leading-relaxed">
+                      Todos los anuncios operan en frecuencias saludables de entrega. No se observan anomalías de fatiga en este período.
+                    </p>
+                  </div>
+                )}
 
                 <div className="border-t border-purple-500/20 dark:border-[#a855f7]/30 pt-3">
                   <p className="text-[10px] font-mono text-purple-900 dark:text-[#e9d5ff] font-bold mb-1.5 uppercase">
                     Sugerencia Estratégica (Diversidad):
                   </p>
                   <p className="text-xs text-purple-950 dark:text-[#d8b4fe] leading-relaxed">
-                    {creative.suggestion}
+                    {!activeTenant
+                      ? 'Sin recomendaciones estratégicas activas sin un contexto de negocio.'
+                      : (creative?.suggestion || 'Mantener la rotación regular de copies y creativos visuales para sostener la tasa de conversión.')}
                   </p>
                 </div>
               </div>

@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       // Purga automática de datos demo cacheados si la versión de esquema es previa a v7
-      if (localStorage.getItem('vector_schema_version') !== 'v7_zero_state_clean') {
+      if (localStorage.getItem('vector_schema_version') !== 'v8_zero_state_purge') {
         const keysToRemove = [
           'vector_tenants_data',
           'vector_active_tenant_key',
@@ -56,7 +56,7 @@ export const AuthProvider = ({ children }) => {
             localStorage.removeItem(key);
           }
         }
-        localStorage.setItem('vector_schema_version', 'v7_zero_state_clean');
+        localStorage.setItem('vector_schema_version', 'v8_zero_state_purge');
       }
 
       const savedTheme = localStorage.getItem('vector_theme');
