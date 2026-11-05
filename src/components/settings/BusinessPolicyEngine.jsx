@@ -56,10 +56,10 @@ export const BusinessPolicyEngine = () => {
     if (activeTenantId && tenantsData?.[activeTenantId]) {
       return tenantsData[activeTenantId];
     }
-    return authActiveTenant || Object.values(tenantsData || {})[0] || null;
+    return authActiveTenant || null;
   }, [activeTenantKey, activeTenantId, tenantsData, authActiveTenant]);
 
-  const tenantId = currentTenant?.id || 'dental';
+  const tenantId = currentTenant?.id || null;
 
   // Vista activa: 'active_business' (Políticas del negocio seleccionado) o 'agency_matrix' (Matriz de toda la agencia - Solo Admin)
   const [viewMode, setViewMode] = useState('active_business');

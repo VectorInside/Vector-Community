@@ -229,7 +229,7 @@ export const CentroDeMando = () => {
               className="text-xs bg-neon text-black font-mono font-black uppercase px-4 py-2 rounded-xl flex items-center gap-1.5 hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_15px_var(--neon-glow)] active:scale-95 min-h-[40px]"
             >
               <MessageSquare className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>Bandeja (3)</span>
+              <span>Bandeja</span>
             </button>
           </div>
         ) : (
@@ -281,7 +281,7 @@ export const CentroDeMando = () => {
 
           <p className="text-xs sm:text-sm text-[var(--text-muted)] font-sans leading-relaxed">
             {isClient ? (
-              `Conecta la estrategia, contenido y seguimiento de ${activeTenant?.name || 'tu negocio'}. 3 consultas esperan atención inmediata en tu bandeja de WhatsApp y 2 piezas requieren tu visto bueno editorial.`
+              `Conecta la estrategia, contenido y seguimiento de ${activeTenant?.name || 'tu negocio'} en tiempo real.`
             ) : (
               `Supervisas ${tenantsList.length} negocios en el ecosistema. ${tenantsList.filter(t => !t.isAiActive).length > 0 ? `${tenantsList.filter(t => !t.isAiActive).length} en atención manual y ` : ''}${tenantsList.filter(t => t.frictionAlert).length} alertas de fricción web detectadas con Meta Pixel & GA4.`
             )}
@@ -295,7 +295,7 @@ export const CentroDeMando = () => {
                   onClick={() => router.push('/inbox')}
                   className="px-5 py-3 rounded-xl bg-neon text-black font-sans font-bold text-xs uppercase flex items-center gap-2 hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_20px_var(--neon-glow)] active:scale-95"
                 >
-                  <span>Atender conversaciones (3)</span>
+                  <span>Atender conversaciones</span>
                   <ArrowRight className="w-4 h-4 stroke-[2.5]" />
                 </button>
 
@@ -304,7 +304,7 @@ export const CentroDeMando = () => {
                   onClick={() => router.push('/planner')}
                   className="px-4 py-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon text-[var(--text-main)] font-sans font-semibold text-xs transition-colors flex items-center gap-2"
                 >
-                  <span>Piezas por revisar (2)</span>
+                  <span>Estudio de contenido</span>
                 </button>
 
                 <button
@@ -645,20 +645,20 @@ export const CentroDeMando = () => {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono">
               <div className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1">
                 <span className="text-[10px] text-[var(--text-muted)] uppercase">Inversión Devengada Mes</span>
-                <p className="text-xl font-bold text-[var(--text-main)]">$12,450 MXN</p>
-                <span className="text-[10px] text-emerald-500 font-bold">ROAS Estimado: 4.2x</span>
+                <p className="text-xl font-bold text-[var(--text-main)]">$0 MXN</p>
+                <span className="text-[10px] text-emerald-500 font-bold">ROAS Estimado: 0.0x</span>
               </div>
 
               <div className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1">
                 <span className="text-[10px] text-[var(--text-muted)] uppercase">Contactos Directos Captados</span>
-                <p className="text-xl font-bold text-neon">18 Leads</p>
-                <span className="text-[10px] text-[var(--text-muted)]">Costo por Lead: $350 MXN</span>
+                <p className="text-xl font-bold text-neon">0 Leads</p>
+                <span className="text-[10px] text-[var(--text-muted)]">Costo por Lead: $0 MXN</span>
               </div>
 
               <div className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1">
                 <span className="text-[10px] text-[var(--text-muted)] uppercase">Canal Más Efectivo</span>
                 <p className="text-xl font-bold text-cyan-400">WhatsApp Direct</p>
-                <span className="text-[10px] text-[var(--text-muted)]">68% de conversiones a cita</span>
+                <span className="text-[10px] text-[var(--text-muted)]">0% de conversiones a cita</span>
               </div>
             </div>
           </div>

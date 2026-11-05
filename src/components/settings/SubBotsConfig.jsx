@@ -116,10 +116,10 @@ export const SubBotsConfig = () => {
     if (activeTenantId && tenantsData?.[activeTenantId]) {
       return tenantsData[activeTenantId];
     }
-    return authActiveTenant || Object.values(tenantsData || {})[0] || null;
+    return authActiveTenant || null;
   }, [activeTenantKey, activeTenantId, tenantsData, authActiveTenant]);
 
-  const tenantId = currentTenant?.id || 'dental';
+  const tenantId = currentTenant?.id || null;
 
   // Configuración técnica y operativa
   const [config, setConfig] = useState(null);
@@ -136,10 +136,10 @@ export const SubBotsConfig = () => {
 
   // Estado de pruebas de latencia de API (Ping)
   const [pingStatus, setPingStatus] = useState({
-    deepseek: { loading: false, result: 'connected', latency: '142 ms', status: 200 },
+    deepseek: { loading: false, result: 'idle', latency: null, status: null },
     openai: { loading: false, result: 'idle', latency: null, status: null },
     anthropic: { loading: false, result: 'idle', latency: null, status: null },
-    groq: { loading: false, result: 'connected', latency: '185 ms', status: 200 },
+    groq: { loading: false, result: 'idle', latency: null, status: null },
   });
 
   // Modal de prueba Sandbox

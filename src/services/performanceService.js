@@ -2,9 +2,16 @@ import api, { isBackendAvailable, unwrapApiData } from './api';
 import { INITIAL_PERFORMANCE_METRICS } from '@/utils/mockData';
 
 const TENANT_METRICS_MAP = {};
+const LEGACY_MOCK_TENANT_IDS = new Set(['dental', 'polanco', 'urban', 'mex', 'corp', 'demo', 'creator', 'gym', 'patrimonial']);
+
+const isInvalidOrMockTenant = (tenantId) => {
+  if (!tenantId) return true;
+  const clean = String(tenantId).toLowerCase().trim();
+  return !clean || clean === 'undefined' || clean === 'null' || LEGACY_MOCK_TENANT_IDS.has(clean);
+};
 
 const resolveMetricsKey = (tenantId) => {
-  if (!tenantId) return null;
+  if (isInvalidOrMockTenant(tenantId)) return null;
   return TENANT_METRICS_MAP[tenantId] || tenantId;
 };
 
@@ -79,33 +86,31 @@ export const normalizeTelemetryFromApi = (raw) => {
 
 export const performanceService = {
   async getDualTelemetry(tenantId) {
-    if (!tenantId) return ZERO_TELEMETRY;
+    if (isInvalidOrMockTenant(tenantId)) return ZERO_TELEMETRY;
     if (!isBackendAvailable) return ZERO_TELEMETRY;
     try {
       const response = await api.get(`/analytics/${tenantId}`);
       const data = unwrapApiData(response);
       return normalizeTelemetryFromApi(data) || ZERO_TELEMETRY;
     } catch (error) {
-      console.warn(`[performanceService.getDualTelemetry] Error para ${tenantId}:`, error?.message);
       return ZERO_TELEMETRY;
     }
   },
 
   async trackTelemetryEvent(tenantId, eventType = 'VISIT') {
-    if (!tenantId) return null;
+    if (isInvalidOrMockTenant(tenantId)) return null;
     if (!isBackendAvailable) return null;
     try {
       const response = await api.post('/analytics/track', { tenantId, eventType });
       const data = unwrapApiData(response);
       return normalizeTelemetryFromApi(data);
     } catch (error) {
-      console.warn(`[performanceService.trackTelemetryEvent] Error para ${tenantId} (${eventType}):`, error?.message);
       return null;
     }
   },
 
   async getPerformanceMetrics(tenantId) {
-    if (!tenantId) return ZERO_PERFORMANCE_METRICS;
+    if (isInvalidOrMockTenant(tenantId)) return ZERO_PERFORMANCE_METRICS;
     const key = resolveMetricsKey(tenantId);
     const fallback = (key && INITIAL_PERFORMANCE_METRICS[key]) || ZERO_PERFORMANCE_METRICS;
     if (!isBackendAvailable) {
@@ -126,14 +131,14 @@ export const performanceService = {
   },
 
   async getCapiAttributionLogs(tenantId) {
-    if (!tenantId) return [];
+    if (isInvalidOrMockTenant(tenantId)) return [];
     const key = resolveMetricsKey(tenantId);
     const tenantData = (key && INITIAL_PERFORMANCE_METRICS[key]) || null;
     return tenantData?.capiLogs || [];
   },
 
   async emitTestCapiSignal(tenantId, eventName = 'Purchase_Verified') {
-    if (!tenantId) return null;
+    if (isInvalidOrMockTenant(tenantId)) return null;
     try {
       await this.trackTelemetryEvent(tenantId, 'CTA_CLICK');
     } catch {

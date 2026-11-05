@@ -297,47 +297,16 @@ export const OrchestrationView = () => {
   // Replace template variables for live preview
   const formatPromptWithTenant = (xml) => {
     if (!xml) return '';
-    const tenantId = activeTenant?.id || 'dental';
-
-    const tenantPreviewData = {
-      dental: {
-        userName: 'Carlos Mendoza',
-        productInterest: 'Limpieza Dental Ultrasónica & Carillas',
-        lastObjection: 'El tratamiento se me hace costoso',
-        ragPassages: '[Fragmento 1: Profilaxis Ultrasónica arancel $850 MXN, incluye diagnóstico 3D y pulido en sillón 3.]\n[Fragmento 2: Horarios Lun-Vie 09:00 a 19:00 hrs. Tratamiento previene 90% de cirugías invasivas sin dolor.]',
-      },
-      polanco: {
-        userName: 'Alejandro Bastida',
-        productInterest: 'Tomahawk Black Onyx 1.2kg & Mesa Terraza VIP',
-        lastObjection: 'Solo quiero ver el menú antes de reservar',
-        ragPassages: '[Fragmento 1: Cortes Sonora Prime y Menú Degustación 8 Tiempos. Descorche $650 MXN por botella.]\n[Fragmento 2: Terraza VIP con vista panorámica. Flameado en mesa por Sommelier. Horario 13:00 a 01:00 hrs.]',
-      },
-      urban: {
-        userName: 'Kevin Roldán',
-        productInterest: 'Cyberpunk High-Tops Sneakers Edición Limitada Talla 27.5 MX',
-        lastObjection: 'Tengo duda de cuánto tarda el envío a Monterrey',
-        ragPassages: '[Fragmento 1: Sneakers manufacturados en gamuza y reflectivo 3M. Suela antideslizante con drop ergonómico.]\n[Fragmento 2: Envío express DHL 24-48h gratis. Métodos de pago: Kueski Pay 3 quincenas sin tarjeta, Mercado Pago y SPEI.]',
-      },
-      corp: {
-        userName: 'Lic. Rodrigo Elizondo',
-        productInterest: 'Licenciamiento Multi-Tenant Vector OS con RLS & CAPI S2S',
-        lastObjection: 'Queremos validar el aislamiento de bases de datos antes de contratar',
-        ragPassages: '[Fragmento 1: Arquitectura RLS (Row-Level Security) en PostgreSQL con aislamiento criptográfico por tenant_id.]\n[Fragmento 2: Meta CAPI S2S sin cookies, servidor dedicado en AWS con SLA 99.9% y soporte técnico 24/7.]',
-      },
-    };
-
-    const preview = tenantPreviewData[tenantId] || tenantPreviewData.dental;
-
     return xml
-      .replaceAll('{tenant_id}', activeTenant?.id || 'dental')
-      .replaceAll('{vertical_tipo}', activeTenant?.vertical || 'service_appointments')
-      .replaceAll('{has_website}', String(activeTenant?.hasWebsite ?? true))
-      .replaceAll('{brand_purpose}', activeTenant?.brandPurpose || 'Democratizar la salud bucal con tecnología avanzada sin dolor')
-      .replaceAll('{business_name}', activeTenant?.name || 'Odontología Integral')
-      .replaceAll('{user_name}', preview.userName)
-      .replaceAll('{product_interest}', preview.productInterest)
-      .replaceAll('{last_objection}', preview.lastObjection)
-      .replaceAll('{rag_retrieved_passages}', preview.ragPassages);
+      .replaceAll('{tenant_id}', activeTenant?.id || 'sin_negocio_activo')
+      .replaceAll('{vertical_tipo}', activeTenant?.vertical || 'sin_vertical')
+      .replaceAll('{has_website}', String(activeTenant?.hasWebsite ?? false))
+      .replaceAll('{brand_purpose}', activeTenant?.brandPurpose || 'Propósito del negocio configurado en Perfil de Marca')
+      .replaceAll('{business_name}', activeTenant?.name || 'Sin negocio seleccionado')
+      .replaceAll('{user_name}', 'Prospecto en Conversación')
+      .replaceAll('{product_interest}', activeTenant?.commercialOffer?.hook || 'Servicio principal del negocio')
+      .replaceAll('{last_objection}', 'Consulta de disponibilidad y precios')
+      .replaceAll('{rag_retrieved_passages}', activeTenant ? `[ Base de Conocimiento RAG de ${activeTenant.name} ]` : '[ Selecciona un negocio para inyectar fragmentos RAG ]');
   };
 
   return (

@@ -40,7 +40,7 @@ export const AgentOrchestrationReportModal = ({
     verticalLabel: 'General',
   };
 
-  const reportId = `AUD-${new Date().getFullYear()}-GOV-VI-${(currentTenant.id || 'DENT').toUpperCase()}`;
+  const reportId = `AUD-${new Date().getFullYear()}-GOV-VI-${(currentTenant.id || 'GEN').toUpperCase()}`;
   const shaHash = `0x4a7e9d${Date.now().toString(16).slice(-6)}c8b3`;
 
   const handlePrint = () => {

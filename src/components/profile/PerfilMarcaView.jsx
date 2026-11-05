@@ -134,19 +134,43 @@ export const PerfilMarcaView = () => {
       );
 
       // Buyer Persona & Marketing Mix (4 Ps)
-      setBuyerName(activeTenant.buyerPersona?.name || 'Cliente Ideal Calificado');
-      setBuyerAgeRange(activeTenant.buyerPersona?.ageRange || '28 a 45 años');
-      setBuyerMaritalStatus(activeTenant.buyerPersona?.maritalStatus || 'Profesionista / Familiar');
-      setBuyerLocation(activeTenant.buyerPersona?.location || 'Zona Metropolitana & CP Local');
-      setBuyerHabits(activeTenant.buyerPersona?.digitalHabits || 'Instagram, TikTok y WhatsApp');
-      setBuyerPainPoint(activeTenant.buyerPersona?.mainPainPoint || 'Falta de claridad en costos y desconfianza');
-      setBuyerBuyingTrigger(activeTenant.buyerPersona?.buyingTrigger || 'Garantía, atención inmediata y facilidades de pago');
+      setBuyerName(activeTenant.buyerPersona?.name || '');
+      setBuyerAgeRange(activeTenant.buyerPersona?.ageRange || '');
+      setBuyerMaritalStatus(activeTenant.buyerPersona?.maritalStatus || '');
+      setBuyerLocation(activeTenant.buyerPersona?.location || '');
+      setBuyerHabits(activeTenant.buyerPersona?.digitalHabits || '');
+      setBuyerPainPoint(activeTenant.buyerPersona?.mainPainPoint || '');
+      setBuyerBuyingTrigger(activeTenant.buyerPersona?.buyingTrigger || '');
 
       setMixProduct(activeTenant.marketingMix4P?.product || '');
       setMixPrice(activeTenant.marketingMix4P?.price || '');
       setMixPlace(activeTenant.marketingMix4P?.place || '');
       setMixPromotion(activeTenant.marketingMix4P?.promotion || '');
 
+      setIsDirty(false);
+    } else {
+      setBrandPurpose('');
+      setToneOfVoice('');
+      setEmojiPolicy('Moderado (según contexto)');
+      setSlaTarget(15);
+      setBrandColors([]);
+      setCustomAvatar('🏢');
+      setOwnerPhone('');
+      setOfferHook('');
+      setOfferCta('');
+      setOfferValidity('');
+      setInviolableRules([]);
+      setBuyerName('');
+      setBuyerAgeRange('');
+      setBuyerMaritalStatus('');
+      setBuyerLocation('');
+      setBuyerHabits('');
+      setBuyerPainPoint('');
+      setBuyerBuyingTrigger('');
+      setMixProduct('');
+      setMixPrice('');
+      setMixPlace('');
+      setMixPromotion('');
       setIsDirty(false);
     }
   }, [activeTenantKey, activeTenant, currentPreset]);
@@ -292,9 +316,9 @@ export const PerfilMarcaView = () => {
               IDENTIDAD & ADN DE MARCA
             </span>
             <span className="text-xs text-[var(--text-muted)] font-mono flex items-center gap-1.5">
-              <span>{currentPreset.canonicalId || 'V00'}</span>
+              <span>{activeTenant ? currentPreset.canonicalId || 'V00' : 'V00'}</span>
               <span>•</span>
-              <span>{activeTenant?.giro || activeTenant?.verticalLabel || 'Servicios Profesionales'}</span>
+              <span>{activeTenant?.giro || activeTenant?.verticalLabel || 'Selecciona un negocio'}</span>
             </span>
             <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-bold flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />

@@ -75,79 +75,32 @@ const getPostFormatIcon = (post) => {
 // CANONICAL MULTI-TENANT MATRICES (ADR-001, ADR-002, ADR-011)
 // =========================================================================
 
-const CANONICAL_DNA_BY_TENANT = {
-    dental: {
-      archetype: 'El Asesor Experto & Autoridad de Confianza',
-      tone: 'Profesional, Empático, Científico y Cálido',
-      tabooWords: 'barato, regalado, remedio casero, garantizado 100%, doloroso, sin compromiso, dolor insoportable',
-      icpPains: 'Miedo al dolor del taladro, vergüenza estética al sonreír, desconfianza por presupuestos sorpresa',
-      icpObjections: 'Costo de implantes, falta de tiempo, incertidumbre sobre meses sin intereses (MSI)',
-      leadMagnetHook: 'Diagnóstico Computarizado 3D Sin Costo + 20% en Tratamiento Integral',
-      leadMagnetCta: 'Comenta "VALORACION" o envía un DM con la palabra "DIAGNOSTICO"',
-    },
-    polanco: {
-      archetype: 'El Anfitrión Hedonista & Maestro Culinario de Autor',
-      tone: 'Sofisticado, Cautivador, Exclusivo y Hospitalario',
-      tabooWords: 'comida rápida, económico, fonda, barato, lleno total, sin reservación, buffet, comida corrida',
-      icpPains: 'Frustración por falta de mesas en ocasiones especiales, servicio apresurado, atmósfera ruidosa para cerrar negocios o celebrar',
-      icpObjections: 'Ticket promedio elevado, política estricta de puntualidad en reservas de terraza, código de vestimenta',
-      leadMagnetHook: 'Cóctel de Autor de Bienvenida + Mesa Preferente en Terraza VIP al Reservar con Anticipación',
-      leadMagnetCta: 'Envía un WhatsApp con la palabra "RESERVA" o pulsa el enlace para asegurar tu mesa prioritaria',
-    },
-    urban: {
-      archetype: 'El Curator de Hype & Amigo Trendsetter Streetwear',
-      tone: 'Urbano, Energético, Auténtico, Exclusivo y Directo',
-      tabooWords: 'réplica, clon, 1.1, clon espejo, baratillo, copia china, imitación, saldo de paca, sin garantía',
-      icpPains: 'Pánico a ser estafado con tenis falsificados en reventa, semanas de espera en aduanas, calzado sin caja original impecable',
-      icpObjections: 'Precio de reventa elevado vs retail original, dudas sobre autenticidad certificada, costo de flete express',
-      leadMagnetHook: 'Envío Express Mismo Día Gratis + Certificado Físico Holográfico de Autenticidad Blindada',
-      leadMagnetCta: 'Comenta "DROP" o pulsa el enlace de biografía para desbloquear acceso prioritario a la preventa',
-    },
-    corp: {
-      archetype: 'El Arquitecto Estratégico & Socio de Soberanía Tecnológica',
-      tone: 'Riguroso, Analítico, Corporativo, Vanguardista y Confiable',
-      tabooWords: 'chambeador, bot barato, cursito, milagroso, baratísimo, sin factura, informal, truco secreto',
-      icpPains: 'Fuga silenciosa de leads B2B por tiempos lentos de respuesta, dependencia de plataformas opacas sin soberanía de datos',
-      icpObjections: 'Curva de implementación, fricción para integrarse a CRM legado (Salesforce/HubSpot), seguridad de datos SOC2',
-      leadMagnetHook: 'Auditoría de Fuga de Ingresos & Diagnóstico de Arquitectura de IA Sin Costo para C-Levels Calificados',
-      leadMagnetCta: 'Agenda tu Sesión Estratégica 1-on-1 vía Zoom con un Arquitecto Senior en el enlace directo',
-    },
-  };
+const EMPTY_DNA = {
+  archetype: '',
+  tone: '',
+  tabooWords: '',
+  icpPains: '',
+  icpObjections: '',
+  leadMagnetHook: '',
+  leadMagnetCta: '',
+};
 
-  const CANONICAL_OFFERS_BY_TENANT = {
-    dental: {
-      docName: 'Propuesta_Comercial_Salud_Octubre_2026.pdf',
-      hook: 'Diagnóstico Computarizado 3D Sin Costo + 20% en Tratamiento Integral',
-      cta: 'Comenta "VALORACION" o envía un DM con la palabra "DIAGNOSTICO"',
-      validity: 'Campaña Activa de Temporada (Primeros 30 registros)',
-    },
-    polanco: {
-      docName: 'Propuesta_Cenas_Maridaje_Temporada_2026.pdf',
-      hook: 'Cóctel de Autor de Bienvenida + Mesa Preferente en Terraza VIP al Reservar con Anticipación',
-      cta: 'Envía un WhatsApp con la palabra "RESERVA" para asegurar tu mesa',
-      validity: 'Válido para Reservas Jueves a Domingo (Cupo Limitado a 8 Mesas)',
-    },
-    urban: {
-      docName: 'Catalogo_Drops_Otono_Streetwear_2026.pdf',
-      hook: 'Envío Express Mismo Día Gratis + Certificado Físico de Autenticidad Blindada',
-      cta: 'Comenta "DROP" o envía un DM para recibir código de acceso exclusivo',
-      validity: 'Válido en compras mayores a $2,800 MXN hasta agotar stock (15 pares)',
-    },
-    corp: {
-      docName: 'Dossier_Soberania_IA_Enterprise_2026.pdf',
-      hook: 'Auditoría de Fuga de Ingresos & Diagnóstico de Arquitectura de IA Sin Costo',
-      cta: 'Solicita tu Sesión de Diagnóstico B2B vía enlace directo o WhatsApp Ejecutivo',
-      validity: 'Cupo Reservado para Directores de Operaciones y TI (Máx. 5 empresas por mes)',
-    },
-  };
+const EMPTY_OFFER = {
+  docName: 'Sin documento cargado',
+  hook: '',
+  cta: '',
+  validity: '',
+};
 
-  const CANONICAL_POSTS_BY_TENANT = { dental: [], polanco: [], urban: [], corp: [] };
-  const CANONICAL_VIRAL_REELS_BY_TENANT = { dental: [], polanco: [], urban: [], corp: [] };
-  const CANONICAL_AUDIT_BY_TENANT = { dental: { score: 0, items: [] }, polanco: { score: 0, items: [] }, urban: { score: 0, items: [] }, corp: { score: 0, items: [] } };
+const CANONICAL_DNA_BY_TENANT = {};
+const CANONICAL_OFFERS_BY_TENANT = {};
+const CANONICAL_POSTS_BY_TENANT = {};
+const CANONICAL_VIRAL_REELS_BY_TENANT = {};
+const CANONICAL_AUDIT_BY_TENANT = {};
 
 export const ContentPlanner = () => {
   const { activeTenant, isAdmin, isClient, triggerModal } = useAuth();
-  const tenantKey = activeTenant?.id || 'dental';
+  const tenantKey = activeTenant?.id || null;
   const [activeTab, setActiveTab] = useState('grid'); // 'grid' | 'dna' | 'viral_lab' | 'audit'
   const [selectedFilter, setSelectedFilter] = useState('ALL');
   const [selectedNetworkFilter, setSelectedNetworkFilter] = useState('ALL');
@@ -160,30 +113,40 @@ export const ContentPlanner = () => {
 
   // State initialization with Tenant Isolation (ADR-001)
   const [brandDna, setBrandDna] = useState(() => {
-    return CANONICAL_DNA_BY_TENANT[tenantKey] || CANONICAL_DNA_BY_TENANT.dental;
+    return (tenantKey && CANONICAL_DNA_BY_TENANT[tenantKey]) || EMPTY_DNA;
   });
 
   const [commercialOffer, setCommercialOffer] = useState(() => {
-    return CANONICAL_OFFERS_BY_TENANT[tenantKey] || CANONICAL_OFFERS_BY_TENANT.dental;
+    return (tenantKey && CANONICAL_OFFERS_BY_TENANT[tenantKey]) || EMPTY_OFFER;
   });
 
   const [posts, setPosts] = useState([]);
 
   const [viralReels, setViralReels] = useState(() => {
-    return CANONICAL_VIRAL_REELS_BY_TENANT[tenantKey] || CANONICAL_VIRAL_REELS_BY_TENANT.dental;
+    return (tenantKey && CANONICAL_VIRAL_REELS_BY_TENANT[tenantKey]) || [];
   });
 
   const [profileAudit, setProfileAudit] = useState(() => {
-    return CANONICAL_AUDIT_BY_TENANT[tenantKey] || CANONICAL_AUDIT_BY_TENANT.dental;
+    return (tenantKey && CANONICAL_AUDIT_BY_TENANT[tenantKey]) || { score: 0, items: [], checks: [] };
   });
 
   // Re-sync states whenever activeTenant changes
   React.useEffect(() => {
-    const canonicalDna = CANONICAL_DNA_BY_TENANT[tenantKey] || CANONICAL_DNA_BY_TENANT.dental;
-    const canonicalOffer = CANONICAL_OFFERS_BY_TENANT[tenantKey] || CANONICAL_OFFERS_BY_TENANT.dental;
-    const canonicalPosts = CANONICAL_POSTS_BY_TENANT[tenantKey] || CANONICAL_POSTS_BY_TENANT.dental;
-    const canonicalViral = CANONICAL_VIRAL_REELS_BY_TENANT[tenantKey] || CANONICAL_VIRAL_REELS_BY_TENANT.dental;
-    const canonicalAudit = CANONICAL_AUDIT_BY_TENANT[tenantKey] || CANONICAL_AUDIT_BY_TENANT.dental;
+    if (!tenantKey) {
+      setBrandDna(EMPTY_DNA);
+      setCommercialOffer(EMPTY_OFFER);
+      setPosts([]);
+      setViralReels([]);
+      setProfileAudit({ score: 0, items: [], checks: [] });
+      setSelectedNetworkFilter('ALL');
+      return;
+    }
+
+    const canonicalDna = CANONICAL_DNA_BY_TENANT[tenantKey] || EMPTY_DNA;
+    const canonicalOffer = CANONICAL_OFFERS_BY_TENANT[tenantKey] || EMPTY_OFFER;
+    const canonicalPosts = CANONICAL_POSTS_BY_TENANT[tenantKey] || [];
+    const canonicalViral = CANONICAL_VIRAL_REELS_BY_TENANT[tenantKey] || [];
+    const canonicalAudit = CANONICAL_AUDIT_BY_TENANT[tenantKey] || { score: 0, items: [], checks: [] };
 
     if (typeof window !== 'undefined') {
       try {
@@ -232,12 +195,12 @@ export const ContentPlanner = () => {
       .catch(() => {
         setPosts([]);
       });
-  }, [activeTenant?.id]);
+  }, [activeTenant?.id, tenantKey]);
 
   // Persist edits whenever posts or dna or offer change
   const persistPosts = (newPosts) => {
     setPosts(newPosts);
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && tenantKey) {
       try {
         localStorage.setItem(`vector_planner_posts_${tenantKey}`, JSON.stringify(newPosts));
       } catch (e) {}
@@ -246,7 +209,7 @@ export const ContentPlanner = () => {
 
   const persistBrandDna = (newDna) => {
     setBrandDna(newDna);
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && tenantKey) {
       try {
         localStorage.setItem(`vector_planner_dna_${tenantKey}`, JSON.stringify(newDna));
       } catch (e) {}
@@ -255,7 +218,7 @@ export const ContentPlanner = () => {
 
   const persistCommercialOffer = (newOffer) => {
     setCommercialOffer(newOffer);
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && tenantKey) {
       try {
         localStorage.setItem(`vector_planner_offer_${tenantKey}`, JSON.stringify(newOffer));
       } catch (e) {}
@@ -304,11 +267,11 @@ export const ContentPlanner = () => {
   };
 
   const handleResetToCanonicalDna = () => {
-    const canonical = CANONICAL_DNA_BY_TENANT[tenantKey] || CANONICAL_DNA_BY_TENANT.dental;
+    const canonical = (tenantKey && CANONICAL_DNA_BY_TENANT[tenantKey]) || EMPTY_DNA;
     persistBrandDna(canonical);
     triggerModal(
       'ADN Canónico Restaurado',
-      `Se han restablecido los valores predeterminados de la industria para <b>${activeTenant?.name}</b> (${activeTenant?.giro || 'Estándar'}).`
+      `Se han restablecido los valores predeterminados de la industria para <b>${activeTenant?.name || 'el negocio'}</b> (${activeTenant?.giro || 'Estándar'}).`
     );
   };
 
@@ -1098,7 +1061,7 @@ export const ContentPlanner = () => {
 
           {/* Audit Checks Checklist */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {profileAudit.checks.map((chk) => (
+            {(profileAudit?.checks || profileAudit?.items || []).map((chk) => (
               <div
                 key={chk.id}
                 className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-3 font-mono text-xs"

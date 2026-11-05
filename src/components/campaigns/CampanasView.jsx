@@ -43,7 +43,7 @@ const TENANT_CAMPAIGNS = {};
 export const CampanasView = () => {
   const router = useRouter();
   const { activeTenant, isAdmin } = useAuth();
-  const tenantId = activeTenant?.id || 'dental';
+  const tenantId = activeTenant?.id || null;
 
   // State initialized clean (Zero-State) and loaded from campaignService
   const [campaigns, setCampaigns] = useState([]);
@@ -348,9 +348,9 @@ export const CampanasView = () => {
             </span>
             <span className="text-xs text-[var(--text-muted)] font-mono flex items-center gap-1.5">
               <span>Espacio:</span>
-              <strong className="text-[var(--text-main)]">{activeTenant?.name || 'Vector Inside'}</strong>
+              <strong className="text-[var(--text-main)]">{activeTenant?.name || 'Sin negocio seleccionado'}</strong>
               <span className="text-[10px] px-2 py-0.2 rounded-full bg-white/5 border border-white/10 text-neon font-bold">
-                {activeTenant?.giro || 'Comercial'}
+                {activeTenant?.giro || 'Sin giro activo'}
               </span>
             </span>
           </div>
@@ -459,7 +459,7 @@ export const CampanasView = () => {
             <strong className="text-neon font-bold">${avgCpl} MXN</strong>
           </div>
           <div className="w-full h-1.5 rounded-full bg-[var(--bg-card)] overflow-hidden">
-            <div className="h-full bg-neon rounded-full" style={{ width: '85%' }} />
+            <div className="h-full bg-neon rounded-full" style={{ width: totalLeads > 0 ? '85%' : '0%' }} />
           </div>
         </div>
 
@@ -486,7 +486,7 @@ export const CampanasView = () => {
             </button>
           </div>
           <div className="w-full h-1.5 rounded-full bg-[var(--bg-card)] overflow-hidden">
-            <div className="h-full bg-blue-500 rounded-full" style={{ width: '92%' }} />
+            <div className="h-full bg-blue-500 rounded-full" style={{ width: campaigns.length > 0 ? '92%' : '0%' }} />
           </div>
         </div>
       </div>

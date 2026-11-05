@@ -24,8 +24,8 @@ export const AuthProvider = ({ children }) => {
   // Sync preferences from localStorage & Backend PostgreSQL on client mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      // Purga automática de datos demo cacheados si la versión de esquema es previa a v7
-      if (localStorage.getItem('vector_schema_version') !== 'v8_zero_state_purge') {
+      // Purga automática de datos demo cacheados si la versión de esquema es previa a v9
+      if (localStorage.getItem('vector_schema_version') !== 'v9_complete_zero_state') {
         const keysToRemove = [
           'vector_tenants_data',
           'vector_active_tenant_key',
@@ -51,12 +51,13 @@ export const AuthProvider = ({ children }) => {
               key.startsWith('vector_campaigns_') ||
               key.startsWith('vector_inbox_') ||
               key.startsWith('vector_planner_') ||
+              key.startsWith('vector_subbots_') ||
               key.startsWith('vector_threads_'))
           ) {
             localStorage.removeItem(key);
           }
         }
-        localStorage.setItem('vector_schema_version', 'v8_zero_state_purge');
+        localStorage.setItem('vector_schema_version', 'v9_complete_zero_state');
       }
 
       const savedTheme = localStorage.getItem('vector_theme');

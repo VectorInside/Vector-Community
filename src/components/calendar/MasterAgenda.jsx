@@ -88,100 +88,40 @@ export function recomputeShiftsHours(shifts, durationMin = 60) {
   }));
 }
 
-export const TENANT_EMAIL_TEMPLATES = {
-  dental: {
-    senderName: 'Clínica Odontológica Integral',
-    senderEmail: 'citas@odontologiaintegral.com',
-    logoAvatar: '🦷',
-    accentColor: '#D4FF00',
-    subject: '✅ Cita Confirmada: {{servicio}} en {{negocio}}',
-    welcomeMessage: '¡Hola, {{cliente}}! Tu cita odontológica ha sido agendada con éxito en nuestro sistema.',
-    instructions: 'Por favor preséntate 10 minutos antes. Es indispensable traer una identificación oficial y tus estudios o radiografías previas.',
-    locationType: 'physical',
-    locationAddress: 'Av. Insurgentes Sur 1234, Consultorio 302, Benito Juárez, CDMX',
-    virtualLink: 'https://meet.google.com/vector-dental-cita',
-    cancellationPolicy: 'Puedes cancelar o reprogramar sin costo notificando con al menos 24 horas de antelación vía WhatsApp o llamando al consultorio.',
-    ctaText: 'Añadir a Google Calendar / Outlook',
-    includeIcs: true,
-    includeWhatsapp: true,
-    sampleClient: 'Carlos Villaseñor',
-    sampleClientEmail: 'carlos.villasenor@gmail.com',
-    sampleService: 'Limpieza Dental y Profilaxis Ultrasónica',
-    sampleSpecialist: 'Dra. Claudia Ortiz (Ortodoncia)',
-    sampleDateTime: 'Viernes 23 Octubre 2026 • 11:00 hrs',
-  },
-  polanco: {
-    senderName: 'Polanco Steakhouse & Mixology',
-    senderEmail: 'reservas@polancosteakhouse.mx',
-    logoAvatar: '🥩',
-    accentColor: '#F97316',
-    subject: '🥩 Reservación Confirmada: {{servicio}} en {{negocio}}',
-    welcomeMessage: '¡Hola, {{cliente}}! Tu reservación gastronómica ha sido confirmada con éxito en nuestro sistema.',
-    instructions: 'Mesa reservada con 15 minutos de tolerancia. Código de vestimenta: Smart Casual. Si requieres área de terraza o atención especial, infórmanos con anticipación.',
-    locationType: 'physical',
-    locationAddress: 'Campos Elíseos 204, Polanco IV Sección, Miguel Hidalgo, CDMX',
-    virtualLink: '',
-    cancellationPolicy: 'Cancelaciones o ajuste de comensales sin penalización hasta 4 horas antes de tu horario reservado vía WhatsApp.',
-    ctaText: 'Añadir a Google Calendar / Outlook',
-    includeIcs: true,
-    includeWhatsapp: true,
-    sampleClient: 'Alejandro Bastida',
-    sampleClientEmail: 'alejandro.bastida@empresa.com',
-    sampleService: 'Reserva VIP Terraza & Menú Degustación (4 pax)',
-    sampleSpecialist: 'Capitán de Salón: Marco Aurelio',
-    sampleDateTime: 'Viernes 23 Octubre 2026 • 20:30 hrs',
-  },
-  urban: {
-    senderName: 'Urban Motors & Sneaks Premium',
-    senderEmail: 'citas@urbansneaks.shop',
-    logoAvatar: '👟',
-    accentColor: '#06B6D4',
-    subject: '📦 Turno Confirmado: {{servicio}} en {{negocio}}',
-    welcomeMessage: '¡Hola, {{cliente}}! Tu turno de servicio y entrega ha sido agendado con éxito.',
-    instructions: 'Presenta tu confirmación digital o identificación al ingresar. El tiempo estimado de atención es de 45 minutos.',
-    locationType: 'physical',
-    locationAddress: 'Av. Vasco de Quiroga 3800, Santa Fe, Cuajimalpa, CDMX',
-    virtualLink: 'https://meet.google.com/urban-soporte',
-    cancellationPolicy: 'Puedes reprogramar tu turno con al menos 12 horas de antelación vía WhatsApp.',
-    ctaText: 'Añadir a Google Calendar / Outlook',
-    includeIcs: true,
-    includeWhatsapp: true,
-    sampleClient: 'Lic. Valeria Domínguez',
-    sampleClientEmail: 'valeria.dominguez@live.com',
-    sampleService: 'Tratamiento Cerámico 9H & Entrega Exclusiva',
-    sampleSpecialist: 'Master Detailer: Ing. Roberto S.',
-    sampleDateTime: 'Viernes 23 Octubre 2026 • 15:30 hrs',
-  },
-  corp: {
-    senderName: 'Vector Corporate Solutions B2B',
-    senderEmail: 'enterprise@vectorinside.com',
-    logoAvatar: '🏢',
-    accentColor: '#3B82F6',
-    subject: '💼 Sesión Confirmada: {{servicio}} con {{negocio}}',
-    welcomeMessage: '¡Hola, {{cliente}}! Tu sesión ejecutiva de consultoría ha sido confirmada en nuestra agenda corporativa.',
-    instructions: 'La sesión se llevará a cabo por Google Meet cifrado. Se sugiere contar con diagramas de arquitectura y métricas listas para compartir pantalla.',
-    locationType: 'virtual',
-    locationAddress: 'Sesión Virtual Segura (Google Meet Cifrado S2S) • Torre Chapultepec Piso 28, CDMX',
-    virtualLink: 'https://meet.google.com/vector-enterprise-b2b',
-    cancellationPolicy: 'Puedes reprogramar la sesión con al menos 2 horas de anticipación a través del enlace de Google Calendar.',
-    ctaText: 'Añadir a Google Calendar / Outlook',
-    includeIcs: true,
-    includeWhatsapp: true,
-    sampleClient: 'Lic. Rodrigo Elizondo (VP Operaciones)',
-    sampleClientEmail: 'rodrigo.elizondo@logisticaglobal.com',
-    sampleService: 'Discovery Call & Auditoría IA de Pipeline ($45k USD)',
-    sampleSpecialist: 'Director de Soluciones: Marcos V.',
-    sampleDateTime: 'Viernes 23 Octubre 2026 • 11:00 hrs',
-  },
+export const DEFAULT_EMAIL_TEMPLATE = {
+  senderName: 'Mi Negocio',
+  senderEmail: 'citas@minegocio.com',
+  logoAvatar: '🏢',
+  accentColor: '#D4FF00',
+  subject: '✅ Cita Confirmada: {{servicio}} en {{negocio}}',
+  welcomeMessage: '¡Hola, {{cliente}}! Tu cita ha sido agendada con éxito en nuestro sistema.',
+  instructions: 'Por favor preséntate 10 minutos antes de tu cita programada.',
+  locationType: 'physical',
+  locationAddress: 'Dirección principal del negocio',
+  virtualLink: '',
+  cancellationPolicy: 'Puedes cancelar o reprogramar sin costo notificando con al menos 24 horas de antelación vía WhatsApp.',
+  ctaText: 'Añadir a Google Calendar / Outlook',
+  includeIcs: true,
+  includeWhatsapp: true,
+  sampleClient: 'Cliente Registrado',
+  sampleClientEmail: 'cliente@correo.com',
+  sampleService: 'Servicio General',
+  sampleSpecialist: 'Especialista Asignado',
+  sampleDateTime: 'Horario Programado',
 };
 
-export function replaceEmailVariables(text, vars = {}, tenantKey = 'dental') {
+export const TENANT_EMAIL_TEMPLATES = {
+  default: DEFAULT_EMAIL_TEMPLATE,
+  dental: DEFAULT_EMAIL_TEMPLATE,
+};
+
+export function replaceEmailVariables(text, vars = {}, tenantKey = 'default') {
   if (!text) return '';
-  const template = TENANT_EMAIL_TEMPLATES[tenantKey] || TENANT_EMAIL_TEMPLATES.dental;
+  const template = TENANT_EMAIL_TEMPLATES[tenantKey] || DEFAULT_EMAIL_TEMPLATE;
   return text
     .replaceAll('{{cliente}}', vars?.cliente || vars?.client || template.sampleClient)
     .replaceAll('{{servicio}}', vars?.servicio || vars?.service || template.sampleService)
-    .replaceAll('{{fecha}}', vars?.fecha || vars?.date || template.sampleDateTime?.split('•')[0]?.trim() || 'Viernes 23 de Octubre, 2026')
+    .replaceAll('{{fecha}}', vars?.fecha || vars?.date || template.sampleDateTime?.split('•')[0]?.trim() || 'Fecha Programada')
     .replaceAll('{{hora}}', vars?.hora || vars?.hour || template.sampleDateTime?.split('•')[1]?.trim() || '11:00 hrs')
     .replaceAll('{{especialista}}', vars?.especialista || vars?.specialist || template.sampleSpecialist)
     .replaceAll('{{negocio}}', vars?.negocio || vars?.business || template.senderName)
@@ -258,7 +198,7 @@ export const MasterAgenda = () => {
     };
   });
 
-  const activeKey = activeTenant?.id || activeTenantId || 'dental';
+  const activeKey = activeTenant?.id || activeTenantId || null;
 
   // Almacenar configuraciones por tenant de forma estrictamente aislada
   const [tenantEmailConfigs, setTenantEmailConfigs] = useState(() => {
@@ -271,12 +211,13 @@ export const MasterAgenda = () => {
     return TENANT_EMAIL_TEMPLATES;
   });
 
-  const emailConfig = tenantEmailConfigs[activeKey] || TENANT_EMAIL_TEMPLATES[activeKey] || TENANT_EMAIL_TEMPLATES.dental;
-  const currentTenantTemplate = TENANT_EMAIL_TEMPLATES[activeKey] || TENANT_EMAIL_TEMPLATES.dental;
+  const emailConfig = (activeKey && tenantEmailConfigs[activeKey]) || DEFAULT_EMAIL_TEMPLATE;
+  const currentTenantTemplate = (activeKey && TENANT_EMAIL_TEMPLATES[activeKey]) || DEFAULT_EMAIL_TEMPLATE;
 
   const setEmailConfig = (updaterOrObj) => {
+    if (!activeKey) return;
     setTenantEmailConfigs((prev) => {
-      const current = prev[activeKey] || TENANT_EMAIL_TEMPLATES[activeKey] || TENANT_EMAIL_TEMPLATES.dental;
+      const current = prev[activeKey] || DEFAULT_EMAIL_TEMPLATE;
       const newObj = typeof updaterOrObj === 'function' ? updaterOrObj(current) : updaterOrObj;
       const updated = { ...prev, [activeKey]: newObj };
       if (typeof window !== 'undefined') {
@@ -441,9 +382,13 @@ export const MasterAgenda = () => {
   };
 
   const handleManualBook = (shift, hour) => {
+    const currentTenantKey = activeTenant?.id || activeTenantId || null;
+    if (!currentTenantKey) {
+      alert('Selecciona un negocio activo antes de agendar una cita.');
+      return;
+    }
     const clientName = prompt(`Agendar cita manual para las ${hour} hrs (${shift.name}):\nNombre del cliente / paciente:`);
     if (!clientName) return;
-    const currentTenantKey = activeTenant?.id || activeTenantId || 'dental';
     const newApt = {
       id: `apt-${Date.now()}`,
       tenantId: currentTenantKey,
@@ -473,10 +418,10 @@ export const MasterAgenda = () => {
   };
 
   // Filtrado de citas (por tenant activo y filtro de estado)
-  const currentTenantId = activeTenant?.id || activeTenantId || 'dental';
-  const tenantAppointments = appointments.filter(
-    (apt) => !apt.tenantId || apt.tenantId === currentTenantId || (currentTenantId === 'dental' && apt.tenantId === 'tenant-mex-001')
-  );
+  const currentTenantId = activeTenant?.id || activeTenantId || null;
+  const tenantAppointments = currentTenantId
+    ? appointments.filter((apt) => !apt.tenantId || apt.tenantId === currentTenantId)
+    : [];
 
   const filteredAppointments = tenantAppointments.filter((apt) => {
     if (filterStatus === 'CONFIRMED') return apt.depositPaid;
@@ -516,9 +461,9 @@ export const MasterAgenda = () => {
             </div>
             <p className="text-xs text-[var(--text-muted)] mt-0.5 flex flex-wrap items-center gap-2 font-mono">
               <span>Negocio activo:</span>
-              <strong className="text-[var(--text-main)]">{activeTenant?.name || 'Clínica Odontológica Integral'}</strong>
+              <strong className="text-[var(--text-main)]">{activeTenant?.name || 'Sin negocio seleccionado'}</strong>
               <span className="text-[var(--text-muted)]">•</span>
-              <span className="text-neon">Giro: {activeTenant?.giro || 'Servicios Profesionales'}</span>
+              <span className="text-neon">Giro: {activeTenant?.giro || 'Sin giro activo'}</span>
             </p>
           </div>
         </div>

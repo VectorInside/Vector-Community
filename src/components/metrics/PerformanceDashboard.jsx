@@ -260,7 +260,7 @@ export const PerformanceDashboard = () => {
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span className="text-[var(--text-muted)]">Meta CAPI:</span>
             <span className="font-bold text-emerald-500">
-              {activeTenant?.capiStatus || 'Conectado • 99.4% Entrega'}
+              {!activeTenant ? 'Inactivo' : (activeTenant?.capiStatus || (summary.capiSyncRate > 0 ? `Conectado • ${summary.capiSyncRate}% Entrega` : 'En espera de eventos'))}
             </span>
           </div>
 
@@ -338,24 +338,14 @@ export const PerformanceDashboard = () => {
                       ? 'bg-blue-500/15 text-blue-400 border-blue-500/30'
                       : 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30'
                   }`}>
-                    {activeTenant?.hasWebsite ? 'Google Analytics 4' : 'Atención Directa por WhatsApp'}
+                    {!activeTenant ? 'Inactivo' : (activeTenant?.hasWebsite ? 'Google Analytics 4' : 'Atención Directa por WhatsApp')}
                   </span>
                 </div>
                 <p className="text-[var(--text-muted)] text-xs mt-0.5 font-sans">
                   URL:{' '}
                   {!activeTenant ? (
-              <div className="p-8 text-center text-xs font-mono text-[var(--text-muted)] space-y-2">
-                <Activity className="w-8 h-8 opacity-30 mx-auto text-lime-400" />
-                <p className="text-[var(--text-main)] font-bold">Sin Negocio Seleccionado</p>
-                <p>Selecciona un negocio en el selector superior para monitorear su embudo de conversión y puntos de fuga en tiempo real.</p>
-              </div>
-            ) : (!data?.dualTelemetry && Number(mlMetrics.visits) === 0 && Number(webMetrics.sessions) === 0) ? (
-              <div className="p-8 text-center text-xs font-mono text-[var(--text-muted)] space-y-2">
-                <Activity className="w-8 h-8 opacity-30 mx-auto text-lime-400" />
-                <p className="text-[var(--text-main)] font-bold">Sin Telemetría Registrada</p>
-                <p>No se han registrado eventos de tráfico ni conversiones para <strong>{activeTenant.name}</strong>. Se registrarán conforme los prospectos interactúen con los anuncios o la micro-landing.</p>
-              </div>
-            ) : activeTenant?.hasWebsite ? (
+                    <span className="text-[var(--text-muted)] italic">Sin negocio seleccionado</span>
+                  ) : activeTenant?.hasWebsite ? (
                     <a
                       href={activeTenant.websiteUrl}
                       target="_blank"
@@ -371,7 +361,7 @@ export const PerformanceDashboard = () => {
                   )}{' '}
                   • ID de Medición:{' '}
                   <code className="text-[var(--text-main)] bg-[var(--bg-card)] px-1.5 py-0.5 rounded border border-[var(--border-color)]">
-                    {activeTenant?.ga4MeasurementId || 'Meta CAPI for Messaging'}
+                    {!activeTenant ? 'No configurado' : (activeTenant?.ga4MeasurementId || 'Meta CAPI for Messaging')}
                   </code>
                 </p>
               </div>
@@ -380,7 +370,7 @@ export const PerformanceDashboard = () => {
             <div className="flex items-center gap-2">
               <span className="text-[10px] text-[var(--text-muted)]">Pixel / CAPI:</span>
               <code className="text-[var(--text-main)] bg-[var(--bg-card)] px-2 py-1 rounded border border-[var(--border-color)] text-[11px]">
-                {activeTenant?.metaPixelId || 'Handshake Servidor Activo'}
+                {!activeTenant ? 'Inactivo' : (activeTenant?.metaPixelId || 'Handshake Servidor Activo')}
               </code>
             </div>
           </div>
@@ -417,6 +407,11 @@ export const PerformanceDashboard = () => {
             </div>
 
             {/* Grid de Canales Filtrados Estrictamente */}
+            {activeChannelsList.length === 0 ? (
+              <div className="p-8 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] text-center text-xs font-mono text-[var(--text-muted)]">
+                Selecciona un negocio activo para visualizar la salud y telemetría de sus canales conectados.
+              </div>
+            ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
               {activeChannelsList.map((ch) => {
                 const IconComp = CHANNEL_ICONS[ch.iconName] || Globe;
@@ -449,7 +444,7 @@ export const PerformanceDashboard = () => {
                         {/* Status API Badge */}
                         <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 text-[10px] font-mono font-bold shrink-0">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                          <span>{ch.tenantConfig?.latencyMs || metrics.latencyMs || 120}ms</span>
+                          <span>{ch.tenantConfig?.latencyMs ?? metrics.latencyMs ?? 0}ms</span>
                         </div>
                       </div>
 
@@ -458,19 +453,19 @@ export const PerformanceDashboard = () => {
                         <div className="p-1.5 rounded-lg bg-[var(--bg-panel)]">
                           <span className="text-[9px] text-[var(--text-muted)] block">Interacciones</span>
                           <span className="text-xs font-bold text-[var(--text-main)]">
-                            {formatNumber(metrics.clicks || 1200)}
+                            {formatNumber(metrics.clicks ?? 0)}
                           </span>
                         </div>
                         <div className="p-1.5 rounded-lg bg-[var(--bg-panel)]">
                           <span className="text-[9px] text-[var(--text-muted)] block">CPC</span>
                           <span className="text-xs font-bold text-emerald-500">
-                            {metrics.cpc || '$3.50 MXN'}
+                            {metrics.cpc || '$0.00 MXN'}
                           </span>
                         </div>
                         <div className="p-1.5 rounded-lg bg-[var(--bg-panel)]">
                           <span className="text-[9px] text-[var(--text-muted)] block">Fuga/Rebote</span>
                           <span className={`text-xs font-bold ${parseFloat(metrics.bounceRate || '2.0%') <= 3.0 ? 'text-emerald-400' : 'text-amber-500'}`}>
-                            {metrics.bounceRate || '1.8%'}
+                            {metrics.bounceRate || '0.0%'}
                           </span>
                         </div>
                       </div>
@@ -487,7 +482,7 @@ export const PerformanceDashboard = () => {
                               ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
                               : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                           }`}>
-                            {metrics.adFatigueScore || 1.8}x {isFatigueAlert ? '(Saturado)' : '(Saludable)'}
+                            {metrics.adFatigueScore ?? 0.0}x {isFatigueAlert ? '(Saturado)' : '(Saludable)'}
                           </span>
                         </div>
 
@@ -501,7 +496,7 @@ export const PerformanceDashboard = () => {
                         ) : (
                           <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)] font-mono">
                             <span>Retención de Audiencia:</span>
-                            <span className="text-neon font-bold">{metrics.retentionScore || '82%'}</span>
+                            <span className="text-neon font-bold">{metrics.retentionScore || '0%'}</span>
                           </div>
                         )}
                       </div>
@@ -515,6 +510,7 @@ export const PerformanceDashboard = () => {
                 );
               })}
             </div>
+            )}
           </div>
 
           {/* Banner de Delimitación: Sitio Web Corporativo (GA4) vs Micro-Landing Vector */}
@@ -560,7 +556,7 @@ export const PerformanceDashboard = () => {
               title={activeTenant?.hasWebsite ? 'Costo por Clic (CPC Web)' : 'Costo por Conversación'}
               value={!activeTenant ? '$0.00 MXN' : (webMetrics.cpc || '$0.00 MXN')}
               subvalue={!activeTenant ? 'Sin negocio seleccionado' : 'Costo unitario por prospecto'}
-              change={!activeTenant ? '0%' : '-8.2%'}
+              change={!activeTenant || (Number(webMetrics.sessions) === 0 && Number(mlMetrics.visits) === 0) ? '0%' : '-8.2%'}
               isPositive={true}
               icon={DollarSign}
               badgeText={!activeTenant ? 'INACTIVO' : 'ÓPTIMO'}
@@ -569,29 +565,31 @@ export const PerformanceDashboard = () => {
 
             <StatCard
               title="Conversión a Cita / Venta"
-              value={webMetrics.whatsappClickRate || (activeTenant?.hasWebsite ? '1.4%' : '18.4%')}
+              value={!activeTenant ? '0.0%' : (activeTenant?.hasWebsite ? (webMetrics.whatsappClickRate || '0.0%') : (mlMetrics.conversionRate || '0.0%'))}
               subvalue={
-                activeTenant?.frictionAlert
+                !activeTenant
+                  ? 'Sin negocio seleccionado'
+                  : activeTenant?.frictionAlert
                   ? '⚠️ Crítico (< 3.0% Umbral)'
                   : activeTenant?.hasWebsite
                   ? 'Saludable (> 3.0%)'
                   : 'Alta Conversión en Chat'
               }
-              change={activeTenant?.frictionAlert ? '-32.1%' : '+14.5%'}
+              change={!activeTenant || (Number(webMetrics.sessions) === 0 && Number(mlMetrics.visits) === 0) ? '0%' : (activeTenant?.frictionAlert ? '-32.1%' : '+14.5%')}
               isPositive={!activeTenant?.frictionAlert}
               icon={MousePointerClick}
-              badgeText={activeTenant?.frictionAlert ? 'FRICCIÓN' : 'CONVIRTIENDO'}
+              badgeText={!activeTenant ? 'INACTIVO' : (activeTenant?.frictionAlert ? 'FRICCIÓN' : 'CONVIRTIENDO')}
               accentColor={activeTenant?.frictionAlert ? 'rose' : 'brand'}
             />
 
             <StatCard
               title="Tasa de Fuga / Rebote"
-              value={activeTenant?.hasWebsite ? (webMetrics.bounceRate || '65%') : '0.0%'}
-              subvalue={activeTenant?.hasWebsite ? 'Salidas en primer fold' : 'Cero rebote (Directo a chat)'}
-              change={activeTenant?.hasWebsite ? '+4.2%' : '-100%'}
+              value={!activeTenant ? '0.0%' : (activeTenant?.hasWebsite ? (webMetrics.bounceRate || '0%') : (mlMetrics.bounceRate || '0.0%'))}
+              subvalue={!activeTenant ? 'Sin negocio seleccionado' : (activeTenant?.hasWebsite ? 'Salidas en primer fold' : 'Cero rebote (Directo a chat)')}
+              change={!activeTenant || (Number(webMetrics.sessions) === 0 && Number(mlMetrics.visits) === 0) ? '0%' : (activeTenant?.hasWebsite ? '+4.2%' : '-100%')}
               isPositive={!activeTenant?.hasWebsite}
               icon={TrendingUp}
-              badgeText={activeTenant?.hasWebsite ? 'DIAGNÓSTICO' : 'GARANTIZADO'}
+              badgeText={!activeTenant ? 'INACTIVO' : (activeTenant?.hasWebsite ? 'DIAGNÓSTICO' : 'GARANTIZADO')}
               accentColor={activeTenant?.hasWebsite ? 'amber' : 'emerald'}
             />
           </div>
@@ -829,7 +827,7 @@ export const PerformanceDashboard = () => {
                 </div>
               )}
             </div>
-          ) : (
+          ) : activeTenant ? (
             <div className="p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 space-y-3 animate-fade-in font-sans">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5 text-emerald-600 dark:text-emerald-400 font-bold text-sm">
@@ -841,10 +839,10 @@ export const PerformanceDashboard = () => {
                 </span>
               </div>
               <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                El ecosistema de <strong>{activeTenant?.name}</strong> canaliza todo el tráfico publicitario directamente al chat de WhatsApp y a la Micro-Landing autogenerada de Vector. Al no depender de una página web externa pesada, no existe fuga de prospectos por tiempo de carga y la tasa de contacto se mantiene al máximo.
+                El ecosistema de <strong>{activeTenant.name}</strong> canaliza todo el tráfico publicitario directamente al chat de WhatsApp y a la Micro-Landing autogenerada de Vector. Al no depender de una página web externa pesada, no existe fuga de prospectos por tiempo de carga y la tasa de contacto se mantiene al máximo.
               </p>
             </div>
-          )}
+          ) : null}
 
           {/* Step-by-Step Funnel Dropoff Chart */}
           <div className="p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-5 shadow-sm">
@@ -1005,15 +1003,27 @@ export const PerformanceDashboard = () => {
               <div className="space-y-2">
                 <div className="flex justify-between items-center p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
                   <span className="text-[var(--text-main)]">Meta Ads (Instagram / FB)</span>
-                  <span className="text-neon font-bold">72.4% (2,476 visitas)</span>
+                  <span className="text-neon font-bold">
+                    {!activeTenant || (Number(webMetrics.sessions) === 0 && Number(mlMetrics.visits) === 0)
+                      ? '0.0% (0 visitas)'
+                      : `${mlMetrics.sources?.directAds || '0.0%'} (${formatNumber(mlMetrics.visits ?? 0)} visitas)`}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
                   <span className="text-[var(--text-main)]">Google Búsqueda Orgánica</span>
-                  <span className="text-blue-400 font-bold">15.8% (540 visitas)</span>
+                  <span className="text-blue-400 font-bold">
+                    {!activeTenant || Number(webMetrics.sessions) === 0
+                      ? '0.0% (0 visitas)'
+                      : `100% (${formatNumber(webMetrics.sessions ?? 0)} visitas)`}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
                   <span className="text-[var(--text-main)]">Tráfico Directo / WhatsApp</span>
-                  <span className="text-emerald-500 font-bold">11.8% (404 visitas)</span>
+                  <span className="text-emerald-500 font-bold">
+                    {!activeTenant || Number(mlMetrics.ctaClicks) === 0
+                      ? '0.0% (0 visitas)'
+                      : `${mlMetrics.sources?.bioLink || '0.0%'} (${formatNumber(mlMetrics.ctaClicks ?? 0)} clics)`}
+                  </span>
                 </div>
               </div>
             </div>
@@ -1028,14 +1038,18 @@ export const PerformanceDashboard = () => {
                     <Smartphone className="w-3.5 h-3.5 text-neon" />
                     <span>Dispositivos Móviles (Smartphones)</span>
                   </span>
-                  <span className="text-emerald-500 font-bold">89.2% (Mayoritaria)</span>
+                  <span className="text-emerald-500 font-bold">
+                    {!activeTenant || (Number(webMetrics.sessions) === 0 && Number(mlMetrics.visits) === 0)
+                      ? '0.0% (Sin tráfico)'
+                      : '100% (Móvil)'}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
                   <span className="flex items-center gap-1.5 text-[var(--text-muted)]">
                     <Globe className="w-3.5 h-3.5" />
                     <span>Computadoras de Escritorio (Desktop)</span>
                   </span>
-                  <span className="text-[var(--text-muted)] font-bold">10.8%</span>
+                  <span className="text-[var(--text-muted)] font-bold">0.0%</span>
                 </div>
               </div>
             </div>
@@ -1052,45 +1066,45 @@ export const PerformanceDashboard = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
               title="ROAS Real Atribuido"
-              value={`${summary.realRoas}x`}
-              subvalue={`(Meta: ${summary.metaReportedRoas}x)`}
-              change="+41.3%"
+              value={`${summary.realRoas ?? 0}x`}
+              subvalue={`(Meta: ${summary.metaReportedRoas ?? 0}x)`}
+              change={summary.realRoas > 0 ? '+41.3%' : '0%'}
               isPositive={true}
               icon={TrendingUp}
-              badgeText="BACKEND REAL"
+              badgeText={!activeTenant ? 'INACTIVO' : 'BACKEND REAL'}
               accentColor="brand"
             />
 
             <StatCard
               title="CAC Real (Cost per Acquisition)"
-              value={`$${summary.realCac} USD`}
-              subvalue={`(CPA: $${summary.blendedCpa})`}
-              change="-15.4%"
+              value={`$${summary.realCac ?? 0} USD`}
+              subvalue={`(CPA: $${summary.blendedCpa ?? 0})`}
+              change={summary.realCac > 0 ? '-15.4%' : '0%'}
               isPositive={true}
               icon={DollarSign}
-              badgeText="OPT. METRIC"
+              badgeText={!activeTenant ? 'INACTIVO' : 'OPT. METRIC'}
               accentColor="emerald"
             />
 
             <StatCard
               title="Ingresos Reales Atribuidos"
-              value={`$${formatNumber(summary.backendAttributedRevenue)} USD`}
-              subvalue={`Gasto: $${formatNumber(summary.totalSpend)}`}
-              change="+28.0%"
+              value={`$${formatNumber(summary.backendAttributedRevenue ?? 0)} USD`}
+              subvalue={`Gasto: $${formatNumber(summary.totalSpend ?? 0)}`}
+              change={summary.backendAttributedRevenue > 0 ? '+28.0%' : '0%'}
               isPositive={true}
               icon={Activity}
-              badgeText="VERIFICADO"
+              badgeText={!activeTenant ? 'INACTIVO' : 'VERIFICADO'}
               accentColor="blue"
             />
 
             <StatCard
               title="Sincronización con Meta Ads"
-              value={`${summary.capiSyncRate}%`}
-              subvalue="Calidad de Registro: 9.8/10"
-              change="+1.2%"
+              value={`${summary.capiSyncRate ?? 0}%`}
+              subvalue={!activeTenant || summary.capiSyncRate === 0 ? 'Sin eventos registrados' : 'Calidad de Registro: 9.8/10'}
+              change={summary.capiSyncRate > 0 ? '+1.2%' : '0%'}
               isPositive={true}
               icon={ShieldCheck}
-              badgeText="EN TIEMPO REAL"
+              badgeText={!activeTenant ? 'INACTIVO' : 'EN TIEMPO REAL'}
               accentColor="amber"
             />
           </div>
@@ -1225,16 +1239,32 @@ export const PerformanceDashboard = () => {
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-xl font-bold text-[var(--text-main)] tracking-tight flex items-center gap-2">
-                    <span>{activeTenant?.avatar}</span>
-                    <span>Micro-Landing Page de {activeTenant?.name}</span>
+                    <span>{activeTenant?.avatar || '🏢'}</span>
+                    <span>
+                      {activeTenant
+                        ? `Micro-Landing Page de ${activeTenant.name}`
+                        : 'Micro-Landing Page (Sin negocio seleccionado)'}
+                    </span>
                   </h3>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">
-                    CAPI ACTIVO • 99.4%
+                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold border ${
+                    activeTenant
+                      ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                      : 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'
+                  }`}>
+                    {activeTenant ? 'ACTIVA' : 'INACTIVO'}
                   </span>
                 </div>
                 <p className="text-xs text-[var(--text-muted)] font-mono mt-0.5">
                   Embudo ultraligero de alta conversión alojado en:{' '}
-                  <code className="text-neon underline">app.vectorinside.com/m/{activeTenant?.microLandingSlug || activeTenant?.id}</code>
+                  {activeTenant ? (
+                    <code className="text-neon underline">
+                      app.vectorinside.com/m/{activeTenant.microLandingSlug || activeTenant.id}
+                    </code>
+                  ) : (
+                    <span className="italic text-[var(--text-muted)]">
+                      Selecciona un negocio para generar su enlace público
+                    </span>
+                  )}
                 </p>
               </div>
             </div>
@@ -1242,16 +1272,18 @@ export const PerformanceDashboard = () => {
             <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
+                disabled={!activeTenant}
                 onClick={handleCopyPublicLink}
-                className="px-4 py-2 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] text-xs font-mono font-bold border border-[var(--border-color)] flex items-center gap-1.5 transition-all shadow-sm"
+                className="px-4 py-2 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] disabled:opacity-50 disabled:cursor-not-allowed text-[var(--text-main)] text-xs font-mono font-bold border border-[var(--border-color)] flex items-center gap-1.5 transition-all shadow-sm"
               >
                 {copiedLink ? <Check className="w-4 h-4 text-neon" /> : <ExternalLink className="w-4 h-4" />}
                 <span>{copiedLink ? '¡Copiado!' : 'Copiar URL Pública'}</span>
               </button>
               <button
                 type="button"
-                onClick={() => setShowMicroLandingModal(true)}
-                className="px-4 py-2 rounded-xl bg-neon text-black font-bold text-xs font-mono shadow-[0_0_15px_rgba(231,249,0,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-1.5"
+                disabled={!activeTenant}
+                onClick={() => activeTenant && setShowMicroLandingModal(true)}
+                className="px-4 py-2 rounded-xl bg-neon text-black font-bold text-xs font-mono shadow-[0_0_15px_rgba(231,249,0,0.3)] hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1.5"
               >
                 <Smartphone className="w-4 h-4" />
                 <span>Previsualización Móvil</span>
@@ -1265,45 +1297,45 @@ export const PerformanceDashboard = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
               title="Visitas a Micro-Landing"
-              value={formatNumber(mlMetrics.visits || 1280)}
-              subvalue="Tráfico de alta intención"
-              change="+24.2%"
+              value={formatNumber(!activeTenant ? 0 : (mlMetrics.visits ?? 0))}
+              subvalue={!activeTenant ? 'Sin negocio seleccionado' : 'Tráfico de alta intención'}
+              change={Number(mlMetrics.visits) > 0 ? '+24.2%' : '0%'}
               isPositive={true}
               icon={Users}
-              badgeText="EMBUDO VECTOR"
+              badgeText={!activeTenant ? 'INACTIVO' : 'EMBUDO VECTOR'}
               accentColor="brand"
             />
 
             <StatCard
               title="Conversión a WhatsApp (Chat)"
-              value={mlMetrics.conversionRate || '18.2%'}
-              subvalue={`${mlMetrics.leadsGenerated || 233} chats iniciados`}
-              change="+13x vs Web"
+              value={!activeTenant ? '0.0%' : (mlMetrics.conversionRate || '0.0%')}
+              subvalue={`${!activeTenant ? 0 : (mlMetrics.leadsGenerated ?? 0)} chats iniciados`}
+              change={Number(mlMetrics.leadsGenerated) > 0 ? '+13x vs Web' : '0%'}
               isPositive={true}
               icon={MousePointerClick}
-              badgeText="ALTA CONVERSIÓN"
+              badgeText={!activeTenant ? 'INACTIVO' : 'ALTA CONVERSIÓN'}
               accentColor="emerald"
             />
 
             <StatCard
               title="Costo por Lead (Micro-Landing)"
-              value={mlMetrics.costPerLead || '$1.85 MXN'}
-              subvalue="Costo unitario por conversación"
-              change="-51.3%"
+              value={!activeTenant ? '$0.00 MXN' : (mlMetrics.costPerLead || '$0.00 MXN')}
+              subvalue={!activeTenant ? 'Sin negocio seleccionado' : 'Costo unitario por conversación'}
+              change={Number(mlMetrics.visits) > 0 ? '-51.3%' : '0%'}
               isPositive={true}
               icon={DollarSign}
-              badgeText="ÓPTIMO"
+              badgeText={!activeTenant ? 'INACTIVO' : 'ÓPTIMO'}
               accentColor="emerald"
             />
 
             <StatCard
               title="Velocidad Móvil & Retención"
-              value={mlMetrics.avgLoadTime || '0.65s'}
-              subvalue={`Rebote de solo ${mlMetrics.bounceRate || '8.4%'}`}
-              change="-87% vs Web"
+              value={!activeTenant ? '0.00s' : (mlMetrics.avgLoadTime || '0.00s')}
+              subvalue={`Rebote de solo ${!activeTenant ? '0.0%' : (mlMetrics.bounceRate || '0.0%')}`}
+              change={Number(mlMetrics.visits) > 0 ? '-87% vs Web' : '0%'}
               isPositive={true}
               icon={TrendingUp}
-              badgeText="0% FRICCIÓN"
+              badgeText={!activeTenant ? 'INACTIVO' : '0% FRICCIÓN'}
               accentColor="blue"
             />
           </div>
@@ -1355,42 +1387,54 @@ export const PerformanceDashboard = () => {
                 <tbody className="divide-y divide-[var(--border-color)] text-[var(--text-main)]">
                   <tr className="hover:bg-[var(--bg-card)] transition-colors">
                     <td className="py-3 px-3 font-semibold font-sans">Velocidad de Carga Celular (LCP)</td>
-                    <td className="py-3 px-3 text-amber-500 font-bold">2.9 segundos (Lento)</td>
-                    <td className="py-3 px-3 text-neon font-bold">{mlMetrics.avgLoadTime || '0.65s'} (Instantáneo)</td>
-                    <td className="py-3 px-3 text-right text-emerald-500 font-bold">+346% más veloz</td>
+                    <td className="py-3 px-3 text-[var(--text-muted)] font-bold">
+                      {!activeTenant || Number(webMetrics.sessions) === 0 ? '0.00s (Sin datos)' : '2.9s'}
+                    </td>
+                    <td className="py-3 px-3 text-neon font-bold">
+                      {!activeTenant ? '0.00s' : (mlMetrics.avgLoadTime || '0.00s')}
+                    </td>
+                    <td className="py-3 px-3 text-right text-[var(--text-muted)] font-bold">
+                      {!activeTenant || Number(mlMetrics.visits) === 0 ? 'Sin telemetría' : 'Optimizado'}
+                    </td>
                   </tr>
 
                   <tr className="hover:bg-[var(--bg-card)] transition-colors">
                     <td className="py-3 px-3 font-semibold font-sans">Tasa de Contacto a WhatsApp</td>
-                    <td className="py-3 px-3 text-red-500 font-bold">
-                      {webMetrics.whatsappClickRate || '1.4%'} (⚠️ Fricción)
+                    <td className="py-3 px-3 text-[var(--text-muted)] font-bold">
+                      {!activeTenant ? '0.0%' : (webMetrics.whatsappClickRate || '0.0%')}
                     </td>
                     <td className="py-3 px-3 text-emerald-400 font-bold">
-                      {mlMetrics.conversionRate || '18.2%'} (🚀 Directo a chat)
+                      {!activeTenant ? '0.0%' : (mlMetrics.conversionRate || '0.0%')}
                     </td>
-                    <td className="py-3 px-3 text-right text-emerald-500 font-bold">13x más citas/leads</td>
+                    <td className="py-3 px-3 text-right text-[var(--text-muted)] font-bold">
+                      {!activeTenant || Number(mlMetrics.visits) === 0 ? 'Sin telemetría' : 'Directo a chat'}
+                    </td>
                   </tr>
 
                   <tr className="hover:bg-[var(--bg-card)] transition-colors">
                     <td className="py-3 px-3 font-semibold font-sans">Costo Unitario de Adquisición</td>
                     <td className="py-3 px-3 text-[var(--text-muted)]">
-                      {webMetrics.cpc || '$3.80 MXN'} CPC
+                      {!activeTenant ? '$0.00 MXN' : (webMetrics.cpc || '$0.00 MXN')} CPC
                     </td>
                     <td className="py-3 px-3 text-neon font-bold">
-                      {mlMetrics.costPerLead || '$1.85 MXN'} por Lead
+                      {!activeTenant ? '$0.00 MXN' : (mlMetrics.costPerLead || '$0.00 MXN')} por Lead
                     </td>
-                    <td className="py-3 px-3 text-right text-emerald-500 font-bold">-51% costo por prospecto</td>
+                    <td className="py-3 px-3 text-right text-[var(--text-muted)] font-bold">
+                      {!activeTenant || Number(mlMetrics.visits) === 0 ? 'Sin telemetría' : 'Medición activa'}
+                    </td>
                   </tr>
 
                   <tr className="hover:bg-[var(--bg-card)] transition-colors">
                     <td className="py-3 px-3 font-semibold font-sans">Tasa de Rebote / Fuga de Visitas</td>
-                    <td className="py-3 px-3 text-amber-500 font-bold">
-                      {webMetrics.bounceRate || '65%'} de abandono
+                    <td className="py-3 px-3 text-[var(--text-muted)] font-bold">
+                      {!activeTenant ? '0%' : (webMetrics.bounceRate || '0%')} de abandono
                     </td>
                     <td className="py-3 px-3 text-emerald-400 font-bold">
-                      {mlMetrics.bounceRate || '8.4%'} de rebote
+                      {!activeTenant ? '0.0%' : (mlMetrics.bounceRate || '0.0%')} de rebote
                     </td>
-                    <td className="py-3 px-3 text-right text-emerald-500 font-bold">87% menos fuga</td>
+                    <td className="py-3 px-3 text-right text-[var(--text-muted)] font-bold">
+                      {!activeTenant || Number(mlMetrics.visits) === 0 ? 'Sin telemetría' : '0% fricción'}
+                    </td>
                   </tr>
 
                   <tr className="hover:bg-[var(--bg-card)] transition-colors bg-[var(--bg-card)]/50">
@@ -1420,7 +1464,7 @@ export const PerformanceDashboard = () => {
                   <Smartphone className="w-4 h-4" />
                   Enlace en Bio (Redes)
                 </span>
-                <span className="text-neon font-bold">{mlMetrics.sources?.bioLink || '54.2%'}</span>
+                <span className="text-neon font-bold">{!activeTenant ? '0.0%' : (mlMetrics.sources?.bioLink || '0.0%')}</span>
               </div>
               <p className="text-[var(--text-muted)] font-sans text-xs">
                 Tráfico orgánico proveniente de Instagram Bio, TikTok y perfiles sociales.
@@ -1433,7 +1477,7 @@ export const PerformanceDashboard = () => {
                   <MousePointerClick className="w-4 h-4" />
                   Meta Ads Pauta Directa
                 </span>
-                <span className="text-emerald-500 font-bold">{mlMetrics.sources?.directAds || '38.6%'}</span>
+                <span className="text-emerald-500 font-bold">{!activeTenant ? '0.0%' : (mlMetrics.sources?.directAds || '0.0%')}</span>
               </div>
               <p className="text-[var(--text-muted)] font-sans text-xs">
                 Campañas de tráfico pagado en Meta con atribución CAPI server-to-server.
@@ -1446,7 +1490,7 @@ export const PerformanceDashboard = () => {
                   <QrCode className="w-4 h-4" />
                   Código QR en Mostrador
                 </span>
-                <span className="text-blue-500 font-bold">{mlMetrics.sources?.qrPrint || '7.2%'}</span>
+                <span className="text-blue-500 font-bold">{!activeTenant ? '0.0%' : (mlMetrics.sources?.qrPrint || '0.0%')}</span>
               </div>
               <p className="text-[var(--text-muted)] font-sans text-xs">
                 Clientes físicos que escanean el QR en recepción, mesas o material impreso.
@@ -1494,23 +1538,27 @@ export const PerformanceDashboard = () => {
 
             <div className="flex flex-col sm:flex-row items-center justify-between w-full max-w-xl gap-3 z-10">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className={`w-2.5 h-2.5 rounded-full ${activeTenant ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-600'}`} />
                 <span className="text-xs font-mono font-bold text-[var(--text-main)]">
-                  Simulador en Vivo: {activeTenant?.name}
+                  Simulador en Vivo: {activeTenant ? activeTenant.name : 'Sin negocio seleccionado'}
                 </span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[var(--text-muted)] font-mono">
-                  /m/{activeTenant?.microLandingSlug || activeTenant?.id || 'dental'}
-                </span>
+                {activeTenant && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[var(--text-muted)] font-mono">
+                    /m/{activeTenant.microLandingSlug || activeTenant.id}
+                  </span>
+                )}
               </div>
-              <Button
-                variant="primary"
-                size="sm"
-                className="gap-2 shadow-lg shadow-neon/20 hover:scale-105 transition-all text-xs"
-                onClick={() => setShowMicroLandingModal(true)}
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Abrir Studio Completo</span>
-              </Button>
+              {activeTenant && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="gap-2 shadow-lg shadow-neon/20 hover:scale-105 transition-all text-xs"
+                  onClick={() => setShowMicroLandingModal(true)}
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Abrir Studio Completo</span>
+                </Button>
+              )}
             </div>
 
             {/* Framed Mobile Mockup */}
@@ -1518,53 +1566,65 @@ export const PerformanceDashboard = () => {
               {/* Top Notch / Dynamic Island */}
               <div className="absolute top-2 left-1/2 -translate-x-1/2 w-24 h-5 bg-black rounded-full z-20 flex items-center justify-center border border-zinc-800/80 shadow-inner">
                 <div className="w-2.5 h-2.5 rounded-full bg-zinc-900 border border-zinc-800 mr-2" />
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/80 animate-pulse" />
+                <div className={`w-1.5 h-1.5 rounded-full ${activeTenant ? 'bg-emerald-500/80 animate-pulse' : 'bg-zinc-700'}`} />
               </div>
 
-              {/* Iframe content */}
-              <iframe
-                src={`/m/${activeTenant?.microLandingSlug || activeTenant?.id || 'dental'}?preview=true`}
-                title="MicroLanding Quick Preview"
-                className="w-full h-full border-0 pt-0 bg-black"
-              />
+              {activeTenant ? (
+                <iframe
+                  src={`/m/${activeTenant.microLandingSlug || activeTenant.id}?preview=true`}
+                  title="MicroLanding Quick Preview"
+                  className="w-full h-full border-0 pt-0 bg-black"
+                />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center space-y-3 bg-zinc-950 text-xs font-mono text-zinc-400">
+                  <Smartphone className="w-10 h-10 text-zinc-600" />
+                  <p className="text-zinc-200 font-bold font-sans text-sm">Sin Micro-Landing Activa</p>
+                  <p className="text-[11px] leading-relaxed">
+                    Selecciona o registra un negocio para previsualizar y personalizar su Micro-Landing móvil en tiempo real.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Quick Actions Footer */}
-            <div className="flex flex-wrap items-center justify-center gap-3 z-10 pt-2">
-              <button
-                onClick={() => {
-                  const url = typeof window !== 'undefined' 
-                    ? `${window.location.origin}/m/${activeTenant?.microLandingSlug || activeTenant?.id || 'dental'}`
-                    : `https://vector.lat/m/${activeTenant?.microLandingSlug || activeTenant?.id || 'dental'}`;
-                  navigator.clipboard.writeText(url);
-                  setCopiedLink(true);
-                  setTimeout(() => setCopiedLink(false), 2000);
-                }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-[var(--text-main)] transition-colors"
-              >
-                {copiedLink ? (
-                  <>
-                    <Check className="w-3.5 h-3.5 text-emerald-400" />
-                    <span className="text-emerald-400">¡Enlace Copiado!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3.5 h-3.5 text-[var(--text-muted)]" />
-                    <span>Copiar Enlace Bio</span>
-                  </>
-                )}
-              </button>
+            {activeTenant && (
+              <div className="flex flex-wrap items-center justify-center gap-3 z-10 pt-2">
+                <button
+                  onClick={() => {
+                    const slug = activeTenant.microLandingSlug || activeTenant.id;
+                    const url = typeof window !== 'undefined' 
+                      ? `${window.location.origin}/m/${slug}`
+                      : `https://vector.lat/m/${slug}`;
+                    navigator.clipboard.writeText(url);
+                    setCopiedLink(true);
+                    setTimeout(() => setCopiedLink(false), 2000);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-[var(--text-main)] transition-colors"
+                >
+                  {copiedLink ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="text-emerald-400">¡Enlace Copiado!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+                      <span>Copiar Enlace Bio</span>
+                    </>
+                  )}
+                </button>
 
-              <a
-                href={`/m/${activeTenant?.microLandingSlug || activeTenant?.id || 'dental'}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-neon transition-colors"
-              >
-                <span>Abrir Pestaña Completa</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            </div>
+                <a
+                  href={`/m/${activeTenant.microLandingSlug || activeTenant.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-neon transition-colors"
+                >
+                  <span>Abrir Pestaña Completa</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
+            )}
           </div>
         </div>
       )}

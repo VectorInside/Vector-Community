@@ -43,11 +43,21 @@ export const ChannelConnectionsManager = () => {
   // Estado local de canales conectados por tenant
   const [channelsState, setChannelsState] = useState(() => {
     return activeTenant?.connectedChannels || {
-      meta: { enabled: true, status: 'connected', latencyMs: 142 },
-      whatsapp: { enabled: true, status: 'connected', latencyMs: 85 },
-      google: { enabled: true, status: 'connected', latencyMs: 190 },
+      meta: { enabled: false, status: 'disconnected', latencyMs: null },
+      whatsapp: { enabled: false, status: 'disconnected', latencyMs: null },
+      google: { enabled: false, status: 'disconnected', latencyMs: null },
     };
   });
+
+  React.useEffect(() => {
+    setChannelsState(
+      activeTenant?.connectedChannels || {
+        meta: { enabled: false, status: 'disconnected', latencyMs: null },
+        whatsapp: { enabled: false, status: 'disconnected', latencyMs: null },
+        google: { enabled: false, status: 'disconnected', latencyMs: null },
+      }
+    );
+  }, [activeTenant]);
 
   const [formFields, setFormFields] = useState({});
   const [testingChannel, setTestingChannel] = useState(null);

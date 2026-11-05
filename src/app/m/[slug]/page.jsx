@@ -74,6 +74,27 @@ const TENANT_THEMES = {
   },
 };
 
+const DEFAULT_GENERIC_THEME = {
+  cover: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&auto=format&fit=crop&q=80',
+  tagline: 'Atención personalizada e inmediata directo en tu WhatsApp.',
+  address: 'Atención Omnicanal',
+  hoursWeek: 'Lun–Vie: 09:00 a 19:00 hrs',
+  hoursWeekend: 'Sáb: 09:00 a 14:00 hrs',
+  rating: '5.0',
+  reviewsCount: 'Verificado',
+  services: [
+    { title: 'Atención Personalizada', desc: 'Orientación inmediata con nuestro asistente oficial', badge: 'Disponible', tone: 'neon' },
+    { title: 'Cotización & Citas', desc: 'Agenda o solicita información sin tiempos de espera', badge: 'Respuesta < 1 min', tone: 'emerald' },
+  ],
+};
+
+const DEFAULT_GENERIC_LEAD_FORM = {
+  title: '¿En qué podemos ayudarte hoy?',
+  subtitle: 'Te atendemos de inmediato por WhatsApp',
+  buttonText: 'Iniciar Conversación en WhatsApp',
+  options: ['Información General', 'Agendar Cita', 'Cotización', 'Hablar con un Asesor'],
+};
+
 const DEFAULT_LEAD_FORMS = {
   dental: {
     title: 'Motivo principal de consulta:',
@@ -103,7 +124,7 @@ const DEFAULT_LEAD_FORMS = {
 
 export default function MicroLandingPage() {
   const params = useParams();
-  const slug = params?.slug || 'dental';
+  const slug = params?.slug || '';
 
   // DTO público saneado (Previene filtración de datos fiscales o financieros en el bundle del cliente)
   const [activeTenantData, setActiveTenantData] = useState(() => {
@@ -146,8 +167,8 @@ export default function MicroLandingPage() {
   }, [slug]);
 
   const baseTenant = activeTenantData;
-  const baseTheme = TENANT_THEMES[baseTenant.id] || TENANT_THEMES.dental;
-  const baseDefaultLead = DEFAULT_LEAD_FORMS[baseTenant.id] || DEFAULT_LEAD_FORMS.dental;
+  const baseTheme = TENANT_THEMES[baseTenant.id] || DEFAULT_GENERIC_THEME;
+  const baseDefaultLead = DEFAULT_LEAD_FORMS[baseTenant.id] || DEFAULT_GENERIC_LEAD_FORM;
 
   // Real-time customizer state
   const [customData, setCustomData] = useState({
@@ -182,8 +203,11 @@ export default function MicroLandingPage() {
     };
 
     window.addEventListener('message', handleMessage);
-    // Track Micro-Landing Visit in Backend Telemetry
-    if (baseTenant?.id) {
+    // Track Micro-Landing Visit in Backend Telemetry (only on real public visits, never in preview iframe)
+    const isIframeOrPreview =
+      typeof window !== 'undefined' &&
+      (window.self !== window.top || new URLSearchParams(window.location.search).get('preview') === 'true');
+    if (baseTenant?.id && !isIframeOrPreview) {
       performanceService.trackTelemetryEvent(baseTenant.id, 'VISIT').catch(() => {});
     }
     return () => window.removeEventListener('message', handleMessage);
@@ -238,13 +262,13 @@ export default function MicroLandingPage() {
   const [bookingName, setBookingName] = useState('');
   const [bookingPhone, setBookingPhone] = useState('');
   const [selectedOption, setSelectedOption] = useState(() => {
-    return (DEFAULT_LEAD_FORMS[baseTenant.id] || DEFAULT_LEAD_FORMS.dental).options?.[0] || 'Consulta General';
+    return (DEFAULT_LEAD_FORMS[baseTenant.id] || DEFAULT_GENERIC_LEAD_FORM).options?.[0] || 'Información General';
   });
   const [bookedSuccess, setBookedSuccess] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
   useEffect(() => {
-    const activeLead = customData.leadForm || DEFAULT_LEAD_FORMS[baseTenant.id] || DEFAULT_LEAD_FORMS.dental;
+    const activeLead = customData.leadForm || DEFAULT_LEAD_FORMS[baseTenant.id] || DEFAULT_GENERIC_LEAD_FORM;
     if (activeLead?.options && activeLead.options.length > 0) {
       if (!activeLead.options.includes(selectedOption)) {
         setSelectedOption(activeLead.options[0]);
@@ -265,7 +289,7 @@ export default function MicroLandingPage() {
   const vertical = baseTenant.vertical || (baseTenant.id === 'polanco' ? 'hospitality' : baseTenant.id === 'urban' ? 'ecommerce' : 'service_appointments');
 
   const getVerticalFormConfig = () => {
-    const defaultLead = DEFAULT_LEAD_FORMS[baseTenant.id] || DEFAULT_LEAD_FORMS.dental;
+    const defaultLead = DEFAULT_LEAD_FORMS[baseTenant.id] || DEFAULT_GENERIC_LEAD_FORM;
     const activeLead = customData.leadForm || defaultLead;
 
     return {

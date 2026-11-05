@@ -51,7 +51,7 @@ export const CommandPaletteModal = ({ isOpen, onClose }) => {
   const inputRef = useRef(null);
   const listRef = useRef(null);
 
-  const tenantKey = activeTenantKey || activeTenant?.id || 'dental';
+  const tenantKey = activeTenantKey || activeTenant?.id || null;
 
   // Auto-focus input on open
   useEffect(() => {

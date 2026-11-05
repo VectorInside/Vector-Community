@@ -176,7 +176,11 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
   };
 
   const handleSimulateInboundComment = () => {
-    const tenantKey = activeTenant?.id || 'dental';
+    const tenantKey = activeTenant?.id || null;
+    if (!tenantKey) {
+      triggerModal('Selecciona un Negocio', 'Elige un negocio activo en el selector superior para simular comentarios en Meta Graph.');
+      return;
+    }
     const samples = {
       dental: {
         author: '@dra_monica_s',
@@ -1310,27 +1314,31 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-mono">
             <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-1 shadow-sm">
               <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase">Hook Rate Promedio (3s)</span>
-              <p className="text-2xl font-black text-neon">46.8%</p>
-              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">+12% vs benchmark</span>
+              <p className="text-2xl font-black text-neon">{metaComments.length > 0 ? '46.8%' : '0.0%'}</p>
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
+                {metaComments.length > 0 ? '+12% vs benchmark' : 'Sin datos registrados'}
+              </span>
             </div>
 
             <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-1 shadow-sm">
               <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase">Comentarios Analizados</span>
-              <p className="text-2xl font-black text-zinc-900 dark:text-white">{metaComments.length * 32}</p>
+              <p className="text-2xl font-black text-zinc-900 dark:text-white">{metaComments.length}</p>
               <span className="text-[10px] text-zinc-400 dark:text-zinc-500">Últimas 24 horas</span>
             </div>
 
             <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-1 shadow-sm">
               <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase">DMs Disparados Automáticos</span>
               <p className="text-2xl font-black text-cyan-600 dark:text-cyan-400">
-                {metaComments.filter((c) => c.status?.includes('DM') || c.category === 'LEAD').length * 14}
+                {metaComments.filter((c) => c.status?.includes('DM') || c.category === 'LEAD').length}
               </p>
-              <span className="text-[10px] text-cyan-700 dark:text-cyan-500">Conversión a Chat: 38.4%</span>
+              <span className="text-[10px] text-cyan-700 dark:text-cyan-500">
+                Conversión a Chat: {metaComments.length > 0 ? '38.4%' : '0.0%'}
+              </span>
             </div>
 
             <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-1 shadow-sm">
               <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase">Sentimiento de Comunidad</span>
-              <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">96.8%</p>
+              <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{metaComments.length > 0 ? '96.8%' : '0.0%'}</p>
               <span className="text-[10px] text-emerald-700 dark:text-emerald-500">Filtro de Toxicidad Activo</span>
             </div>
           </div>
@@ -1706,8 +1714,10 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
 
             <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-1 shadow-sm">
               <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase">Tasa de Reactivación a Cita</span>
-              <p className="text-2xl font-black text-neon">39.1%</p>
-              <span className="text-[10px] text-emerald-400 font-sans">+4x vs seguimiento manual</span>
+              <p className="text-2xl font-black text-neon">{reengagementList.length > 0 ? '39.1%' : '0.0%'}</p>
+              <span className="text-[10px] text-emerald-400 font-sans">
+                {reengagementList.length > 0 ? '+4x vs seguimiento manual' : 'Sin prospectos en cola'}
+              </span>
             </div>
 
             <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-1 shadow-sm">

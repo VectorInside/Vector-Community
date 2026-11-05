@@ -68,7 +68,7 @@ export const ConversacionesInbox = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { activeTenant, triggerModal } = useAuth();
-  const tenantKey = activeTenant?.id || 'dental';
+  const tenantKey = activeTenant?.id || null;
 
   // Read URL query parameter for direct jump from notification
   const targetThreadId = searchParams.get('threadId');
@@ -275,68 +275,24 @@ export const ConversacionesInbox = () => {
 
   // DeepSeek R1 AI Prompt Suggestions tailored to tenant
   const tenantSuggestions = useMemo(() => {
-    if (tenantKey === 'polanco') {
-      return [
-        {
-          label: 'Confirmar Mesa Terraza',
-          text: `Hola ${activeThread?.name}! Con gusto te confirmo la disponibilidad de mesa en terraza VIP para 4 personas hoy a las 21:00 hrs. ¿Deseas que preparemos un cóctel de bienvenida cortesía de la casa?`,
-        },
-        {
-          label: 'Enviar Menú & Vinos',
-          text: `Te comparto nuestro Menú Degustación Prime y la selección de maridaje de autor: https://app.vectorinside.com/m/polanco. ¿Te reservo la mesa?`,
-        },
-        {
-          label: 'Proponer Horario Alterno',
-          text: `Para terraza principal tenemos slot libre a las 20:30 o a las 21:30 hrs. ¿Cuál de los dos te acomoda mejor para apartarte el lugar?`,
-        },
-      ];
-    } else if (tenantKey === 'urban') {
-      return [
-        {
-          label: 'Validar Talla & Stock',
-          text: `Hola ${activeThread?.name}! Sí, tenemos disponible la talla solicitada con tag holográfico de autenticidad blindada y envío express inmediato en CDMX.`,
-        },
-        {
-          label: 'Enviar Link de Checkout',
-          text: `Puedes apartar tu par antes de que se agote el stock directo en nuestro checkout protegido: https://urbansneaks.shop. ¿Requieres factura?`,
-        },
-        {
-          label: 'Garantía Legit Check',
-          text: `Todos nuestros pares pasan doble verificación física y luz ultravioleta. Si no es 100% original, te devolvemos 3x tu dinero.`,
-        },
-      ];
-    } else if (tenantKey === 'corp') {
-      return [
-        {
-          label: 'Agendar Zoom con CTO',
-          text: `Estimado(a) ${activeThread?.name}, con gusto coordinamos la sesión de diagnóstico técnico 1-on-1 de 30 minutos vía Zoom con un Arquitecto Senior de Vector Inside. ¿Te funciona este jueves a las 11:00 hrs?`,
-        },
-        {
-          label: 'Enviar Dossier B2B',
-          text: `Te adjunto el dossier técnico sobre soberanía de IA y arquitectura de agentes HITL: https://vectorinside.com/enterprise.`,
-        },
-        {
-          label: 'Confirmar Stack Técnico',
-          text: `Nuestra infraestructura se integra directamente a Meta Cloud API y tu CRM legado sin middleware frágil. ¿Qué CRM utilizan actualmente?`,
-        },
-      ];
-    } else {
-      return [
-        {
-          label: 'Confirmar Diagnóstico 3D',
-          text: `Hola ${activeThread?.name}! Con gusto te agendamos para tu diagnóstico computarizado 3D sin costo. Usamos tecnología digital sin dolor y te entregamos tu presupuesto transparente en 15 minutos.`,
-        },
-        {
-          label: 'Aclarar Financiamiento MSI',
-          text: `Manejamos hasta 12 Meses Sin Intereses con todas las tarjetas bancarias y planes de pago directo en tratamientos de implantes.`,
-        },
-        {
-          label: 'Proponer Cita',
-          text: `Tenemos disponible mañana a las 11:30 hrs o a las 16:00 hrs con nuestro cirujano especialista. ¿Cuál horario te queda mejor?`,
-        },
-      ];
-    }
-  }, [tenantKey, activeThread]);
+    if (!activeTenant || !activeThread) return [];
+    const bizName = activeTenant?.name || 'nuestro negocio';
+    const leadName = activeThread?.name || 'estimado(a)';
+    return [
+      {
+        label: 'Confirmar Atención',
+        text: `Hola ${leadName}, gracias por comunicarte con ${bizName}. Con gusto damos seguimiento inmediato a tu solicitud.`,
+      },
+      {
+        label: 'Compartir Información',
+        text: `Te compartimos los detalles de nuestros servicios y disponibilidad en ${bizName}. ¿Tienes alguna duda adicional?`,
+      },
+      {
+        label: 'Proponer Cita',
+        text: `Tenemos disponibilidad para agendarte en ${bizName}. ¿Qué horario te resulta más cómodo?`,
+      },
+    ];
+  }, [activeTenant, activeThread]);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 block animate-fade-in space-y-6">
@@ -348,7 +304,7 @@ export const ConversacionesInbox = () => {
               OPERACIÓN / BANDEJA DE ATENCIÓN
             </span>
             <span className="text-xs text-[var(--text-muted)] font-mono">
-              Espacio: <strong className="text-[var(--text-main)]">{activeTenant?.name || 'Vector Inside'}</strong>
+              Espacio: <strong className="text-[var(--text-main)]">{activeTenant?.name || 'Sin negocio seleccionado'}</strong>
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-heading font-black text-[var(--text-main)]">
@@ -381,9 +337,17 @@ export const ConversacionesInbox = () => {
       {/* Meta Omnichannel Status Banner */}
       <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-[var(--text-muted)]">
         <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-lime-400 animate-pulse shrink-0" />
+          <span className={`w-2 h-2 rounded-full shrink-0 ${activeTenant ? 'bg-lime-400 animate-pulse' : 'bg-zinc-600'}`} />
           <span className="font-mono text-[11px]">
-            <strong>Canales Conectados a Meta Graph API v21.0:</strong> WhatsApp Cloud API, Instagram Direct & Facebook Messenger · SLA Objetivo: <strong>15 min</strong>
+            {activeTenant ? (
+              <>
+                <strong>Canales Conectados a Meta Graph API v21.0 ({activeTenant.name}):</strong> WhatsApp Cloud API, Instagram Direct & Facebook Messenger · SLA Objetivo: <strong>15 min</strong>
+              </>
+            ) : (
+              <>
+                <strong>Sin canales activos:</strong> Selecciona un negocio en el selector superior para sincronizar las bandejas de Meta Graph API.
+              </>
+            )}
           </span>
         </div>
         <div className="flex items-center gap-2">
