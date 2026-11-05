@@ -72,7 +72,11 @@ export const useSSE = (tenantId, onNewAlert) => {
       return;
     }
 
-    const sseBaseUrl = process.env.NEXT_PUBLIC_SSE_URL || `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1'}/alerts/stream`;
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+    const defaultHost = (hostname !== 'localhost' && hostname !== '127.0.0.1' && !process.env.NEXT_PUBLIC_API_URL)
+      ? `http://${hostname}:8080/api/v1`
+      : 'http://localhost:8080/api/v1';
+    const sseBaseUrl = process.env.NEXT_PUBLIC_SSE_URL || `${process.env.NEXT_PUBLIC_API_URL || defaultHost}/alerts/stream`;
     const fullUrl = `${sseBaseUrl}?tenantId=${tenantId}`;
 
     let sseInstance = null;

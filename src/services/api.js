@@ -3,8 +3,20 @@ import { useTenantStore } from '@/hooks/useTenant';
 
 export const isBackendAvailable = process.env.NEXT_PUBLIC_ENABLE_BACKEND !== 'false';
 
+// Helper dinámico para resolver la IP/Host del backend en tiempo de ejecución (local, red Wi-Fi o túnel)
+const getDynamicApiBaseUrl = () => {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    // Si se navega por IP local (ej. 192.168.x.x) y no es localhost
+    if (hostname !== 'localhost' && hostname !== '127.0.0.1' && !process.env.NEXT_PUBLIC_API_URL) {
+      return `http://${hostname}:8080/api/v1`;
+    }
+  }
+  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
+};
+
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1',
+  baseURL: getDynamicApiBaseUrl(),
   headers: {
     'Content-Type': 'application/json',
   },
