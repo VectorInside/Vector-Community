@@ -28,6 +28,8 @@ import {
   LayoutGrid,
   List,
   Trash2,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Portal } from '@/components/common/Portal';
@@ -89,6 +91,24 @@ export const CuentasAccesosView = () => {
 
   // View Mode: 'grid' (detailed cards) or 'table' (compact density)
   const [viewMode, setViewMode] = useState('grid');
+
+  // KPI Cards Collapsible State
+  const [isKpiCollapsed, setIsKpiCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('vector_cuentas_kpi_collapsed') === 'true';
+    }
+    return false;
+  });
+
+  const toggleKpiCollapse = () => {
+    setIsKpiCollapsed((prev) => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('vector_cuentas_kpi_collapsed', String(next));
+      }
+      return next;
+    });
+  };
 
   // Security: Masked Passwords (toggle per tenant)
   const [visiblePasswords, setVisiblePasswords] = useState({});
@@ -434,63 +454,122 @@ export const CuentasAccesosView = () => {
         </button>
       </header>
 
-      {/* KPI Stats Bar (Clean 1:1 Business Metrics) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 font-mono">
-        <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
-          <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider block font-semibold">
-            Negocios con Acceso
+      {/* KPI Stats Bar with Collapse / Expand Toggle */}
+      <div className="space-y-2 font-mono">
+        <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
+          <span className="text-[10px] uppercase tracking-wider font-semibold text-[var(--text-faint)]">
+            Métricas de Cuentas (Modelo 1:1)
           </span>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-heading font-black text-[var(--text-main)]">
-              {stats.total}
-            </span>
-            <span className="text-[10px] text-[var(--text-muted)] font-sans">
-              1 cuenta / negocio
-            </span>
-          </div>
+          <button
+            type="button"
+            onClick={toggleKpiCollapse}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon hover:text-neon transition-all text-[11px] cursor-pointer"
+            title={isKpiCollapsed ? 'Expandir tarjetas de métricas' : 'Contraer tarjetas de métricas'}
+          >
+            {isKpiCollapsed ? (
+              <>
+                <ChevronDown className="w-3.5 h-3.5 text-neon" />
+                <span>Mostrar métricas ({stats.total} total)</span>
+              </>
+            ) : (
+              <>
+                <ChevronUp className="w-3.5 h-3.5" />
+                <span>Contraer tarjetas</span>
+              </>
+            )}
+          </button>
         </div>
 
-        <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
-          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block font-semibold">
-            Cuentas Activas
-          </span>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-heading font-black text-emerald-600 dark:text-emerald-400">
-              {stats.active}
-            </span>
-            <span className="text-[10px] text-[var(--text-muted)] font-sans">
-              Acceso habilitado
-            </span>
-          </div>
-        </div>
+        {!isKpiCollapsed ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 animate-fade-in">
+            <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
+              <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider block font-semibold">
+                Negocios con Acceso
+              </span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl sm:text-3xl font-heading font-black text-[var(--text-main)]">
+                  {stats.total}
+                </span>
+                <span className="text-[10px] text-[var(--text-muted)] font-sans">
+                  {stats.total === 1 ? 'negocio vinculado' : 'negocios vinculados'}
+                </span>
+              </div>
+            </div>
 
-        <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
-          <span className="text-[10px] text-amber-500 uppercase tracking-wider block font-semibold">
-            Por Activar
-          </span>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-heading font-black text-amber-500">
-              {stats.pending}
-            </span>
-            <span className="text-[10px] text-[var(--text-muted)] font-sans">
-              Invitación enviada
-            </span>
-          </div>
-        </div>
+            <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block font-semibold">
+                Cuentas Activas
+              </span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl sm:text-3xl font-heading font-black text-emerald-600 dark:text-emerald-400">
+                  {stats.active}
+                </span>
+                <span className="text-[10px] text-[var(--text-muted)] font-sans">
+                  Acceso habilitado
+                </span>
+              </div>
+            </div>
 
-        <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
-          <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider block font-semibold">
-            Suspendidas
-          </span>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-heading font-black text-[var(--text-main)]">
-              {stats.suspended}
-            </span>
-            <span className="text-[10px] text-[var(--text-muted)] font-sans">
-              Acceso bloqueado
-            </span>
+            <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
+              <span className="text-[10px] text-amber-500 uppercase tracking-wider block font-semibold">
+                Por Activar
+              </span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl sm:text-3xl font-heading font-black text-amber-500">
+                  {stats.pending}
+                </span>
+                <span className="text-[10px] text-[var(--text-muted)] font-sans">
+                  Invitación enviada
+                </span>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
+              <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider block font-semibold">
+                Suspendidas
+              </span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl sm:text-3xl font-heading font-black text-[var(--text-main)]">
+                  {stats.suspended}
+                </span>
+                <span className="text-[10px] text-[var(--text-muted)] font-sans">
+                  Acceso bloqueado
+                </span>
+              </div>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="px-4 py-2.5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex flex-wrap items-center justify-between gap-3 text-xs animate-fade-in">
+            <div className="flex items-center gap-4 text-[11px] flex-wrap">
+              <span className="flex items-center gap-1.5">
+                <span className="text-[var(--text-muted)]">Negocios vinculados:</span>
+                <strong className="text-[var(--text-main)] font-black">{stats.total}</strong>
+              </span>
+              <span className="text-[var(--border-color)]">•</span>
+              <span className="flex items-center gap-1.5">
+                <span className="text-[var(--text-muted)]">Activas:</span>
+                <strong className="text-emerald-500 font-black">{stats.active}</strong>
+              </span>
+              <span className="text-[var(--border-color)]">•</span>
+              <span className="flex items-center gap-1.5">
+                <span className="text-[var(--text-muted)]">Por Activar:</span>
+                <strong className="text-amber-500 font-black">{stats.pending}</strong>
+              </span>
+              <span className="text-[var(--border-color)]">•</span>
+              <span className="flex items-center gap-1.5">
+                <span className="text-[var(--text-muted)]">Suspendidas:</span>
+                <strong className="text-[var(--text-main)] font-black">{stats.suspended}</strong>
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={toggleKpiCollapse}
+              className="text-[10px] text-neon hover:underline font-bold"
+            >
+              Ver tarjetas completas
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Filter Bar: Clean, Search, Active Tenant Shortcut & View Switcher */}

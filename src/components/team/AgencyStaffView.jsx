@@ -21,6 +21,7 @@ import {
   Send,
   SlidersHorizontal,
   ChevronDown,
+  ChevronUp,
   Layers,
   KeyRound,
   Copy,
@@ -112,6 +113,24 @@ export const AgencyStaffView = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+
+  // KPI Cards Collapsible State
+  const [isKpiCollapsed, setIsKpiCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('vector_staff_kpi_collapsed') === 'true';
+    }
+    return false;
+  });
+
+  const toggleKpiCollapse = () => {
+    setIsKpiCollapsed((prev) => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('vector_staff_kpi_collapsed', String(next));
+      }
+      return next;
+    });
+  };
 
   // Modals & Feedback
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
@@ -388,63 +407,122 @@ export const AgencyStaffView = () => {
         </button>
       </header>
 
-      {/* KPI Stats Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 font-mono">
-        <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
-          <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider block font-semibold">
-            Total Colaboradores
+      {/* KPI Stats Bar with Collapse / Expand Toggle */}
+      <div className="space-y-2 font-mono">
+        <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
+          <span className="text-[10px] uppercase tracking-wider font-semibold text-[var(--text-faint)]">
+            Estructura del Equipo Interno
           </span>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-heading font-black text-[var(--text-main)]">
-              {stats.total}
-            </span>
-            <span className="text-[10px] text-emerald-500 font-sans font-bold">
-              {stats.active} activos
-            </span>
-          </div>
+          <button
+            type="button"
+            onClick={toggleKpiCollapse}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon hover:text-neon transition-all text-[11px] cursor-pointer"
+            title={isKpiCollapsed ? 'Expandir tarjetas de métricas' : 'Contraer tarjetas de métricas'}
+          >
+            {isKpiCollapsed ? (
+              <>
+                <ChevronDown className="w-3.5 h-3.5 text-neon" />
+                <span>Mostrar métricas ({stats.total} total)</span>
+              </>
+            ) : (
+              <>
+                <ChevronUp className="w-3.5 h-3.5" />
+                <span>Contraer tarjetas</span>
+              </>
+            )}
+          </button>
         </div>
 
-        <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
-          <span className="text-[10px] text-neon uppercase tracking-wider block font-semibold">
-            Super Admins
-          </span>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-heading font-black text-neon">
-              {stats.superAdmins}
-            </span>
-            <span className="text-[10px] text-[var(--text-muted)] font-sans">
-              Control global
-            </span>
-          </div>
-        </div>
+        {!isKpiCollapsed ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 animate-fade-in">
+            <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
+              <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider block font-semibold">
+                Total Colaboradores
+              </span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl sm:text-3xl font-heading font-black text-[var(--text-main)]">
+                  {stats.total}
+                </span>
+                <span className="text-[10px] text-emerald-500 font-sans font-bold">
+                  {stats.active} activos
+                </span>
+              </div>
+            </div>
 
-        <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
-          <span className="text-[10px] text-blue-400 uppercase tracking-wider block font-semibold">
-            Administradores
-          </span>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-heading font-black text-blue-400">
-              {stats.admins}
-            </span>
-            <span className="text-[10px] text-[var(--text-muted)] font-sans">
-              Negocios asignados
-            </span>
-          </div>
-        </div>
+            <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
+              <span className="text-[10px] text-neon uppercase tracking-wider block font-semibold">
+                Super Admins
+              </span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl sm:text-3xl font-heading font-black text-neon">
+                  {stats.superAdmins}
+                </span>
+                <span className="text-[10px] text-[var(--text-muted)] font-sans">
+                  Control global
+                </span>
+              </div>
+            </div>
 
-        <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
-          <span className="text-[10px] text-emerald-400 uppercase tracking-wider block font-semibold">
-            Cuentas Activas
-          </span>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-heading font-black text-emerald-400">
-              {stats.active}
-            </span>
-            <span className="text-[10px] text-[var(--text-muted)] font-sans">
-              Acceso habilitado
-            </span>
+            <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
+              <span className="text-[10px] text-blue-400 uppercase tracking-wider block font-semibold">
+                Administradores
+              </span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl sm:text-3xl font-heading font-black text-blue-400">
+                  {stats.admins}
+                </span>
+                <span className="text-[10px] text-[var(--text-muted)] font-sans">
+                  Negocios asignados
+                </span>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
+              <span className="text-[10px] text-emerald-400 uppercase tracking-wider block font-semibold">
+                Cuentas Activas
+              </span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl sm:text-3xl font-heading font-black text-emerald-400">
+                  {stats.active}
+                </span>
+                <span className="text-[10px] text-[var(--text-muted)] font-sans">
+                  Acceso habilitado
+                </span>
+              </div>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="px-4 py-2.5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex flex-wrap items-center justify-between gap-3 text-xs animate-fade-in">
+            <div className="flex items-center gap-4 text-[11px] flex-wrap">
+              <span className="flex items-center gap-1.5">
+                <span className="text-[var(--text-muted)]">Colaboradores:</span>
+                <strong className="text-[var(--text-main)] font-black">{stats.total}</strong>
+              </span>
+              <span className="text-[var(--border-color)]">•</span>
+              <span className="flex items-center gap-1.5">
+                <span className="text-[var(--text-muted)]">Super Admins:</span>
+                <strong className="text-neon font-black">{stats.superAdmins}</strong>
+              </span>
+              <span className="text-[var(--border-color)]">•</span>
+              <span className="flex items-center gap-1.5">
+                <span className="text-[var(--text-muted)]">Administradores:</span>
+                <strong className="text-blue-400 font-black">{stats.admins}</strong>
+              </span>
+              <span className="text-[var(--border-color)]">•</span>
+              <span className="flex items-center gap-1.5">
+                <span className="text-[var(--text-muted)]">Activos:</span>
+                <strong className="text-emerald-500 font-black">{stats.active}</strong>
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={toggleKpiCollapse}
+              className="text-[10px] text-neon hover:underline font-bold"
+            >
+              Ver tarjetas completas
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Filter Bar */}
