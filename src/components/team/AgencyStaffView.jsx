@@ -229,12 +229,15 @@ export const AgencyStaffView = () => {
   };
 
   const handlePreviewInvite = () => {
-    if (!inviteForm.name.trim() || !inviteForm.email.trim()) {
-      showToast('Completa el nombre y correo para previsualizar');
-      return;
-    }
-    if (!isValidEmail(inviteForm.email.trim())) {
-      showToast('Ingresa un correo electrónico válido con dominio');
+    const rawName = inviteForm.name.trim();
+    const rawEmail = inviteForm.email.trim();
+
+    // Si los campos están vacíos, usamos valores de muestra para permitir previsualizar de inmediato el diseño
+    const displayName = rawName || 'Colaborador Nuevo';
+    const displayEmail = rawEmail || 'colaborador@vectorinside.com';
+
+    if (rawEmail && !isValidEmail(rawEmail)) {
+      showToast('Ingresa un correo electrónico válido con dominio (ej. usuario@dominio.com)');
       return;
     }
     const cleanPhone = normalizePhone10(inviteForm.phone);
@@ -246,14 +249,14 @@ export const AgencyStaffView = () => {
         : `${inviteForm.customTenants.length} Negocios Específicos`;
 
     setInvitationModalData({
-      name: inviteForm.name.trim(),
-      email: inviteForm.email.trim().toLowerCase(),
+      name: displayName,
+      email: displayEmail.toLowerCase(),
       phone: cleanPhone,
       role: inviteForm.role,
       roleLabel: ROLE_DEFINITIONS[inviteForm.role]?.label || 'Administrador',
       assignedSummary,
       tempPassword: generateSecureStaffPassword(),
-      isPendingSave: true,
+      isPendingSave: Boolean(rawName && rawEmail),
     });
   };
 

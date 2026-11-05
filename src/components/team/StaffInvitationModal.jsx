@@ -64,7 +64,7 @@ export const StaffInvitationModal = ({
 
   return (
     <Portal>
-      <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fade-in font-sans">
+      <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-fade-in font-sans">
         <div className="relative w-full max-w-2xl bg-zinc-950 border border-zinc-800 rounded-3xl p-6 sm:p-7 space-y-5 shadow-2xl animate-scale-up max-h-[92vh] flex flex-col">
           {/* Header */}
           <div className="flex items-start justify-between border-b border-zinc-800 pb-4">
