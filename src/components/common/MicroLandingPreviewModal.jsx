@@ -41,56 +41,44 @@ import {
 import confetti from 'canvas-confetti';
 
 const DEFAULT_COVERS = {
-  dental: 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=800&auto=format&fit=crop&q=80',
-  polanco: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=800&auto=format&fit=crop&q=80',
-  urban: 'https://images.unsplash.com/photo-1552346154-21d32810aba3?w=800&auto=format&fit=crop&q=80',
-  corp: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&auto=format&fit=crop&q=80',
+  default: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&auto=format&fit=crop&q=80',
 };
 
 const DEFAULT_LEAD_FORMS = {
-  dental: {
+  default: {
+    title: '¿En qué podemos ayudarte hoy?',
+    subtitle: 'Te atendemos de inmediato por WhatsApp',
+    buttonText: 'Iniciar Conversación en WhatsApp',
+    options: ['Información General', 'Agendar Cita', 'Cotización', 'Hablar con un Asesor'],
+  },
+  health: {
     title: 'Motivo principal de consulta:',
     subtitle: 'Te orientamos sobre fechas y presupuestos en minutos',
     buttonText: 'Solicitar Cita de Valoración',
-    options: ['Limpieza Dental', 'Implante Molar', 'Ortodoncia', 'Diagnóstico General'],
+    options: ['Valoración Inicial', 'Consulta Especializada', 'Seguimiento', 'Urgencia'],
   },
-  polanco: {
-    title: 'Reserva tu Mesa VIP en Terraza:',
+  hospitality: {
+    title: 'Reserva tu lugar:',
     subtitle: 'Confirmación prioritaria por WhatsApp en < 5 min',
-    buttonText: 'Solicitar Reserva de Mesa',
-    options: ['2 comensales', '4 comensales', '6 comensales', 'Mesa VIP 8+'],
+    buttonText: 'Solicitar Reservación',
+    options: ['2 personas', '4 personas', '6 personas', 'Grupo 8+'],
   },
-  urban: {
-    title: 'Talla o Modelo a consultar / apartar:',
-    subtitle: 'Verificamos disponibilidad de tu talla de inmediato',
-    buttonText: 'Consultar Stock & Apartar',
-    options: ['26 MX', '26.5 MX', '27 MX', '27.5 MX', '28 MX'],
+  retail: {
+    title: 'Producto o modelo a consultar:',
+    subtitle: 'Verificamos disponibilidad de inmediato',
+    buttonText: 'Consultar Disponibilidad',
+    options: ['Catálogo General', 'Pedido Especial', 'Envío Express', 'Garantía'],
   },
-  corp: {
+  b2b: {
     title: 'Servicio de Interés Estratégico:',
-    subtitle: 'Sesión de 30 min con un consultor de soluciones',
-    buttonText: 'Agendar Discovery Call (30 min)',
+    subtitle: 'Sesión con un consultor de soluciones',
+    buttonText: 'Agendar Sesión (30 min)',
     options: ['Automatización IA', 'Integración CRM', 'Agentes Multi-Canal', 'Consultoría B2B'],
   },
 };
 
 const DEFAULT_SERVICES = {
-  dental: [
-    { title: 'Diagnóstico Digital 3D', desc: 'Escaneo intraoral sin molde incómodo', badge: 'Gratis esta semana', tone: 'neon' },
-    { title: 'Limpieza Ultrasónica & Pulido', desc: 'Profilaxis profunda con ultrasonido y flúor', badge: 'Más solicitado', tone: 'emerald' },
-    { title: 'Ortodoncia Invisible', desc: 'Alineadores transparentes de última generación', badge: 'Hasta 12 MSI', tone: 'blue' },
-    { title: 'Blanqueamiento Láser LED', desc: 'Aclara hasta 4 tonos en 1 sola sesión de 45 min', badge: '-20% Descuento', tone: 'neon' },
-  ],
-  polanco: [
-    { title: 'Reserva de Mesa VIP & Terraza', desc: 'Asignación prioritaria para ocasiones especiales', badge: 'Confirmación 5 min', tone: 'emerald' },
-    { title: 'Menú Degustación 5 Tiempos', desc: 'Maridaje exclusivo seleccionado por nuestro Sommelier', badge: 'Recomendado', tone: 'neon' },
-    { title: 'Cavas & Mixología de Autor', desc: 'Coctelería premium con destilados artesanales', badge: 'Happy Hour 6-8pm', tone: 'blue' },
-  ],
-  urban: [
-    { title: 'Drops Exclusivos & Sneakers Hype', desc: 'Ediciones limitadas de Nike, Jordan, Yeezy y New Balance', badge: 'Stock Limitado', tone: 'neon' },
-    { title: 'Envío Express Mismo Día', desc: 'Entregas seguras en CDMX en menos de 4 horas', badge: 'Envío Gratis > $2,500', tone: 'emerald' },
-    { title: 'Verificación de Autenticidad', desc: 'Certificado físico y digital de legitimidad por expertos', badge: '100% Original', tone: 'blue' },
-  ],
+  default: [],
 };
 
 export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
@@ -133,9 +121,9 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
   // Initialize tenant data from localStorage or tenant defaults
   useEffect(() => {
     if (!tenant) return;
-    const defaultList = DEFAULT_SERVICES[tenant.id] || DEFAULT_SERVICES.dental;
-    const defaultCover = DEFAULT_COVERS[tenant.id] || DEFAULT_COVERS.dental;
-    const defaultLeadForm = DEFAULT_LEAD_FORMS[tenant.id] || DEFAULT_LEAD_FORMS.dental;
+    const defaultList = DEFAULT_SERVICES[tenant.id] || DEFAULT_SERVICES.default;
+    const defaultCover = DEFAULT_COVERS[tenant.id] || DEFAULT_COVERS.default;
+    const defaultLeadForm = DEFAULT_LEAD_FORMS[tenant.id] || DEFAULT_LEAD_FORMS.default;
 
     try {
       const saved = localStorage.getItem(`vector_microlanding_${tenant.id}`);
@@ -144,23 +132,23 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
         setCustomData({
           name: parsed.name || tenant.name || 'Mi Negocio',
           tagline: parsed.tagline || (tenant.giro ? `${tenant.giro} de vanguardia y atención personalizada.` : 'Atención inmediata y personalizada.'),
-          phone: parsed.phone || tenant.phone || '+525512345678',
-          address: parsed.address || 'Av. Horacio 1520, Polanco, Miguel Hidalgo, CDMX',
+          phone: parsed.phone || tenant.phone || '',
+          address: parsed.address || tenant.address || '',
           hoursWeek: parsed.hoursWeek || 'Lun–Vie: 09:00 a 19:00 hrs',
           hoursWeekend: parsed.hoursWeekend || 'Sáb: 09:00 a 14:00 hrs',
           ga4MeasurementId: parsed.ga4MeasurementId || tenant.ga4MeasurementId || '',
           metaPixelId: parsed.metaPixelId || tenant.metaPixelId || '',
           logo: parsed.logo || null,
           cover: parsed.cover || defaultCover,
-          services: parsed.services && parsed.services.length > 0 ? parsed.services : defaultList,
+          services: Array.isArray(parsed.services) ? parsed.services : defaultList,
           leadForm: parsed.leadForm || defaultLeadForm,
         });
       } else {
         setCustomData({
           name: tenant.name || 'Mi Negocio',
           tagline: tenant.giro ? `${tenant.giro} de vanguardia y atención personalizada.` : 'Atención inmediata y personalizada.',
-          phone: tenant.phone || '+525512345678',
-          address: 'Av. Horacio 1520, Polanco, Miguel Hidalgo, CDMX',
+          phone: tenant.phone || '',
+          address: tenant.address || '',
           hoursWeek: 'Lun–Vie: 09:00 a 19:00 hrs',
           hoursWeekend: 'Sáb: 09:00 a 14:00 hrs',
           ga4MeasurementId: tenant.ga4MeasurementId || '',
@@ -175,8 +163,8 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
       setCustomData({
         name: tenant.name || 'Mi Negocio',
         tagline: 'Atención inmediata y personalizada.',
-        phone: tenant.phone || '+525512345678',
-        address: 'Av. Horacio 1520, Polanco, Miguel Hidalgo, CDMX',
+        phone: tenant.phone || '',
+        address: tenant.address || '',
         hoursWeek: 'Lun–Vie: 09:00 a 19:00 hrs',
         hoursWeekend: 'Sáb: 09:00 a 14:00 hrs',
         ga4MeasurementId: tenant.ga4MeasurementId || '',
@@ -307,32 +295,32 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
   };
 
   const handleRemoveCover = () => {
-    const defaultCover = DEFAULT_COVERS[tenant?.id] || DEFAULT_COVERS.dental;
+    const defaultCover = DEFAULT_COVERS[tenant?.id] || DEFAULT_COVERS.default;
     handleUpdateField('cover', defaultCover);
   };
 
   // Lead Form state handlers
   const handleUpdateLeadFormField = (field, value) => {
-    const current = customData.leadForm || DEFAULT_LEAD_FORMS[tenant?.id] || DEFAULT_LEAD_FORMS.dental;
+    const current = customData.leadForm || DEFAULT_LEAD_FORMS[tenant?.id] || DEFAULT_LEAD_FORMS.default;
     const updated = { ...current, [field]: value };
     handleUpdateField('leadForm', updated);
   };
 
   const handleAddLeadOption = () => {
-    const current = customData.leadForm || DEFAULT_LEAD_FORMS[tenant?.id] || DEFAULT_LEAD_FORMS.dental;
+    const current = customData.leadForm || DEFAULT_LEAD_FORMS[tenant?.id] || DEFAULT_LEAD_FORMS.default;
     const nextOptions = [...(current.options || []), `Opción ${(current.options?.length || 0) + 1}`];
     handleUpdateLeadFormField('options', nextOptions);
   };
 
   const handleUpdateLeadOption = (index, value) => {
-    const current = customData.leadForm || DEFAULT_LEAD_FORMS[tenant?.id] || DEFAULT_LEAD_FORMS.dental;
+    const current = customData.leadForm || DEFAULT_LEAD_FORMS[tenant?.id] || DEFAULT_LEAD_FORMS.default;
     const nextOptions = [...(current.options || [])];
     nextOptions[index] = value;
     handleUpdateLeadFormField('options', nextOptions);
   };
 
   const handleRemoveLeadOption = (index) => {
-    const current = customData.leadForm || DEFAULT_LEAD_FORMS[tenant?.id] || DEFAULT_LEAD_FORMS.dental;
+    const current = customData.leadForm || DEFAULT_LEAD_FORMS[tenant?.id] || DEFAULT_LEAD_FORMS.default;
     const nextOptions = [...(current.options || [])];
     nextOptions.splice(index, 1);
     handleUpdateLeadFormField('options', nextOptions);
@@ -1011,28 +999,28 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                         <button
                           type="button"
-                          onClick={() => handleLoadLeadFormPreset('dental')}
+                          onClick={() => handleLoadLeadFormPreset('health')}
                           className="py-2 px-2.5 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-[var(--text-main)] hover:text-neon border border-[var(--border-color)] text-xs font-mono transition-all text-center flex items-center justify-center gap-1.5 active:scale-95"
                         >
-                          <span>🦷 Dental</span>
+                          <span>🩺 Salud</span>
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleLoadLeadFormPreset('polanco')}
+                          onClick={() => handleLoadLeadFormPreset('hospitality')}
                           className="py-2 px-2.5 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-[var(--text-main)] hover:text-neon border border-[var(--border-color)] text-xs font-mono transition-all text-center flex items-center justify-center gap-1.5 active:scale-95"
                         >
-                          <span>🍷 Restaurante</span>
+                          <span>🍷 Hospitalidad</span>
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleLoadLeadFormPreset('urban')}
+                          onClick={() => handleLoadLeadFormPreset('retail')}
                           className="py-2 px-2.5 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-[var(--text-main)] hover:text-neon border border-[var(--border-color)] text-xs font-mono transition-all text-center flex items-center justify-center gap-1.5 active:scale-95"
                         >
-                          <span>👟 Calzado</span>
+                          <span>🛍️ Comercio</span>
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleLoadLeadFormPreset('corp')}
+                          onClick={() => handleLoadLeadFormPreset('b2b')}
                           className="py-2 px-2.5 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-[var(--text-main)] hover:text-neon border border-[var(--border-color)] text-xs font-mono transition-all text-center flex items-center justify-center gap-1.5 active:scale-95"
                         >
                           <span>💼 Asesoría B2B</span>

@@ -27,53 +27,6 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
-// Base Tenant Themes with Services and Hours
-const TENANT_THEMES = {
-  dental: {
-    cover: 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=800&auto=format&fit=crop&q=80',
-    tagline: 'Odontología integral de vanguardia, estética dental y salud bucal sin dolor.',
-    address: 'Av. Horacio 1520, Polanco, Miguel Hidalgo, CDMX',
-    hoursWeek: 'Lun–Vie: 09:00 a 19:00 hrs',
-    hoursWeekend: 'Sáb: 09:00 a 14:00 hrs',
-    rating: '4.9',
-    reviewsCount: '480+',
-    services: [
-      { title: 'Diagnóstico Digital 3D', desc: 'Escaneo intraoral sin molde incómodo', badge: 'Gratis esta semana', tone: 'neon' },
-      { title: 'Limpieza Ultrasónica & Pulido', desc: 'Profilaxis profunda con ultrasonido y flúor', badge: 'Más solicitado', tone: 'emerald' },
-      { title: 'Ortodoncia Invisible', desc: 'Alineadores transparentes de última generación', badge: 'Hasta 12 MSI', tone: 'blue' },
-      { title: 'Blanqueamiento Láser LED', desc: 'Aclara hasta 4 tonos en 1 sola sesión de 45 min', badge: '-20% Descuento', tone: 'neon' },
-    ],
-  },
-  polanco: {
-    cover: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=800&auto=format&fit=crop&q=80',
-    tagline: 'Cortes Prime Dry-Aged, coctelería de autor y ambiente exclusivo en el corazón de Polanco.',
-    address: 'Campos Elíseos 204, Polanco V Secc, CDMX',
-    hoursWeek: 'Mar–Sáb: 13:00 a 01:00 hrs',
-    hoursWeekend: 'Dom: 13:00 a 20:00 hrs',
-    rating: '4.8',
-    reviewsCount: '620+',
-    services: [
-      { title: 'Reserva de Mesa VIP & Terraza', desc: 'Asignación prioritaria para ocasiones especiales', badge: 'Confirmación 5 min', tone: 'emerald' },
-      { title: 'Menú Degustación 5 Tiempos', desc: 'Maridaje exclusivo seleccionado por nuestro Sommelier', badge: 'Recomendado', tone: 'neon' },
-      { title: 'Cavas & Mixología de Autor', desc: 'Coctelería premium con destilados artesanales', badge: 'Happy Hour 6-8pm', tone: 'blue' },
-    ],
-  },
-  urban: {
-    cover: 'https://images.unsplash.com/photo-1552346154-21d32810aba3?w=800&auto=format&fit=crop&q=80',
-    tagline: 'Sneakers exclusivos, drops limitados y streetwear 100% original autenticado.',
-    address: 'Colima 180, Roma Norte, Cuauhtémoc, CDMX',
-    hoursWeek: 'Lun–Vie: 11:00 a 20:00 hrs',
-    hoursWeekend: 'Sáb–Dom: 11:00 a 21:00 hrs',
-    rating: '4.9',
-    reviewsCount: '310+',
-    services: [
-      { title: 'Drops Exclusivos & Sneakers Hype', desc: 'Ediciones limitadas de Nike, Jordan, Yeezy y New Balance', badge: 'Stock Limitado', tone: 'neon' },
-      { title: 'Envío Express Mismo Día', desc: 'Entregas seguras en CDMX en menos de 4 horas', badge: 'Envío Gratis > $2,500', tone: 'emerald' },
-      { title: 'Verificación de Autenticidad', desc: 'Certificado físico y digital de legitimidad por expertos', badge: '100% Original', tone: 'blue' },
-    ],
-  },
-};
-
 const DEFAULT_GENERIC_THEME = {
   cover: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&auto=format&fit=crop&q=80',
   tagline: 'Atención personalizada e inmediata directo en tu WhatsApp.',
@@ -82,10 +35,7 @@ const DEFAULT_GENERIC_THEME = {
   hoursWeekend: 'Sáb: 09:00 a 14:00 hrs',
   rating: '5.0',
   reviewsCount: 'Verificado',
-  services: [
-    { title: 'Atención Personalizada', desc: 'Orientación inmediata con nuestro asistente oficial', badge: 'Disponible', tone: 'neon' },
-    { title: 'Cotización & Citas', desc: 'Agenda o solicita información sin tiempos de espera', badge: 'Respuesta < 1 min', tone: 'emerald' },
-  ],
+  services: [],
 };
 
 const DEFAULT_GENERIC_LEAD_FORM = {
@@ -95,31 +45,12 @@ const DEFAULT_GENERIC_LEAD_FORM = {
   options: ['Información General', 'Agendar Cita', 'Cotización', 'Hablar con un Asesor'],
 };
 
+const TENANT_THEMES = {
+  default: DEFAULT_GENERIC_THEME,
+};
+
 const DEFAULT_LEAD_FORMS = {
-  dental: {
-    title: 'Motivo principal de consulta:',
-    subtitle: 'Te orientamos sobre fechas y presupuestos en minutos',
-    buttonText: 'Solicitar Cita de Valoración',
-    options: ['Limpieza Dental', 'Implante Molar', 'Ortodoncia', 'Diagnóstico General'],
-  },
-  polanco: {
-    title: 'Reserva tu Mesa VIP en Terraza:',
-    subtitle: 'Confirmación prioritaria por WhatsApp en < 5 min',
-    buttonText: 'Solicitar Reserva de Mesa',
-    options: ['2 comensales', '4 comensales', '6 comensales', 'Mesa VIP 8+'],
-  },
-  urban: {
-    title: 'Talla o Modelo a consultar / apartar:',
-    subtitle: 'Verificamos disponibilidad de tu talla de inmediato',
-    buttonText: 'Consultar Stock & Apartar',
-    options: ['26 MX', '26.5 MX', '27 MX', '27.5 MX', '28 MX'],
-  },
-  corp: {
-    title: 'Servicio de Interés Estratégico:',
-    subtitle: 'Sesión de 30 min con un consultor de soluciones',
-    buttonText: 'Agendar Discovery Call (30 min)',
-    options: ['Automatización IA', 'Integración CRM', 'Agentes Multi-Canal', 'Consultoría B2B'],
-  },
+  default: DEFAULT_GENERIC_LEAD_FORM,
 };
 
 export default function MicroLandingPage() {

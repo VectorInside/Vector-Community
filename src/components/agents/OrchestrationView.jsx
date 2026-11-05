@@ -87,201 +87,51 @@ export const OrchestrationView = () => {
         return;
       }
       if (agentKey === 'supervisor') {
-        const supervisorData = {
-          dental: {
-            tenant_id: 'dental',
-            target_agent: 'Sub-Agente Moderador de Cierre',
-            intent_category: 'Consulta de Precios y Aranceles',
-            detected_prospect: 'Carlos Mendoza',
-            confidence_score: 0.985,
-            execution_time_ms: 12,
-            caching_hit: true,
-            token_cost_usd: '$0.0000 (Prompt Caching 100%)',
-            routing_reason: 'Prospecto consulta costo de profilaxis ultrasónica. Canaliza a Closer con RAG dental.',
-          },
-          polanco: {
-            tenant_id: 'polanco',
-            target_agent: 'Sub-Agente Moderador de Cierre',
-            intent_category: 'Reserva Mesa Terraza VIP',
-            detected_prospect: 'Alejandro Bastida',
-            confidence_score: 0.992,
-            execution_time_ms: 11,
-            caching_hit: true,
-            token_cost_usd: '$0.0000 (Prompt Caching 100%)',
-            routing_reason: 'Solicitud de mesa en Terraza para cena de negocios. Enruta a Closer gastronómico.',
-          },
-          urban: {
-            tenant_id: 'urban',
-            target_agent: 'Sub-Agente Moderador de Cierre',
-            intent_category: 'Disponibilidad Talla & Envío Express',
-            detected_prospect: 'Kevin Roldán',
-            confidence_score: 0.978,
-            execution_time_ms: 14,
-            caching_hit: true,
-            token_cost_usd: '$0.0000 (Prompt Caching 100%)',
-            routing_reason: 'Consulta de stock para Sneakers Cyberpunk 27.5 MX. Enruta a Closer e-commerce con Kueski Pay.',
-          },
-          corp: {
-            tenant_id: 'corp',
-            target_agent: 'Sub-Agente Moderador de Cierre',
-            intent_category: 'Cotización Enterprise B2B & RLS Multi-Tenant',
-            detected_prospect: 'Lic. Rodrigo Elizondo',
-            confidence_score: 0.995,
-            execution_time_ms: 9,
-            caching_hit: true,
-            token_cost_usd: '$0.0000 (Prompt Caching 100%)',
-            routing_reason: 'Holding corporativo evaluando 4 subsidiarias. Enruta a Closer B2B con validación BANT.',
-          },
-        };
-
-        setSimulationOutput(supervisorData[tenantId] || null);
+        setSimulationOutput({
+          tenant_id: tenantId,
+          target_agent: 'Sub-Agente Moderador de Cierre',
+          intent_category: 'Consulta Comercial & Calificación',
+          confidence_score: 0.985,
+          execution_time_ms: 12,
+          caching_hit: true,
+          token_cost_usd: '$0.0000 (Prompt Caching 100%)',
+          routing_reason: `Enrutamiento dinámico activo para ${tenantName} con aislamiento Multi-Tenant RLS.`,
+        });
       } else if (agentKey === 'closer') {
-        const closerData = {
-          dental: {
-            tenant_id: 'dental',
-            message_response: `¡Hola Carlos! Entiendo perfectamente que busques cuidar tu inversión. En ${tenantName}, nuestro tratamiento de profilaxis ultrasónica previene el 90% de cirugías futuras costosas sin dolor. Tu diagnóstico 3D está bonificado en tu primera cita. ¿Te apartamos una sesión de 35 min este jueves a las 11:00 am en nuestro sillón 3?`,
-            lead_qualification_status: {
-              req_1_contact_valid: true,
-              req_2_product_identified: true,
-              req_3_doubts_resolved: true,
-              req_4_cta_accepted: false,
-            },
-            current_lead_temperature: 'Seguimiento con Alta Intención',
-            is_billable_lead: false,
-            execution_time_ms: 310,
-            framework_applied: 'JTBD + Ecuación de Valor (Beneficio clínico antes de arancel $850 MXN)',
+        setSimulationOutput({
+          tenant_id: tenantId,
+          message_response: `¡Hola! Bienvenido a ${tenantName}. Estamos listos para brindarte información personalizada sobre ${coreService} y agendar tu atención. ¿Qué horario te resulta más cómodo?`,
+          lead_qualification_status: {
+            req_1_contact_valid: true,
+            req_2_product_identified: true,
+            req_3_doubts_resolved: true,
+            req_4_cta_accepted: false,
           },
-          polanco: {
-            tenant_id: 'polanco',
-            message_response: `¡Hola Alejandro! Un gusto saludarte. En ${tenantName} preparamos cada servicio como un ritual gastronómico. Nuestro Tomahawk Black Onyx de 1.2kg con flameado en mesa incluye maridaje guiado por sommelier. ¿Deseas asegurar tu mesa en la Terraza VIP este viernes a las 8:30 pm?`,
-            lead_qualification_status: {
-              req_1_contact_valid: true,
-              req_2_product_identified: true,
-              req_3_doubts_resolved: true,
-              req_4_cta_accepted: true,
-            },
-            current_lead_temperature: 'Cierre Confirmado (VIP)',
-            is_billable_lead: true,
-            billing_amount_mxn: '$350.00 MXN',
-            execution_time_ms: 285,
-            framework_applied: 'Storytelling de Alto Estatus + Escasez de Mesas VIP',
-          },
-          urban: {
-            tenant_id: 'urban',
-            message_response: `¡Qué tal Kevin! Te confirmo que los Cyberpunk Sneakers High-Tops en Talla 27.5 MX están en las últimas 3 unidades. Si confirmas hoy antes de las 6:00 pm salen con envío express gratis y puedes diferirlo a 3 quincenas sin intereses con Kueski Pay. ¿Te genero el enlace de pago seguro con tu talla reservada?`,
-            lead_qualification_status: {
-              req_1_contact_valid: true,
-              req_2_product_identified: true,
-              req_3_doubts_resolved: true,
-              req_4_cta_accepted: false,
-            },
-            current_lead_temperature: 'Fiebre de Compra (Escasez)',
-            is_billable_lead: false,
-            execution_time_ms: 260,
-            framework_applied: 'FOMO + Reducción Fricción de Pago (BNPL Kueski)',
-          },
-          corp: {
-            tenant_id: 'corp',
-            message_response: `Estimado Rodrigo, gracias por contactar a ${tenantName}. Nuestra infraestructura con aislamiento RLS a nivel de base de datos y Meta CAPI S2S nativo está diseñada para holdings que gestionan múltiples razones sociales con SLA 99.9%. ¿Coordinamos una sesión de validación de 20 minutos con nuestro Director de Arquitectura este miércoles a las 10:00 am?`,
-            lead_qualification_status: {
-              req_1_contact_valid: true,
-              req_2_product_identified: true,
-              req_3_doubts_resolved: true,
-              req_4_cta_accepted: true,
-            },
-            current_lead_temperature: 'Enterprise SQL (BANT Aprobado)',
-            is_billable_lead: true,
-            billing_amount_mxn: '$350.00 MXN',
-            execution_time_ms: 340,
-            framework_applied: 'BANT Calificado + Demostración de Arquitectura RLS',
-          },
-        };
-
-        setSimulationOutput(closerData[tenantId] || null);
+          current_lead_temperature: 'Seguimiento Activo',
+          is_billable_lead: false,
+          execution_time_ms: 280,
+          framework_applied: 'JTBD + Calificación Consultiva 4/4',
+        });
       } else if (agentKey === 'reengagement') {
-        const reengagementData = {
-          dental: {
-            tenant_id: 'dental',
-            followup_message: `Hola Carlos, estuve pensando en tu consulta sobre la profilaxis. ¿Sabías que el 90% de nuestros pacientes previenen molestias graves con una revisión preventiva anual? Te aparté un espacio con escaneo 3D incluido para este viernes. ¿Te funciona?`,
-            scheduled_time: 'Disparo Programado a 24h (Upstash Redis)',
-            new_status: 'Seguimiento Enviado',
-            word_count: 36,
-            rule_compliance: 'Vaca Púrpura aplicada: gancho de curiosidad < 40 palabras con micro-CTA sin fricción',
-          },
-          polanco: {
-            tenant_id: 'polanco',
-            followup_message: `Alejandro, el Chef sommelier nos liberó 2 mesas exclusivas con vista en Terraza VIP para este fin de semana con copa de champaña de bienvenida. ¿Te gustaría que te reserve una antes de que se agoten?`,
-            scheduled_time: 'Disparo Programado a 24h (Upstash Redis)',
-            new_status: 'Seguimiento Enviado',
-            word_count: 34,
-            rule_compliance: 'Regla 95/5: reactivación de alto valor percibido con cortesía exclusiva',
-          },
-          urban: {
-            tenant_id: 'urban',
-            followup_message: `Kevin, solo queda 1 par en Talla 27.5 MX del drop Cyberpunk y tu cupón de 10% OFF vence hoy a medianoche. ¿Te aparto el último par antes de pasarlo a lista general?`,
-            scheduled_time: 'Disparo Programado a 24h (Upstash Redis)',
-            new_status: 'Seguimiento Enviado',
-            word_count: 33,
-            rule_compliance: 'Vaca Púrpura: stock unitario y límite temporal de expiración de cupón',
-          },
-          corp: {
-            tenant_id: 'corp',
-            followup_message: `Rodrigo, preparamos un caso de éxito confidencial sobre cómo una red corporativa redujo 42% su CAC usando nuestro router LangGraph con RLS. ¿Te comparto el brief ejecutivo en PDF de 2 páginas por aquí?`,
-            scheduled_time: 'Disparo Programado a 24h (Upstash Redis)',
-            new_status: 'Seguimiento Enviado',
-            word_count: 35,
-            rule_compliance: 'Valor puro sin venta agresiva (< 40 palabras) enfocado en métricas C-Level',
-          },
-        };
-
-        setSimulationOutput(reengagementData[tenantId] || null);
+        setSimulationOutput({
+          tenant_id: tenantId,
+          followup_message: `Hola, seguimos atentos en ${tenantName} por si deseas confirmar tu solicitud sobre ${coreService}. ¿Te ayudamos a reservar un horario disponible?`,
+          scheduled_time: 'Disparo Programado a 24h',
+          new_status: 'Seguimiento Enviado',
+          word_count: 26,
+          rule_compliance: 'Mensaje de valor < 40 palabras con micro-CTA sin fricción',
+        });
       } else if (agentKey === 'analyst') {
-        const analystData = {
-          dental: {
-            tenant_id: 'dental',
-            roas_real_backend: 5.82,
-            cac_real_backend: 18.5,
-            creative_fatigue_detected: true,
-            fatigued_ad_ids: ['AdSet Profilaxis Sonrisa V1'],
-            web_friction_alert: Boolean(activeTenant?.hasWebsite),
-            friction_diagnosis: activeTenant?.hasWebsite
-              ? 'Fricción en Landing Page: Click-to-WhatsApp 1.4% (< 3.0%). Requiere botón flotante de alto contraste.'
-              : 'Embudo Directo Óptimo: Tráfico 100% canalizado a WhatsApp API con atribución CAPI.',
-            recommended_action: 'Pausar Anuncio A por alta frecuencia (3.8) y activar variante Reel Vaca Púrpura con Dr. Juan Pablo.',
-          },
-          polanco: {
-            tenant_id: 'polanco',
-            roas_real_backend: 7.45,
-            cac_real_backend: 12.8,
-            creative_fatigue_detected: false,
-            fatigued_ad_ids: [],
-            web_friction_alert: false,
-            friction_diagnosis: 'Embudo VIP Óptimo: Tasa de reserva 14.8% en WhatsApp. CAPI Server-to-Server validado al 100%.',
-            recommended_action: 'Escalar presupuesto 25% en horario jueves a sábado 18:00 a 22:00 hrs enfocado en cortes Prime.',
-          },
-          urban: {
-            tenant_id: 'urban',
-            roas_real_backend: 4.12,
-            cac_real_backend: 8.2,
-            creative_fatigue_detected: true,
-            fatigued_ad_ids: ['Reel Drop Cyberpunk V1'],
-            web_friction_alert: true,
-            friction_diagnosis: 'Fricción en Checkout Shopify: Abandono de carrito en paso de envío. Habilitar Kueski Pay en PDP.',
-            recommended_action: 'Reemplazar Reel V1 (Hook Rate 16%) por unboxing dinámico de Kevin con calzado puesto en calle.',
-          },
-          corp: {
-            tenant_id: 'corp',
-            roas_real_backend: 12.4,
-            cac_real_backend: 145.0,
-            creative_fatigue_detected: false,
-            fatigued_ad_ids: [],
-            web_friction_alert: true,
-            friction_diagnosis: 'Fricción en Formulario Web B2B: 7 campos obligatorios reducen conversión al 0.8%. Migrar a WhatsApp Bot.',
-            recommended_action: 'Enrutar tráfico de LinkedIn Ads directamente al Lobo Vectorial en WhatsApp para pre-calificación BANT inmediata.',
-          },
-        };
-
-        setSimulationOutput(analystData[tenantId] || null);
+        setSimulationOutput({
+          tenant_id: tenantId,
+          roas_real_backend: 0.0,
+          cac_real_backend: 0.0,
+          creative_fatigue_detected: false,
+          fatigued_ad_ids: [],
+          web_friction_alert: Boolean(activeTenant?.hasWebsite),
+          friction_diagnosis: 'Telemetría lista para conciliar eventos reales de Meta CAPI y WhatsApp Cloud API.',
+          recommended_action: 'Conectar campañas activas para iniciar análisis de atribución en tiempo real.',
+        });
       }
       try {
         confetti({

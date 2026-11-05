@@ -131,91 +131,36 @@ export const CampanasView = () => {
 
   // AI Copilot Generator
   const handleGenerateWithAi = () => {
+    if (!tenantId) {
+      alert('Selecciona un negocio activo antes de generar una campaña con IA.');
+      return;
+    }
     setIsGeneratingAi(true);
 
     setTimeout(() => {
-      let aiCamp;
-      if (tenantId === 'dental') {
-        aiCamp = {
-          id: `camp-ai-${Date.now()}`,
-          name: 'Diseño de Sonrisa & Carillas Digitales',
-          offer: 'Simulación digital de sonrisa en video 3D + 10% en paquete integral de estética.',
-          objective: 'Citas de Alta Gama',
-          audience: 'Hombres y mujeres 25-50 años interesados en estética facial y dental',
-          channel: 'Meta Ads (Instagram & FB)',
-          budget: 15000,
-          spend: 0,
-          leadsCount: 0,
-          piecesCount: 3,
-          status: 'Activa',
-          owner: 'Copilot IA Vector',
-          start: '2026-10-24',
-          end: '2026-11-30',
-          hypothesis: 'Mostrar un render digital del antes y después antes de mencionar el costo incrementa la tasa de agendamiento calificado al 24%.',
-          roas: '4.8x',
-          cpl: 520,
-        };
-      } else if (tenantId === 'polanco') {
-        aiCamp = {
-          id: `camp-ai-${Date.now()}`,
-          name: 'Noches de Parrilla & Jazz en Vivo',
-          offer: 'Cena maridaje con selección de vinos y música en vivo los miércoles.',
-          objective: 'Llenado de Salón en Días Laborales',
-          audience: 'Residentes de Polanco, Anzures y ejecutivos de Masaryk',
-          channel: 'Meta Ads (Instagram & FB)',
-          budget: 12000,
-          spend: 0,
-          leadsCount: 0,
-          piecesCount: 3,
-          status: 'Activa',
-          owner: 'Copilot IA Vector',
-          start: '2026-10-24',
-          end: '2026-11-30',
-          hypothesis: 'Atacar días de baja afluencia tradicional (miércoles) con oferta de jazz llena el salón y eleva el ticket promedio de consumo en bar.',
-          roas: '5.2x',
-          cpl: 280,
-        };
-      } else if (tenantId === 'urban') {
-        aiCamp = {
-          id: `camp-ai-${Date.now()}`,
-          name: 'Restock Alert & Acceso Anticipado VIP',
-          offer: 'Notificación 1 hora antes del lanzamiento público para apartar en WhatsApp.',
-          objective: 'Ventas Flash & Fidelización',
-          audience: 'Compradores recurrentes y seguidores de coleccionismo urbano',
-          channel: 'Meta Ads (Instagram & FB)',
-          budget: 16000,
-          spend: 0,
-          leadsCount: 0,
-          piecesCount: 4,
-          status: 'Activa',
-          owner: 'Copilot IA Vector',
-          start: '2026-10-24',
-          end: '2026-11-30',
-          hypothesis: 'Ofrecer acceso anticipado a través de chat de WhatsApp convierte con tasa superior al 30% en las primeras 2 horas del drop.',
-          roas: '8.1x',
-          cpl: 220,
-        };
-      } else {
-        aiCamp = {
-          id: `camp-ai-${Date.now()}`,
-          name: 'Auditoría de Conversión en WhatsApp para CEOs',
-          offer: 'Diagnóstico en 15 minutos de fugas de clientes en canales de mensajería.',
-          objective: 'Reuniones B2B Calificadas',
-          audience: 'Directores de operaciones y marketing en empresas de servicios',
-          channel: 'Google Search & Meta CAPI',
-          budget: 20000,
-          spend: 0,
-          leadsCount: 0,
-          piecesCount: 3,
-          status: 'Activa',
-          owner: 'Copilot IA Vector',
-          start: '2026-10-24',
-          end: '2026-11-30',
-          hypothesis: 'Plantear el costo oculto de responder tarde en WhatsApp abre la puerta a contratos enterprise de automatización IA.',
-          roas: '7.5x',
-          cpl: 690,
-        };
-      }
+      const todayIso = new Date().toISOString().split('T')[0];
+      const nextMonth = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
+      const aiCamp = {
+        id: `camp-ai-${Date.now()}`,
+        name: `Campaña Estratégica — ${activeTenant?.name || 'Mi Negocio'}`,
+        offer: activeTenant?.coreService
+          ? `Promoción destacada en ${activeTenant.coreService} con atención prioritaria en WhatsApp.`
+          : 'Diagnóstico y atención personalizada inmediata en canales de mensajería.',
+        objective: 'Citas & Conversaciones Calificadas',
+        audience: `Público objetivo interesado en ${activeTenant?.giro || 'servicios especializados'}`,
+        channel: 'Meta Ads (Instagram & FB)',
+        budget: 15000,
+        spend: 0,
+        leadsCount: 0,
+        piecesCount: 3,
+        status: 'Activa',
+        owner: 'Copilot IA Vector',
+        start: todayIso,
+        end: nextMonth,
+        hypothesis: 'Enrutar tráfico directo a WhatsApp con respuesta < 1 min incrementa la tasa de conversión.',
+        roas: '0.0x',
+        cpl: 0,
+      };
 
       saveCampaigns([aiCamp, ...campaigns]);
       setIsGeneratingAi(false);
@@ -239,6 +184,8 @@ export const CampanasView = () => {
     e.preventDefault();
     if (!newCampaignForm.name.trim()) return;
 
+    const todayIso = new Date().toISOString().split('T')[0];
+    const nextMonth = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
     const newCamp = {
       id: `camp-${Date.now()}`,
       name: newCampaignForm.name,
@@ -252,8 +199,8 @@ export const CampanasView = () => {
       piecesCount: 2,
       status: 'Activa',
       owner: isAdmin ? 'Lobo Vectorial (Agencia)' : 'Equipo de Marca',
-      start: '2026-10-24',
-      end: '2026-11-30',
+      start: todayIso,
+      end: nextMonth,
       hypothesis: newCampaignForm.hypothesis || 'Validar respuesta de mercado con seguimiento rápido en WhatsApp.',
       roas: 'Pendiente',
       cpl: 0,
@@ -283,47 +230,17 @@ export const CampanasView = () => {
 
   // Prefill AI helper in modal
   const handleAutofillAiForm = () => {
-    if (tenantId === 'dental') {
-      setNewCampaignForm({
-        name: 'Limpieza Ultrasónica & Check-Up Preventivo',
-        offer: 'Profilaxis ultrasónica profunda con flúor y escaneo digital a precio preferencial.',
-        objective: 'Volumen de Pacientes Nuevos',
-        channel: 'Meta Ads (Instagram & FB)',
-        budget: 10000,
-        audience: 'Familias y profesionistas en radio de 5km de la clínica',
-        hypothesis: 'Una oferta de entrada económica atrae pacientes que luego requieren tratamientos de mayor valor (ortodoncia/resinas).',
-      });
-    } else if (tenantId === 'polanco') {
-      setNewCampaignForm({
-        name: 'Celebración de Cumpleaños & Aniversarios',
-        offer: 'Postre de cortesía de autor y botella espumante para mesas de 6+ comensales.',
-        objective: 'Reservas de Alto Ticket',
-        channel: 'Meta Ads (Instagram & FB)',
-        budget: 12000,
-        audience: 'Usuarios que cumplen años este mes y sus amigos cercanos en CDMX',
-        hypothesis: 'Segmentar anuncios por cumpleaños atrae grupos grandes con reservación anticipada y nula cancelación.',
-      });
-    } else if (tenantId === 'urban') {
-      setNewCampaignForm({
-        name: 'Sneaker Care & Mantenimiento Especializado',
-        offer: 'Limpieza profunda gratis en tu calzado al comprar sneakers seleccionados.',
-        objective: 'Cross-selling & Servicio Adicional',
-        channel: 'TikTok & Meta Reels',
-        budget: 8000,
-        audience: 'Compradores de calzado de colección y amantes del cuidado de zapatillas',
-        hypothesis: 'El servicio de limpieza y cuidado genera fidelidad de marca y compras recurrentes bimestrales.',
-      });
-    } else {
-      setNewCampaignForm({
-        name: 'Diagnóstico de Fricción Web & WhatsApp',
-        offer: 'Análisis de embudo sin costo para reducir la tasa de abandono en páginas comerciales.',
-        objective: 'Discovery Calls Corporativas',
-        channel: 'Google Search & Meta CAPI',
-        budget: 15000,
-        audience: 'Gerentes de marketing y directores comerciales en México',
-        hypothesis: 'Demostrar con métricas dónde pierden prospectos genera confianza inmediata para contratar la solución.',
-      });
-    }
+    setNewCampaignForm({
+      name: `Captación Directa — ${activeTenant?.name || 'Mi Negocio'}`,
+      offer: activeTenant?.coreService
+        ? `Atención preferencial en ${activeTenant.coreService} reservando por WhatsApp.`
+        : 'Valoración inicial sin costo para nuevos prospectos vía WhatsApp.',
+      objective: 'Citas & Conversaciones Calificadas',
+      channel: 'Meta Ads (Instagram & FB)',
+      budget: 12000,
+      audience: `Clientes potenciales de ${activeTenant?.giro || 'nuestro giro comercial'} en zona de cobertura`,
+      hypothesis: 'Una oferta clara con atención inmediata en WhatsApp reduce el costo por prospecto calificado.',
+    });
   };
 
   return (

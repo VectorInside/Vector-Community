@@ -260,8 +260,8 @@ export const CentroDeMando = () => {
             <span className="text-[10px] font-sans uppercase tracking-widest text-neon font-extrabold bg-neon/10 px-2.5 py-1 rounded-full border border-neon/30">
               {isClient ? 'OPERACIÓN · DIRECCIÓN CLARA' : 'GOBERNANZA · CONTROL MULTI-NEGOCIO'}
             </span>
-            <span className="text-xs font-sans text-[var(--text-muted)]">
-              Octubre 2026
+            <span suppressHydrationWarning className="text-xs font-sans text-[var(--text-muted)] capitalize">
+              {new Date().toLocaleDateString('es-MX', { month: 'long', year: 'numeric' })}
             </span>
           </div>
 

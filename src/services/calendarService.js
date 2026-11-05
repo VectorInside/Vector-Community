@@ -41,12 +41,13 @@ export const normalizeAppointmentFromApi = (apt) => {
   if (!apt) return null;
   const clientName = apt.client || apt.clientName || 'Cliente';
   const serviceName = apt.serviceName || apt.service || 'Consulta General';
-  const dateStr = apt.fullDate || apt.appointmentDate || '2026-10-23';
+  const todayIso = new Date().toISOString().split('T')[0];
+  const dateStr = apt.fullDate || apt.appointmentDate || todayIso;
   const hourStr = apt.hour || '10:00';
   return {
     id: apt.id,
     tenantId: apt.tenantId || null,
-    dayId: (apt.dayId || 'fri').toLowerCase(),
+    dayId: (apt.dayId || 'mon').toLowerCase(),
     fullDate: dateStr,
     appointmentDate: dateStr,
     hour: hourStr,
@@ -58,7 +59,8 @@ export const normalizeAppointmentFromApi = (apt) => {
     specialist: apt.specialist || 'Especialista Asignado',
     serviceName: serviceName,
     serviceColor: normalizeServiceColor(apt.serviceColor),
-    estimatedValue: formatCurrencyMXN(apt.estimatedValue),
+    estimatedValue: parseNumericMXN(apt.estimatedValue),
+    estimatedValueFormatted: formatCurrencyMXN(apt.estimatedValue),
     depositPaid: apt.depositPaid !== undefined ? Boolean(apt.depositPaid) : apt.status === 'CONFIRMED',
     status: apt.status || 'CONFIRMED',
     start: apt.start || `${dateStr}T${hourStr}:00`,
@@ -70,7 +72,8 @@ export const normalizeAppointmentFromApi = (apt) => {
 export const serializeAppointmentToApi = (apt) => {
   const clientName = apt.clientName || apt.client || 'Cliente';
   const serviceName = apt.serviceName || apt.service || 'Consulta General';
-  const dateStr = apt.appointmentDate || apt.fullDate || '2026-10-23';
+  const todayIso = new Date().toISOString().split('T')[0];
+  const dateStr = apt.appointmentDate || apt.fullDate || todayIso;
   const hourStr = apt.hour || '10:00';
   const validStatuses = ['CONFIRMED', 'TRIAGE', 'COMPLETED', 'CANCELLED'];
   const status = validStatuses.includes(apt.status) ? apt.status : 'CONFIRMED';
@@ -78,7 +81,7 @@ export const serializeAppointmentToApi = (apt) => {
   return {
     id: apt.id || undefined,
     tenantId: apt.tenantId || null,
-    dayId: (apt.dayId || 'fri').toLowerCase(),
+    dayId: (apt.dayId || 'mon').toLowerCase(),
     appointmentDate: dateStr,
     hour: hourStr,
     title: apt.title || `${clientName} — ${serviceName}`,

@@ -497,7 +497,7 @@ export const Header = () => {
                 {/* Footer Quick Action */}
                 <div className="pt-2 border-t border-[var(--border-color)] flex items-center justify-between">
                   <span className="text-[10px] font-mono text-[var(--text-faint)]">
-                    Espacio actual: <strong className="text-[var(--text-main)]">{activeTenant?.shortName || activeTenant?.name}</strong>
+                    Espacio actual: <strong className="text-[var(--text-main)]">{activeTenant?.shortName || activeTenant?.name || 'Sin negocio seleccionado'}</strong>
                   </span>
                   <button
                     type="button"
@@ -551,7 +551,7 @@ export const Header = () => {
                     </p>
                     <p className="text-[10px] text-[var(--text-faint)] flex items-center gap-1 mt-0.5">
                       <span>Espacio:</span>
-                      <strong className="text-[var(--text-main)] truncate">{activeTenant?.name}</strong>
+                      <strong className="text-[var(--text-main)] truncate">{activeTenant?.name || 'Sin negocio seleccionado'}</strong>
                     </p>
                   </div>
                 </div>
