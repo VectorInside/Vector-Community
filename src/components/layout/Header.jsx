@@ -261,8 +261,8 @@ export const Header = () => {
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
                 className={`flex items-center gap-2 px-2.5 py-1 rounded-xl bg-[var(--bg-base)] border text-xs font-mono font-bold transition-all ${isOpen
-                    ? 'border-lime-400 ring-1 ring-lime-400/40 shadow-sm text-[var(--text-main)]'
-                    : 'border-[var(--border-color)] hover:border-lime-400 text-[var(--text-main)]'
+                  ? 'border-lime-400 ring-1 ring-lime-400/40 shadow-sm text-[var(--text-main)]'
+                  : 'border-[var(--border-color)] hover:border-lime-400 text-[var(--text-main)]'
                   }`}
                 title="Cambiar espacio de negocio"
               >
@@ -314,8 +314,8 @@ export const Header = () => {
                           type="button"
                           onClick={() => handleSelectTenant(t.id)}
                           className={`w-full text-left p-2 rounded-xl text-xs font-mono flex items-center justify-between gap-2 transition-all ${isSelected
-                              ? 'bg-lime-400/15 text-[var(--text-main)] font-bold border border-lime-400/40 shadow-sm'
-                              : 'text-[var(--text-muted)] hover:bg-[var(--bg-card-subtle)] hover:text-[var(--text-main)] border border-transparent'
+                            ? 'bg-lime-400/15 text-[var(--text-main)] font-bold border border-lime-400/40 shadow-sm'
+                            : 'text-[var(--text-muted)] hover:bg-[var(--bg-card-subtle)] hover:text-[var(--text-main)] border border-transparent'
                             }`}
                         >
                           <div className="flex items-center gap-2.5 truncate">
@@ -404,8 +404,8 @@ export const Header = () => {
               onClick={() => setIsNotifOpen((prev) => !prev)}
               title={`${unreadCount} notificaciones sin atender`}
               className={`p-2 rounded-xl bg-[var(--bg-base)] border transition-all relative ${isNotifOpen
-                  ? 'border-lime-400 ring-1 ring-lime-400/40 text-lime-400 shadow-sm'
-                  : 'border-[var(--border-color)] hover:border-lime-400 text-[var(--text-muted)] hover:text-lime-400'
+                ? 'border-lime-400 ring-1 ring-lime-400/40 text-lime-400 shadow-sm'
+                : 'border-[var(--border-color)] hover:border-lime-400 text-[var(--text-muted)] hover:text-lime-400'
                 }`}
             >
               <Bell className="w-4 h-4" />
@@ -454,8 +454,8 @@ export const Header = () => {
                     type="button"
                     onClick={() => setNotifFilter('all')}
                     className={`px-2 py-0.5 rounded-md font-bold transition-all ${notifFilter === 'all'
-                        ? 'bg-lime-400 text-black'
-                        : 'bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                      ? 'bg-lime-400 text-black'
+                      : 'bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
                       }`}
                   >
                     <span suppressHydrationWarning>Todas ({notifications.length})</span>
@@ -464,8 +464,8 @@ export const Header = () => {
                     type="button"
                     onClick={() => setNotifFilter('unread')}
                     className={`px-2 py-0.5 rounded-md font-bold transition-all ${notifFilter === 'unread'
-                        ? 'bg-lime-400 text-black'
-                        : 'bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                      ? 'bg-lime-400 text-black'
+                      : 'bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
                       }`}
                   >
                     <span suppressHydrationWarning>Sin leer ({unreadCount})</span>
@@ -488,8 +488,8 @@ export const Header = () => {
                         type="button"
                         onClick={() => handleSelectNotification(notif)}
                         className={`w-full text-left p-2.5 rounded-xl transition-all flex items-start gap-2.5 pt-2.5 ${notif.isRead
-                            ? 'hover:bg-[var(--bg-card)]/50 opacity-75'
-                            : 'bg-[var(--bg-card)]/80 hover:bg-[var(--bg-card)] border border-lime-400/20'
+                          ? 'hover:bg-[var(--bg-card)]/50 opacity-75'
+                          : 'bg-[var(--bg-card)]/80 hover:bg-[var(--bg-card)] border border-lime-400/20'
                           }`}
                       >
                         {/* Tenant Avatar */}
@@ -564,8 +564,8 @@ export const Header = () => {
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
               title={`Perfil actual: ${role === 'admin' ? 'Administrador' : 'Usuario'} - Haz clic para ver opciones`}
               className={`w-8 h-8 rounded-xl border flex items-center justify-center font-mono font-black text-xs shrink-0 transition-all cursor-pointer ${isUserMenuOpen
-                  ? 'bg-lime-400 text-black border-lime-400 shadow-neon-sm ring-2 ring-lime-400/30'
-                  : 'bg-[var(--bg-card)] border-[var(--border-color)] text-lime-400 hover:border-lime-400/60 hover:bg-[var(--bg-panel)]'
+                ? 'bg-lime-400 text-black border-lime-400 shadow-neon-sm ring-2 ring-lime-400/30'
+                : 'bg-[var(--bg-card)] border-[var(--border-color)] text-lime-400 hover:border-lime-400/60 hover:bg-[var(--bg-panel)]'
                 }`}
             >
               {role === 'admin' ? 'VI' : 'CL'}

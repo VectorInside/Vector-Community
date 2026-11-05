@@ -1431,15 +1431,19 @@ export const RAGWizard = ({
   const [expandedTenantPillars, setExpandedTenantPillars] = useState({});
 
   // Computed metrics for ecosystem
+  const allTenantsList = useMemo(() => {
+    return Object.values(tenantsData || {});
+  }, [tenantsData]);
+
   const tenantEcosystemStats = useMemo(() => {
-    const list = Object.values(tenantsData || {});
+    const list = allTenantsList;
     const total = list.length;
     const activeCount = list.filter(
       (t) => t.microLandingStatus !== 'suspended' && t.microLandingStatus !== 'disabled' && t.microLandingEnabled !== false
     ).length;
     const pausedCount = total - activeCount;
     return { total, activeCount, pausedCount };
-  }, [tenantsData]);
+  }, [allTenantsList]);
 
   // Filtered and searched tenant list (Aislamiento Multi-Tenant Estricto)
   const filteredTenantsList = useMemo(() => {
@@ -1476,7 +1480,7 @@ export const RAGWizard = ({
 
       return true;
     });
-  }, [tenantsData, tenantSearchQuery, tenantStatusFilter, tenantVerticalFilter]);
+  }, [tenantsData, tenantSearchQuery, tenantStatusFilter, tenantVerticalFilter, isAdmin, activeTenant?.id]);
 
   // Toggle expanded pillars for a tenant
   const toggleTenantPillars = (tenantId) => {
@@ -2938,16 +2942,16 @@ export const RAGWizard = ({
                 🏢
               </div>
               <h4 className="text-sm font-bold text-[var(--text-main)]">
-                {tenantsList.length === 0
+                {allTenantsList.length === 0
                   ? 'No hay negocios registrados en el sistema'
                   : 'No se encontraron negocios con los filtros actuales'}
               </h4>
               <p className="text-xs text-[var(--text-muted)] max-w-md mx-auto">
-                {tenantsList.length === 0
-                  ? 'El ecosistema se encuentra limpio (Zero-State). Haz clic en "+ Alta Nuevo Negocio" para dar de alta tu primer negocio en PostgreSQL.'
+                {allTenantsList.length === 0
+                  ? 'El ecosistema se encuentra limpio (Zero-State). Haz clic en "+ Alta Nuevo Negocio" para dar de alta tu primer negocio.'
                   : `No hay coincidencias para "${tenantSearchQuery}". Prueba modificando tu término de búsqueda o limpia los filtros.`}
               </p>
-              {tenantsList.length > 0 && (
+              {allTenantsList.length > 0 && (
                 <button
                   type="button"
                   onClick={() => {
