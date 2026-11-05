@@ -17,6 +17,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { isValidEmail } from '@/utils/formatters';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -46,6 +47,11 @@ export default function LoginPage() {
     const cleanEmail = email.trim().toLowerCase();
     if (!cleanEmail || !password) {
       setErrorMessage('Por favor ingresa tu correo y contraseña.');
+      return;
+    }
+
+    if (!isValidEmail(cleanEmail)) {
+      setErrorMessage('Ingresa un correo electrónico válido con dominio (ej. usuario@dominio.com).');
       return;
     }
 

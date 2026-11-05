@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Portal } from '@/components/common/Portal';
+import { isValidEmail, normalizePhone10, formatPhoneDisplay } from '@/utils/formatters';
 import { tenantService } from '@/services/tenantService';
 import { userService } from '@/services/userService';
 
@@ -133,10 +134,14 @@ export const CuentasAccesosView = () => {
 
   // 1-Click WhatsApp Direct Dispatch with Temporary Password Notice
   const handleSendWhatsApp = (account) => {
-    const cleanPhone = (account.phone || '').replace(/[^0-9]/g, '');
+    const cleanPhone = normalizePhone10(account.phone);
+    if (!cleanPhone || cleanPhone.length !== 10) {
+      showToast('El usuario no cuenta con un teléfono válido de 10 dígitos.');
+      return;
+    }
     const message = `👋 Hola ${account.ownerName},\n\nTe compartimos las credenciales de acceso oficial para el portal de *${account.tenantName}* en Vector Inside:\n\n🔗 *Enlace de Acceso:* http://localhost:3000/login\n✉️ *Usuario:* ${account.email}\n🔑 *Contraseña Provisional:* ${account.tempPassword}\n\n⚠️ *AVISO DE SEGURIDAD:* Al ingresar a tu cuenta, el sistema te solicitará automáticamente definir tu *contraseña personal definitiva*. Nadie más conocerá tu clave.\n\n¡Cualquier duda o soporte estamos para servirte!`;
     const encoded = encodeURIComponent(message);
-    window.open(`https://wa.me/${cleanPhone}?text=${encoded}`, '_blank');
+    window.open(`https://wa.me/52${cleanPhone}?text=${encoded}`, '_blank');
     showToast(`Abriendo WhatsApp para ${account.ownerName}...`);
   };
 
@@ -235,6 +240,15 @@ export const CuentasAccesosView = () => {
       showToast('Por favor completa todos los campos requeridos');
       return;
     }
+    if (!isValidEmail(newAccountForm.email.trim())) {
+      showToast('Ingresa un correo electrónico válido con dominio (ej. usuario@dominio.com)');
+      return;
+    }
+    const cleanPhone = normalizePhone10(newAccountForm.phone);
+    if (newAccountForm.phone.trim() && cleanPhone.length !== 10) {
+      showToast('El teléfono debe contener exactamente 10 dígitos numéricos');
+      return;
+    }
 
     // Defensive check: does this tenant already have an account?
     const alreadyExists = accounts.some((a) => a.tenantId === newAccountForm.tenantId);
@@ -256,7 +270,7 @@ export const CuentasAccesosView = () => {
       email: newAccountForm.email.trim().toLowerCase(),
       tempPassword: finalPassword,
       mustChangePassword: true, // Forces immediate pop-up on first client login
-      phone: newAccountForm.phone.trim() || '+52 55 0000 0000',
+      phone: cleanPhone || '',
       status: 'ACTIVE',
       lastLogin: 'Invitación enviada (Listo para ingresar)',
       twoFactorEnabled: false,
@@ -956,7 +970,7 @@ export const CuentasAccesosView = () => {
 
                         <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-muted)]">
                           <Phone className="w-3.5 h-3.5 text-[var(--text-muted)] shrink-0" />
-                          <span>{account.phone}</span>
+                          <span>{account.phone ? formatPhoneDisplay(account.phone) : 'Sin teléfono'}</span>
                         </div>
                       </div>
                     </div>
@@ -1190,15 +1204,19 @@ export const CuentasAccesosView = () => {
                 {/* Teléfono WhatsApp */}
                 <div>
                   <label className="block text-[var(--text-main)] font-bold mb-1 font-sans text-xs">
-                    Teléfono / WhatsApp de Contacto
+                    Teléfono / WhatsApp de Contacto (10 dígitos)
                   </label>
                   <input
-                    type="text"
+                    type="tel"
+                    maxLength={14}
                     value={newAccountForm.phone}
                     onChange={(e) => setNewAccountForm({ ...newAccountForm, phone: e.target.value })}
-                    placeholder="ej. +52 55 4912 3456"
+                    placeholder="ej. 55 4912 3456 (10 dígitos)"
                     className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] focus:border-neon rounded-xl p-2.5 text-xs text-[var(--text-main)] font-mono outline-none"
                   />
+                  <p className="text-[10px] text-[var(--text-muted)] mt-1 font-sans">
+                    Ingresa los 10 dígitos locales del negocio (sin código de país).
+                  </p>
                 </div>
 
                 {/* Contraseña Provisional */}

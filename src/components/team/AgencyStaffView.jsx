@@ -33,6 +33,7 @@ import {
 import confetti from 'canvas-confetti';
 import { Portal } from '@/components/common/Portal';
 import { userService } from '@/services/userService';
+import { isValidEmail, normalizePhone10, formatPhoneDisplay } from '@/utils/formatters';
 
 const ROLE_DEFINITIONS = {
   SUPER_ADMIN: {
@@ -222,6 +223,15 @@ export const AgencyStaffView = () => {
       showToast('Completa el nombre y correo electrónico');
       return;
     }
+    if (!isValidEmail(inviteForm.email.trim())) {
+      showToast('Ingresa un correo electrónico válido con dominio (ej. usuario@dominio.com)');
+      return;
+    }
+    const cleanPhone = normalizePhone10(inviteForm.phone);
+    if (inviteForm.phone.trim() && cleanPhone.length !== 10) {
+      showToast('El teléfono debe contener exactamente 10 dígitos numéricos');
+      return;
+    }
 
     const assigned =
       inviteForm.assignedTenantsMode === 'all'
@@ -234,7 +244,7 @@ export const AgencyStaffView = () => {
       id: `staff-${Date.now()}`,
       name: inviteForm.name.trim(),
       email: inviteForm.email.trim().toLowerCase(),
-      phone: inviteForm.phone.trim(),
+      phone: cleanPhone,
       role: inviteForm.role,
       roleLabel: ROLE_DEFINITIONS[inviteForm.role]?.label || 'Administrador',
       avatar: inviteForm.role === 'SUPER_ADMIN' ? '⚡' : '💼',
@@ -280,8 +290,13 @@ export const AgencyStaffView = () => {
 
   // Update staff profile (phone & name) in PostgreSQL 17
   const handleSaveStaffProfile = async (staffId, { name, phone }) => {
-    const cleanPhone = (phone || '').trim();
+    const cleanPhone = normalizePhone10(phone);
     const cleanName = (name || '').trim();
+
+    if (phone && phone.trim() && cleanPhone.length !== 10) {
+      showToast('El teléfono debe contener exactamente 10 dígitos numéricos');
+      return;
+    }
 
     try {
       const isCurrentUser =
@@ -641,7 +656,7 @@ export const AgencyStaffView = () => {
                         <p className="text-xs text-[var(--text-muted)]">
                           {roleInfo.label} •{' '}
                           {member.phone && member.phone !== '+52 55 1234 5678'
-                            ? member.phone
+                            ? formatPhoneDisplay(member.phone)
                             : 'Sin teléfono registrado'}
                         </p>
                         <button
@@ -1072,17 +1087,18 @@ const EditStaffProfileModal = ({ staffMember, onClose, onSave }) => {
 
             <div className="space-y-1.5">
               <label className="block text-[11px] text-[var(--text-muted)] font-semibold uppercase tracking-wider">
-                Número Telefónico / WhatsApp
+                Número Telefónico / WhatsApp (10 dígitos)
               </label>
               <input
                 type="tel"
+                maxLength={14}
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-main)] focus:border-neon focus:outline-none"
-                placeholder="Ej. +52 55 8899 0011 (o déjalo vacío)"
+                placeholder="Ej. 55 1234 5678 (o déjalo vacío)"
               />
               <p className="text-[10px] text-[var(--text-muted)] font-sans">
-                Número telefónico oficial de contacto.
+                Número telefónico normalizado a 10 dígitos (estándar México).
               </p>
             </div>
 

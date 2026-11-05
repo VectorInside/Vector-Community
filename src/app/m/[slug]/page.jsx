@@ -26,6 +26,7 @@ import {
   Award,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { normalizePhone10, formatPhoneDisplay } from '@/utils/formatters';
 
 const DEFAULT_GENERIC_THEME = {
   cover: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&auto=format&fit=crop&q=80',
@@ -263,7 +264,11 @@ export default function MicroLandingPage() {
 
   const handleQuickLeadSubmit = (e) => {
     e.preventDefault();
-    if (!bookingPhone) return;
+    const cleanBookingPhone = normalizePhone10(bookingPhone);
+    if (cleanBookingPhone.length !== 10) {
+      alert('Por favor ingresa tu número de WhatsApp a 10 dígitos (ej. 55 1234 5678).');
+      return;
+    }
     trackConversion('Lead');
     if (baseTenant?.id) {
       performanceService.trackTelemetryEvent(baseTenant.id, 'LEAD_GENERATED').catch(() => {});
@@ -271,7 +276,7 @@ export default function MicroLandingPage() {
         .createLead({
           tenantId: baseTenant.id,
           name: bookingName || 'Prospecto Micro-Landing',
-          phone: bookingPhone,
+          phone: cleanBookingPhone,
           channel: 'Micro-Landing Vector',
           leadState: 'LEAD_WARM_24H',
           potentialTicket: baseTenant.avgTicketMXN ? `$${baseTenant.avgTicketMXN} MXN` : '$1,500 MXN',
@@ -646,6 +651,7 @@ export default function MicroLandingPage() {
                 </label>
                 <input
                   type="tel"
+                  maxLength={14}
                   required
                   placeholder="ej. 55 1234 5678"
                   value={bookingPhone}

@@ -8,6 +8,7 @@ import {
   QUICK_TONE_TEMPLATES,
   BRAND_AVATAR_PRESETS,
 } from '@/utils/brandPresets';
+import { normalizePhone10, formatPhoneDisplay } from '@/utils/formatters';
 import {
   Sparkles,
   Clock,
@@ -178,6 +179,12 @@ export const PerfilMarcaView = () => {
   // Manejador de guardado persistente
   const handleSave = useCallback((e) => {
     if (e && e.preventDefault) e.preventDefault();
+    const cleanPhone = normalizePhone10(ownerPhone);
+    if (ownerPhone && ownerPhone.trim() && cleanPhone.length !== 10) {
+      alert('El teléfono de escalación humana debe contener exactamente 10 dígitos numéricos (ej. 55 1234 5678).');
+      return;
+    }
+
     if (updateTenantPolicy && (activeTenantKey || activeTenant?.id)) {
       const targetKey = activeTenantKey || activeTenant?.id;
       updateTenantPolicy(targetKey, {
@@ -187,7 +194,7 @@ export const PerfilMarcaView = () => {
         slaTarget,
         brandColors,
         avatar: customAvatar,
-        phone: ownerPhone,
+        phone: cleanPhone || '',
         commercialOffer: {
           ...(activeTenant?.commercialOffer || {}),
           hook: offerHook,
@@ -1091,21 +1098,22 @@ export const PerfilMarcaView = () => {
               {/* Teléfono de Escalación Humana */}
               <div>
                 <label className="font-mono text-[10px] text-[var(--text-muted)] uppercase font-bold block mb-1">
-                  Teléfono / WhatsApp de Escalación Humana *
+                  Teléfono / WhatsApp de Escalación Humana (10 dígitos) *
                 </label>
                 <input
-                  type="text"
+                  type="tel"
+                  maxLength={14}
                   required
                   value={ownerPhone}
                   onChange={(e) => {
                     setOwnerPhone(e.target.value);
                     setIsDirty(true);
                   }}
-                  placeholder="+52 55 1234 5678"
+                  placeholder="55 1234 5678 (10 dígitos)"
                   className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none font-mono text-xs"
                 />
                 <span className="text-[9px] font-mono text-[var(--text-muted)] mt-1 block">
-                  A este número se transfieren emergencias médicas, quejas de clientes o prospectos que solicitan hablar con un humano.
+                  Ingresa 10 dígitos locales. A este número se transfieren emergencias médicas, quejas de clientes o prospectos que solicitan hablar con un humano.
                 </span>
               </div>
 
