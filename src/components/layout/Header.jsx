@@ -88,13 +88,13 @@ export const Header = () => {
         name: editProfileName.trim(),
         phone: editProfilePhone.trim(),
       });
-      setProfileSaveMsg('Guardado en PostgreSQL');
+      setProfileSaveMsg('Perfil actualizado correctamente');
       setTimeout(() => {
         setIsEditProfileOpen(false);
         setProfileSaveMsg('');
       }, 900);
     } catch (err) {
-      setProfileSaveMsg('Error: Verifica conexión a PostgreSQL');
+      setProfileSaveMsg('Error de conexión con el servidor');
     } finally {
       setIsSavingProfile(false);
     }
@@ -671,7 +671,7 @@ export const Header = () => {
                           disabled={isSavingProfile}
                           className="px-2.5 py-1 rounded-lg bg-lime-400 text-black font-bold text-[10px] hover:brightness-110 cursor-pointer disabled:opacity-60"
                         >
-                          {isSavingProfile ? 'Guardando...' : 'Guardar en BD'}
+                          {isSavingProfile ? 'Guardando...' : 'Guardar'}
                         </button>
                       </div>
                     </form>
@@ -694,7 +694,7 @@ export const Header = () => {
                       <div className="text-[10px] text-[var(--text-muted)] truncate">
                         {currentUser?.phone && currentUser.phone !== '+52 55 1234 5678'
                           ? `Actual: ${currentUser.phone}`
-                          : 'Configurar tu número real en BD'}
+                          : 'Configurar número de contacto'}
                       </div>
                     </div>
                   </button>
@@ -771,7 +771,7 @@ export const Header = () => {
                 {/* Security Badge */}
                 <div className="px-3 py-2 rounded-xl bg-emerald-500/5 border border-emerald-500/20 flex items-center gap-2 text-[10px] font-mono text-emerald-400">
                   <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
-                  <span className="leading-tight">Sesión validada contra PostgreSQL 17</span>
+                  <span className="leading-tight">Sesión activa y protegida</span>
                 </div>
 
                 {/* Logout Divider */}

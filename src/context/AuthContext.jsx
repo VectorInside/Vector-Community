@@ -157,14 +157,14 @@ export const AuthProvider = ({ children }) => {
         hydrateTenantsFromBackend();
       })
       .catch(() => {
-        // Si PostgreSQL o el backend están apagados, invalidar sesión en memoria y bloquear acceso
+        // Si el servidor o la base de datos están apagados, invalidar sesión local y solicitar nuevo acceso
         setDbConnected(false);
         setIsAuthenticated(false);
         localStorage.removeItem('vector_user_id');
         localStorage.removeItem('vector_current_user');
         sessionStorage.setItem(
           'vector_auth_redirect_reason',
-          'No se pudo validar tu sesión contra PostgreSQL (la base de datos o el servidor están apagados). Enciende la base de datos e inicia sesión.'
+          'La sesión ha expirado o no se pudo establecer conexión con el servidor. Por favor inicia sesión nuevamente.'
         );
       })
       .finally(() => {

@@ -295,9 +295,9 @@ export const AgencyStaffView = () => {
         )
       );
       setEditingStaffProfile(null);
-      showToast('Teléfono y perfil guardados en PostgreSQL');
+      showToast('Perfil de contacto actualizado');
     } catch (err) {
-      showToast('Error al guardar en PostgreSQL: verifica que la base de datos esté encendida.');
+      showToast('Error de conexión al actualizar el perfil.');
       throw err;
     }
   };
@@ -964,7 +964,7 @@ const EditStaffProfileModal = ({ staffMember, onClose, onSave }) => {
                   Editar Teléfono & Perfil
                 </h3>
                 <p className="text-[11px] text-[var(--text-muted)] font-mono">
-                  {staffMember.email} • Persistencia en PostgreSQL 17
+                  {staffMember.email} • Actualización de contacto
                 </p>
               </div>
             </div>
@@ -994,7 +994,7 @@ const EditStaffProfileModal = ({ staffMember, onClose, onSave }) => {
 
             <div className="space-y-1.5">
               <label className="block text-[11px] text-[var(--text-muted)] font-semibold uppercase tracking-wider">
-                Número Telefónico / WhatsApp Real
+                Número Telefónico / WhatsApp
               </label>
               <input
                 type="tel"
@@ -1004,7 +1004,7 @@ const EditStaffProfileModal = ({ staffMember, onClose, onSave }) => {
                 placeholder="Ej. +52 55 8899 0011 (o déjalo vacío)"
               />
               <p className="text-[10px] text-[var(--text-muted)] font-sans">
-                Se guarda directamente en la tabla <code className="text-neon">users</code> de PostgreSQL.
+                Número telefónico oficial de contacto.
               </p>
             </div>
 
@@ -1022,7 +1022,7 @@ const EditStaffProfileModal = ({ staffMember, onClose, onSave }) => {
                 className="px-4 py-2 rounded-xl bg-neon text-black font-mono font-bold text-xs hover:bg-[var(--neon-hover)] transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-60"
               >
                 <Check className="w-3.5 h-3.5" />
-                <span>{saving ? 'Guardando en BD...' : 'Guardar en PostgreSQL'}</span>
+                <span>{saving ? 'Guardando...' : 'Guardar Cambios'}</span>
               </button>
             </div>
           </form>

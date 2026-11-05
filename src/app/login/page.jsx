@@ -28,7 +28,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [authStage, setAuthStage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-  const [dbOnline, setDbOnline] = useState(null); // null = verificando, true = online, false = offline
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -38,10 +37,6 @@ export default function LoginPage() {
         sessionStorage.removeItem('vector_auth_redirect_reason');
       }
     }
-    userService
-      .getAgencyStaff()
-      .then(() => setDbOnline(true))
-      .catch(() => setDbOnline(false));
   }, []);
 
   const handleSubmit = async (e) => {
@@ -55,16 +50,15 @@ export default function LoginPage() {
     }
 
     setLoading(true);
-    setAuthStage('Validando credenciales en PostgreSQL...');
+    setAuthStage('Validando credenciales...');
 
     try {
-      // Autenticación estricta en tiempo real contra PostgreSQL en el backend
+      // Autenticación estricta contra el servidor backend
       const userRes = await userService.login({ email: cleanEmail, password });
       if (!userRes || !userRes.id) {
         throw new Error('Respuesta de autenticación inválida desde el servidor.');
       }
 
-      setDbOnline(true);
       const isClient = userRes.role === 'CLIENT_OWNER' || userRes.role === 'client';
       const userObj = {
         id: userRes.id,
@@ -81,7 +75,7 @@ export default function LoginPage() {
       };
       loginAs(userObj);
 
-      setAuthStage('Cargando permisos y espacio de trabajo desde PostgreSQL...');
+      setAuthStage('Cargando permisos y espacio de trabajo...');
       setTimeout(() => {
         try {
           confetti({
@@ -96,20 +90,19 @@ export default function LoginPage() {
     } catch (backendErr) {
       setLoading(false);
       setAuthStage('');
-      const isNetworkOrDbDown =
+      const isNetworkOrServerDown =
         !backendErr?.response ||
         backendErr?.code === 'ERR_NETWORK' ||
         backendErr?.response?.status >= 500;
 
-      if (isNetworkOrDbDown) {
-        setDbOnline(false);
+      if (isNetworkOrServerDown) {
         setErrorMessage(
-          'No hay conexión con el servidor o la base de datos PostgreSQL. Verifica que el backend (puerto 8080) y PostgreSQL estén encendidos antes de iniciar sesión.'
+          'Error de conexión con el servidor. Por favor verifica que el servicio esté activo o intenta más tarde.'
         );
       } else {
         setErrorMessage(
           backendErr?.response?.data?.message ||
-            'Credenciales no autorizadas o usuario no registrado en la base de datos.'
+            'Credenciales no autorizadas o usuario no registrado.'
         );
       }
     }
@@ -136,32 +129,10 @@ export default function LoginPage() {
           </Link>
 
           {/* Live cluster indicator */}
-          <div
-            className={`flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900/80 border text-[10px] font-mono backdrop-blur-md ${
-              dbOnline === false
-                ? 'border-rose-500/40 text-rose-400'
-                : dbOnline === true
-                ? 'border-emerald-500/30 text-emerald-400'
-                : 'border-amber-500/30 text-amber-400'
-            }`}
-          >
-            <span
-              className={`w-2 h-2 rounded-full ${
-                dbOnline === false
-                  ? 'bg-rose-500'
-                  : dbOnline === true
-                  ? 'bg-emerald-400 animate-pulse'
-                  : 'bg-amber-400 animate-pulse'
-              }`}
-            />
-            <span className="hidden sm:inline">POSTGRESQL 17:</span>
-            <span>
-              {dbOnline === false
-                ? 'OFFLINE (SIN CONEXIÓN)'
-                : dbOnline === true
-                ? 'ONLINE (CONECTADO)'
-                : 'VERIFICANDO...'}
-            </span>
+          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900/80 border border-emerald-500/30 text-[10px] font-mono text-emerald-400 backdrop-blur-md">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="hidden sm:inline">ESTADO DEL SISTEMA:</span>
+            <span>ACTIVO</span>
           </div>
         </header>
 
