@@ -27,21 +27,19 @@ import confetti from 'canvas-confetti';
 import { VectorInsideLogo } from '@/components/common/VectorInsideLogo';
 import { formatDateTime } from '@/utils/formatters';
 
-// Helper to format Date for iCal RFC 5545 (e.g. 20261023T110000Z)
+// Helper to format Date for iCal RFC 5545 (e.g. YYYYMMDDTHHMMSSZ)
 function formatIcsDate(dateObj) {
   const pad = (n) => String(n).padStart(2, '0');
   const d = dateObj instanceof Date ? dateObj : new Date(dateObj);
-  if (isNaN(d.getTime())) {
-    return '20261023T170000Z';
-  }
+  const validDate = isNaN(d.getTime()) ? new Date() : d;
   return (
-    d.getUTCFullYear() +
-    pad(d.getUTCMonth() + 1) +
-    pad(d.getUTCDate()) +
+    validDate.getUTCFullYear() +
+    pad(validDate.getUTCMonth() + 1) +
+    pad(validDate.getUTCDate()) +
     'T' +
-    pad(d.getUTCHours()) +
-    pad(d.getUTCMinutes()) +
-    pad(d.getUTCSeconds()) +
+    pad(validDate.getUTCHours()) +
+    pad(validDate.getUTCMinutes()) +
+    pad(validDate.getUTCSeconds()) +
     'Z'
   );
 }
@@ -49,20 +47,17 @@ function formatIcsDate(dateObj) {
 // Helper to get tenant location fallback
 export function getTenantDefaultAddress(tenant) {
   if (tenant?.address) return tenant.address;
-  if (tenant?.id === 'polanco') return 'Campos Elíseos 204, Polanco IV Sección, Miguel Hidalgo, CDMX';
-  if (tenant?.id === 'urban') return 'Av. Vasco de Quiroga 3800, Santa Fe, Cuajimalpa, CDMX';
-  if (tenant?.id === 'corp') return 'Torre Chapultepec Piso 28, Paseo de la Reforma 505, CDMX';
-  return 'Av. Insurgentes Sur 1234, Consultorio 302, Benito Juárez, CDMX';
+  return 'Dirección registrada del negocio';
 }
 
 // Generate RFC 5545 .ics calendar file content
 export function generateIcsContent(apt, tenant) {
-  const tenantName = tenant?.name || (tenant?.id === 'polanco' ? 'Polanco Steakhouse' : 'Vector Inside');
+  const tenantName = tenant?.name || 'Vector Inside';
   const title = apt?.title || `Cita: ${apt?.serviceName || 'Servicio'} con ${tenantName}`;
   const details = `${apt?.details || 'Cita confirmada en Vector Inside'}. Especialista: ${apt?.specialist || 'Asignado'}. Teléfono: ${apt?.phone || 'N/A'}`;
   const location = getTenantDefaultAddress(tenant);
 
-  const startIso = apt?.start ? new Date(apt.start) : new Date('2026-10-23T11:00:00');
+  const startIso = apt?.start ? new Date(apt.start) : new Date();
   const endIso = apt?.end ? new Date(apt.end) : new Date(startIso.getTime() + 45 * 60 * 1000);
 
   return [
@@ -106,14 +101,14 @@ export function triggerIcsDownload(apt, tenant) {
 
 // Generate Google Calendar direct URL
 export function getGoogleCalendarUrl(apt, tenant) {
-  const tenantName = tenant?.name || (tenant?.id === 'polanco' ? 'Polanco Steakhouse' : 'Vector Inside');
+  const tenantName = tenant?.name || 'Vector Inside';
   const title = encodeURIComponent(apt?.title || `Cita: ${apt?.serviceName || 'Servicio'} - ${tenantName}`);
   const details = encodeURIComponent(
     `Cita confirmada en ${tenantName}.\nEspecialista: ${apt?.specialist || 'Asignado'}\nCliente: ${apt?.client || 'N/A'}\nTeléfono: ${apt?.phone || 'N/A'}\nDetalles: ${apt?.details || 'N/A'}`
   );
   const location = encodeURIComponent(getTenantDefaultAddress(tenant));
 
-  const startIso = apt?.start ? new Date(apt.start) : new Date('2026-10-23T11:00:00');
+  const startIso = apt?.start ? new Date(apt.start) : new Date();
   const endIso = apt?.end ? new Date(apt.end) : new Date(startIso.getTime() + 45 * 60 * 1000);
 
   const startFormatted = formatIcsDate(startIso);
@@ -139,15 +134,7 @@ export const AppointmentConfirmationEmailModal = ({
     appointment?.clientEmail || `${appointment?.client?.toLowerCase().replace(/[^a-z0-9]/g, '.') || 'cliente'}@gmail.com`
   );
   const [customNotes, setCustomNotes] = useState(
-    emailConfig?.instructions || (
-      tenant?.id === 'polanco'
-        ? 'Mesa reservada con 15 minutos de tolerancia. Código de vestimenta: Smart Casual.'
-        : tenant?.id === 'urban'
-        ? 'Presentar confirmación digital al ingresar. Unidad con mínimo 1/4 de tanque.'
-        : tenant?.id === 'corp'
-        ? 'Sesión por Google Meet cifrado. Tener métricas listas para compartir.'
-        : 'Por favor preséntate 10 minutos antes e identificación oficial.'
-    )
+    emailConfig?.instructions || 'Por favor preséntate 10 minutos antes de tu cita programada.'
   );
 
   React.useEffect(() => {
@@ -159,35 +146,16 @@ export const AppointmentConfirmationEmailModal = ({
   }, [appointment]);
 
   React.useEffect(() => {
-    const defaultInstructions = emailConfig?.instructions || (
-      tenant?.id === 'polanco'
-        ? 'Mesa reservada con 15 minutos de tolerancia. Código de vestimenta: Smart Casual. Si requieres área de terraza o atención especial, infórmanos con anticipación.'
-        : tenant?.id === 'urban'
-        ? 'Presenta tu confirmación digital o identificación al ingresar. El tiempo estimado de atención es de 45 minutos.'
-        : tenant?.id === 'corp'
-        ? 'La sesión se llevará a cabo por Google Meet cifrado. Se sugiere contar con diagramas de arquitectura y métricas listas para compartir pantalla.'
-        : 'Por favor preséntate 10 minutos antes. Es indispensable traer una identificación oficial y tus estudios o radiografías previas.'
-    );
+    const defaultInstructions =
+      emailConfig?.instructions || 'Por favor preséntate 10 minutos antes de tu cita programada.';
     setCustomNotes(defaultInstructions);
   }, [tenant, emailConfig, appointment]);
 
   if (!isOpen || !appointment) return null;
 
-  const tenantName = tenant?.name || (
-    tenant?.id === 'polanco'
-      ? 'Polanco Steakhouse & Mixology'
-      : tenant?.id === 'urban'
-      ? 'Urban Motors & Sneaks Premium'
-      : tenant?.id === 'corp'
-      ? 'Vector Corporate Solutions B2B'
-      : 'Clínica Odontológica Integral'
-  );
-  const tenantAvatar = tenant?.avatar || (
-    tenant?.id === 'polanco' ? '🥩' : tenant?.id === 'urban' ? '👟' : tenant?.id === 'corp' ? '🏢' : '🦷'
-  );
-  const accentColor = emailConfig?.accentColor || (
-    tenant?.id === 'polanco' ? '#F97316' : tenant?.id === 'urban' ? '#06B6D4' : tenant?.id === 'corp' ? '#3B82F6' : '#D4FF00'
-  );
+  const tenantName = tenant?.name || 'Mi Negocio';
+  const tenantAvatar = tenant?.avatar || '🏢';
+  const accentColor = emailConfig?.accentColor || '#D4FF00';
   const senderEmail = emailConfig?.senderEmail || `citas@${tenant?.id || 'negocio'}.com`;
 
   const googleCalUrl = getGoogleCalendarUrl(appointment, tenant);
@@ -225,7 +193,7 @@ export const AppointmentConfirmationEmailModal = ({
 
   const handleShareWhatsapp = () => {
     const text = encodeURIComponent(
-      `¡Hola ${appointment.client}! Te confirmamos tu cita en ${tenantName}:\n\n🗓️ Fecha: ${appointment.hour || '11:00'} hrs (${appointment.dayId?.toUpperCase() || 'VIE'})\n🩺 Servicio: ${appointment.serviceName || appointment.title}\n📍 Ubicación: ${emailConfig?.locationAddress || 'Av. Insurgentes Sur 1234'}\n\nAgrega la cita a tu Google Calendar:\n${googleCalUrl}`
+      `¡Hola ${appointment.client}! Te confirmamos tu cita en ${tenantName}:\n\n🗓️ Fecha: ${appointment.hour || '11:00'} hrs (${appointment.dayId?.toUpperCase() || ''})\n🩺 Servicio: ${appointment.serviceName || appointment.title}\n📍 Ubicación: ${emailConfig?.locationAddress || getTenantDefaultAddress(tenant)}\n\nAgrega la cita a tu Google Calendar:\n${googleCalUrl}`
     );
     window.open(`https://wa.me/${appointment.phone?.replace(/[^0-9]/g, '')}?text=${text}`, '_blank');
   };
@@ -426,7 +394,7 @@ export const AppointmentConfirmationEmailModal = ({
                         Ubicación:
                       </span>
                       <span className="text-[var(--text-main)] truncate max-w-[260px]">
-                        {emailConfig?.locationAddress || 'Av. Insurgentes Sur 1234, CDMX'}
+                        {emailConfig?.locationAddress || getTenantDefaultAddress(tenant)}
                       </span>
                     </div>
 

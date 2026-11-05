@@ -23,10 +23,10 @@ export const TenantSwitcher = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const filteredTenants = tenants.filter(
+  const filteredTenants = (tenants || []).filter(
     (t) =>
-      t.name.toLowerCase().includes(search.toLowerCase()) ||
-      t.verticalLabel.toLowerCase().includes(search.toLowerCase())
+      t?.name?.toLowerCase().includes(search.toLowerCase()) ||
+      t?.verticalLabel?.toLowerCase().includes(search.toLowerCase())
   );
 
   const getVerticalBadge = (vertical) => {
@@ -41,13 +41,13 @@ export const TenantSwitcher = () => {
       {/* Trigger Button */}
       <button
         type="button"
-        disabled={!permissions.canSwitchTenant}
+        disabled={!(permissions?.canSwitchTenant ?? true)}
         onClick={() => setIsOpen(!isOpen)}
         className={`flex items-center gap-3 px-3.5 py-2 rounded-xl bg-dark-surface border transition-all text-left ${
           isOpen
             ? 'border-brand-primary ring-1 ring-brand-primary/30 shadow-neon-sm'
             : 'border-dark-border hover:border-zinc-700'
-        } ${!permissions.canSwitchTenant ? 'cursor-default opacity-90' : 'cursor-pointer'}`}
+        } ${!(permissions?.canSwitchTenant ?? true) ? 'cursor-default opacity-90' : 'cursor-pointer'}`}
       >
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dark-elevated text-lg border border-dark-border shrink-0">
           {activeTenant?.avatar || '🏢'}

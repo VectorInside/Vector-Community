@@ -33,264 +33,39 @@ import {
   Share2,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { campaignService } from '@/services/campaignService';
 
 // ============================================================================
 // MATRIZ DE CAMPAÑAS ESTRATÉGICAS POR GIRO DE NEGOCIO (VERTICAL-AWARE)
 // ============================================================================
-const TENANT_CAMPAIGNS = {
-  dental: [
-    {
-      id: 'camp-dental-1',
-      name: 'Ortodoncia Invisible 3D & Alineadores',
-      offer: 'Diagnóstico intraoral 3D sin costo + hasta 12 MSI en alineadores transparentes.',
-      objective: 'Citas Calificadas & Valoración',
-      audience: 'Adultos 22-45 años en Polanco, Miguel Hidalgo y zonas aledañas',
-      channel: 'Meta Ads (Instagram & FB)',
-      budget: 18000,
-      spend: 9400,
-      leadsCount: 14,
-      piecesCount: 5,
-      status: 'Activa',
-      owner: 'Dra. Sofía Alarcón & IA Vector',
-      start: '2026-10-01',
-      end: '2026-11-15',
-      hypothesis: 'Destacar la estética sin brackets metálicos y el diagnóstico digital atrae prospectos con ticket promedio >$35,000 MXN.',
-      roas: '4.2x',
-      cpl: 671,
-    },
-    {
-      id: 'camp-dental-2',
-      name: 'Implantes Dentales & Carga Inmediata',
-      offer: 'Tomografía computarizada incluida y plan quirúrgico guiado por computadora.',
-      objective: 'Cirugía de Alta Especialidad',
-      audience: 'Hombres y mujeres 40-65 años con necesidad de rehabilitación bucal',
-      channel: 'Google Search & Meta CAPI',
-      budget: 14000,
-      spend: 6800,
-      leadsCount: 8,
-      piecesCount: 3,
-      status: 'Activa',
-      owner: 'Dr. Alejandro Peña & IA Vector',
-      start: '2026-10-05',
-      end: '2026-11-20',
-      hypothesis: 'Pauta de alta intención en Google Search conectada al CAPI directo a WhatsApp reduce el ciclo de cierre de 3 semanas a 48 horas.',
-      roas: '5.6x',
-      cpl: 850,
-    },
-    {
-      id: 'camp-dental-3',
-      name: 'Blanqueamiento Láser Express Eventos',
-      offer: 'Aclara hasta 4 tonos en 1 sola sesión de 45 min (-20% de descuento este mes).',
-      objective: 'Captación Rápida & Ticket Ágil',
-      audience: 'Jóvenes 20-35 años, novias, graduaciones y eventos sociales',
-      channel: 'Meta Reels & TikTok',
-      budget: 8000,
-      spend: 2100,
-      leadsCount: 6,
-      piecesCount: 4,
-      status: 'En preparación',
-      owner: 'Lobo Vectorial (Agencia)',
-      start: '2026-10-25',
-      end: '2026-11-30',
-      hypothesis: 'Videos de antes/después en reels generan alta viralidad y volumen de mensajes a costo por lead inferior a $350 MXN.',
-      roas: '3.1x',
-      cpl: 350,
-    },
-  ],
-  polanco: [
-    {
-      id: 'camp-polanco-1',
-      name: 'Experiencia Cortes Prime en Terraza VIP',
-      offer: 'Reserva prioritaria de mesa en terraza con cóctel de bienvenida de autor.',
-      objective: 'Reservas VIP & Ocasiones Especiales',
-      audience: 'Gourmets, ejecutivos y parejas 28-55 años en CDMX Poniente',
-      channel: 'Meta Ads (Instagram & FB)',
-      budget: 20000,
-      spend: 11200,
-      leadsCount: 28,
-      piecesCount: 6,
-      status: 'Activa',
-      owner: 'Chef Ejecutivo & IA Vector',
-      start: '2026-10-01',
-      end: '2026-11-15',
-      hypothesis: 'Creativos en video con cortes Dry-Aged al fuego y mixología generan reservas inmediatas con ticket promedio >$2,800 MXN por mesa.',
-      roas: '6.4x',
-      cpl: 400,
-    },
-    {
-      id: 'camp-polanco-2',
-      name: 'Menú Degustación & Maridaje Sommelier',
-      offer: 'Menú exclusivo 5 tiempos maridado con etiquetas internacionales selectas.',
-      objective: 'Comensales de Alto Ticket',
-      audience: 'Búsqueda de alta gastronomía en Polanco, Lomas y Condesa',
-      channel: 'Google Search & Meta CAPI',
-      budget: 15000,
-      spend: 7900,
-      leadsCount: 16,
-      piecesCount: 3,
-      status: 'Activa',
-      owner: 'Sommelier Titular',
-      start: '2026-10-05',
-      end: '2026-11-20',
-      hypothesis: 'Captar búsquedas tipo "restaurante cena romántica polanco" y agendar en WhatsApp con confirmación automática en <5 min.',
-      roas: '5.1x',
-      cpl: 493,
-    },
-    {
-      id: 'camp-polanco-3',
-      name: 'After-Office Mixología & DJ en Vivo',
-      offer: '2x1 en cócteles de autor y tabla de tapas los jueves y viernes de 18:00 a 21:00 hrs.',
-      objective: 'Grupos Corporativos & Networking',
-      audience: 'Colaboradores corporativos de Masaryk, Palmas y Reforma',
-      channel: 'Meta Reels & TikTok',
-      budget: 9000,
-      spend: 3500,
-      leadsCount: 19,
-      piecesCount: 4,
-      status: 'En preparación',
-      owner: 'Lobo Vectorial (Agencia)',
-      start: '2026-10-25',
-      end: '2026-11-30',
-      hypothesis: 'Anuncios en carrusel y reels con ambiente nocturno activan mesas de 4 a 8 personas para after-office.',
-      roas: '4.8x',
-      cpl: 184,
-    },
-  ],
-  urban: [
-    {
-      id: 'camp-urban-1',
-      name: 'Drops Exclusivos & Sneakers Hype',
-      offer: 'Apartado de calzado edición limitada Nike, Jordan y Yeezy 100% original autenticado.',
-      objective: 'Apartados & Venta Directa',
-      audience: 'Sneakerheads y comunidad streetwear 18-35 años en México',
-      channel: 'Meta Ads (Instagram & FB)',
-      budget: 22000,
-      spend: 14300,
-      leadsCount: 42,
-      piecesCount: 8,
-      status: 'Activa',
-      owner: 'Store Manager & IA Vector',
-      start: '2026-10-01',
-      end: '2026-11-15',
-      hypothesis: 'Anunciar drops de stock limitado con botón directo a WhatsApp dispara la urgencia de compra antes del sold-out.',
-      roas: '7.2x',
-      cpl: 340,
-    },
-    {
-      id: 'camp-urban-2',
-      name: 'Envío Express Mismo Día & Autenticidad',
-      offer: 'Entregas seguras en CDMX en menos de 4 horas con certificado físico y digital.',
-      objective: 'Conversión Inmediata & Confianza',
-      audience: 'Compradores de calzado premium con alta urgencia de entrega',
-      channel: 'Google Search & Meta CAPI',
-      budget: 14000,
-      spend: 6500,
-      leadsCount: 21,
-      piecesCount: 3,
-      status: 'Activa',
-      owner: 'Logística Urban & IA Vector',
-      start: '2026-10-05',
-      end: '2026-11-20',
-      hypothesis: 'Garantizar autenticidad contra réplicas y entrega exprés en 4 horas elimina el 90% de objeciones de compra.',
-      roas: '5.9x',
-      cpl: 309,
-    },
-    {
-      id: 'camp-urban-3',
-      name: 'Colección Apparel & Drops de Temporada',
-      offer: 'Hoodies oversized y streetwear con envío gratis nacional en pedidos >$2,500 MXN.',
-      objective: 'Ticket Promedio & Cross-selling',
-      audience: 'Fans de moda urbana, skateboarding y hip-hop culture',
-      channel: 'Meta Reels & TikTok',
-      budget: 10000,
-      spend: 2800,
-      leadsCount: 15,
-      piecesCount: 5,
-      status: 'En preparación',
-      owner: 'Lobo Vectorial (Agencia)',
-      start: '2026-10-25',
-      end: '2026-11-30',
-      hypothesis: 'Videos de unboxing y outfit inspiration aumentan la compra combinada de calzado más ropa en un 38%.',
-      roas: '4.5x',
-      cpl: 186,
-    },
-  ],
-  corp: [
-    {
-      id: 'camp-corp-1',
-      name: 'Automatización de WhatsApp con IA B2B',
-      offer: 'Auditoría gratuita de contactabilidad y demo en vivo de agente IA para tu equipo de ventas.',
-      objective: 'Discovery Calls & Cuentas Clave',
-      audience: 'Directores de ventas, CEOs y CMOs de empresas medianas y agencias',
-      channel: 'Meta Ads (Instagram & FB)',
-      budget: 25000,
-      spend: 13200,
-      leadsCount: 18,
-      piecesCount: 4,
-      status: 'Activa',
-      owner: 'Consultor B2B & IA Vector',
-      start: '2026-10-01',
-      end: '2026-11-15',
-      hypothesis: 'Demostrar que las empresas pierden 70% de leads por tardar >15 min en responder detona la necesidad de agentes IA inmediatos.',
-      roas: '8.4x',
-      cpl: 733,
-    },
-    {
-      id: 'camp-corp-2',
-      name: 'Integración CRM & Meta CAPI for Messaging',
-      offer: 'Conexión de servidor para atribución real de ventas en WhatsApp y optimización de pauta.',
-      objective: 'Cuentas Enterprise & Agencias',
-      audience: 'Empresas con gasto publicitario en Meta superior a $50,000 MXN mensuales',
-      channel: 'Google Search & Meta CAPI',
-      budget: 18000,
-      spend: 8400,
-      leadsCount: 11,
-      piecesCount: 3,
-      status: 'Activa',
-      owner: 'Arquitecto de Soluciones',
-      start: '2026-10-05',
-      end: '2026-11-20',
-      hypothesis: 'Atacar el dolor de la ceguera de atribución en Meta Ads tras los cambios de privacidad posiciona la suite técnica de Vector.',
-      roas: '6.8x',
-      cpl: 763,
-    },
-  ],
-};
+const TENANT_CAMPAIGNS = {};
 
 export const CampanasView = () => {
   const router = useRouter();
   const { activeTenant, isAdmin } = useAuth();
-  const tenantId = activeTenant?.id || 'dental';
+  const tenantId = activeTenant?.id || null;
 
-  // State initialized with vertical-aware campaigns from localStorage or tenant defaults
-  const [campaigns, setCampaigns] = useState(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem(`vector_campaigns_${tenantId}`);
-        if (saved) return JSON.parse(saved);
-      } catch (e) {}
-    }
-    return TENANT_CAMPAIGNS[tenantId] || TENANT_CAMPAIGNS.dental;
-  });
+  // State initialized clean (Zero-State) and loaded from campaignService
+  const [campaigns, setCampaigns] = useState([]);
 
-  // Re-sync when switching tenant
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(`vector_campaigns_${tenantId}`);
-      if (saved) {
-        setCampaigns(JSON.parse(saved));
-        return;
-      }
-    } catch (e) {}
-    setCampaigns(TENANT_CAMPAIGNS[tenantId] || TENANT_CAMPAIGNS.dental);
-  }, [tenantId]);
+    const activeId = activeTenant?.id;
+    if (!activeId) {
+      setCampaigns([]);
+      return;
+    }
+    campaignService
+      .getCampaigns(activeId)
+      .then((data) => {
+        setCampaigns(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        setCampaigns([]);
+      });
+  }, [activeTenant?.id]);
 
-  // Save to localStorage whenever campaigns mutate
   const saveCampaigns = (newCampaigns) => {
-    setCampaigns(newCampaigns);
-    try {
-      localStorage.setItem(`vector_campaigns_${tenantId}`, JSON.stringify(newCampaigns));
-    } catch (e) {}
+    setCampaigns(newCampaigns || []);
   };
 
   const [channelFilter, setChannelFilter] = useState('all');
@@ -311,7 +86,7 @@ export const CampanasView = () => {
 
   // Filtered campaigns
   const filteredCampaigns = useMemo(() => {
-    return campaigns.filter((c) => {
+    return (campaigns || []).filter((c) => {
       const matchChannel =
         channelFilter === 'all' ||
         (channelFilter === 'meta' && c.channel.toLowerCase().includes('meta')) ||
@@ -356,91 +131,36 @@ export const CampanasView = () => {
 
   // AI Copilot Generator
   const handleGenerateWithAi = () => {
+    if (!tenantId) {
+      alert('Selecciona un negocio activo antes de generar una campaña con IA.');
+      return;
+    }
     setIsGeneratingAi(true);
 
     setTimeout(() => {
-      let aiCamp;
-      if (tenantId === 'dental') {
-        aiCamp = {
-          id: `camp-ai-${Date.now()}`,
-          name: 'Diseño de Sonrisa & Carillas Digitales',
-          offer: 'Simulación digital de sonrisa en video 3D + 10% en paquete integral de estética.',
-          objective: 'Citas de Alta Gama',
-          audience: 'Hombres y mujeres 25-50 años interesados en estética facial y dental',
-          channel: 'Meta Ads (Instagram & FB)',
-          budget: 15000,
-          spend: 0,
-          leadsCount: 0,
-          piecesCount: 3,
-          status: 'Activa',
-          owner: 'Copilot IA Vector',
-          start: '2026-10-24',
-          end: '2026-11-30',
-          hypothesis: 'Mostrar un render digital del antes y después antes de mencionar el costo incrementa la tasa de agendamiento calificado al 24%.',
-          roas: '4.8x',
-          cpl: 520,
-        };
-      } else if (tenantId === 'polanco') {
-        aiCamp = {
-          id: `camp-ai-${Date.now()}`,
-          name: 'Noches de Parrilla & Jazz en Vivo',
-          offer: 'Cena maridaje con selección de vinos y música en vivo los miércoles.',
-          objective: 'Llenado de Salón en Días Laborales',
-          audience: 'Residentes de Polanco, Anzures y ejecutivos de Masaryk',
-          channel: 'Meta Ads (Instagram & FB)',
-          budget: 12000,
-          spend: 0,
-          leadsCount: 0,
-          piecesCount: 3,
-          status: 'Activa',
-          owner: 'Copilot IA Vector',
-          start: '2026-10-24',
-          end: '2026-11-30',
-          hypothesis: 'Atacar días de baja afluencia tradicional (miércoles) con oferta de jazz llena el salón y eleva el ticket promedio de consumo en bar.',
-          roas: '5.2x',
-          cpl: 280,
-        };
-      } else if (tenantId === 'urban') {
-        aiCamp = {
-          id: `camp-ai-${Date.now()}`,
-          name: 'Restock Alert & Acceso Anticipado VIP',
-          offer: 'Notificación 1 hora antes del lanzamiento público para apartar en WhatsApp.',
-          objective: 'Ventas Flash & Fidelización',
-          audience: 'Compradores recurrentes y seguidores de coleccionismo urbano',
-          channel: 'Meta Ads (Instagram & FB)',
-          budget: 16000,
-          spend: 0,
-          leadsCount: 0,
-          piecesCount: 4,
-          status: 'Activa',
-          owner: 'Copilot IA Vector',
-          start: '2026-10-24',
-          end: '2026-11-30',
-          hypothesis: 'Ofrecer acceso anticipado a través de chat de WhatsApp convierte con tasa superior al 30% en las primeras 2 horas del drop.',
-          roas: '8.1x',
-          cpl: 220,
-        };
-      } else {
-        aiCamp = {
-          id: `camp-ai-${Date.now()}`,
-          name: 'Auditoría de Conversión en WhatsApp para CEOs',
-          offer: 'Diagnóstico en 15 minutos de fugas de clientes en canales de mensajería.',
-          objective: 'Reuniones B2B Calificadas',
-          audience: 'Directores de operaciones y marketing en empresas de servicios',
-          channel: 'Google Search & Meta CAPI',
-          budget: 20000,
-          spend: 0,
-          leadsCount: 0,
-          piecesCount: 3,
-          status: 'Activa',
-          owner: 'Copilot IA Vector',
-          start: '2026-10-24',
-          end: '2026-11-30',
-          hypothesis: 'Plantear el costo oculto de responder tarde en WhatsApp abre la puerta a contratos enterprise de automatización IA.',
-          roas: '7.5x',
-          cpl: 690,
-        };
-      }
+      const todayIso = new Date().toISOString().split('T')[0];
+      const nextMonth = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
+      const aiCamp = {
+        id: `camp-ai-${Date.now()}`,
+        name: `Campaña Estratégica — ${activeTenant?.name || 'Mi Negocio'}`,
+        offer: activeTenant?.coreService
+          ? `Promoción destacada en ${activeTenant.coreService} con atención prioritaria en WhatsApp.`
+          : 'Diagnóstico y atención personalizada inmediata en canales de mensajería.',
+        objective: 'Citas & Conversaciones Calificadas',
+        audience: `Público objetivo interesado en ${activeTenant?.giro || 'servicios especializados'}`,
+        channel: 'Meta Ads (Instagram & FB)',
+        budget: 15000,
+        spend: 0,
+        leadsCount: 0,
+        piecesCount: 3,
+        status: 'Activa',
+        owner: 'Copilot IA Vector',
+        start: todayIso,
+        end: nextMonth,
+        hypothesis: 'Enrutar tráfico directo a WhatsApp con respuesta < 1 min incrementa la tasa de conversión.',
+        roas: '0.0x',
+        cpl: 0,
+      };
 
       saveCampaigns([aiCamp, ...campaigns]);
       setIsGeneratingAi(false);
@@ -464,6 +184,8 @@ export const CampanasView = () => {
     e.preventDefault();
     if (!newCampaignForm.name.trim()) return;
 
+    const todayIso = new Date().toISOString().split('T')[0];
+    const nextMonth = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
     const newCamp = {
       id: `camp-${Date.now()}`,
       name: newCampaignForm.name,
@@ -477,8 +199,8 @@ export const CampanasView = () => {
       piecesCount: 2,
       status: 'Activa',
       owner: isAdmin ? 'Lobo Vectorial (Agencia)' : 'Equipo de Marca',
-      start: '2026-10-24',
-      end: '2026-11-30',
+      start: todayIso,
+      end: nextMonth,
       hypothesis: newCampaignForm.hypothesis || 'Validar respuesta de mercado con seguimiento rápido en WhatsApp.',
       roas: 'Pendiente',
       cpl: 0,
@@ -508,47 +230,17 @@ export const CampanasView = () => {
 
   // Prefill AI helper in modal
   const handleAutofillAiForm = () => {
-    if (tenantId === 'dental') {
-      setNewCampaignForm({
-        name: 'Limpieza Ultrasónica & Check-Up Preventivo',
-        offer: 'Profilaxis ultrasónica profunda con flúor y escaneo digital a precio preferencial.',
-        objective: 'Volumen de Pacientes Nuevos',
-        channel: 'Meta Ads (Instagram & FB)',
-        budget: 10000,
-        audience: 'Familias y profesionistas en radio de 5km de la clínica',
-        hypothesis: 'Una oferta de entrada económica atrae pacientes que luego requieren tratamientos de mayor valor (ortodoncia/resinas).',
-      });
-    } else if (tenantId === 'polanco') {
-      setNewCampaignForm({
-        name: 'Celebración de Cumpleaños & Aniversarios',
-        offer: 'Postre de cortesía de autor y botella espumante para mesas de 6+ comensales.',
-        objective: 'Reservas de Alto Ticket',
-        channel: 'Meta Ads (Instagram & FB)',
-        budget: 12000,
-        audience: 'Usuarios que cumplen años este mes y sus amigos cercanos en CDMX',
-        hypothesis: 'Segmentar anuncios por cumpleaños atrae grupos grandes con reservación anticipada y nula cancelación.',
-      });
-    } else if (tenantId === 'urban') {
-      setNewCampaignForm({
-        name: 'Sneaker Care & Mantenimiento Especializado',
-        offer: 'Limpieza profunda gratis en tu calzado al comprar sneakers seleccionados.',
-        objective: 'Cross-selling & Servicio Adicional',
-        channel: 'TikTok & Meta Reels',
-        budget: 8000,
-        audience: 'Compradores de calzado de colección y amantes del cuidado de zapatillas',
-        hypothesis: 'El servicio de limpieza y cuidado genera fidelidad de marca y compras recurrentes bimestrales.',
-      });
-    } else {
-      setNewCampaignForm({
-        name: 'Diagnóstico de Fricción Web & WhatsApp',
-        offer: 'Análisis de embudo sin costo para reducir la tasa de abandono en páginas comerciales.',
-        objective: 'Discovery Calls Corporativas',
-        channel: 'Google Search & Meta CAPI',
-        budget: 15000,
-        audience: 'Gerentes de marketing y directores comerciales en México',
-        hypothesis: 'Demostrar con métricas dónde pierden prospectos genera confianza inmediata para contratar la solución.',
-      });
-    }
+    setNewCampaignForm({
+      name: `Captación Directa — ${activeTenant?.name || 'Mi Negocio'}`,
+      offer: activeTenant?.coreService
+        ? `Atención preferencial en ${activeTenant.coreService} reservando por WhatsApp.`
+        : 'Valoración inicial sin costo para nuevos prospectos vía WhatsApp.',
+      objective: 'Citas & Conversaciones Calificadas',
+      channel: 'Meta Ads (Instagram & FB)',
+      budget: 12000,
+      audience: `Clientes potenciales de ${activeTenant?.giro || 'nuestro giro comercial'} en zona de cobertura`,
+      hypothesis: 'Una oferta clara con atención inmediata en WhatsApp reduce el costo por prospecto calificado.',
+    });
   };
 
   return (
@@ -573,9 +265,9 @@ export const CampanasView = () => {
             </span>
             <span className="text-xs text-[var(--text-muted)] font-mono flex items-center gap-1.5">
               <span>Espacio:</span>
-              <strong className="text-[var(--text-main)]">{activeTenant?.name || 'Vector Inside'}</strong>
+              <strong className="text-[var(--text-main)]">{activeTenant?.name || 'Sin negocio seleccionado'}</strong>
               <span className="text-[10px] px-2 py-0.2 rounded-full bg-white/5 border border-white/10 text-neon font-bold">
-                {activeTenant?.giro || 'Comercial'}
+                {activeTenant?.giro || 'Sin giro activo'}
               </span>
             </span>
           </div>
@@ -684,7 +376,7 @@ export const CampanasView = () => {
             <strong className="text-neon font-bold">${avgCpl} MXN</strong>
           </div>
           <div className="w-full h-1.5 rounded-full bg-[var(--bg-card)] overflow-hidden">
-            <div className="h-full bg-neon rounded-full" style={{ width: '85%' }} />
+            <div className="h-full bg-neon rounded-full" style={{ width: totalLeads > 0 ? '85%' : '0%' }} />
           </div>
         </div>
 
@@ -711,7 +403,7 @@ export const CampanasView = () => {
             </button>
           </div>
           <div className="w-full h-1.5 rounded-full bg-[var(--bg-card)] overflow-hidden">
-            <div className="h-full bg-blue-500 rounded-full" style={{ width: '92%' }} />
+            <div className="h-full bg-blue-500 rounded-full" style={{ width: campaigns.length > 0 ? '92%' : '0%' }} />
           </div>
         </div>
       </div>
@@ -784,7 +476,16 @@ export const CampanasView = () => {
 
       {/* Campaigns Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {filteredCampaigns.map((camp) => {
+        {filteredCampaigns.length === 0 ? (
+          <div className="col-span-full p-12 text-center rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-3">
+            <Megaphone className="w-12 h-12 text-[var(--text-muted)] mx-auto opacity-40" />
+            <h4 className="text-base font-bold text-[var(--text-main)]">Sin campañas publicitarias</h4>
+            <p className="text-xs text-[var(--text-muted)] max-w-md mx-auto">
+              {!activeTenant ? 'Selecciona un negocio para ver sus campañas activas.' : 'Este negocio aún no tiene campañas publicitarias registradas. Puedes iniciar una nueva con el Copiloto de IA.'}
+            </p>
+          </div>
+        ) : (
+          filteredCampaigns.map((camp) => {
           const spendPct = camp.budget > 0 ? Math.round((camp.spend / camp.budget) * 100) : 0;
           const currentCpl = camp.leadsCount > 0 ? Math.round(camp.spend / camp.leadsCount) : camp.cpl || 0;
 
@@ -932,7 +633,7 @@ export const CampanasView = () => {
               </div>
             </div>
           );
-        })}
+        }))}
       </div>
 
       {filteredCampaigns.length === 0 && (

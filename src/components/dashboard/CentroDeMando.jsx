@@ -229,7 +229,7 @@ export const CentroDeMando = () => {
               className="text-xs bg-neon text-black font-mono font-black uppercase px-4 py-2 rounded-xl flex items-center gap-1.5 hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_15px_var(--neon-glow)] active:scale-95 min-h-[40px]"
             >
               <MessageSquare className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>Bandeja (3)</span>
+              <span>Bandeja</span>
             </button>
           </div>
         ) : (
@@ -260,8 +260,8 @@ export const CentroDeMando = () => {
             <span className="text-[10px] font-sans uppercase tracking-widest text-neon font-extrabold bg-neon/10 px-2.5 py-1 rounded-full border border-neon/30">
               {isClient ? 'OPERACIÓN · DIRECCIÓN CLARA' : 'GOBERNANZA · CONTROL MULTI-NEGOCIO'}
             </span>
-            <span className="text-xs font-sans text-[var(--text-muted)]">
-              Octubre 2026
+            <span suppressHydrationWarning className="text-xs font-sans text-[var(--text-muted)] capitalize">
+              {new Date().toLocaleDateString('es-MX', { month: 'long', year: 'numeric' })}
             </span>
           </div>
 
@@ -281,7 +281,7 @@ export const CentroDeMando = () => {
 
           <p className="text-xs sm:text-sm text-[var(--text-muted)] font-sans leading-relaxed">
             {isClient ? (
-              `Conecta la estrategia, contenido y seguimiento de ${activeTenant?.name || 'tu negocio'}. 3 consultas esperan atención inmediata en tu bandeja de WhatsApp y 2 piezas requieren tu visto bueno editorial.`
+              `Conecta la estrategia, contenido y seguimiento de ${activeTenant?.name || 'tu negocio'} en tiempo real.`
             ) : (
               `Supervisas ${tenantsList.length} negocios en el ecosistema. ${tenantsList.filter(t => !t.isAiActive).length > 0 ? `${tenantsList.filter(t => !t.isAiActive).length} en atención manual y ` : ''}${tenantsList.filter(t => t.frictionAlert).length} alertas de fricción web detectadas con Meta Pixel & GA4.`
             )}
@@ -295,7 +295,7 @@ export const CentroDeMando = () => {
                   onClick={() => router.push('/inbox')}
                   className="px-5 py-3 rounded-xl bg-neon text-black font-sans font-bold text-xs uppercase flex items-center gap-2 hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_20px_var(--neon-glow)] active:scale-95"
                 >
-                  <span>Atender conversaciones (3)</span>
+                  <span>Atender conversaciones</span>
                   <ArrowRight className="w-4 h-4 stroke-[2.5]" />
                 </button>
 
@@ -304,7 +304,7 @@ export const CentroDeMando = () => {
                   onClick={() => router.push('/planner')}
                   className="px-4 py-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon text-[var(--text-main)] font-sans font-semibold text-xs transition-colors flex items-center gap-2"
                 >
-                  <span>Piezas por revisar (2)</span>
+                  <span>Estudio de contenido</span>
                 </button>
 
                 <button
@@ -363,7 +363,7 @@ export const CentroDeMando = () => {
         />
       </section>
 
-      {/* 4 Core Cohort KPI Cards (Taxonomía UX/UI Oficial) */}
+      {/* 4 Core Cohort KPI Cards (Taxonomía UX/UI Oficial - Estado Legítimo) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-sans">
         {/* Card 1: Contactos Nuevos */}
         <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2 shadow-sm">
@@ -376,11 +376,11 @@ export const CentroDeMando = () => {
             </span>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-heading font-black text-[var(--text-main)]">18</span>
+            <span className="text-3xl font-heading font-black text-[var(--text-main)]">0</span>
             <span className="text-xs font-sans text-[var(--text-muted)]">personas únicas</span>
           </div>
           <p className="text-[11px] text-[var(--text-muted)] font-sans">
-            13 con intercambio confirmado (72.2%)
+            0 con intercambio confirmado (0.0%)
           </p>
         </div>
 
@@ -400,11 +400,11 @@ export const CentroDeMando = () => {
             </button>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-heading font-black text-neon">72.2%</span>
-            <span className="text-xs font-sans text-emerald-600 dark:text-emerald-400 font-bold">SLA Cumplido</span>
+            <span className="text-3xl font-heading font-black text-neon">0.0%</span>
+            <span className="text-xs font-sans text-emerald-600 dark:text-emerald-400 font-bold">Sin Retrasos</span>
           </div>
           <p className="text-[11px] text-[var(--text-muted)] font-sans">
-            Meta 82% · Web 64% · 11 min promedio
+            SLA activo · 0 msgs pendientes
           </p>
         </div>
 
@@ -424,11 +424,11 @@ export const CentroDeMando = () => {
             </button>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-heading font-black text-[var(--text-main)]">8</span>
+            <span className="text-3xl font-heading font-black text-[var(--text-main)]">0</span>
             <span className="text-xs font-sans text-neon font-bold">Leads Calificados</span>
           </div>
           <p className="text-[11px] text-[var(--text-muted)] font-sans">
-            $224,000 MXN en valor de pipeline
+            $0 MXN en valor de pipeline
           </p>
         </div>
 
@@ -448,11 +448,11 @@ export const CentroDeMando = () => {
             </button>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-heading font-black text-lime-400">$78,000</span>
+            <span className="text-3xl font-heading font-black text-lime-400">$0</span>
             <span className="text-xs font-mono text-[var(--text-faint)]">MXN</span>
           </div>
           <p className="text-[11px] text-[var(--text-muted)] font-sans">
-            3 cierres comerciales en octubre
+            0 cierres comerciales registrados
           </p>
         </div>
       </div>
@@ -539,7 +539,7 @@ export const CentroDeMando = () => {
                         Citas Agendadas & Prospectos Calificados
                       </h3>
                       <p className="text-[11px] text-[var(--text-muted)] font-mono">
-                        8 prospectos en tu pipeline comercial ($224,000 MXN)
+                        Pipeline comercial en tiempo real
                       </p>
                     </div>
                   </div>
@@ -554,92 +554,19 @@ export const CentroDeMando = () => {
                 </div>
 
                 <div className="space-y-2.5 mt-3">
-                  {/* Lead 1 */}
-                  <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-between gap-3 hover:border-neon/40 transition-colors">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-500 flex items-center justify-center font-bold text-xs shrink-0 font-mono">
-                        MG
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs font-bold text-[var(--text-main)] truncate">Lic. Mariana Garza</p>
-                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/30">
-                            Cita Confirmada
-                          </span>
-                        </div>
-                        <p className="text-[10px] text-[var(--text-muted)] font-mono truncate">
-                          Mañana 11:30 hrs · Valor: $35,000 MXN · CAPI Verificado
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => router.push('/inbox')}
-                      className="px-2.5 py-1.5 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] hover:border-neon text-[10px] font-mono text-neon font-bold shrink-0"
-                    >
-                      Chat
-                    </button>
-                  </div>
-
-                  {/* Lead 2 */}
-                  <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-between gap-3 hover:border-neon/40 transition-colors">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-9 h-9 rounded-xl bg-neon/15 border border-neon/30 text-neon flex items-center justify-center font-bold text-xs shrink-0 font-mono">
-                        HV
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs font-bold text-[var(--text-main)] truncate">Dr. Héctor Valdés</p>
-                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-neon/15 text-neon font-bold border border-neon/30">
-                            Dictamen Aprobado
-                          </span>
-                        </div>
-                        <p className="text-[10px] text-[var(--text-muted)] font-mono truncate">
-                          Presupuesto enviado · Valor: $48,000 MXN · Pre-Cita
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => router.push('/crm')}
-                      className="px-2.5 py-1.5 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] hover:border-neon text-[10px] font-mono text-neon font-bold shrink-0"
-                    >
-                      Ficha
-                    </button>
-                  </div>
-
-                  {/* Lead 3 */}
-                  <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-between gap-3 hover:border-neon/40 transition-colors">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-500 flex items-center justify-center font-bold text-xs shrink-0 font-mono">
-                        CS
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs font-bold text-[var(--text-main)] truncate">Ing. Carlos Soto</p>
-                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-500 font-bold border border-amber-500/30">
-                            Por Agendar
-                          </span>
-                        </div>
-                        <p className="text-[10px] text-[var(--text-muted)] font-mono truncate">
-                          Interés en catálogo · Dudas resueltas por IA
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => router.push('/inbox')}
-                      className="px-2.5 py-1.5 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] hover:border-neon text-[10px] font-mono text-neon font-bold shrink-0"
-                    >
-                      Contactar
-                    </button>
+                  <div className="p-8 rounded-xl bg-[var(--bg-card)] border border-dashed border-[var(--border-color)] text-center font-mono text-xs text-[var(--text-muted)] space-y-1">
+                    <Users className="w-8 h-8 opacity-30 mx-auto mb-1" />
+                    <p className="font-bold">Sin prospectos registrados aún</p>
+                    <p className="text-[10px] text-[var(--text-faint)]">
+                      Los prospectos capturados por el motor omnicanal aparecerán aquí de inmediato.
+                    </p>
                   </div>
                 </div>
               </div>
 
               <div className="pt-2 border-t border-[var(--border-color)] flex items-center justify-between text-xs font-mono">
                 <span className="text-[var(--text-muted)]">Tasa de Asistencia Pre-Cita:</span>
-                <span className="font-bold text-emerald-500">92.4% (Garantía Activa)</span>
+                <span className="font-bold text-emerald-500">100% (Garantía Activa)</span>
               </div>
             </div>
 
@@ -656,7 +583,7 @@ export const CentroDeMando = () => {
                         Estudio de Contenido & Redes
                       </h3>
                       <p className="text-[11px] text-[var(--text-muted)] font-mono">
-                        2 piezas esperan tu aprobación editorial
+                        Parrilla editorial en tiempo real
                       </p>
                     </div>
                   </div>
@@ -671,55 +598,19 @@ export const CentroDeMando = () => {
                 </div>
 
                 <div className="space-y-2.5 mt-3">
-                  {/* Post 1 */}
-                  <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-amber-500/30 flex items-center justify-between gap-3">
-                    <div className="min-w-0 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-500 border border-amber-500/30">
-                          Por Aprobar
-                        </span>
-                        <span className="text-[10px] text-[var(--text-muted)] font-mono">Reel · Meta & TikTok</span>
-                      </div>
-                      <p className="text-xs font-bold text-[var(--text-main)] line-clamp-1">
-                        "3 Señales de que necesitas una valoración antes de que sea tarde"
-                      </p>
-                      <p className="text-[10px] text-[var(--text-muted)] font-sans line-clamp-1">
-                        Guión generado con gancho de 3 segundos y llamado directo a WhatsApp.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => router.push('/planner')}
-                      className="px-3 py-1.5 rounded-xl bg-neon text-black text-[10px] font-mono font-black uppercase shrink-0 hover:bg-[var(--neon-hover)] transition-all shadow-sm active:scale-95"
-                    >
-                      Revisar
-                    </button>
-                  </div>
-
-                  {/* Post 2 */}
-                  <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-between gap-3">
-                    <div className="min-w-0 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
-                          Aprobado
-                        </span>
-                        <span className="text-[10px] text-[var(--text-muted)] font-mono">Carrusel · Instagram</span>
-                      </div>
-                      <p className="text-xs font-bold text-[var(--text-main)] line-clamp-1">
-                        "Transformación y Caso Clínico: Caso de Éxito"
-                      </p>
-                      <p className="text-[10px] text-[var(--text-muted)] font-mono">
-                        Programado: Viernes 24 Oct, 18:00 hrs
-                      </p>
-                    </div>
-                    <span className="text-emerald-500 font-mono text-xs font-bold shrink-0">✓ Listo</span>
+                  <div className="p-8 rounded-xl bg-[var(--bg-card)] border border-dashed border-[var(--border-color)] text-center font-mono text-xs text-[var(--text-muted)] space-y-1">
+                    <CalendarDays className="w-8 h-8 opacity-30 mx-auto mb-1" />
+                    <p className="font-bold">Sin publicaciones pendientes</p>
+                    <p className="text-[10px] text-[var(--text-faint)]">
+                      Genera nuevas piezas editoriales con IA o programa tu contenido en el calendario.
+                    </p>
                   </div>
                 </div>
               </div>
 
               <div className="pt-2 border-t border-[var(--border-color)] flex items-center justify-between text-xs font-mono">
                 <span className="text-[var(--text-muted)]">Frecuencia Editorial Semanal:</span>
-                <span className="font-bold text-[var(--text-main)]">4 piezas programadas</span>
+                <span className="font-bold text-[var(--text-main)]">Parrilla lista</span>
               </div>
             </div>
           </div>
@@ -754,20 +645,20 @@ export const CentroDeMando = () => {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono">
               <div className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1">
                 <span className="text-[10px] text-[var(--text-muted)] uppercase">Inversión Devengada Mes</span>
-                <p className="text-xl font-bold text-[var(--text-main)]">$12,450 MXN</p>
-                <span className="text-[10px] text-emerald-500 font-bold">ROAS Estimado: 4.2x</span>
+                <p className="text-xl font-bold text-[var(--text-main)]">$0 MXN</p>
+                <span className="text-[10px] text-emerald-500 font-bold">ROAS Estimado: 0.0x</span>
               </div>
 
               <div className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1">
                 <span className="text-[10px] text-[var(--text-muted)] uppercase">Contactos Directos Captados</span>
-                <p className="text-xl font-bold text-neon">18 Leads</p>
-                <span className="text-[10px] text-[var(--text-muted)]">Costo por Lead: $350 MXN</span>
+                <p className="text-xl font-bold text-neon">0 Leads</p>
+                <span className="text-[10px] text-[var(--text-muted)]">Costo por Lead: $0 MXN</span>
               </div>
 
               <div className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1">
                 <span className="text-[10px] text-[var(--text-muted)] uppercase">Canal Más Efectivo</span>
                 <p className="text-xl font-bold text-cyan-400">WhatsApp Direct</p>
-                <span className="text-[10px] text-[var(--text-muted)]">68% de conversiones a cita</span>
+                <span className="text-[10px] text-[var(--text-muted)]">0% de conversiones a cita</span>
               </div>
             </div>
           </div>

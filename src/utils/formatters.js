@@ -73,16 +73,23 @@ export const cleanConcept = (val) => {
     'LEAD_COLD_24H': 'Ingreso / Frío (24h)',
     'LEAD_WARM_24H': 'En Seguimiento (24h)',
     'LEAD_HOT_PREQUAL': 'Prospecto Cálido',
-    'BILLABLE_LEAD': 'Lead Calificado',
+    'BILLABLE_LEAD': 'Prospecto Calificado',
+    'NO_BILLABLE': 'No Facturable',
+    'PENDING_QUALIFICATION': 'En Calificación',
     'HITL_INTERVENTION': 'Intervención Humana',
     'QUEUED_REDIS_24H': 'En Cola de Re-contacto (24h)',
     'TRIGGER_IMMIMENT': 'Disparo Inminente',
     'PENDING_AGENCY_APPROVAL': 'Pendiente de Aprobación',
-    'PENDING_INVOICE': 'Facturación Pendiente',
+    'PENDING_INVOICE': 'Pendiente de Facturar',
     'PENDING_INVITE': 'Invitación Pendiente',
     'ACTIVE': 'Activo',
     'SUSPENDED': 'Suspendido',
     'SYNCED_GOOGLE_CALENDAR': 'Sincronizado en Google Calendar',
+    'system_generated': 'Atención Automática',
+    'COLD_DROP': 'Contacto en Pausa',
+    'FOLLOWUP_PENDING_24H': 'Seguimiento Pendiente (24h)',
+    'WARM_FINANCING': 'En Análisis de Financiamiento',
+    'QUALIFIED_TRANSFER': 'Transferido a Asesor',
 
     // Herramientas & Sub-Bots
     'consultar_disponibilidad_google_calendar()': 'Consulta de Agenda en Google Calendar',
@@ -125,3 +132,45 @@ export const cleanConcept = (val) => {
 
   return cleaned;
 };
+
+/**
+ * Validador estricto de correo electrónico (exige usuario, @, dominio y extensión >= 2 caracteres)
+ * Ej: usuario@empresa.com, contacto@vectorinside.mx
+ */
+export const isValidEmail = (email) => {
+  if (!email || typeof email !== 'string') return false;
+  const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  return re.test(email.trim().toLowerCase());
+};
+
+/**
+ * Normalizador estricto de teléfono a 10 dígitos numéricos (estándar México).
+ * Remueve espacios, guiones, paréntesis y el prefijo de país +52 / 52 si viene incluido.
+ */
+export const normalizePhone10 = (rawPhone) => {
+  if (!rawPhone || typeof rawPhone !== 'string') return '';
+  let digits = rawPhone.replace(/\D/g, '');
+  if (digits.length === 12 && digits.startsWith('52')) {
+    digits = digits.slice(2);
+  }
+  return digits.slice(0, 10);
+};
+
+/**
+ * Verifica si un teléfono tiene exactamente 10 dígitos numéricos válidos.
+ */
+export const isValidPhone10 = (phone) => {
+  return normalizePhone10(phone).length === 10;
+};
+
+/**
+ * Formatea un número de 10 dígitos para visualización limpia: "55 1234 5678"
+ */
+export const formatPhoneDisplay = (rawPhone) => {
+  const digits = normalizePhone10(rawPhone);
+  if (!digits) return '';
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 2)} ${digits.slice(2)}`;
+  return `${digits.slice(0, 2)} ${digits.slice(2, 6)} ${digits.slice(6, 10)}`;
+};
+

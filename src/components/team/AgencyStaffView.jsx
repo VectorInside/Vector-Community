@@ -21,13 +21,21 @@ import {
   Send,
   SlidersHorizontal,
   ChevronDown,
+  ChevronUp,
   Layers,
   KeyRound,
   Copy,
   Check,
+  Trash2,
+  AlertTriangle,
+  Pencil,
+  Eye,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Portal } from '@/components/common/Portal';
+import { userService } from '@/services/userService';
+import { isValidEmail, normalizePhone10, formatPhoneDisplay } from '@/utils/formatters';
+import { StaffInvitationModal } from './StaffInvitationModal';
 
 const ROLE_DEFINITIONS = {
   SUPER_ADMIN: {
@@ -45,7 +53,7 @@ const ROLE_DEFINITIONS = {
 };
 
 export const AgencyStaffView = () => {
-  const { tenantsData } = useAuth();
+  const { tenantsData, currentUser, updateCurrentUserProfile } = useAuth();
 
   // Persist agency staff in localStorage for interactive session
   const [staffList, setStaffList] = useState(() => {
@@ -53,7 +61,13 @@ export const AgencyStaffView = () => {
       const saved = localStorage.getItem('vector_agency_staff_members');
       if (saved) {
         try {
-          return JSON.parse(saved);
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            return parsed.map((m) => ({
+              ...m,
+              phone: m.phone === '+52 55 1234 5678' ? '' : (m.phone || ''),
+            }));
+          }
         } catch (e) {}
       }
     }
@@ -66,14 +80,68 @@ export const AgencyStaffView = () => {
     }
   }, [staffList]);
 
+  // Sincronizar si el usuario actual actualiza su teléfono desde el Header
+  useEffect(() => {
+    if (currentUser?.id) {
+      setStaffList((prev) =>
+        prev.map((m) =>
+          m.id === currentUser.id ||
+          (currentUser.id === 'usr-admin-01' && m.email?.toLowerCase() === currentUser.email?.toLowerCase())
+            ? {
+                ...m,
+                name: currentUser.name || m.name,
+                phone: currentUser.phone === '+52 55 1234 5678' ? '' : (currentUser.phone ?? m.phone),
+              }
+            : m
+        )
+      );
+    }
+  }, [currentUser?.id, currentUser?.name, currentUser?.phone, currentUser?.email]);
+
+  // Hydrate from PostgreSQL 17 Backend (/api/v1/users/staff)
+  useEffect(() => {
+    userService
+      .getAgencyStaff()
+      .then((backendStaff) => {
+        if (Array.isArray(backendStaff) && backendStaff.length > 0) {
+          setStaffList(backendStaff);
+        } else if (Array.isArray(backendStaff)) {
+          setStaffList(INITIAL_AGENCY_STAFF);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   // Search and Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
 
+  // KPI Cards Collapsible State
+  const [isKpiCollapsed, setIsKpiCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('vector_staff_kpi_collapsed') === 'true';
+    }
+    return false;
+  });
+
+  const toggleKpiCollapse = () => {
+    setIsKpiCollapsed((prev) => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('vector_staff_kpi_collapsed', String(next));
+      }
+      return next;
+    });
+  };
+
   // Modals & Feedback
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [invitationModalData, setInvitationModalData] = useState(null);
   const [editingStaffTenants, setEditingStaffTenants] = useState(null);
+  const [editingStaffProfile, setEditingStaffProfile] = useState(null);
+  const [deleteModalStaff, setDeleteModalStaff] = useState(null);
+  const [isDeletingStaff, setIsDeletingStaff] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
   const [copiedId, setCopiedId] = useState(null);
 
@@ -133,23 +201,89 @@ export const AgencyStaffView = () => {
 
   // Toggle status (Active / Suspended)
   const handleToggleStatus = (id) => {
+    let targetMember = staffList.find((m) => m.id === id);
+    const next = targetMember?.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
+
     setStaffList((prev) =>
       prev.map((member) => {
         if (member.id === id) {
-          const next = member.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
-          showToast(`Acceso de ${member.name} ${next === 'ACTIVE' ? 'reactivado' : 'suspendido'}`);
           return { ...member, status: next };
         }
         return member;
       })
     );
+
+    if (targetMember) {
+      userService.updateUserStatus(id, next).catch(() => {});
+      showToast(`Acceso de ${targetMember.name} ${next === 'ACTIVE' ? 'reactivado' : 'suspendido'}`);
+    }
+  };
+
+  const generateSecureStaffPassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+    let pwd = 'Vec#';
+    for (let i = 0; i < 6; i++) {
+      pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return pwd + '!';
+  };
+
+  const handlePreviewInvite = () => {
+    const rawName = inviteForm.name.trim();
+    const rawEmail = inviteForm.email.trim();
+
+    // Si los campos están vacíos, usamos valores de muestra para permitir previsualizar de inmediato el diseño
+    const displayName = rawName || 'Colaborador Nuevo';
+    const displayEmail = rawEmail || 'colaborador@vectorinside.com';
+
+    if (rawEmail && !isValidEmail(rawEmail)) {
+      showToast('Ingresa un correo electrónico válido con dominio (ej. usuario@dominio.com)');
+      return;
+    }
+    const cleanPhone = normalizePhone10(inviteForm.phone);
+    const assignedSummary =
+      inviteForm.role === 'SUPER_ADMIN'
+        ? 'Acceso Global a Todos los Negocios'
+        : inviteForm.assignedTenantsMode === 'all'
+        ? 'Todos los Negocios'
+        : `${inviteForm.customTenants.length} Negocios Específicos`;
+
+    setInvitationModalData({
+      name: displayName,
+      email: displayEmail.toLowerCase(),
+      phone: cleanPhone,
+      role: inviteForm.role,
+      roleLabel: ROLE_DEFINITIONS[inviteForm.role]?.label || 'Administrador',
+      assignedSummary,
+      tempPassword: generateSecureStaffPassword(),
+      isPendingSave: Boolean(rawName && rawEmail),
+    });
+  };
+
+  const handleConfirmFromModal = () => {
+    if (!invitationModalData) return;
+    if (invitationModalData.isPendingSave) {
+      handleInviteSubmit({ preventDefault: () => {} });
+    } else {
+      setInvitationModalData(null);
+      showToast('Invitación y credenciales registradas.');
+    }
   };
 
   // Submit new staff invitation
   const handleInviteSubmit = (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     if (!inviteForm.name.trim() || !inviteForm.email.trim()) {
       showToast('Completa el nombre y correo electrónico');
+      return;
+    }
+    if (!isValidEmail(inviteForm.email.trim())) {
+      showToast('Ingresa un correo electrónico válido con dominio (ej. usuario@dominio.com)');
+      return;
+    }
+    const cleanPhone = normalizePhone10(inviteForm.phone);
+    if (inviteForm.phone.trim() && cleanPhone.length !== 10) {
+      showToast('El teléfono debe contener exactamente 10 dígitos numéricos');
       return;
     }
 
@@ -160,11 +294,19 @@ export const AgencyStaffView = () => {
         ? inviteForm.customTenants
         : 'all';
 
+    const tempPassword = generateSecureStaffPassword();
+    const assignedSummary =
+      inviteForm.role === 'SUPER_ADMIN'
+        ? 'Acceso Global a Todos los Negocios'
+        : inviteForm.assignedTenantsMode === 'all'
+        ? 'Todos los Negocios'
+        : `${inviteForm.customTenants.length} Negocios Específicos`;
+
     const newMember = {
       id: `staff-${Date.now()}`,
       name: inviteForm.name.trim(),
       email: inviteForm.email.trim().toLowerCase(),
-      phone: inviteForm.phone.trim() || '+52 55 0000 0000',
+      phone: cleanPhone,
       role: inviteForm.role,
       roleLabel: ROLE_DEFINITIONS[inviteForm.role]?.label || 'Administrador',
       avatar: inviteForm.role === 'SUPER_ADMIN' ? '⚡' : '💼',
@@ -173,11 +315,22 @@ export const AgencyStaffView = () => {
       lastLogin: 'Invitación enviada (Listo para ingresar)',
       createdAt: new Date().toISOString(),
       twoFactorEnabled: false,
+      tempPassword,
     };
 
     setStaffList((prev) => [newMember, ...prev]);
     setIsInviteModalOpen(false);
     showToast(`Invitación enviada a ${newMember.email}`);
+
+    // Persist to PostgreSQL 17 Backend
+    userService.createStaff({
+      name: newMember.name,
+      email: newMember.email,
+      phone: newMember.phone,
+      role: newMember.role,
+      assignedTenantsMode: inviteForm.assignedTenantsMode,
+      customTenants: inviteForm.customTenants,
+    }).catch(() => {});
 
     try {
       confetti({
@@ -187,6 +340,18 @@ export const AgencyStaffView = () => {
         colors: ['#C3F400', '#3B82F6', '#A855F7'],
       });
     } catch (err) {}
+
+    // Open official invitation card with generated credentials
+    setInvitationModalData({
+      name: newMember.name,
+      email: newMember.email,
+      phone: newMember.phone,
+      role: newMember.role,
+      roleLabel: newMember.roleLabel,
+      assignedSummary,
+      tempPassword,
+      isPendingSave: false,
+    });
 
     setInviteForm({
       name: '',
@@ -198,6 +363,54 @@ export const AgencyStaffView = () => {
     });
   };
 
+  // Update staff profile (phone & name) in PostgreSQL 17
+  const handleSaveStaffProfile = async (staffId, { name, phone }) => {
+    const cleanPhone = normalizePhone10(phone);
+    const cleanName = (name || '').trim();
+
+    if (phone && phone.trim() && cleanPhone.length !== 10) {
+      showToast('El teléfono debe contener exactamente 10 dígitos numéricos');
+      return;
+    }
+
+    try {
+      const isCurrentUser =
+        staffId === currentUser?.id ||
+        staffId === 'usr-admin-01' ||
+        staffId === 'staff-1';
+
+      if (isCurrentUser && updateCurrentUserProfile) {
+        await updateCurrentUserProfile({
+          id: staffId,
+          name: cleanName,
+          phone: cleanPhone,
+        });
+      } else {
+        await userService.updateUserProfile(staffId, {
+          name: cleanName,
+          phone: cleanPhone,
+        });
+      }
+
+      setStaffList((prev) =>
+        prev.map((m) =>
+          m.id === staffId
+            ? {
+                ...m,
+                name: cleanName || m.name,
+                phone: cleanPhone,
+              }
+            : m
+        )
+      );
+      setEditingStaffProfile(null);
+      showToast('Perfil de contacto actualizado');
+    } catch (err) {
+      showToast('Error de conexión al actualizar el perfil.');
+      throw err;
+    }
+  };
+
   // Update assigned tenants modal submit
   const handleSaveAssignedTenants = (staffId, assigned) => {
     setStaffList((prev) =>
@@ -205,6 +418,43 @@ export const AgencyStaffView = () => {
     );
     setEditingStaffTenants(null);
     showToast('Negocios asignados actualizados correctamente');
+
+    // Persist to PostgreSQL 17 Backend
+    userService.updateAssignedTenants(staffId, {
+      assignedTenantsMode: assigned === 'all' ? 'all' : 'custom',
+      customTenants: Array.isArray(assigned) ? assigned : [],
+    }).catch(() => {});
+  };
+
+  // Delete staff confirmation (Soft delete IAM)
+  const handleDeleteStaffConfirm = async () => {
+    if (!deleteModalStaff) return;
+
+    // Blindaje Maestro: Inmunidad para Edgar Lobo Vectorial
+    const isMaster =
+      deleteModalStaff.id === 'usr-admin-01' ||
+      deleteModalStaff.id === 'staff-1' ||
+      deleteModalStaff.email?.toLowerCase().includes('edgaradmin') ||
+      (deleteModalStaff.role === 'SUPER_ADMIN' && deleteModalStaff.name?.toLowerCase().includes('edgar'));
+
+    if (isMaster) {
+      showToast('Operación denegada: La cuenta del Super Admin Maestro es inmutable.');
+      setDeleteModalStaff(null);
+      return;
+    }
+
+    setIsDeletingStaff(true);
+    try {
+      await userService.deleteUser(deleteModalStaff.id);
+      setStaffList((prev) => prev.filter((s) => s.id !== deleteModalStaff.id));
+      showToast(`Colaborador ${deleteModalStaff.name} eliminado del equipo.`);
+      setDeleteModalStaff(null);
+    } catch (err) {
+      console.error('Error al eliminar colaborador:', err);
+      showToast('Error al eliminar colaborador');
+    } finally {
+      setIsDeletingStaff(false);
+    }
   };
 
   return (
@@ -247,63 +497,122 @@ export const AgencyStaffView = () => {
         </button>
       </header>
 
-      {/* KPI Stats Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 font-mono">
-        <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
-          <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider block font-semibold">
-            Total Colaboradores
+      {/* KPI Stats Bar with Collapse / Expand Toggle */}
+      <div className="space-y-2 font-mono">
+        <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
+          <span className="text-[10px] uppercase tracking-wider font-semibold text-[var(--text-faint)]">
+            Estructura del Equipo Interno
           </span>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-heading font-black text-[var(--text-main)]">
-              {stats.total}
-            </span>
-            <span className="text-[10px] text-emerald-500 font-sans font-bold">
-              {stats.active} activos
-            </span>
-          </div>
+          <button
+            type="button"
+            onClick={toggleKpiCollapse}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon hover:text-neon transition-all text-[11px] cursor-pointer"
+            title={isKpiCollapsed ? 'Expandir tarjetas de métricas' : 'Contraer tarjetas de métricas'}
+          >
+            {isKpiCollapsed ? (
+              <>
+                <ChevronDown className="w-3.5 h-3.5 text-neon" />
+                <span>Mostrar métricas ({stats.total} total)</span>
+              </>
+            ) : (
+              <>
+                <ChevronUp className="w-3.5 h-3.5" />
+                <span>Contraer tarjetas</span>
+              </>
+            )}
+          </button>
         </div>
 
-        <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
-          <span className="text-[10px] text-neon uppercase tracking-wider block font-semibold">
-            Super Admins
-          </span>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-heading font-black text-neon">
-              {stats.superAdmins}
-            </span>
-            <span className="text-[10px] text-[var(--text-muted)] font-sans">
-              Control global
-            </span>
-          </div>
-        </div>
+        {!isKpiCollapsed ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 animate-fade-in">
+            <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
+              <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider block font-semibold">
+                Total Colaboradores
+              </span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl sm:text-3xl font-heading font-black text-[var(--text-main)]">
+                  {stats.total}
+                </span>
+                <span className="text-[10px] text-emerald-500 font-sans font-bold">
+                  {stats.active} activos
+                </span>
+              </div>
+            </div>
 
-        <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
-          <span className="text-[10px] text-blue-400 uppercase tracking-wider block font-semibold">
-            Administradores
-          </span>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-heading font-black text-blue-400">
-              {stats.admins}
-            </span>
-            <span className="text-[10px] text-[var(--text-muted)] font-sans">
-              Negocios asignados
-            </span>
-          </div>
-        </div>
+            <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
+              <span className="text-[10px] text-neon uppercase tracking-wider block font-semibold">
+                Super Admins
+              </span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl sm:text-3xl font-heading font-black text-neon">
+                  {stats.superAdmins}
+                </span>
+                <span className="text-[10px] text-[var(--text-muted)] font-sans">
+                  Control global
+                </span>
+              </div>
+            </div>
 
-        <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
-          <span className="text-[10px] text-emerald-400 uppercase tracking-wider block font-semibold">
-            Cuentas Activas
-          </span>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-heading font-black text-emerald-400">
-              {stats.active}
-            </span>
-            <span className="text-[10px] text-[var(--text-muted)] font-sans">
-              Acceso habilitado
-            </span>
+            <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
+              <span className="text-[10px] text-blue-400 uppercase tracking-wider block font-semibold">
+                Administradores
+              </span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl sm:text-3xl font-heading font-black text-blue-400">
+                  {stats.admins}
+                </span>
+                <span className="text-[10px] text-[var(--text-muted)] font-sans">
+                  Negocios asignados
+                </span>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
+              <span className="text-[10px] text-emerald-400 uppercase tracking-wider block font-semibold">
+                Cuentas Activas
+              </span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl sm:text-3xl font-heading font-black text-emerald-400">
+                  {stats.active}
+                </span>
+                <span className="text-[10px] text-[var(--text-muted)] font-sans">
+                  Acceso habilitado
+                </span>
+              </div>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="px-4 py-2.5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex flex-wrap items-center justify-between gap-3 text-xs animate-fade-in">
+            <div className="flex items-center gap-4 text-[11px] flex-wrap">
+              <span className="flex items-center gap-1.5">
+                <span className="text-[var(--text-muted)]">Colaboradores:</span>
+                <strong className="text-[var(--text-main)] font-black">{stats.total}</strong>
+              </span>
+              <span className="text-[var(--border-color)]">•</span>
+              <span className="flex items-center gap-1.5">
+                <span className="text-[var(--text-muted)]">Super Admins:</span>
+                <strong className="text-neon font-black">{stats.superAdmins}</strong>
+              </span>
+              <span className="text-[var(--border-color)]">•</span>
+              <span className="flex items-center gap-1.5">
+                <span className="text-[var(--text-muted)]">Administradores:</span>
+                <strong className="text-blue-400 font-black">{stats.admins}</strong>
+              </span>
+              <span className="text-[var(--border-color)]">•</span>
+              <span className="flex items-center gap-1.5">
+                <span className="text-[var(--text-muted)]">Activos:</span>
+                <strong className="text-emerald-500 font-black">{stats.active}</strong>
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={toggleKpiCollapse}
+              className="text-[10px] text-neon hover:underline font-bold"
+            >
+              Ver tarjetas completas
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Filter Bar */}
@@ -373,7 +682,8 @@ export const AgencyStaffView = () => {
           filteredStaff.map((member) => {
             const roleInfo = ROLE_DEFINITIONS[member.role] || ROLE_DEFINITIONS.SUPER_ADMIN;
             const isSuspended = member.status === 'SUSPENDED';
-            const isPending = member.status === 'PENDING_INVITE';
+            const isPending = member.status === 'PENDING_INVITE' ||
+              (typeof member.lastLogin === 'string' && member.lastLogin.toLowerCase().includes('invitación enviada'));
 
             return (
               <div
@@ -418,9 +728,23 @@ export const AgencyStaffView = () => {
                         )}
                       </div>
 
-                      <p className="text-xs text-[var(--text-muted)]">
-                        {roleInfo.label} • {member.phone}
-                      </p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-xs text-[var(--text-muted)]">
+                          {roleInfo.label} •{' '}
+                          {member.phone && member.phone !== '+52 55 1234 5678'
+                            ? formatPhoneDisplay(member.phone)
+                            : 'Sin teléfono registrado'}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setEditingStaffProfile(member)}
+                          className="text-[10px] font-mono text-neon hover:underline flex items-center gap-1 cursor-pointer"
+                          title="Editar número telefónico y nombre en PostgreSQL"
+                        >
+                          <Pencil className="w-2.5 h-2.5" />
+                          <span>Editar teléfono</span>
+                        </button>
+                      </div>
 
                       <div className="flex items-center gap-1.5 font-mono text-xs pt-0.5">
                         <Mail className="w-3.5 h-3.5 text-[var(--text-muted)] shrink-0" />
@@ -490,6 +814,46 @@ export const AgencyStaffView = () => {
 
                   {/* Right Column: Actions */}
                   <div className="flex items-center gap-2 font-mono text-xs shrink-0">
+                    {/* Botón de Ficha: SOLO visible mientras el colaborador esté pendiente de aceptar la invitación */}
+                    {isPending && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const assignedSummary =
+                            member.assignedTenants === 'all'
+                              ? 'Todos los Negocios'
+                              : Array.isArray(member.assignedTenants)
+                              ? `${member.assignedTenants.length} Negocios Asignados`
+                              : 'Negocios Asignados';
+                          setInvitationModalData({
+                            name: member.name,
+                            email: member.email,
+                            phone: member.phone,
+                            role: member.role,
+                            roleLabel: member.roleLabel || member.role,
+                            assignedSummary,
+                            tempPassword: member.tempPassword || 'Vec#Auth2026!',
+                            isPendingSave: false,
+                          });
+                        }}
+                        className="px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 hover:border-amber-400 text-amber-400 hover:text-white transition-all flex items-center gap-1.5 min-h-[44px]"
+                        title="Reenviar invitación o consultar ficha provisional (Pendiente de ingreso)"
+                      >
+                        <Mail className="w-3.5 h-3.5 text-amber-400" />
+                        <span className="font-bold">Reenviar Ficha</span>
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => setEditingStaffProfile(member)}
+                      className="px-3.5 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon text-[var(--text-muted)] hover:text-neon transition-all flex items-center gap-1.5 min-h-[44px]"
+                      title="Editar teléfono y nombre en PostgreSQL"
+                    >
+                      <Phone className="w-3.5 h-3.5 text-neon" />
+                      <span className="font-bold">Teléfono</span>
+                    </button>
+
                     <button
                       type="button"
                       onClick={() => setEditingStaffTenants(member)}
@@ -515,6 +879,30 @@ export const AgencyStaffView = () => {
                         {isSuspended ? 'Reactivar' : 'Suspender'}
                       </span>
                     </button>
+
+                    {/* Master Super Admin Immutable Shield vs Delete Button */}
+                    {member.id === 'usr-admin-01' ||
+                    member.id === 'staff-1' ||
+                    member.email?.toLowerCase().includes('edgaradmin') ||
+                    (member.role === 'SUPER_ADMIN' && member.name?.toLowerCase().includes('edgar')) ? (
+                      <div
+                        className="px-3 py-2 rounded-xl bg-neon/10 border border-neon/30 text-neon flex items-center gap-1.5 min-h-[44px] cursor-not-allowed select-none opacity-90"
+                        title="Cuenta Fundadora Maestra Inmutable (Protegida por Gobernanza WORM)"
+                      >
+                        <ShieldAlert className="w-3.5 h-3.5 text-neon" />
+                        <span className="text-[11px] font-bold">Protegido</span>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setDeleteModalStaff(member)}
+                        className="px-3 py-2 rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] hover:border-rose-500/50 hover:bg-rose-500/10 text-[var(--text-muted)] hover:text-rose-400 transition-all flex items-center gap-1.5 min-h-[44px]"
+                        title="Eliminar colaborador del equipo"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                        <span className="hidden sm:inline">Eliminar</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -686,26 +1074,57 @@ export const AgencyStaffView = () => {
                   )}
                 </div>
 
-                <div className="flex items-center justify-end gap-3 pt-4 border-t border-[var(--border-color)]">
+                <div className="flex items-center justify-between gap-3 pt-4 border-t border-[var(--border-color)]">
                   <button
                     type="button"
-                    onClick={() => setIsInviteModalOpen(false)}
-                    className="px-4 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-muted)] hover:text-white font-mono"
+                    onClick={handlePreviewInvite}
+                    className="px-3.5 py-2.5 rounded-xl bg-[var(--bg-card)] border border-cyan-500/30 text-cyan-400 hover:text-white hover:border-cyan-400 text-xs font-mono font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                    title="Previsualizar el formato HTML oficial que recibirá el colaborador"
                   >
-                    Cancelar
+                    <Eye className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>Previsualizar Correo</span>
                   </button>
-                  <button
-                    type="submit"
-                    className="px-5 py-2.5 rounded-xl bg-neon text-black font-mono font-bold text-xs hover:bg-[var(--neon-hover)] transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(195,244,0,0.3)]"
-                  >
-                    <Send className="w-4 h-4" />
-                    <span>Enviar Invitación</span>
-                  </button>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setIsInviteModalOpen(false)}
+                      className="px-4 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-muted)] hover:text-white font-mono cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-5 py-2.5 rounded-xl bg-neon text-black font-mono font-bold text-xs hover:bg-[var(--neon-hover)] transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(195,244,0,0.3)] cursor-pointer active:scale-95"
+                    >
+                      <Send className="w-4 h-4 text-black" />
+                      <span>Enviar Invitación</span>
+                    </button>
+                  </div>
                 </div>
               </form>
             </div>
           </div>
         </Portal>
+      )}
+
+      {/* MODAL: FICHA OFICIAL DE INVITACIÓN & PREVISUALIZACIÓN DE CORREO */}
+      {invitationModalData && (
+        <StaffInvitationModal
+          isOpen={Boolean(invitationModalData)}
+          onClose={() => setInvitationModalData(null)}
+          invitationData={invitationModalData}
+          onConfirmSend={handleConfirmFromModal}
+        />
+      )}
+
+      {/* MODAL: EDITAR TELÉFONO Y PERFIL EN POSTGRESQL */}
+      {editingStaffProfile && (
+        <EditStaffProfileModal
+          staffMember={editingStaffProfile}
+          onClose={() => setEditingStaffProfile(null)}
+          onSave={handleSaveStaffProfile}
+        />
       )}
 
       {/* MODAL: EDITAR NEGOCIOS ASIGNADOS */}
@@ -717,7 +1136,121 @@ export const AgencyStaffView = () => {
           onSave={handleSaveAssignedTenants}
         />
       )}
+
+      {/* MODAL: CONFIRMAR ELIMINACIÓN DE COLABORADOR */}
+      {deleteModalStaff && (
+        <DeleteStaffModal
+          staffMember={deleteModalStaff}
+          isDeleting={isDeletingStaff}
+          onConfirm={handleDeleteStaffConfirm}
+          onClose={() => {
+            if (!isDeletingStaff) setDeleteModalStaff(null);
+          }}
+        />
+      )}
     </div>
+  );
+};
+
+const EditStaffProfileModal = ({ staffMember, onClose, onSave }) => {
+  const [name, setName] = useState(staffMember.name || '');
+  const [phone, setPhone] = useState(
+    staffMember.phone === '+52 55 1234 5678' ? '' : (staffMember.phone || '')
+  );
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await onSave(staffMember.id, { name, phone });
+    } catch {
+      // handled in parent toast
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Portal>
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fade-in font-sans">
+        <div className="relative w-full max-w-md bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-3xl p-6 space-y-4 shadow-2xl animate-scale-up">
+          <div className="flex items-start justify-between border-b border-[var(--border-color)] pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-neon/15 text-neon">
+                <Phone className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-heading font-black text-[var(--text-main)]">
+                  Editar Teléfono & Perfil
+                </h3>
+                <p className="text-[11px] text-[var(--text-muted)] font-mono">
+                  {staffMember.email} • Actualización de contacto
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-white"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4 font-mono text-xs">
+            <div className="space-y-1.5">
+              <label className="block text-[11px] text-[var(--text-muted)] font-semibold uppercase tracking-wider">
+                Nombre Completo
+              </label>
+              <input
+                type="text"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-main)] focus:border-neon focus:outline-none"
+                placeholder="Ej. Edgar Lobo Vectorial"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-[11px] text-[var(--text-muted)] font-semibold uppercase tracking-wider">
+                Número Telefónico / WhatsApp (10 dígitos)
+              </label>
+              <input
+                type="tel"
+                maxLength={14}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-main)] focus:border-neon focus:outline-none"
+                placeholder="Ej. 55 1234 5678 (o déjalo vacío)"
+              />
+              <p className="text-[10px] text-[var(--text-muted)] font-sans">
+                Número telefónico normalizado a 10 dígitos (estándar México).
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-[var(--border-color)]">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-muted)] hover:text-white"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={saving}
+                className="px-4 py-2 rounded-xl bg-neon text-black font-mono font-bold text-xs hover:bg-[var(--neon-hover)] transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-60"
+              >
+                <Check className="w-3.5 h-3.5" />
+                <span>{saving ? 'Guardando...' : 'Guardar Cambios'}</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Portal>
   );
 };
 
@@ -815,6 +1348,94 @@ const EditAssignedTenantsModal = ({ staffMember, allTenants, onClose, onSave }) 
               </button>
             </div>
           </form>
+        </div>
+      </div>
+    </Portal>
+  );
+};
+
+// Componente Modal para confirmación de Eliminación de Colaborador (IAM Soft Delete)
+const DeleteStaffModal = ({ staffMember, isDeleting, onConfirm, onClose }) => {
+  if (!staffMember) return null;
+
+  return (
+    <Portal>
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fade-in font-sans">
+        <div className="relative w-full max-w-md bg-[var(--bg-panel)] border border-rose-500/30 rounded-3xl p-6 sm:p-7 space-y-5 shadow-2xl animate-scale-up">
+          {/* Header */}
+          <div className="flex items-start justify-between border-b border-[var(--border-color)] pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-2xl bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-heading font-black text-[var(--text-main)]">
+                  Eliminar Colaborador
+                </h3>
+                <p className="text-xs text-rose-400 font-mono">
+                  Revocación de Credenciales & Acceso IAM
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isDeleting}
+              className="p-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-white transition-colors disabled:opacity-50"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Member Card */}
+          <div className="p-3.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-3">
+            <span className="text-3xl p-2 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)]">
+              {staffMember.avatar || '💼'}
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-heading font-black text-[var(--text-main)] truncate">
+                {staffMember.name}
+              </div>
+              <div className="text-xs text-[var(--text-muted)] truncate">
+                {staffMember.email}
+              </div>
+              <div className="text-[10px] font-mono text-blue-400 mt-0.5">
+                {staffMember.roleLabel || staffMember.role}
+              </div>
+            </div>
+          </div>
+
+          {/* Security Alert Notice */}
+          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-sans space-y-1.5">
+            <div className="flex items-center gap-1.5 font-bold font-mono text-[11px] text-rose-400">
+              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+              <span>Acción de Seguridad IAM</span>
+            </div>
+            <p className="text-[11px] text-zinc-300 leading-relaxed">
+              Se revocarán inmediatamente todos los tokens JWT activos y se cancelarán los permisos en los negocios asignados. Por gobernanza y auditoría criptográfica, los registros de actividad histórica permanecerán preservados en la base de datos PostgreSQL 17.
+            </p>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-[var(--border-color)]">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isDeleting}
+              className="px-4 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-muted)] hover:text-white transition-colors disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={onConfirm}
+              disabled={isDeleting}
+              className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-mono font-bold text-xs transition-all shadow-sm flex items-center gap-1.5 cursor-pointer shadow-rose-900/30 disabled:opacity-50"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>{isDeleting ? 'Revocando...' : 'Revocar & Eliminar Miembro'}</span>
+            </button>
+          </div>
         </div>
       </div>
     </Portal>

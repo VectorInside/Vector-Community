@@ -21,6 +21,8 @@ import {
   KeyRound,
   ShieldCheck,
   User,
+  Phone,
+  Pencil,
 } from 'lucide-react';
 import { findModuleByPath } from '@/utils/modulesRegistry';
 import { ChangePasswordModal } from '@/components/common/ChangePasswordModal';
@@ -31,6 +33,9 @@ export const Header = () => {
   const pathname = usePathname();
   const {
     role,
+    currentUser,
+    logout,
+    updateCurrentUserProfile,
     isAdmin,
     activeTenantKey,
     activeTenant,
@@ -53,10 +58,47 @@ export const Header = () => {
   const [notifFilter, setNotifFilter] = useState('all'); // 'all' | 'unread'
   const notifRef = useRef(null);
 
-  // User Profile Menu & Password Management
+  // User Profile Menu, Phone/Name Edition & Password Management
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [editProfileName, setEditProfileName] = useState('');
+  const [editProfilePhone, setEditProfilePhone] = useState('');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileSaveMsg, setProfileSaveMsg] = useState('');
   const userMenuRef = useRef(null);
+
+  const handleOpenEditProfile = () => {
+    setEditProfileName(
+      currentUser?.name || (role === 'admin' ? 'Edgar Lobo Vectorial' : activeTenant?.name || 'Cliente')
+    );
+    setEditProfilePhone(
+      currentUser?.phone === '+52 55 1234 5678' ? '' : (currentUser?.phone || '')
+    );
+    setProfileSaveMsg('');
+    setIsEditProfileOpen(true);
+  };
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    setIsSavingProfile(true);
+    setProfileSaveMsg('');
+    try {
+      await updateCurrentUserProfile({
+        name: editProfileName.trim(),
+        phone: editProfilePhone.trim(),
+      });
+      setProfileSaveMsg('Perfil actualizado correctamente');
+      setTimeout(() => {
+        setIsEditProfileOpen(false);
+        setProfileSaveMsg('');
+      }, 900);
+    } catch (err) {
+      setProfileSaveMsg('Error de conexión con el servidor');
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
 
   // Global keyboard shortcut: Cmd+K / Ctrl+K
   useEffect(() => {
@@ -70,78 +112,22 @@ export const Header = () => {
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, []);
 
-  const INITIAL_CROSS_TENANT_NOTIFICATIONS = [
-    {
-      id: 'notif-pol-01',
-      tenantKey: 'polanco',
-      tenantName: 'Polanco Steakhouse',
-      tenantAvatar: '🥩',
-      channel: 'WhatsApp',
-      channelColor: 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10',
-      title: 'Reserva VIP Terraza (4 personas)',
-      sender: 'Alejandro Bastida',
-      snippet: 'Hola! Queremos reservar hoy a las 9pm en terraza para 4 personas, festejo de aniversario.',
-      time: 'Hace 3 min',
-      slaRemaining: 5,
-      threadId: 'pol-001',
-      isRead: false,
-    },
-    {
-      id: 'notif-dent-01',
-      tenantKey: 'dental',
-      tenantName: 'Odontología Integral',
-      tenantAvatar: '🦷',
-      channel: 'Instagram DM',
-      channelColor: 'border-pink-500/30 text-pink-400 bg-pink-500/10',
-      title: 'Valoración Implante Molar 3D',
-      sender: 'Dra. Mariana Solares',
-      snippet: 'Buenas tardes, me urge cita para valorar un implante con anestesia sin dolor.',
-      time: 'Hace 8 min',
-      slaRemaining: 8,
-      threadId: 'dent-002',
-      isRead: false,
-    },
-    {
-      id: 'notif-urb-01',
-      tenantKey: 'urban',
-      tenantName: 'Urban Sneaks',
-      tenantAvatar: '👟',
-      channel: 'WhatsApp',
-      channelColor: 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10',
-      title: 'Legit Check & Talla 27.5mx',
-      sender: 'Kevin Almonte',
-      snippet: 'Tienen disponible el Jordan 1 Retro High en 27.5mx? Es 100% original con factura?',
-      time: 'Hace 14 min',
-      slaRemaining: 12,
-      threadId: 'urb-001',
-      isRead: false,
-    },
-    {
-      id: 'notif-corp-01',
-      tenantKey: 'corp',
-      tenantName: 'Vector Enterprise',
-      tenantAvatar: '🏢',
-      channel: 'Facebook Messenger',
-      channelColor: 'border-blue-500/30 text-blue-400 bg-blue-500/10',
-      title: 'Auditoría Fuga de Leads B2B',
-      sender: 'Ing. Fernando Arteaga',
-      snippet: 'Quisiéramos agendar la sesión de diagnóstico técnico con un Arquitecto Senior.',
-      time: 'Hace 22 min',
-      slaRemaining: 18,
-      threadId: 'corp-001',
-      isRead: true,
-    },
-  ];
+  const INITIAL_CROSS_TENANT_NOTIFICATIONS = [];
 
-  const [notifications, setNotifications] = useState(() => {
+  const [notifications, setNotifications] = useState(INITIAL_CROSS_TENANT_NOTIFICATIONS);
+  const [isHeaderMounted, setIsHeaderMounted] = useState(false);
+
+  useEffect(() => {
+    setIsHeaderMounted(true);
     if (typeof window !== 'undefined') {
       try {
         const saved = localStorage.getItem('vector_global_notifications');
-        if (saved) return JSON.parse(saved);
-      } catch (e) {}
+        if (saved) {
+          setNotifications(JSON.parse(saved));
+        }
+      } catch (e) { }
     }
-    return INITIAL_CROSS_TENANT_NOTIFICATIONS;
-  });
+  }, []);
 
   const targetTenantKey = activeTenantKey || activeTenant?.id;
 
@@ -169,7 +155,7 @@ export const Header = () => {
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem('vector_global_notifications', JSON.stringify(updated));
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // 2. Switch Tenant Context (Solo si es administrador de agencia)
@@ -188,7 +174,7 @@ export const Header = () => {
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem('vector_global_notifications', JSON.stringify(updated));
-      } catch (e) {}
+      } catch (e) { }
     }
   };
 
@@ -274,21 +260,19 @@ export const Header = () => {
               <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className={`flex items-center gap-2 px-2.5 py-1 rounded-xl bg-[var(--bg-base)] border text-xs font-mono font-bold transition-all ${
-                  isOpen
-                    ? 'border-lime-400 ring-1 ring-lime-400/40 shadow-sm text-[var(--text-main)]'
-                    : 'border-[var(--border-color)] hover:border-lime-400 text-[var(--text-main)]'
-                }`}
+                className={`flex items-center gap-2 px-2.5 py-1 rounded-xl bg-[var(--bg-base)] border text-xs font-mono font-bold transition-all ${isOpen
+                  ? 'border-lime-400 ring-1 ring-lime-400/40 shadow-sm text-[var(--text-main)]'
+                  : 'border-[var(--border-color)] hover:border-lime-400 text-[var(--text-main)]'
+                  }`}
                 title="Cambiar espacio de negocio"
               >
-                <span className="text-sm leading-none">{activeTenant?.avatar || '🏢'}</span>
-                <span className="max-w-[120px] sm:max-w-[170px] truncate text-[var(--text-main)] font-semibold">
+                <span className="text-sm leading-none" suppressHydrationWarning>{activeTenant?.avatar || '🏢'}</span>
+                <span className="max-w-[120px] sm:max-w-[170px] truncate text-[var(--text-main)] font-semibold" suppressHydrationWarning>
                   {activeTenant?.name || 'Seleccionar Negocio'}
                 </span>
                 <ChevronDown
-                  className={`w-3.5 h-3.5 text-[var(--text-muted)] transition-transform duration-200 ${
-                    isOpen ? 'rotate-180 text-lime-400' : ''
-                  }`}
+                  className={`w-3.5 h-3.5 text-[var(--text-muted)] transition-transform duration-200 ${isOpen ? 'rotate-180 text-lime-400' : ''
+                    }`}
                 />
               </button>
 
@@ -329,11 +313,10 @@ export const Header = () => {
                           key={t.id}
                           type="button"
                           onClick={() => handleSelectTenant(t.id)}
-                          className={`w-full text-left p-2 rounded-xl text-xs font-mono flex items-center justify-between gap-2 transition-all ${
-                            isSelected
-                              ? 'bg-lime-400/15 text-[var(--text-main)] font-bold border border-lime-400/40 shadow-sm'
-                              : 'text-[var(--text-muted)] hover:bg-[var(--bg-card-subtle)] hover:text-[var(--text-main)] border border-transparent'
-                          }`}
+                          className={`w-full text-left p-2 rounded-xl text-xs font-mono flex items-center justify-between gap-2 transition-all ${isSelected
+                            ? 'bg-lime-400/15 text-[var(--text-main)] font-bold border border-lime-400/40 shadow-sm'
+                            : 'text-[var(--text-muted)] hover:bg-[var(--bg-card-subtle)] hover:text-[var(--text-main)] border border-transparent'
+                            }`}
                         >
                           <div className="flex items-center gap-2.5 truncate">
                             <span className="text-base shrink-0">{t.avatar || '🏢'}</span>
@@ -380,8 +363,8 @@ export const Header = () => {
             </div>
           ) : (
             <div className="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] text-xs font-bold text-[var(--text-main)]">
-              <span>{activeTenant?.avatar}</span>
-              <span className="truncate max-w-[140px]">{activeTenant?.name}</span>
+              <span suppressHydrationWarning>{activeTenant?.avatar}</span>
+              <span className="truncate max-w-[140px]" suppressHydrationWarning>{activeTenant?.name}</span>
             </div>
           )}
         </div>
@@ -420,20 +403,22 @@ export const Header = () => {
               type="button"
               onClick={() => setIsNotifOpen((prev) => !prev)}
               title={`${unreadCount} notificaciones sin atender`}
-              className={`p-2 rounded-xl bg-[var(--bg-base)] border transition-all relative ${
-                isNotifOpen
-                  ? 'border-lime-400 ring-1 ring-lime-400/40 text-lime-400 shadow-sm'
-                  : 'border-[var(--border-color)] hover:border-lime-400 text-[var(--text-muted)] hover:text-lime-400'
-              }`}
+              className={`p-2 rounded-xl bg-[var(--bg-base)] border transition-all relative ${isNotifOpen
+                ? 'border-lime-400 ring-1 ring-lime-400/40 text-lime-400 shadow-sm'
+                : 'border-[var(--border-color)] hover:border-lime-400 text-[var(--text-muted)] hover:text-lime-400'
+                }`}
             >
               <Bell className="w-4 h-4" />
-              {unreadCount > 0 ? (
-                <span className="absolute -top-1 -right-1 px-1.5 min-w-[18px] h-[18px] rounded-full text-[9px] font-mono font-black bg-lime-400 text-black flex items-center justify-center shadow-[0_0_8px_rgba(200,255,0,0.5)] animate-pulse">
+              {isHeaderMounted && unreadCount > 0 ? (
+                <span
+                  suppressHydrationWarning
+                  className="absolute -top-1 -right-1 px-1.5 min-w-[18px] h-[18px] rounded-full text-[9px] font-mono font-black bg-lime-400 text-black flex items-center justify-center shadow-[0_0_8px_rgba(200,255,0,0.5)] animate-pulse"
+                >
                   {unreadCount}
                 </span>
-              ) : (
-                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              )}
+              ) : isHeaderMounted ? (
+                <span suppressHydrationWarning className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              ) : null}
             </button>
 
             {/* Notification Popover Dropdown */}
@@ -468,24 +453,22 @@ export const Header = () => {
                   <button
                     type="button"
                     onClick={() => setNotifFilter('all')}
-                    className={`px-2 py-0.5 rounded-md font-bold transition-all ${
-                      notifFilter === 'all'
-                        ? 'bg-lime-400 text-black'
-                        : 'bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
-                    }`}
+                    className={`px-2 py-0.5 rounded-md font-bold transition-all ${notifFilter === 'all'
+                      ? 'bg-lime-400 text-black'
+                      : 'bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                      }`}
                   >
-                    Todas ({notifications.length})
+                    <span suppressHydrationWarning>Todas ({notifications.length})</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setNotifFilter('unread')}
-                    className={`px-2 py-0.5 rounded-md font-bold transition-all ${
-                      notifFilter === 'unread'
-                        ? 'bg-lime-400 text-black'
-                        : 'bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
-                    }`}
+                    className={`px-2 py-0.5 rounded-md font-bold transition-all ${notifFilter === 'unread'
+                      ? 'bg-lime-400 text-black'
+                      : 'bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                      }`}
                   >
-                    Sin leer ({unreadCount})
+                    <span suppressHydrationWarning>Sin leer ({unreadCount})</span>
                   </button>
                   <span className="text-[10px] font-mono text-[var(--text-faint)] ml-auto">
                     {isAdmin ? 'Cross-Tenant' : 'Espacio Aislado'}
@@ -504,11 +487,10 @@ export const Header = () => {
                         key={notif.id}
                         type="button"
                         onClick={() => handleSelectNotification(notif)}
-                        className={`w-full text-left p-2.5 rounded-xl transition-all flex items-start gap-2.5 pt-2.5 ${
-                          notif.isRead
-                            ? 'hover:bg-[var(--bg-card)]/50 opacity-75'
-                            : 'bg-[var(--bg-card)]/80 hover:bg-[var(--bg-card)] border border-lime-400/20'
-                        }`}
+                        className={`w-full text-left p-2.5 rounded-xl transition-all flex items-start gap-2.5 pt-2.5 ${notif.isRead
+                          ? 'hover:bg-[var(--bg-card)]/50 opacity-75'
+                          : 'bg-[var(--bg-card)]/80 hover:bg-[var(--bg-card)] border border-lime-400/20'
+                          }`}
                       >
                         {/* Tenant Avatar */}
                         <div className="w-8 h-8 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] flex items-center justify-center text-base shrink-0 mt-0.5">
@@ -557,7 +539,7 @@ export const Header = () => {
                 {/* Footer Quick Action */}
                 <div className="pt-2 border-t border-[var(--border-color)] flex items-center justify-between">
                   <span className="text-[10px] font-mono text-[var(--text-faint)]">
-                    Espacio actual: <strong className="text-[var(--text-main)]">{activeTenant?.shortName || activeTenant?.name}</strong>
+                    Espacio actual: <strong className="text-[var(--text-main)]">{activeTenant?.shortName || activeTenant?.name || 'Sin negocio seleccionado'}</strong>
                   </span>
                   <button
                     type="button"
@@ -581,11 +563,10 @@ export const Header = () => {
               type="button"
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
               title={`Perfil actual: ${role === 'admin' ? 'Administrador' : 'Usuario'} - Haz clic para ver opciones`}
-              className={`w-8 h-8 rounded-xl border flex items-center justify-center font-mono font-black text-xs shrink-0 transition-all cursor-pointer ${
-                isUserMenuOpen
-                  ? 'bg-lime-400 text-black border-lime-400 shadow-neon-sm ring-2 ring-lime-400/30'
-                  : 'bg-[var(--bg-card)] border-[var(--border-color)] text-lime-400 hover:border-lime-400/60 hover:bg-[var(--bg-panel)]'
-              }`}
+              className={`w-8 h-8 rounded-xl border flex items-center justify-center font-mono font-black text-xs shrink-0 transition-all cursor-pointer ${isUserMenuOpen
+                ? 'bg-lime-400 text-black border-lime-400 shadow-neon-sm ring-2 ring-lime-400/30'
+                : 'bg-[var(--bg-card)] border-[var(--border-color)] text-lime-400 hover:border-lime-400/60 hover:bg-[var(--bg-panel)]'
+                }`}
             >
               {role === 'admin' ? 'VI' : 'CL'}
             </button>
@@ -594,31 +575,130 @@ export const Header = () => {
             {isUserMenuOpen && (
               <div className="absolute right-0 top-10 w-72 sm:w-80 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] shadow-2xl p-3 z-50 animate-scale-up space-y-3 font-sans">
                 {/* User Identity Header */}
-                <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-lime-400/15 border border-lime-400/30 flex items-center justify-center font-mono font-black text-sm text-lime-400 shadow-neon-sm shrink-0">
-                    {role === 'admin' ? 'VI' : 'CL'}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-bold text-[var(--text-main)] truncate">
-                        {role === 'admin' ? 'Agencia Vector Inside' : (activeTenant?.shortName || activeTenant?.name || 'Cliente')}
-                      </span>
-                      <span className="text-[9px] font-mono px-1.5 py-0.5 bg-lime-400/10 text-lime-400 border border-lime-400/20 rounded font-semibold uppercase shrink-0">
-                        {role === 'admin' ? 'Admin' : 'Cliente'}
-                      </span>
+                <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-lime-400/15 border border-lime-400/30 flex items-center justify-center font-mono font-black text-sm text-lime-400 shadow-neon-sm shrink-0">
+                      {role === 'admin' ? 'VI' : 'CL'}
                     </div>
-                    <p className="text-[11px] font-mono text-[var(--text-muted)] truncate">
-                      {role === 'admin' ? 'operaciones@vectorinside.com' : `gerencia@${activeTenant?.id || 'negocio'}.mx`}
-                    </p>
-                    <p className="text-[10px] text-[var(--text-faint)] flex items-center gap-1 mt-0.5">
-                      <span>Espacio:</span>
-                      <strong className="text-[var(--text-main)] truncate">{activeTenant?.name}</strong>
-                    </p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-bold text-[var(--text-main)] truncate">
+                          {currentUser?.name ||
+                            (role === 'admin'
+                              ? 'Edgar Lobo Vectorial'
+                              : activeTenant?.shortName || activeTenant?.name || 'Cliente')}
+                        </span>
+                        <span className="text-[9px] font-mono px-1.5 py-0.5 bg-lime-400/10 text-lime-400 border border-lime-400/20 rounded font-semibold uppercase shrink-0">
+                          {role === 'admin' ? 'Admin' : 'Cliente'}
+                        </span>
+                      </div>
+                      <p className="text-[11px] font-mono text-[var(--text-muted)] truncate">
+                        {currentUser?.email ||
+                          (role === 'admin'
+                            ? 'Edgaradmin@vectorinside.com'
+                            : `gerencia@${activeTenant?.id || 'negocio'}.mx`)}
+                      </p>
+                      <div className="flex items-center justify-between gap-1 mt-0.5">
+                        <span className="text-[10px] font-mono text-[var(--text-faint)] flex items-center gap-1 truncate">
+                          <Phone className="w-2.5 h-2.5 text-lime-400 shrink-0" />
+                          <span>
+                            {currentUser?.phone && currentUser.phone !== '+52 55 1234 5678'
+                              ? currentUser.phone
+                              : 'Sin teléfono registrado'}
+                          </span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleOpenEditProfile}
+                          className="text-[10px] font-mono text-lime-400 hover:underline flex items-center gap-0.5 shrink-0 cursor-pointer"
+                        >
+                          <Pencil className="w-2.5 h-2.5" />
+                          <span>Editar</span>
+                        </button>
+                      </div>
+                      <p className="text-[10px] text-[var(--text-faint)] flex items-center gap-1 mt-0.5">
+                        <span>Espacio:</span>
+                        <strong className="text-[var(--text-main)] truncate">
+                          {activeTenant?.name || 'Sin negocio seleccionado'}
+                        </strong>
+                      </p>
+                    </div>
                   </div>
+
+                  {/* Inline Editor for Profile & Phone in PostgreSQL */}
+                  {isEditProfileOpen && (
+                    <form
+                      onSubmit={handleSaveProfile}
+                      className="pt-2 border-t border-[var(--border-color)] space-y-2 font-mono text-xs"
+                    >
+                      <div>
+                        <label className="block text-[10px] text-[var(--text-muted)] mb-0.5">
+                          Nombre Completo
+                        </label>
+                        <input
+                          type="text"
+                          value={editProfileName}
+                          onChange={(e) => setEditProfileName(e.target.value)}
+                          placeholder="Tu nombre completo"
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-[var(--bg-base)] border border-[var(--border-color)] text-xs text-[var(--text-main)] focus:border-lime-400 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-[var(--text-muted)] mb-0.5">
+                          Teléfono / WhatsApp Real
+                        </label>
+                        <input
+                          type="tel"
+                          value={editProfilePhone}
+                          onChange={(e) => setEditProfilePhone(e.target.value)}
+                          placeholder="Ej: +52 55 8899 0011 (o vacío)"
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-[var(--bg-base)] border border-[var(--border-color)] text-xs text-[var(--text-main)] focus:border-lime-400 focus:outline-none"
+                        />
+                      </div>
+                      {profileSaveMsg && (
+                        <p className="text-[10px] text-lime-400 font-bold">{profileSaveMsg}</p>
+                      )}
+                      <div className="flex items-center justify-end gap-1.5 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setIsEditProfileOpen(false)}
+                          className="px-2.5 py-1 rounded-lg bg-[var(--bg-base)] border border-[var(--border-color)] text-[10px] text-[var(--text-muted)] hover:text-white cursor-pointer"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={isSavingProfile}
+                          className="px-2.5 py-1 rounded-lg bg-lime-400 text-black font-bold text-[10px] hover:brightness-110 cursor-pointer disabled:opacity-60"
+                        >
+                          {isSavingProfile ? 'Guardando...' : 'Guardar'}
+                        </button>
+                      </div>
+                    </form>
+                  )}
                 </div>
 
                 {/* Actions Section */}
                 <div className="space-y-1">
+                  {/* Editar Teléfono y Perfil */}
+                  <button
+                    type="button"
+                    onClick={handleOpenEditProfile}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-mono text-[var(--text-main)] hover:bg-[var(--bg-card)] hover:text-lime-400 transition-colors cursor-pointer group text-left"
+                  >
+                    <div className="w-6 h-6 rounded-lg bg-lime-400/10 border border-lime-400/20 flex items-center justify-center text-lime-400 group-hover:bg-lime-400 group-hover:text-black transition-colors shrink-0">
+                      <Phone className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold">Editar Teléfono & Perfil</div>
+                      <div className="text-[10px] text-[var(--text-muted)] truncate">
+                        {currentUser?.phone && currentUser.phone !== '+52 55 1234 5678'
+                          ? `Actual: ${currentUser.phone}`
+                          : 'Configurar número de contacto'}
+                      </div>
+                    </div>
+                  </button>
+
                   {/* Cambiar Contraseña */}
                   <button
                     type="button"
@@ -691,7 +771,7 @@ export const Header = () => {
                 {/* Security Badge */}
                 <div className="px-3 py-2 rounded-xl bg-emerald-500/5 border border-emerald-500/20 flex items-center gap-2 text-[10px] font-mono text-emerald-400">
                   <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
-                  <span className="leading-tight">Sesión cifrada con JWT multi-tenant activo</span>
+                  <span className="leading-tight">Sesión activa y protegida</span>
                 </div>
 
                 {/* Logout Divider */}
@@ -700,6 +780,7 @@ export const Header = () => {
                     type="button"
                     onClick={() => {
                       setIsUserMenuOpen(false);
+                      logout();
                       router.push('/login');
                     }}
                     className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-mono font-bold transition-all cursor-pointer"
@@ -715,7 +796,10 @@ export const Header = () => {
           {/* Logout Direct Button */}
           <button
             type="button"
-            onClick={() => router.push('/login')}
+            onClick={() => {
+              logout();
+              router.push('/login');
+            }}
             title="Cerrar Sesión"
             className="p-2 rounded-xl bg-[var(--bg-base)] hover:bg-rose-500/10 border border-[var(--border-color)] hover:border-rose-500/40 text-[var(--text-muted)] hover:text-rose-500 transition-colors"
           >
@@ -728,8 +812,8 @@ export const Header = () => {
       <ChangePasswordModal
         isOpen={isChangePasswordOpen}
         onClose={() => setIsChangePasswordOpen(false)}
-        userEmail={role === 'admin' ? 'operaciones@vectorinside.com' : `gerencia@${activeTenant?.id || 'negocio'}.mx`}
-        userName={role === 'admin' ? 'Agencia Vector Inside' : (activeTenant?.shortName || activeTenant?.name || 'Cliente')}
+        userEmail={role === 'admin' ? 'Edgaradmin@vectorinside.com' : `gerencia@${activeTenant?.id || 'negocio'}.mx`}
+        userName={role === 'admin' ? 'Edgar Lobo Vectorial' : (activeTenant?.shortName || activeTenant?.name || 'Cliente')}
       />
 
       {/* Global Command Palette Modal (⌘ K / Ctrl+K) */}
@@ -738,12 +822,12 @@ export const Header = () => {
         onClose={() => setIsCommandPaletteOpen(false)}
       />
 
-      {/* Demo Status Bar - UX/UI Principle: Never simulate fake real success */}
+      {/* Operational Status Bar */}
       <div className="flex items-center justify-between text-[10px] font-mono text-[var(--text-faint)] pt-1 border-t border-[var(--border-color)]/60">
         <div className="flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-lime-400" />
-          <span className="text-[var(--text-muted)] font-semibold">PROTOTIPO OPERATIVO</span>
-          <span className="hidden sm:inline">· Datos demostrativos de Vector Inside</span>
+          <span className="text-[var(--text-muted)] font-semibold">SISTEMA OPERATIVO ACTIVO</span>
+          <span className="hidden sm:inline">· Vector Inside OS</span>
         </div>
         <div className="text-[var(--text-faint)]">
           MXN · Ciudad de México

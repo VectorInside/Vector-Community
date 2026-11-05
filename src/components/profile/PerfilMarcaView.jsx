@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import {
   resolveBrandPreset,
@@ -8,6 +8,7 @@ import {
   QUICK_TONE_TEMPLATES,
   BRAND_AVATAR_PRESETS,
 } from '@/utils/brandPresets';
+import { normalizePhone10, formatPhoneDisplay } from '@/utils/formatters';
 import {
   Sparkles,
   Clock,
@@ -76,6 +77,21 @@ export const PerfilMarcaView = () => {
   const [inviolableRules, setInviolableRules] = useState([]);
   const [newRuleInput, setNewRuleInput] = useState('');
 
+  // Buyer Persona
+  const [buyerName, setBuyerName] = useState('');
+  const [buyerAgeRange, setBuyerAgeRange] = useState('');
+  const [buyerMaritalStatus, setBuyerMaritalStatus] = useState('');
+  const [buyerLocation, setBuyerLocation] = useState('');
+  const [buyerHabits, setBuyerHabits] = useState('');
+  const [buyerPainPoint, setBuyerPainPoint] = useState('');
+  const [buyerBuyingTrigger, setBuyerBuyingTrigger] = useState('');
+
+  // Marketing Mix 4 Ps
+  const [mixProduct, setMixProduct] = useState('');
+  const [mixPrice, setMixPrice] = useState('');
+  const [mixPlace, setMixPlace] = useState('');
+  const [mixPromotion, setMixPromotion] = useState('');
+
   // Categoría activa de selector de avatar
   const [selectedAvatarCategory, setSelectedAvatarCategory] = useState(0);
 
@@ -118,13 +134,57 @@ export const PerfilMarcaView = () => {
             ]
       );
 
+      // Buyer Persona & Marketing Mix (4 Ps)
+      setBuyerName(activeTenant.buyerPersona?.name || '');
+      setBuyerAgeRange(activeTenant.buyerPersona?.ageRange || '');
+      setBuyerMaritalStatus(activeTenant.buyerPersona?.maritalStatus || '');
+      setBuyerLocation(activeTenant.buyerPersona?.location || '');
+      setBuyerHabits(activeTenant.buyerPersona?.digitalHabits || '');
+      setBuyerPainPoint(activeTenant.buyerPersona?.mainPainPoint || '');
+      setBuyerBuyingTrigger(activeTenant.buyerPersona?.buyingTrigger || '');
+
+      setMixProduct(activeTenant.marketingMix4P?.product || '');
+      setMixPrice(activeTenant.marketingMix4P?.price || '');
+      setMixPlace(activeTenant.marketingMix4P?.place || '');
+      setMixPromotion(activeTenant.marketingMix4P?.promotion || '');
+
+      setIsDirty(false);
+    } else {
+      setBrandPurpose('');
+      setToneOfVoice('');
+      setEmojiPolicy('Moderado (según contexto)');
+      setSlaTarget(15);
+      setBrandColors([]);
+      setCustomAvatar('🏢');
+      setOwnerPhone('');
+      setOfferHook('');
+      setOfferCta('');
+      setOfferValidity('');
+      setInviolableRules([]);
+      setBuyerName('');
+      setBuyerAgeRange('');
+      setBuyerMaritalStatus('');
+      setBuyerLocation('');
+      setBuyerHabits('');
+      setBuyerPainPoint('');
+      setBuyerBuyingTrigger('');
+      setMixProduct('');
+      setMixPrice('');
+      setMixPlace('');
+      setMixPromotion('');
       setIsDirty(false);
     }
   }, [activeTenantKey, activeTenant, currentPreset]);
 
   // Manejador de guardado persistente
-  const handleSave = (e) => {
+  const handleSave = useCallback((e) => {
     if (e && e.preventDefault) e.preventDefault();
+    const cleanPhone = normalizePhone10(ownerPhone);
+    if (ownerPhone && ownerPhone.trim() && cleanPhone.length !== 10) {
+      alert('El teléfono de escalación humana debe contener exactamente 10 dígitos numéricos (ej. 55 1234 5678).');
+      return;
+    }
+
     if (updateTenantPolicy && (activeTenantKey || activeTenant?.id)) {
       const targetKey = activeTenantKey || activeTenant?.id;
       updateTenantPolicy(targetKey, {
@@ -134,7 +194,7 @@ export const PerfilMarcaView = () => {
         slaTarget,
         brandColors,
         avatar: customAvatar,
-        phone: ownerPhone,
+        phone: cleanPhone || '',
         commercialOffer: {
           ...(activeTenant?.commercialOffer || {}),
           hook: offerHook,
@@ -142,13 +202,54 @@ export const PerfilMarcaView = () => {
           validity: offerValidity,
         },
         inviolableRules,
+        buyerPersona: {
+          name: buyerName,
+          ageRange: buyerAgeRange,
+          maritalStatus: buyerMaritalStatus,
+          location: buyerLocation,
+          digitalHabits: buyerHabits,
+          mainPainPoint: buyerPainPoint,
+          buyingTrigger: buyerBuyingTrigger,
+        },
+        marketingMix4P: {
+          product: mixProduct,
+          price: mixPrice,
+          place: mixPlace,
+          promotion: mixPromotion,
+        },
       });
 
       setIsDirty(false);
       setSavedNotification(true);
       setTimeout(() => setSavedNotification(false), 4000);
     }
-  };
+  }, [
+    updateTenantPolicy,
+    activeTenantKey,
+    activeTenant,
+    brandPurpose,
+    toneOfVoice,
+    emojiPolicy,
+    slaTarget,
+    brandColors,
+    customAvatar,
+    ownerPhone,
+    offerHook,
+    offerCta,
+    offerValidity,
+    inviolableRules,
+    buyerName,
+    buyerAgeRange,
+    buyerMaritalStatus,
+    buyerLocation,
+    buyerHabits,
+    buyerPainPoint,
+    buyerBuyingTrigger,
+    mixProduct,
+    mixPrice,
+    mixPlace,
+    mixPromotion,
+  ]);
 
   // Manejador de atajo de teclado Ctrl+S / Cmd+S para guardar
   useEffect(() => {
@@ -160,7 +261,7 @@ export const PerfilMarcaView = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [brandPurpose, toneOfVoice, emojiPolicy, slaTarget, brandColors, customAvatar, ownerPhone, offerHook, offerCta, offerValidity, inviolableRules]);
+  }, [handleSave]);
 
   // Cambiar color individual en paleta
   const handleColorChange = (index, newHex) => {
@@ -222,9 +323,9 @@ export const PerfilMarcaView = () => {
               IDENTIDAD & ADN DE MARCA
             </span>
             <span className="text-xs text-[var(--text-muted)] font-mono flex items-center gap-1.5">
-              <span>{currentPreset.canonicalId || 'V00'}</span>
+              <span>{activeTenant ? currentPreset.canonicalId || 'V00' : 'V00'}</span>
               <span>•</span>
-              <span>{activeTenant?.giro || activeTenant?.verticalLabel || 'Servicios Profesionales'}</span>
+              <span>{activeTenant?.giro || activeTenant?.verticalLabel || 'Selecciona un negocio'}</span>
             </span>
             <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-bold flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -794,14 +895,197 @@ export const PerfilMarcaView = () => {
         </div>
 
         {/* =================================================================== */}
-        {/* SECCIÓN 5: POLÍTICA DE CONTACTABILIDAD & SLA DE ATENCIÓN            */}
+        {/* SECCIÓN 5: DELIMITACIÓN DEL BUYER PERSONA & MARKETING MIX (4 Ps)    */}
+        {/* =================================================================== */}
+        <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-6 shadow-sm font-sans">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[var(--border-color)] pb-3 gap-2">
+            <div className="flex items-center gap-2">
+              <Target className="w-5 h-5 text-neon" />
+              <div>
+                <h3 className="font-heading font-black text-sm text-[var(--text-main)] uppercase tracking-wide">
+                  5. Delimitación del Buyer Persona & Marketing Mix (4 Ps)
+                </h3>
+                <span className="text-[10px] text-[var(--text-muted)] font-mono">
+                  Extraído del manual de identidad para alimentar el bot y los copys de venta
+                </span>
+              </div>
+            </div>
+            <span className="px-2.5 py-0.5 rounded-full bg-neon/10 text-neon font-mono text-[10px] font-bold border border-neon/20 self-start sm:self-auto">
+              Auditoría BANT & AIDA
+            </span>
+          </div>
+
+          {/* Formulario del Buyer Persona */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-xs font-mono font-bold text-neon uppercase">
+              <span>🎯 Perfil Demográfico & Psicográfico</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 text-xs font-sans">
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-[var(--text-muted)]">Nombre del Arquetipo</label>
+                <input
+                  type="text"
+                  value={buyerName}
+                  onChange={(e) => {
+                    setBuyerName(e.target.value);
+                    setIsDirty(true);
+                  }}
+                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-[var(--text-muted)]">Rango de Edad</label>
+                <input
+                  type="text"
+                  value={buyerAgeRange}
+                  onChange={(e) => {
+                    setBuyerAgeRange(e.target.value);
+                    setIsDirty(true);
+                  }}
+                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-[var(--text-muted)]">Estado Civil & Entorno</label>
+                <input
+                  type="text"
+                  value={buyerMaritalStatus}
+                  onChange={(e) => {
+                    setBuyerMaritalStatus(e.target.value);
+                    setIsDirty(true);
+                  }}
+                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs"
+                />
+              </div>
+
+              <div className="space-y-1 sm:col-span-2 lg:col-span-3">
+                <label className="text-[11px] font-bold text-[var(--text-muted)]">Geolocalización & Códigos Postales Prioritarios</label>
+                <input
+                  type="text"
+                  value={buyerLocation}
+                  onChange={(e) => {
+                    setBuyerLocation(e.target.value);
+                    setIsDirty(true);
+                  }}
+                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs"
+                />
+              </div>
+
+              <div className="space-y-1 sm:col-span-2 lg:col-span-3">
+                <label className="text-[11px] font-bold text-[var(--text-muted)]">Hábitos Digitales & Canales de Consumo</label>
+                <input
+                  type="text"
+                  value={buyerHabits}
+                  onChange={(e) => {
+                    setBuyerHabits(e.target.value);
+                    setIsDirty(true);
+                  }}
+                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs"
+                />
+              </div>
+
+              <div className="space-y-1 sm:col-span-1 lg:col-span-1.5">
+                <label className="text-[11px] font-bold text-amber-400">Dolor Principal (Struggling Moment)</label>
+                <textarea
+                  rows={2}
+                  value={buyerPainPoint}
+                  onChange={(e) => {
+                    setBuyerPainPoint(e.target.value);
+                    setIsDirty(true);
+                  }}
+                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-amber-500/30 text-[var(--text-main)] focus:border-amber-400 outline-none text-xs leading-relaxed"
+                />
+              </div>
+
+              <div className="space-y-1 sm:col-span-1 lg:col-span-1.5">
+                <label className="text-[11px] font-bold text-emerald-400">Disparador de Compra (Gancho Irresistible)</label>
+                <textarea
+                  rows={2}
+                  value={buyerBuyingTrigger}
+                  onChange={(e) => {
+                    setBuyerBuyingTrigger(e.target.value);
+                    setIsDirty(true);
+                  }}
+                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-emerald-500/30 text-[var(--text-main)] focus:border-emerald-400 outline-none text-xs leading-relaxed"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Formulario del Marketing Mix (4 Ps) */}
+          <div className="space-y-4 pt-3 border-t border-[var(--border-color)]">
+            <div className="flex items-center gap-2 text-xs font-mono font-bold text-cyan-400 uppercase">
+              <span>📦 Estructura del Marketing Mix (4 Ps Oficiales)</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs font-sans">
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-[var(--text-muted)]">1. PRODUCTO (Propuesta de Valor & Alcance)</label>
+                <textarea
+                  rows={2}
+                  value={mixProduct}
+                  onChange={(e) => {
+                    setMixProduct(e.target.value);
+                    setIsDirty(true);
+                  }}
+                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs leading-relaxed"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-[var(--text-muted)]">2. PRECIO (Aranceles, Rangos & MSI)</label>
+                <textarea
+                  rows={2}
+                  value={mixPrice}
+                  onChange={(e) => {
+                    setMixPrice(e.target.value);
+                    setIsDirty(true);
+                  }}
+                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs leading-relaxed"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-[var(--text-muted)]">3. PLAZA (Canales de Entrega & Locaciones)</label>
+                <textarea
+                  rows={2}
+                  value={mixPlace}
+                  onChange={(e) => {
+                    setMixPlace(e.target.value);
+                    setIsDirty(true);
+                  }}
+                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs leading-relaxed"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-[var(--text-muted)]">4. PROMOCIÓN (Ofertas del Mes, Cupones & 2x1)</label>
+                <textarea
+                  rows={2}
+                  value={mixPromotion}
+                  onChange={(e) => {
+                    setMixPromotion(e.target.value);
+                    setIsDirty(true);
+                  }}
+                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs leading-relaxed"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* =================================================================== */}
+        {/* SECCIÓN 6: POLÍTICA DE CONTACTABILIDAD & SLA DE ATENCIÓN            */}
         {/* =================================================================== */}
         <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-4 shadow-sm">
           <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-neon" />
               <h3 className="font-heading font-black text-sm text-[var(--text-main)] uppercase tracking-wide">
-                5. Contactabilidad, SLA & Teléfono HITL
+                6. Contactabilidad, SLA & Atención Humana
               </h3>
             </div>
             <span className="text-[10px] font-mono text-neon font-bold bg-neon/10 px-2.5 py-0.5 rounded border border-neon/20">
@@ -814,21 +1098,22 @@ export const PerfilMarcaView = () => {
               {/* Teléfono de Escalación Humana */}
               <div>
                 <label className="font-mono text-[10px] text-[var(--text-muted)] uppercase font-bold block mb-1">
-                  Teléfono / WhatsApp de Escalación Humana (HITL) *
+                  Teléfono / WhatsApp de Escalación Humana (10 dígitos) *
                 </label>
                 <input
-                  type="text"
+                  type="tel"
+                  maxLength={14}
                   required
                   value={ownerPhone}
                   onChange={(e) => {
                     setOwnerPhone(e.target.value);
                     setIsDirty(true);
                   }}
-                  placeholder="+52 55 1234 5678"
+                  placeholder="55 1234 5678 (10 dígitos)"
                   className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none font-mono text-xs"
                 />
                 <span className="text-[9px] font-mono text-[var(--text-muted)] mt-1 block">
-                  A este número se transfieren emergencias médicas, quejas de clientes o prospectos que solicitan hablar con un humano.
+                  Ingresa 10 dígitos locales. A este número se transfieren emergencias médicas, quejas de clientes o prospectos que solicitan hablar con un humano.
                 </span>
               </div>
 
@@ -901,14 +1186,14 @@ export const PerfilMarcaView = () => {
           </div>
         </div>
         {/* =================================================================== */}
-        {/* SECCIÓN 6: CANALES OFICIALES CONECTADOS                             */}
+        {/* SECCIÓN 7: CANALES OFICIALES CONECTADOS                             */}
         {/* =================================================================== */}
         <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-3 shadow-sm">
           <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
             <div className="flex items-center gap-2">
               <Share2 className="w-4 h-4 text-neon" />
               <h3 className="font-heading font-black text-sm text-[var(--text-main)] uppercase tracking-wide">
-                6. Canales Oficiales del Negocio
+                7. Canales Oficiales del Negocio
               </h3>
             </div>
             <span className="text-[10px] font-mono text-[var(--text-muted)]">

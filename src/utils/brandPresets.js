@@ -310,51 +310,6 @@ export const TENANT_BRAND_PRESETS = {
     defaultPurpose: 'Entretener, inspirar y construir una comunidad apasionada a través de historias auténticas y contenido de alto valor.',
   },
 
-  // -------------------------------------------------------------
-  // ALIASES LEGACY PARA RETROCOMPATIBILIDAD
-  // -------------------------------------------------------------
-  dental: {
-    canonicalId: 'V02',
-    name: 'Clínica Odontológica Integral',
-    avatar: '🦷',
-    colors: [
-      { name: 'Azul Clínico', hex: '#0284C7' },
-      { name: 'Celeste Médico', hex: '#38BDF8' },
-      { name: 'Blanco Puro', hex: '#F0F9FF' },
-      { name: 'Esmeralda Salud', hex: '#10B981' },
-      { name: 'Gris Instrumental', hex: '#334155' },
-    ],
-    defaultTone: 'Cálido, profesional, empático y médico-clínico (sin tecnicismos alarmistas)',
-    defaultPurpose: 'Democratizar la salud bucal con tecnología avanzada sin dolor y máxima empatía.',
-  },
-  polanco: {
-    canonicalId: 'V11',
-    name: 'Polanco Steakhouse & Mixology',
-    avatar: '🥩',
-    colors: [
-      { name: 'Borgoña Reserva', hex: '#881337' },
-      { name: 'Rubí Mixología', hex: '#E11D48' },
-      { name: 'Ámbar Cálido', hex: '#F59E0B' },
-      { name: 'Carbón Elegante', hex: '#18181B' },
-      { name: 'Dorado Acabados', hex: '#D97706' },
-    ],
-    defaultTone: 'Sofisticado, hospitalario, sensorial y acogedor',
-    defaultPurpose: 'Crear experiencias gastronómicas memorables donde la alta cocina y el servicio impecable celebran los momentos más importantes.',
-  },
-  urban: {
-    canonicalId: 'V09',
-    name: 'E-commerce Urban Sneaks',
-    avatar: '👟',
-    colors: [
-      { name: 'Lima Streetwear', hex: '#C3F400' },
-      { name: 'Violeta Neón', hex: '#8B5CF6' },
-      { name: 'Negro Profundo', hex: '#09090B' },
-      { name: 'Blanco Puro', hex: '#FFFFFF' },
-      { name: 'Azul Eléctrico', hex: '#3B82F6' },
-    ],
-    defaultTone: 'Fresco, dinámico, directo y entusiasta de la cultura sneaker y moda urbana',
-    defaultPurpose: 'Conectar la cultura urbana con sneakers exclusivos y drops de edición limitada con autenticidad garantizada.',
-  },
   gym: {
     canonicalId: 'V01',
     name: 'Gimnasios & Fitness',
@@ -368,20 +323,6 @@ export const TENANT_BRAND_PRESETS = {
     ],
     defaultTone: 'Enérgico, motivacional, directo y enfocado en disciplina física y resultados',
     defaultPurpose: 'Transformar vidas a través del entrenamiento inteligente y una comunidad que no se rinde.',
-  },
-  corp: {
-    canonicalId: 'V13',
-    name: 'Corporativo & B2B',
-    avatar: '💼',
-    colors: [
-      { name: 'Azul Marino B2B', hex: '#0F172A' },
-      { name: 'Pizarra Corporativo', hex: '#334155' },
-      { name: 'Cyan Telemetría', hex: '#06B6D4' },
-      { name: 'Gris Titanio', hex: '#64748B' },
-      { name: 'Blanco Escarcha', hex: '#F8FAFC' },
-    ],
-    defaultTone: 'Estratégico, formal, consultivo y enfocado en ROI y optimización de procesos',
-    defaultPurpose: 'Elevar la productividad y rentabilidad corporativa mediante automatización inteligente.',
   },
 };
 

@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { ShieldAlert, X } from 'lucide-react';
 import { Portal } from './Portal';
+import { sanitizeSafeMarkup } from '@/utils/security';
 
 export const GeneralModal = () => {
   const { modal, closeModal, executeModalAction } = useAuth();
@@ -51,10 +52,10 @@ export const GeneralModal = () => {
             </button>
           </div>
 
-          {/* Body */}
+          {/* Body (Sanitizado defensivamente contra ataques XSS) */}
           <div
             className="p-6 overflow-y-auto text-sm leading-relaxed text-[var(--text-main)] space-y-2 font-mono"
-            dangerouslySetInnerHTML={{ __html: modal.bodyHtml }}
+            dangerouslySetInnerHTML={{ __html: sanitizeSafeMarkup(modal.bodyHtml) }}
           />
 
           {/* Footer */}

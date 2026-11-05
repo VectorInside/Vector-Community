@@ -89,7 +89,7 @@ export const TrustBadges = ({ lang = 'es' }) => {
         {/* Security & Compliance Badges Grid */}
         <div className="space-y-6">
           <div className="text-center max-w-2xl mx-auto">
-            <h2 className="text-xl sm:text-2xl font-heading font-black text-white uppercase tracking-wider">
+            <h2 className="text-xl sm:text-2xl font-heading font-black text-white uppercase tracking-wider leading-snug pb-1 overflow-visible">
               {t.securityTitle}
             </h2>
             <p className="text-xs sm:text-sm text-zinc-400 font-mono mt-1">

@@ -186,18 +186,18 @@ export const HeroSection = ({ onOpenTrial, lang = 'es' }) => {
 
         {/* Hero Title & Value Proposition */}
         <div className="text-center max-w-5xl mx-auto space-y-6">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-[66px] font-heading font-black tracking-tight text-white leading-[1.14]">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-[66px] font-heading font-black tracking-tight text-white leading-[1.24] sm:leading-[1.2] pb-1 overflow-visible">
             <span className="block sm:inline">{t.title1}{' '}</span>
-            <span className="inline-block relative">
+            <span className="inline-block relative overflow-visible align-baseline">
               <span
-                className={`inline-block text-transparent bg-clip-text bg-gradient-to-r from-neon via-cyan-300 to-emerald-400 drop-shadow-[0_0_30px_rgba(231,249,0,0.25)] transition-all duration-300 transform ${
+                className={`inline-block text-transparent bg-clip-text bg-gradient-to-r from-neon via-cyan-300 to-emerald-400 drop-shadow-[0_0_30px_rgba(231,249,0,0.25)] transition-all duration-300 transform pb-3 sm:pb-4 pt-1 sm:pt-2 -mb-3 sm:-mb-4 -mt-1 sm:-mt-2 overflow-visible align-baseline ${
                   isRotating ? 'opacity-0 -translate-y-2 scale-95' : 'opacity-100 translate-y-0 scale-100'
                 }`}
               >
                 {t.rotatingWords ? t.rotatingWords[rotatingWordIndex] : 'atiende y vende'}
               </span>
             </span>
-            <span className="block mt-1 sm:mt-2 text-zinc-100">
+            <span className="block mt-1 sm:mt-2 text-zinc-100 overflow-visible">
               {t.title2}
             </span>
           </h1>
@@ -560,7 +560,7 @@ export const HeroSection = ({ onOpenTrial, lang = 'es' }) => {
                         </span>
                         <span className="text-zinc-500 text-[9px]">{ev.time}</span>
                       </div>
-                      <p className="text-[11px] text-zinc-300 font-sans leading-tight">
+                      <p className="text-[11px] text-zinc-300 font-sans leading-normal">
                         {ev.msg}
                       </p>
                       <div className="flex justify-end">

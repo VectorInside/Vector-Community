@@ -27,9 +27,15 @@ import {
   Send,
   LayoutGrid,
   List,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Portal } from '@/components/common/Portal';
+import { isValidEmail, normalizePhone10, formatPhoneDisplay } from '@/utils/formatters';
+import { tenantService } from '@/services/tenantService';
+import { userService } from '@/services/userService';
 
 /**
  * ============================================================================
@@ -44,7 +50,7 @@ import { Portal } from '@/components/common/Portal';
  */
 
 export const CuentasAccesosView = () => {
-  const { tenantsData } = useAuth();
+  const { tenantsData, deleteTenant } = useAuth();
   const { currentTenant } = useTenant();
 
   // Accounts state (persisted in localStorage for preview consistency)
@@ -57,8 +63,20 @@ export const CuentasAccesosView = () => {
         } catch (e) {}
       }
     }
-    return INITIAL_BUSINESS_ACCOUNTS;
+    return [];
   });
+
+  // Hydrate from PostgreSQL 17 Backend (/api/v1/users/owners)
+  useEffect(() => {
+    userService
+      .getTenantOwners()
+      .then((backendOwners) => {
+        if (Array.isArray(backendOwners)) {
+          setAccounts(backendOwners);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Save changes to localStorage
   useEffect(() => {
@@ -75,6 +93,24 @@ export const CuentasAccesosView = () => {
   // View Mode: 'grid' (detailed cards) or 'table' (compact density)
   const [viewMode, setViewMode] = useState('grid');
 
+  // KPI Cards Collapsible State
+  const [isKpiCollapsed, setIsKpiCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('vector_cuentas_kpi_collapsed') === 'true';
+    }
+    return false;
+  });
+
+  const toggleKpiCollapse = () => {
+    setIsKpiCollapsed((prev) => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('vector_cuentas_kpi_collapsed', String(next));
+      }
+      return next;
+    });
+  };
+
   // Security: Masked Passwords (toggle per tenant)
   const [visiblePasswords, setVisiblePasswords] = useState({});
 
@@ -90,15 +126,22 @@ export const CuentasAccesosView = () => {
   const [isLimitNoticeOpen, setIsLimitNoticeOpen] = useState(false);
   const [resetPasswordModalUser, setResetPasswordModalUser] = useState(null);
   const [shareCredentialsUser, setShareCredentialsUser] = useState(null);
+  const [deleteAccountModal, setDeleteAccountModal] = useState(null);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
   const [copiedField, setCopiedField] = useState(null);
 
   // 1-Click WhatsApp Direct Dispatch with Temporary Password Notice
   const handleSendWhatsApp = (account) => {
-    const cleanPhone = (account.phone || '').replace(/[^0-9]/g, '');
+    const cleanPhone = normalizePhone10(account.phone);
+    if (!cleanPhone || cleanPhone.length !== 10) {
+      showToast('El usuario no cuenta con un teléfono válido de 10 dígitos.');
+      return;
+    }
     const message = `👋 Hola ${account.ownerName},\n\nTe compartimos las credenciales de acceso oficial para el portal de *${account.tenantName}* en Vector Inside:\n\n🔗 *Enlace de Acceso:* http://localhost:3000/login\n✉️ *Usuario:* ${account.email}\n🔑 *Contraseña Provisional:* ${account.tempPassword}\n\n⚠️ *AVISO DE SEGURIDAD:* Al ingresar a tu cuenta, el sistema te solicitará automáticamente definir tu *contraseña personal definitiva*. Nadie más conocerá tu clave.\n\n¡Cualquier duda o soporte estamos para servirte!`;
     const encoded = encodeURIComponent(message);
-    window.open(`https://wa.me/${cleanPhone}?text=${encoded}`, '_blank');
+    window.open(`https://wa.me/52${cleanPhone}?text=${encoded}`, '_blank');
     showToast(`Abriendo WhatsApp para ${account.ownerName}...`);
   };
 
@@ -197,6 +240,15 @@ export const CuentasAccesosView = () => {
       showToast('Por favor completa todos los campos requeridos');
       return;
     }
+    if (!isValidEmail(newAccountForm.email.trim())) {
+      showToast('Ingresa un correo electrónico válido con dominio (ej. usuario@dominio.com)');
+      return;
+    }
+    const cleanPhone = normalizePhone10(newAccountForm.phone);
+    if (newAccountForm.phone.trim() && cleanPhone.length !== 10) {
+      showToast('El teléfono debe contener exactamente 10 dígitos numéricos');
+      return;
+    }
 
     // Defensive check: does this tenant already have an account?
     const alreadyExists = accounts.some((a) => a.tenantId === newAccountForm.tenantId);
@@ -218,7 +270,7 @@ export const CuentasAccesosView = () => {
       email: newAccountForm.email.trim().toLowerCase(),
       tempPassword: finalPassword,
       mustChangePassword: true, // Forces immediate pop-up on first client login
-      phone: newAccountForm.phone.trim() || '+52 55 0000 0000',
+      phone: cleanPhone || '',
       status: 'ACTIVE',
       lastLogin: 'Invitación enviada (Listo para ingresar)',
       twoFactorEnabled: false,
@@ -228,6 +280,17 @@ export const CuentasAccesosView = () => {
 
     setAccounts((prev) => [savedAccount, ...prev]);
     showToast(`Cuenta maestra para ${savedAccount.tenantName} creada exitosamente`);
+
+    // Persist to PostgreSQL 17 Backend
+    userService.createTenantOwner({
+      tenantId: savedAccount.tenantId,
+      tenantName: savedAccount.tenantName,
+      ownerName: savedAccount.ownerName,
+      email: savedAccount.email,
+      phone: savedAccount.phone,
+      password: savedAccount.tempPassword,
+      notes: savedAccount.notes,
+    }).catch(() => {});
 
     setIsCreateModalOpen(false);
 
@@ -256,18 +319,56 @@ export const CuentasAccesosView = () => {
 
   // Toggle Account Status (Suspend / Reactivate)
   const handleToggleAccountStatus = (tenantId) => {
+    let targetAccount = accounts.find((acc) => acc.tenantId === tenantId);
+    const nextStatus = targetAccount?.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
+
     setAccounts((prev) =>
       prev.map((acc) => {
         if (acc.tenantId === tenantId) {
-          const nextStatus = acc.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
-          showToast(
-            `Acceso para ${acc.tenantName} ${nextStatus === 'ACTIVE' ? 'reactivado' : 'suspendido'}`
-          );
           return { ...acc, status: nextStatus };
         }
         return acc;
       })
     );
+
+    if (targetAccount) {
+      userService.updateUserStatus(targetAccount.id, nextStatus).catch(() => {});
+      showToast(
+        `Acceso para ${targetAccount.tenantName} ${nextStatus === 'ACTIVE' ? 'reactivado' : 'suspendido'}`
+      );
+    }
+  };
+
+  // Soft Delete / Borrado Lógico de Negocio en PostgreSQL 17
+  const handleDeleteAccountConfirm = async () => {
+    if (!deleteAccountModal) return;
+    const targetTenantId = deleteAccountModal.tenantId;
+    const targetAccountId = deleteAccountModal.id;
+    const tenantName = deleteAccountModal.tenantName;
+
+    setIsDeletingAccount(true);
+    try {
+      // 1. Borrado lógico en Backend (Spring Boot soft-delete en tenants y users)
+      await Promise.all([
+        tenantService.deleteTenant(targetTenantId),
+        userService.deleteUser(targetAccountId),
+      ]);
+
+      // 2. Desvincular en contexto global de Auth
+      deleteTenant(targetTenantId);
+
+      // 3. Remover de la lista de cuentas local
+      setAccounts((prev) => prev.filter((acc) => acc.tenantId !== targetTenantId && acc.id !== targetAccountId));
+
+      showToast(`Negocio ${tenantName} archivado y dado de baja.`);
+      setDeleteAccountModal(null);
+      setDeleteConfirmationText('');
+    } catch (err) {
+      console.error('Error al archivar negocio:', err);
+      showToast('Error al archivar negocio');
+    } finally {
+      setIsDeletingAccount(false);
+    }
   };
 
   // Reset Password Handler (Regenerates temp password and flags mustChangePassword = true)
@@ -367,63 +468,122 @@ export const CuentasAccesosView = () => {
         </button>
       </header>
 
-      {/* KPI Stats Bar (Clean 1:1 Business Metrics) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 font-mono">
-        <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
-          <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider block font-semibold">
-            Negocios con Acceso
+      {/* KPI Stats Bar with Collapse / Expand Toggle */}
+      <div className="space-y-2 font-mono">
+        <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
+          <span className="text-[10px] uppercase tracking-wider font-semibold text-[var(--text-faint)]">
+            Métricas de Cuentas (Modelo 1:1)
           </span>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-heading font-black text-[var(--text-main)]">
-              {stats.total}
-            </span>
-            <span className="text-[10px] text-[var(--text-muted)] font-sans">
-              1 cuenta / negocio
-            </span>
-          </div>
+          <button
+            type="button"
+            onClick={toggleKpiCollapse}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon hover:text-neon transition-all text-[11px] cursor-pointer"
+            title={isKpiCollapsed ? 'Expandir tarjetas de métricas' : 'Contraer tarjetas de métricas'}
+          >
+            {isKpiCollapsed ? (
+              <>
+                <ChevronDown className="w-3.5 h-3.5 text-neon" />
+                <span>Mostrar métricas ({stats.total} total)</span>
+              </>
+            ) : (
+              <>
+                <ChevronUp className="w-3.5 h-3.5" />
+                <span>Contraer tarjetas</span>
+              </>
+            )}
+          </button>
         </div>
 
-        <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
-          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block font-semibold">
-            Cuentas Activas
-          </span>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-heading font-black text-emerald-600 dark:text-emerald-400">
-              {stats.active}
-            </span>
-            <span className="text-[10px] text-[var(--text-muted)] font-sans">
-              Acceso habilitado
-            </span>
-          </div>
-        </div>
+        {!isKpiCollapsed ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 animate-fade-in">
+            <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
+              <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider block font-semibold">
+                Negocios con Acceso
+              </span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl sm:text-3xl font-heading font-black text-[var(--text-main)]">
+                  {stats.total}
+                </span>
+                <span className="text-[10px] text-[var(--text-muted)] font-sans">
+                  {stats.total === 1 ? 'negocio vinculado' : 'negocios vinculados'}
+                </span>
+              </div>
+            </div>
 
-        <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
-          <span className="text-[10px] text-amber-500 uppercase tracking-wider block font-semibold">
-            Por Activar
-          </span>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-heading font-black text-amber-500">
-              {stats.pending}
-            </span>
-            <span className="text-[10px] text-[var(--text-muted)] font-sans">
-              Invitación enviada
-            </span>
-          </div>
-        </div>
+            <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block font-semibold">
+                Cuentas Activas
+              </span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl sm:text-3xl font-heading font-black text-emerald-600 dark:text-emerald-400">
+                  {stats.active}
+                </span>
+                <span className="text-[10px] text-[var(--text-muted)] font-sans">
+                  Acceso habilitado
+                </span>
+              </div>
+            </div>
 
-        <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
-          <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider block font-semibold">
-            Suspendidas
-          </span>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-heading font-black text-[var(--text-main)]">
-              {stats.suspended}
-            </span>
-            <span className="text-[10px] text-[var(--text-muted)] font-sans">
-              Acceso bloqueado
-            </span>
+            <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
+              <span className="text-[10px] text-amber-500 uppercase tracking-wider block font-semibold">
+                Por Activar
+              </span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl sm:text-3xl font-heading font-black text-amber-500">
+                  {stats.pending}
+                </span>
+                <span className="text-[10px] text-[var(--text-muted)] font-sans">
+                  Invitación enviada
+                </span>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
+              <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider block font-semibold">
+                Suspendidas
+              </span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl sm:text-3xl font-heading font-black text-[var(--text-main)]">
+                  {stats.suspended}
+                </span>
+                <span className="text-[10px] text-[var(--text-muted)] font-sans">
+                  Acceso bloqueado
+                </span>
+              </div>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="px-4 py-2.5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex flex-wrap items-center justify-between gap-3 text-xs animate-fade-in">
+            <div className="flex items-center gap-4 text-[11px] flex-wrap">
+              <span className="flex items-center gap-1.5">
+                <span className="text-[var(--text-muted)]">Negocios vinculados:</span>
+                <strong className="text-[var(--text-main)] font-black">{stats.total}</strong>
+              </span>
+              <span className="text-[var(--border-color)]">•</span>
+              <span className="flex items-center gap-1.5">
+                <span className="text-[var(--text-muted)]">Activas:</span>
+                <strong className="text-emerald-500 font-black">{stats.active}</strong>
+              </span>
+              <span className="text-[var(--border-color)]">•</span>
+              <span className="flex items-center gap-1.5">
+                <span className="text-[var(--text-muted)]">Por Activar:</span>
+                <strong className="text-amber-500 font-black">{stats.pending}</strong>
+              </span>
+              <span className="text-[var(--border-color)]">•</span>
+              <span className="flex items-center gap-1.5">
+                <span className="text-[var(--text-muted)]">Suspendidas:</span>
+                <strong className="text-[var(--text-main)] font-black">{stats.suspended}</strong>
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={toggleKpiCollapse}
+              className="text-[10px] text-neon hover:underline font-bold"
+            >
+              Ver tarjetas completas
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Filter Bar: Clean, Search, Active Tenant Shortcut & View Switcher */}
@@ -707,6 +867,17 @@ export const CuentasAccesosView = () => {
                           >
                             <Power className="w-3.5 h-3.5" />
                           </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDeleteAccountModal(account);
+                              setDeleteConfirmationText('');
+                            }}
+                            className="p-1.5 rounded-lg border bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-rose-400 hover:border-rose-500/30 hover:bg-rose-500/10 border-[var(--border-color)] transition-colors"
+                            title="Dar de baja / Eliminar negocio"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -799,7 +970,7 @@ export const CuentasAccesosView = () => {
 
                         <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-muted)]">
                           <Phone className="w-3.5 h-3.5 text-[var(--text-muted)] shrink-0" />
-                          <span>{account.phone}</span>
+                          <span>{account.phone ? formatPhoneDisplay(account.phone) : 'Sin teléfono'}</span>
                         </div>
                       </div>
                     </div>
@@ -913,6 +1084,20 @@ export const CuentasAccesosView = () => {
                         {isSuspended ? 'Reactivar' : 'Suspender'}
                       </span>
                     </button>
+
+                    {/* Delete / Archive Business */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDeleteAccountModal(account);
+                        setDeleteConfirmationText('');
+                      }}
+                      className="px-3 py-2 rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] hover:border-rose-500/50 hover:bg-rose-500/10 text-[var(--text-muted)] hover:text-rose-400 transition-all shadow-sm flex items-center gap-1.5 min-h-[44px]"
+                      title="Dar de baja o desvincular negocio"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                      <span className="hidden sm:inline">Eliminar</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1019,15 +1204,19 @@ export const CuentasAccesosView = () => {
                 {/* Teléfono WhatsApp */}
                 <div>
                   <label className="block text-[var(--text-main)] font-bold mb-1 font-sans text-xs">
-                    Teléfono / WhatsApp de Contacto
+                    Teléfono / WhatsApp de Contacto (10 dígitos)
                   </label>
                   <input
-                    type="text"
+                    type="tel"
+                    maxLength={14}
                     value={newAccountForm.phone}
                     onChange={(e) => setNewAccountForm({ ...newAccountForm, phone: e.target.value })}
-                    placeholder="ej. +52 55 4912 3456"
+                    placeholder="ej. 55 4912 3456 (10 dígitos)"
                     className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] focus:border-neon rounded-xl p-2.5 text-xs text-[var(--text-main)] font-mono outline-none"
                   />
+                  <p className="text-[10px] text-[var(--text-muted)] mt-1 font-sans">
+                    Ingresa los 10 dígitos locales del negocio (sin código de país).
+                  </p>
                 </div>
 
                 {/* Contraseña Provisional */}
@@ -1269,6 +1458,25 @@ export const CuentasAccesosView = () => {
           </div>
         </Portal>
       )}
+
+      {/* =================================================================== */}
+      {/* MODAL 5: CONFIRMACIÓN DE BAJA / ARCHIVADO DE NEGOCIO (SOFT DELETE) */}
+      {/* =================================================================== */}
+      {deleteAccountModal && (
+        <DeleteAccountModal
+          account={deleteAccountModal}
+          confirmationText={deleteConfirmationText}
+          setConfirmationText={setDeleteConfirmationText}
+          isDeleting={isDeletingAccount}
+          onConfirm={handleDeleteAccountConfirm}
+          onClose={() => {
+            if (!isDeletingAccount) {
+              setDeleteAccountModal(null);
+              setDeleteConfirmationText('');
+            }
+          }}
+        />
+      )}
     </div>
   );
 };
@@ -1378,6 +1586,126 @@ const ResetPasswordModal = ({ user, onClose, onSubmit }) => {
             >
               <Check className="w-3.5 h-3.5" />
               <span>Guardar & Notificar</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </Portal>
+  );
+};
+
+// Componente Modal para confirmación de Baja / Soft Delete de Negocio
+const DeleteAccountModal = ({
+  account,
+  confirmationText,
+  setConfirmationText,
+  isDeleting,
+  onConfirm,
+  onClose,
+}) => {
+  if (!account) return null;
+  const targetName = account.tenantName || 'Negocio';
+  const isMatch = confirmationText.trim().toLowerCase() === targetName.trim().toLowerCase();
+
+  return (
+    <Portal>
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fade-in font-sans">
+        <div className="relative w-full max-w-md bg-[var(--bg-panel)] border border-rose-500/30 rounded-3xl p-6 sm:p-7 space-y-5 shadow-2xl animate-scale-up">
+          {/* Header */}
+          <div className="flex items-start justify-between border-b border-[var(--border-color)] pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-2xl bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-heading font-black text-[var(--text-main)]">
+                  Dar de Baja Negocio
+                </h3>
+                <p className="text-xs text-rose-400 font-mono">
+                  Gobernanza & Soft Delete Seguro (PostgreSQL 17)
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isDeleting}
+              className="p-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-white transition-colors disabled:opacity-50"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Account Details Card */}
+          <div className="p-3.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-3">
+            <span className="text-3xl p-2 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)]">
+              {account.tenantAvatar || '🏢'}
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-heading font-black text-[var(--text-main)] truncate">
+                {account.tenantName}
+              </div>
+              <div className="text-xs text-[var(--text-muted)] truncate">
+                {account.ownerName} &bull; {account.email}
+              </div>
+              <div className="text-[10px] font-mono text-neon mt-0.5">
+                {account.giro || 'Servicios'}
+              </div>
+            </div>
+          </div>
+
+          {/* Governance Notice */}
+          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-sans space-y-1.5">
+            <div className="flex items-center gap-1.5 font-bold font-mono text-[11px] text-rose-400">
+              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+              <span>Consecuencias de la Operación</span>
+            </div>
+            <p className="text-[11px] text-zinc-300 leading-relaxed">
+              El negocio pasará a estado <strong className="text-rose-400">ARCHIVED</strong>. Se suspenderán de inmediato las automatizaciones de IA, campañas y acceso del cliente al portal. Los registros de auditoría y métricas previas permanecerán sellados de forma inmutable bajo gobernanza WORM.
+            </p>
+          </div>
+
+          {/* Friction Typing Input */}
+          <div className="space-y-2">
+            <label className="text-xs font-mono text-[var(--text-muted)] block">
+              Para confirmar, escribe exactamente el nombre del negocio:
+              <span className="block text-[var(--text-main)] font-bold mt-0.5 select-all text-xs font-sans">
+                {targetName}
+              </span>
+            </label>
+            <input
+              type="text"
+              autoFocus
+              value={confirmationText}
+              onChange={(e) => setConfirmationText(e.target.value)}
+              placeholder="Escribe el nombre aquí..."
+              disabled={isDeleting}
+              className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] focus:border-rose-400 rounded-xl p-2.5 text-xs text-[var(--text-main)] font-mono outline-none"
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-[var(--border-color)]">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isDeleting}
+              className="px-4 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-muted)] hover:text-white transition-colors disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={onConfirm}
+              disabled={!isMatch || isDeleting}
+              className={`px-4 py-2.5 rounded-xl font-mono font-bold text-xs transition-all shadow-sm flex items-center gap-1.5 ${
+                isMatch && !isDeleting
+                  ? 'bg-rose-600 hover:bg-rose-500 text-white cursor-pointer shadow-rose-900/30'
+                  : 'bg-zinc-800 text-zinc-500 border border-zinc-700/50 cursor-not-allowed opacity-60'
+              }`}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>{isDeleting ? 'Archivando...' : 'Confirmar Baja Definitiva'}</span>
             </button>
           </div>
         </div>

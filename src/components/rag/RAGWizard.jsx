@@ -1431,15 +1431,19 @@ export const RAGWizard = ({
   const [expandedTenantPillars, setExpandedTenantPillars] = useState({});
 
   // Computed metrics for ecosystem
+  const allTenantsList = useMemo(() => {
+    return Object.values(tenantsData || {});
+  }, [tenantsData]);
+
   const tenantEcosystemStats = useMemo(() => {
-    const list = Object.values(tenantsData || {});
+    const list = allTenantsList;
     const total = list.length;
     const activeCount = list.filter(
       (t) => t.microLandingStatus !== 'suspended' && t.microLandingStatus !== 'disabled' && t.microLandingEnabled !== false
     ).length;
     const pausedCount = total - activeCount;
     return { total, activeCount, pausedCount };
-  }, [tenantsData]);
+  }, [allTenantsList]);
 
   // Filtered and searched tenant list (Aislamiento Multi-Tenant Estricto)
   const filteredTenantsList = useMemo(() => {
@@ -1476,7 +1480,7 @@ export const RAGWizard = ({
 
       return true;
     });
-  }, [tenantsData, tenantSearchQuery, tenantStatusFilter, tenantVerticalFilter]);
+  }, [tenantsData, tenantSearchQuery, tenantStatusFilter, tenantVerticalFilter, isAdmin, activeTenant?.id]);
 
   // Toggle expanded pillars for a tenant
   const toggleTenantPillars = (tenantId) => {
@@ -2322,11 +2326,15 @@ export const RAGWizard = ({
                 <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
               </div>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-xl font-heading font-black text-cyan-400">94.2%</span>
-                <span className="text-[10px] text-cyan-500 font-bold">Antifrágil</span>
+                <span className="text-xl font-heading font-black text-cyan-400">
+                  {activeTenant ? '94.2%' : '0%'}
+                </span>
+                <span className="text-[10px] text-cyan-500 font-bold">
+                  {activeTenant ? 'Antifrágil' : 'Sin Indexar'}
+                </span>
               </div>
               <span className="text-[9px] text-[var(--text-muted)] block truncate">
-                4/4 Pilares Indexados en Vector DB
+                {activeTenant ? '4/4 Pilares Indexados en Vector DB' : '0/4 Pilares Indexados en Vector DB'}
               </span>
             </div>
 
@@ -2338,11 +2346,11 @@ export const RAGWizard = ({
               <div className="flex items-center gap-1.5 truncate">
                 <span className="text-base shrink-0">{activeTenant?.avatar || '🏢'}</span>
                 <span className="font-heading font-bold text-xs text-[var(--text-main)] truncate">
-                  {activeTenant?.name || 'Clínica Odontológica'}
+                  {activeTenant ? activeTenant.name : 'Sin Negocio Activo'}
                 </span>
               </div>
               <span className="text-[9px] text-neon font-bold font-mono block truncate">
-                ID: {activeTenant?.id || 'dental'}
+                ID: {activeTenant ? activeTenant.id : 'N/A'}
               </span>
             </div>
           </div>
@@ -2931,25 +2939,31 @@ export const RAGWizard = ({
           {filteredTenantsList.length === 0 && (
             <div className="p-8 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] text-center space-y-3 font-mono">
               <div className="w-12 h-12 mx-auto rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-center text-2xl text-[var(--text-muted)]">
-                🔍
+                🏢
               </div>
               <h4 className="text-sm font-bold text-[var(--text-main)]">
-                No se encontraron negocios con los filtros actuales
+                {allTenantsList.length === 0
+                  ? 'No hay negocios registrados en el sistema'
+                  : 'No se encontraron negocios con los filtros actuales'}
               </h4>
               <p className="text-xs text-[var(--text-muted)] max-w-md mx-auto">
-                No hay coincidencias para "{tenantSearchQuery || tenantStatusFilter}". Prueba modificando tu término de búsqueda o limpia los filtros.
+                {allTenantsList.length === 0
+                  ? 'El ecosistema se encuentra limpio (Zero-State). Haz clic en "+ Alta Nuevo Negocio" para dar de alta tu primer negocio.'
+                  : `No hay coincidencias para "${tenantSearchQuery}". Prueba modificando tu término de búsqueda o limpia los filtros.`}
               </p>
-              <button
-                type="button"
-                onClick={() => {
-                  setTenantSearchQuery('');
-                  setTenantStatusFilter('all');
-                  setTenantVerticalFilter('all');
-                }}
-                className="px-4 py-2 rounded-xl bg-neon text-black font-bold text-xs uppercase hover:bg-[var(--neon-hover)] transition-all shadow-sm"
-              >
-                Limpiar Filtros
-              </button>
+              {allTenantsList.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTenantSearchQuery('');
+                    setTenantStatusFilter('all');
+                    setTenantVerticalFilter('all');
+                  }}
+                  className="px-4 py-2 rounded-xl bg-neon text-black font-bold text-xs uppercase hover:bg-[var(--neon-hover)] transition-all shadow-sm"
+                >
+                  Limpiar Filtros
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -3670,7 +3684,7 @@ export const RAGWizard = ({
                   <div className="flex justify-end pt-4 border-t border-[var(--border-color)]">
                     <button
                       type="button"
-                      onClick={() => setCurrentStep(2)}
+                      onClick={() => setCurrentStep(3)}
                       className="bg-neon text-black font-mono font-bold text-xs px-6 py-3 rounded-xl hover:bg-[var(--neon-hover)] transition-all flex items-center gap-2 shadow-neon"
                     >
                       <span>Siguiente: Marketing & Tracking</span>

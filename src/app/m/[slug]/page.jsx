@@ -3,7 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
-import { INITIAL_TENANTS_DATA } from '@/utils/constants';
+import { getPublicTenantLandingData } from '@/utils/publicLandingsCatalog';
+import { performanceService } from '@/services/performanceService';
+import { leadService } from '@/services/leadService';
 import {
   Phone,
   Calendar,
@@ -24,114 +26,41 @@ import {
   Award,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { normalizePhone10, formatPhoneDisplay } from '@/utils/formatters';
 
-// Base Tenant Themes with Services and Hours
+const DEFAULT_GENERIC_THEME = {
+  cover: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&auto=format&fit=crop&q=80',
+  tagline: 'Atención personalizada e inmediata directo en tu WhatsApp.',
+  address: 'Atención Omnicanal',
+  hoursWeek: 'Lun–Vie: 09:00 a 19:00 hrs',
+  hoursWeekend: 'Sáb: 09:00 a 14:00 hrs',
+  rating: '5.0',
+  reviewsCount: 'Verificado',
+  services: [],
+};
+
+const DEFAULT_GENERIC_LEAD_FORM = {
+  title: '¿En qué podemos ayudarte hoy?',
+  subtitle: 'Te atendemos de inmediato por WhatsApp',
+  buttonText: 'Iniciar Conversación en WhatsApp',
+  options: ['Información General', 'Agendar Cita', 'Cotización', 'Hablar con un Asesor'],
+};
+
 const TENANT_THEMES = {
-  dental: {
-    cover: 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=800&auto=format&fit=crop&q=80',
-    tagline: 'Odontología integral de vanguardia, estética dental y salud bucal sin dolor.',
-    address: 'Av. Horacio 1520, Polanco, Miguel Hidalgo, CDMX',
-    hoursWeek: 'Lun–Vie: 09:00 a 19:00 hrs',
-    hoursWeekend: 'Sáb: 09:00 a 14:00 hrs',
-    rating: '4.9',
-    reviewsCount: '480+',
-    services: [
-      { title: 'Diagnóstico Digital 3D', desc: 'Escaneo intraoral sin molde incómodo', badge: 'Gratis esta semana', tone: 'neon' },
-      { title: 'Limpieza Ultrasónica & Pulido', desc: 'Profilaxis profunda con ultrasonido y flúor', badge: 'Más solicitado', tone: 'emerald' },
-      { title: 'Ortodoncia Invisible', desc: 'Alineadores transparentes de última generación', badge: 'Hasta 12 MSI', tone: 'blue' },
-      { title: 'Blanqueamiento Láser LED', desc: 'Aclara hasta 4 tonos en 1 sola sesión de 45 min', badge: '-20% Descuento', tone: 'neon' },
-    ],
-  },
-  polanco: {
-    cover: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=800&auto=format&fit=crop&q=80',
-    tagline: 'Cortes Prime Dry-Aged, coctelería de autor y ambiente exclusivo en el corazón de Polanco.',
-    address: 'Campos Elíseos 204, Polanco V Secc, CDMX',
-    hoursWeek: 'Mar–Sáb: 13:00 a 01:00 hrs',
-    hoursWeekend: 'Dom: 13:00 a 20:00 hrs',
-    rating: '4.8',
-    reviewsCount: '620+',
-    services: [
-      { title: 'Reserva de Mesa VIP & Terraza', desc: 'Asignación prioritaria para ocasiones especiales', badge: 'Confirmación 5 min', tone: 'emerald' },
-      { title: 'Menú Degustación 5 Tiempos', desc: 'Maridaje exclusivo seleccionado por nuestro Sommelier', badge: 'Recomendado', tone: 'neon' },
-      { title: 'Cavas & Mixología de Autor', desc: 'Coctelería premium con destilados artesanales', badge: 'Happy Hour 6-8pm', tone: 'blue' },
-    ],
-  },
-  urban: {
-    cover: 'https://images.unsplash.com/photo-1552346154-21d32810aba3?w=800&auto=format&fit=crop&q=80',
-    tagline: 'Sneakers exclusivos, drops limitados y streetwear 100% original autenticado.',
-    address: 'Colima 180, Roma Norte, Cuauhtémoc, CDMX',
-    hoursWeek: 'Lun–Vie: 11:00 a 20:00 hrs',
-    hoursWeekend: 'Sáb–Dom: 11:00 a 21:00 hrs',
-    rating: '4.9',
-    reviewsCount: '310+',
-    services: [
-      { title: 'Drops Exclusivos & Sneakers Hype', desc: 'Ediciones limitadas de Nike, Jordan, Yeezy y New Balance', badge: 'Stock Limitado', tone: 'neon' },
-      { title: 'Envío Express Mismo Día', desc: 'Entregas seguras en CDMX en menos de 4 horas', badge: 'Envío Gratis > $2,500', tone: 'emerald' },
-      { title: 'Verificación de Autenticidad', desc: 'Certificado físico y digital de legitimidad por expertos', badge: '100% Original', tone: 'blue' },
-    ],
-  },
+  default: DEFAULT_GENERIC_THEME,
 };
 
 const DEFAULT_LEAD_FORMS = {
-  dental: {
-    title: 'Motivo principal de consulta:',
-    subtitle: 'Te orientamos sobre fechas y presupuestos en minutos',
-    buttonText: 'Solicitar Cita de Valoración',
-    options: ['Limpieza Dental', 'Implante Molar', 'Ortodoncia', 'Diagnóstico General'],
-  },
-  polanco: {
-    title: 'Reserva tu Mesa VIP en Terraza:',
-    subtitle: 'Confirmación prioritaria por WhatsApp en < 5 min',
-    buttonText: 'Solicitar Reserva de Mesa',
-    options: ['2 comensales', '4 comensales', '6 comensales', 'Mesa VIP 8+'],
-  },
-  urban: {
-    title: 'Talla o Modelo a consultar / apartar:',
-    subtitle: 'Verificamos disponibilidad de tu talla de inmediato',
-    buttonText: 'Consultar Stock & Apartar',
-    options: ['26 MX', '26.5 MX', '27 MX', '27.5 MX', '28 MX'],
-  },
-  corp: {
-    title: 'Servicio de Interés Estratégico:',
-    subtitle: 'Sesión de 30 min con un consultor de soluciones',
-    buttonText: 'Agendar Discovery Call (30 min)',
-    options: ['Automatización IA', 'Integración CRM', 'Agentes Multi-Canal', 'Consultoría B2B'],
-  },
+  default: DEFAULT_GENERIC_LEAD_FORM,
 };
 
 export default function MicroLandingPage() {
   const params = useParams();
-  const slug = params?.slug || 'dental';
+  const slug = params?.slug || '';
 
-  // Active tenant data with local storage synchronization
+  // DTO público saneado (Previene filtración de datos fiscales o financieros en el bundle del cliente)
   const [activeTenantData, setActiveTenantData] = useState(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const savedTenants = localStorage.getItem('vector_tenants_data');
-        if (savedTenants) {
-          const parsed = JSON.parse(savedTenants);
-          const found =
-            parsed[slug] ||
-            Object.values(parsed).find(
-              (t) =>
-                t.id === slug ||
-                t.microLandingSlug === slug ||
-                (t.name && t.name.toLowerCase().includes(slug))
-            );
-          if (found) return found;
-        }
-      } catch (e) {}
-    }
-    return (
-      INITIAL_TENANTS_DATA[slug] ||
-      Object.values(INITIAL_TENANTS_DATA).find(
-        (t) =>
-          t.id === slug ||
-          t.microLandingSlug === slug ||
-          (t.name && t.name.toLowerCase().includes(slug))
-      ) ||
-      INITIAL_TENANTS_DATA.dental
-    );
+    return getPublicTenantLandingData(slug);
   });
 
   useEffect(() => {
@@ -148,7 +77,18 @@ export default function MicroLandingPage() {
                 t.microLandingSlug === slug ||
                 (t.name && t.name.toLowerCase().includes(slug))
             );
-          if (found) setActiveTenantData(found);
+          if (found) {
+            setActiveTenantData({
+              id: found.id || slug,
+              name: found.name || 'Negocio',
+              shortName: found.shortName || found.name,
+              phone: found.phone || '+525512345678',
+              microLandingSlug: found.microLandingSlug || slug,
+              microLandingEnabled: found.microLandingEnabled !== false,
+              metaPixelId: found.metaPixelId || '',
+              ga4MeasurementId: found.ga4MeasurementId || '',
+            });
+          }
         }
       } catch (e) {}
     };
@@ -159,8 +99,8 @@ export default function MicroLandingPage() {
   }, [slug]);
 
   const baseTenant = activeTenantData;
-  const baseTheme = TENANT_THEMES[baseTenant.id] || TENANT_THEMES.dental;
-  const baseDefaultLead = DEFAULT_LEAD_FORMS[baseTenant.id] || DEFAULT_LEAD_FORMS.dental;
+  const baseTheme = TENANT_THEMES[baseTenant.id] || DEFAULT_GENERIC_THEME;
+  const baseDefaultLead = DEFAULT_LEAD_FORMS[baseTenant.id] || DEFAULT_GENERIC_LEAD_FORM;
 
   // Real-time customizer state
   const [customData, setCustomData] = useState({
@@ -195,6 +135,13 @@ export default function MicroLandingPage() {
     };
 
     window.addEventListener('message', handleMessage);
+    // Track Micro-Landing Visit in Backend Telemetry (only on real public visits, never in preview iframe)
+    const isIframeOrPreview =
+      typeof window !== 'undefined' &&
+      (window.self !== window.top || new URLSearchParams(window.location.search).get('preview') === 'true');
+    if (baseTenant?.id && !isIframeOrPreview) {
+      performanceService.trackTelemetryEvent(baseTenant.id, 'VISIT').catch(() => {});
+    }
     return () => window.removeEventListener('message', handleMessage);
   }, [baseTenant.id]);
 
@@ -247,13 +194,13 @@ export default function MicroLandingPage() {
   const [bookingName, setBookingName] = useState('');
   const [bookingPhone, setBookingPhone] = useState('');
   const [selectedOption, setSelectedOption] = useState(() => {
-    return (DEFAULT_LEAD_FORMS[baseTenant.id] || DEFAULT_LEAD_FORMS.dental).options?.[0] || 'Consulta General';
+    return (DEFAULT_LEAD_FORMS[baseTenant.id] || DEFAULT_GENERIC_LEAD_FORM).options?.[0] || 'Información General';
   });
   const [bookedSuccess, setBookedSuccess] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
   useEffect(() => {
-    const activeLead = customData.leadForm || DEFAULT_LEAD_FORMS[baseTenant.id] || DEFAULT_LEAD_FORMS.dental;
+    const activeLead = customData.leadForm || DEFAULT_LEAD_FORMS[baseTenant.id] || DEFAULT_GENERIC_LEAD_FORM;
     if (activeLead?.options && activeLead.options.length > 0) {
       if (!activeLead.options.includes(selectedOption)) {
         setSelectedOption(activeLead.options[0]);
@@ -274,7 +221,7 @@ export default function MicroLandingPage() {
   const vertical = baseTenant.vertical || (baseTenant.id === 'polanco' ? 'hospitality' : baseTenant.id === 'urban' ? 'ecommerce' : 'service_appointments');
 
   const getVerticalFormConfig = () => {
-    const defaultLead = DEFAULT_LEAD_FORMS[baseTenant.id] || DEFAULT_LEAD_FORMS.dental;
+    const defaultLead = DEFAULT_LEAD_FORMS[baseTenant.id] || DEFAULT_GENERIC_LEAD_FORM;
     const activeLead = customData.leadForm || defaultLead;
 
     return {
@@ -317,8 +264,32 @@ export default function MicroLandingPage() {
 
   const handleQuickLeadSubmit = (e) => {
     e.preventDefault();
-    if (!bookingPhone) return;
+    const cleanBookingPhone = normalizePhone10(bookingPhone);
+    if (cleanBookingPhone.length !== 10) {
+      alert('Por favor ingresa tu número de WhatsApp a 10 dígitos (ej. 55 1234 5678).');
+      return;
+    }
     trackConversion('Lead');
+    if (baseTenant?.id) {
+      performanceService.trackTelemetryEvent(baseTenant.id, 'LEAD_GENERATED').catch(() => {});
+      leadService
+        .createLead({
+          tenantId: baseTenant.id,
+          name: bookingName || 'Prospecto Micro-Landing',
+          phone: cleanBookingPhone,
+          channel: 'Micro-Landing Vector',
+          leadState: 'LEAD_WARM_24H',
+          potentialTicket: baseTenant.avgTicketMXN ? `$${baseTenant.avgTicketMXN} MXN` : '$1,500 MXN',
+          criteriaAudit: {
+            identityValidated: true,
+            catalogIdentified: true,
+            financialClarified: false,
+            consentOrBooked: false,
+          },
+          notes: `Interés captado desde Micro-Landing (/m/${slug}): ${selectedOption}`,
+        })
+        .catch(() => {});
+    }
     setBookedSuccess(true);
     try {
       confetti({
@@ -680,6 +651,7 @@ export default function MicroLandingPage() {
                 </label>
                 <input
                   type="tel"
+                  maxLength={14}
                   required
                   placeholder="ej. 55 1234 5678"
                   value={bookingPhone}

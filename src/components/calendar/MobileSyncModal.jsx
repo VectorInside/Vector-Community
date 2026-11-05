@@ -26,14 +26,14 @@ export const MobileSyncModal = ({ isOpen, onClose, tenant }) => {
 
   if (!isOpen) return null;
 
-  const tenantName = tenant?.name || 'Mi Negocio';
-  const tenantId = tenant?.id || 'dental';
+  const tenantName = tenant?.name || 'Sin negocio seleccionado';
+  const tenantId = tenant?.id || '';
   const mobileAgendaUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/agenda?tenant=${tenantId}`
-    : `https://vectorinside.app/agenda?tenant=${tenantId}`;
+    ? `${window.location.origin}/agenda${tenantId ? `?tenant=${tenantId}` : ''}`
+    : `https://vectorinside.app/agenda${tenantId ? `?tenant=${tenantId}` : ''}`;
   
-  const gcalSubscribeUrl = `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(`webcal://api.vectorinside.app/cal/${tenantId}/events.ics`)}`;
-  const webcalUrl = `webcal://api.vectorinside.app/cal/${tenantId}/events.ics`;
+  const gcalSubscribeUrl = `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(`webcal://api.vectorinside.app/cal/${tenantId || 'default'}/events.ics`)}`;
+  const webcalUrl = `webcal://api.vectorinside.app/cal/${tenantId || 'default'}/events.ics`;
 
   const handleCopy = (text, type) => {
     navigator.clipboard.writeText(text);

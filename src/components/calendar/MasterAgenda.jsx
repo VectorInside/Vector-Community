@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTenant } from '@/hooks/useTenant';
 import { calendarService } from '@/services/calendarService';
+import { tenantService } from '@/services/tenantService';
 import { Button } from '@/components/common/Button';
 import { Portal } from '@/components/common/Portal';
 import { Badge } from '@/components/common/Badge';
@@ -87,561 +88,130 @@ export function recomputeShiftsHours(shifts, durationMin = 60) {
   }));
 }
 
-export const TENANT_EMAIL_TEMPLATES = {
-  dental: {
-    senderName: 'Clínica Odontológica Integral',
-    senderEmail: 'citas@odontologiaintegral.com',
-    logoAvatar: '🦷',
-    accentColor: '#D4FF00',
-    subject: '✅ Cita Confirmada: {{servicio}} en {{negocio}}',
-    welcomeMessage: '¡Hola, {{cliente}}! Tu cita odontológica ha sido agendada con éxito en nuestro sistema.',
-    instructions: 'Por favor preséntate 10 minutos antes. Es indispensable traer una identificación oficial y tus estudios o radiografías previas.',
-    locationType: 'physical',
-    locationAddress: 'Av. Insurgentes Sur 1234, Consultorio 302, Benito Juárez, CDMX',
-    virtualLink: 'https://meet.google.com/vector-dental-cita',
-    cancellationPolicy: 'Puedes cancelar o reprogramar sin costo notificando con al menos 24 horas de antelación vía WhatsApp o llamando al consultorio.',
-    ctaText: 'Añadir a Google Calendar / Outlook',
-    includeIcs: true,
-    includeWhatsapp: true,
-    sampleClient: 'Carlos Villaseñor',
-    sampleClientEmail: 'carlos.villasenor@gmail.com',
-    sampleService: 'Limpieza Dental y Profilaxis Ultrasónica',
-    sampleSpecialist: 'Dra. Claudia Ortiz (Ortodoncia)',
-    sampleDateTime: 'Viernes 23 Octubre 2026 • 11:00 hrs',
-  },
-  polanco: {
-    senderName: 'Polanco Steakhouse & Mixology',
-    senderEmail: 'reservas@polancosteakhouse.mx',
-    logoAvatar: '🥩',
-    accentColor: '#F97316',
-    subject: '🥩 Reservación Confirmada: {{servicio}} en {{negocio}}',
-    welcomeMessage: '¡Hola, {{cliente}}! Tu reservación gastronómica ha sido confirmada con éxito en nuestro sistema.',
-    instructions: 'Mesa reservada con 15 minutos de tolerancia. Código de vestimenta: Smart Casual. Si requieres área de terraza o atención especial, infórmanos con anticipación.',
-    locationType: 'physical',
-    locationAddress: 'Campos Elíseos 204, Polanco IV Sección, Miguel Hidalgo, CDMX',
-    virtualLink: '',
-    cancellationPolicy: 'Cancelaciones o ajuste de comensales sin penalización hasta 4 horas antes de tu horario reservado vía WhatsApp.',
-    ctaText: 'Añadir a Google Calendar / Outlook',
-    includeIcs: true,
-    includeWhatsapp: true,
-    sampleClient: 'Alejandro Bastida',
-    sampleClientEmail: 'alejandro.bastida@empresa.com',
-    sampleService: 'Reserva VIP Terraza & Menú Degustación (4 pax)',
-    sampleSpecialist: 'Capitán de Salón: Marco Aurelio',
-    sampleDateTime: 'Viernes 23 Octubre 2026 • 20:30 hrs',
-  },
-  urban: {
-    senderName: 'Urban Motors & Sneaks Premium',
-    senderEmail: 'citas@urbansneaks.shop',
-    logoAvatar: '👟',
-    accentColor: '#06B6D4',
-    subject: '📦 Turno Confirmado: {{servicio}} en {{negocio}}',
-    welcomeMessage: '¡Hola, {{cliente}}! Tu turno de servicio y entrega ha sido agendado con éxito.',
-    instructions: 'Presenta tu confirmación digital o identificación al ingresar. El tiempo estimado de atención es de 45 minutos.',
-    locationType: 'physical',
-    locationAddress: 'Av. Vasco de Quiroga 3800, Santa Fe, Cuajimalpa, CDMX',
-    virtualLink: 'https://meet.google.com/urban-soporte',
-    cancellationPolicy: 'Puedes reprogramar tu turno con al menos 12 horas de antelación vía WhatsApp.',
-    ctaText: 'Añadir a Google Calendar / Outlook',
-    includeIcs: true,
-    includeWhatsapp: true,
-    sampleClient: 'Lic. Valeria Domínguez',
-    sampleClientEmail: 'valeria.dominguez@live.com',
-    sampleService: 'Tratamiento Cerámico 9H & Entrega Exclusiva',
-    sampleSpecialist: 'Master Detailer: Ing. Roberto S.',
-    sampleDateTime: 'Viernes 23 Octubre 2026 • 15:30 hrs',
-  },
-  corp: {
-    senderName: 'Vector Corporate Solutions B2B',
-    senderEmail: 'enterprise@vectorinside.com',
-    logoAvatar: '🏢',
-    accentColor: '#3B82F6',
-    subject: '💼 Sesión Confirmada: {{servicio}} con {{negocio}}',
-    welcomeMessage: '¡Hola, {{cliente}}! Tu sesión ejecutiva de consultoría ha sido confirmada en nuestra agenda corporativa.',
-    instructions: 'La sesión se llevará a cabo por Google Meet cifrado. Se sugiere contar con diagramas de arquitectura y métricas listas para compartir pantalla.',
-    locationType: 'virtual',
-    locationAddress: 'Sesión Virtual Segura (Google Meet Cifrado S2S) • Torre Chapultepec Piso 28, CDMX',
-    virtualLink: 'https://meet.google.com/vector-enterprise-b2b',
-    cancellationPolicy: 'Puedes reprogramar la sesión con al menos 2 horas de anticipación a través del enlace de Google Calendar.',
-    ctaText: 'Añadir a Google Calendar / Outlook',
-    includeIcs: true,
-    includeWhatsapp: true,
-    sampleClient: 'Lic. Rodrigo Elizondo (VP Operaciones)',
-    sampleClientEmail: 'rodrigo.elizondo@logisticaglobal.com',
-    sampleService: 'Discovery Call & Auditoría IA de Pipeline ($45k USD)',
-    sampleSpecialist: 'Director de Soluciones: Marcos V.',
-    sampleDateTime: 'Viernes 23 Octubre 2026 • 11:00 hrs',
-  },
+export const DEFAULT_EMAIL_TEMPLATE = {
+  senderName: 'Mi Negocio',
+  senderEmail: 'citas@minegocio.com',
+  logoAvatar: '🏢',
+  accentColor: '#D4FF00',
+  subject: '✅ Cita Confirmada: {{servicio}} en {{negocio}}',
+  welcomeMessage: '¡Hola, {{cliente}}! Tu cita ha sido agendada con éxito en nuestro sistema.',
+  instructions: 'Por favor preséntate 10 minutos antes de tu cita programada.',
+  locationType: 'physical',
+  locationAddress: 'Dirección principal del negocio',
+  virtualLink: '',
+  cancellationPolicy: 'Puedes cancelar o reprogramar sin costo notificando con al menos 24 horas de antelación vía WhatsApp.',
+  ctaText: 'Añadir a Google Calendar / Outlook',
+  includeIcs: true,
+  includeWhatsapp: true,
+  sampleClient: 'Cliente Registrado',
+  sampleClientEmail: 'cliente@correo.com',
+  sampleService: 'Servicio General',
+  sampleSpecialist: 'Especialista Asignado',
+  sampleDateTime: 'Horario Programado',
 };
 
-export function replaceEmailVariables(text, vars = {}, tenantKey = 'dental') {
+export const TENANT_EMAIL_TEMPLATES = {
+  default: DEFAULT_EMAIL_TEMPLATE,
+};
+
+export function replaceEmailVariables(text, vars = {}, tenantKey = 'default') {
   if (!text) return '';
-  const template = TENANT_EMAIL_TEMPLATES[tenantKey] || TENANT_EMAIL_TEMPLATES.dental;
+  const template = TENANT_EMAIL_TEMPLATES[tenantKey] || DEFAULT_EMAIL_TEMPLATE;
   return text
     .replaceAll('{{cliente}}', vars?.cliente || vars?.client || template.sampleClient)
     .replaceAll('{{servicio}}', vars?.servicio || vars?.service || template.sampleService)
-    .replaceAll('{{fecha}}', vars?.fecha || vars?.date || template.sampleDateTime?.split('•')[0]?.trim() || 'Viernes 23 de Octubre, 2026')
+    .replaceAll('{{fecha}}', vars?.fecha || vars?.date || template.sampleDateTime?.split('•')[0]?.trim() || 'Fecha Programada')
     .replaceAll('{{hora}}', vars?.hora || vars?.hour || template.sampleDateTime?.split('•')[1]?.trim() || '11:00 hrs')
     .replaceAll('{{especialista}}', vars?.especialista || vars?.specialist || template.sampleSpecialist)
     .replaceAll('{{negocio}}', vars?.negocio || vars?.business || template.senderName)
     .replaceAll('{{ubicacion}}', vars?.ubicacion || vars?.location || template.locationAddress);
 }
 
-const DAYS_OF_WEEK = [
-  { id: 'mon', name: 'Lunes', dateStr: '19 Oct', fullDate: '2026-10-19' },
-  { id: 'tue', name: 'Martes', dateStr: '20 Oct', fullDate: '2026-10-20' },
-  { id: 'wed', name: 'Miércoles', dateStr: '21 Oct', fullDate: '2026-10-21' },
-  { id: 'thu', name: 'Jueves', dateStr: '22 Oct', fullDate: '2026-10-22' },
-  { id: 'fri', name: 'Viernes', dateStr: '23 Oct', fullDate: '2026-10-23' },
-  { id: 'sat', name: 'Sábado', dateStr: '24 Oct', fullDate: '2026-10-24' },
-  { id: 'sun', name: 'Domingo', dateStr: '25 Oct', fullDate: '2026-10-25' },
+const MONTH_NAMES_ES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ];
 
-// Fallback universal si un tenant no tiene calendarConfig
+const MONTH_SHORT_ES = [
+  'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+  'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic',
+];
+
+const DAY_IDS_BY_JS_DAY = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+
+const STATIC_WEEK_DAYS_META = [
+  { id: 'mon', name: 'Lunes' },
+  { id: 'tue', name: 'Martes' },
+  { id: 'wed', name: 'Miércoles' },
+  { id: 'thu', name: 'Jueves' },
+  { id: 'fri', name: 'Viernes' },
+  { id: 'sat', name: 'Sábado' },
+  { id: 'sun', name: 'Domingo' },
+];
+
+function toIsoDateStr(d) {
+  const dateObj = d instanceof Date && !isNaN(d.getTime()) ? d : new Date();
+  return `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+}
+
+function getIsoWeekNumber(dateStrOrObj) {
+  const d = typeof dateStrOrObj === 'string' ? new Date(`${dateStrOrObj}T12:00:00`) : new Date(dateStrOrObj);
+  if (isNaN(d.getTime())) return 1;
+  const target = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = target.getUTCDay() || 7;
+  target.setUTCDate(target.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(target.getUTCFullYear(), 0, 1));
+  return Math.ceil((((target - yearStart) / 86400000) + 1) / 7);
+}
+
+function buildWeekDaysForDate(isoDateStr) {
+  const ref = isoDateStr ? new Date(`${isoDateStr}T12:00:00`) : new Date();
+  const validRef = isNaN(ref.getTime()) ? new Date() : ref;
+  const mondayOffset = (validRef.getDay() + 6) % 7;
+  const monday = new Date(validRef);
+  monday.setDate(validRef.getDate() - mondayOffset);
+
+  return STATIC_WEEK_DAYS_META.map((meta, idx) => {
+    const cur = new Date(monday);
+    cur.setDate(monday.getDate() + idx);
+    const dayNum = String(cur.getDate()).padStart(2, '0');
+    const monthShort = MONTH_SHORT_ES[cur.getMonth()];
+    return {
+      id: meta.id,
+      name: meta.name,
+      dateStr: `${dayNum} ${monthShort}`,
+      fullDate: toIsoDateStr(cur),
+    };
+  });
+}
+
+// Configuración limpia en Zero-State (sin turnos precargados en memoria/buffer)
 const DEFAULT_FALLBACK_CONFIG = {
   type: 'shifts_split',
   slotDurationMin: 60,
   concurrencyLimit: 1,
-  capacityLabel: 'Cita / Paciente',
+  capacityLabel: 'Cita / Cliente',
   operatingDays: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat'],
-  shifts: [
-    {
-      id: 'shift_morning',
-      name: 'Turno Matutino',
-      icon: 'sun',
-      start: '09:00',
-      end: '14:00',
-      hours: ['09:00', '10:00', '11:00', '12:00', '13:00'],
-    },
-    {
-      id: 'shift_afternoon',
-      name: 'Turno Vespertino',
-      icon: 'sunset',
-      start: '15:00',
-      end: '19:00',
-      hours: ['15:00', '16:00', '17:00', '18:00'],
-    },
-  ],
-  breakInterval: { start: '14:00', end: '15:00', label: 'Receso / Cambio de Turno' },
+  shifts: [],
+  breakInterval: null,
 };
 
-// Citas precargadas dinámicas multitenant para toda la semana (Lunes a Domingo)
-const INITIAL_DEMO_APPOINTMENTS = [
-  // ===================== DENTAL (Odontología Integral) =====================
-  {
-    id: 'apt-d01',
-    tenantId: 'dental',
-    dayId: 'mon',
-    hour: '09:30',
-    title: 'Lucía Méndez — Valoración Ortodoncia Invisible',
-    client: 'Lucía Méndez',
-    clientEmail: 'lucia.mendez@gmail.com',
-    phone: '+52 55 4412 8890',
-    specialist: 'Dra. Claudia Ortiz (Ortodoncia)',
-    serviceName: 'Ortodoncia Invisible',
-    serviceColor: '#3B82F6',
-    estimatedValue: 2400,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-19T09:30:00',
-    end: '2026-10-19T10:30:00',
-    details: 'Escaneo intraoral 3D agendado por WhatsApp Bot con confirmación de anticipo.',
-  },
-  {
-    id: 'apt-d02',
-    tenantId: 'dental',
-    dayId: 'tue',
-    hour: '12:00',
-    title: 'Carlos Villaseñor — Limpieza Ultrasónica',
-    client: 'Carlos Villaseñor',
-    clientEmail: 'carlos.villasenor@gmail.com',
-    phone: '+52 55 7719 3321',
-    specialist: 'Dra. Claudia Ortiz (Ortodoncia)',
-    serviceName: 'Limpieza Dental',
-    serviceColor: '#3B82F6',
-    estimatedValue: 1200,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-20T12:00:00',
-    end: '2026-10-20T13:00:00',
-    details: 'Pago en Recepción verificado vía WhatsApp AI Bot.',
-  },
-  {
-    id: 'apt-d03',
-    tenantId: 'dental',
-    dayId: 'wed',
-    hour: '11:00',
-    title: 'Eduardo Garza — Cirugía Implante Unitario',
-    client: 'Ing. Eduardo Garza',
-    clientEmail: 'eduardo.garza@hotmail.com',
-    phone: '+52 55 6671 2233',
-    specialist: 'Dr. Roberto Peña (Maxilofacial)',
-    serviceName: 'Cirugía de Implante',
-    serviceColor: '#10B981',
-    estimatedValue: 8500,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-21T11:00:00',
-    end: '2026-10-21T12:30:00',
-    details: 'Estudio tomográfico verificado. Sillón quirúrgico 1 preparado.',
-  },
-  {
-    id: 'apt-d04',
-    tenantId: 'dental',
-    dayId: 'thu',
-    hour: '10:00',
-    title: 'Ana Martínez — Valoración Implante Dental',
-    client: 'Ana Martínez',
-    clientEmail: 'ana.martinez@gmail.com',
-    phone: '+52 55 1234 5678',
-    specialist: 'Dr. Roberto Peña (Maxilofacial)',
-    serviceName: 'Valoración Implante',
-    serviceColor: '#10B981',
-    estimatedValue: 3500,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-22T10:00:00',
-    end: '2026-10-22T11:00:00',
-    details: 'Anticipo Verificado con Google Calendar Sync.',
-  },
-  {
-    id: 'apt-d05',
-    tenantId: 'dental',
-    dayId: 'fri',
-    hour: '11:00',
-    title: 'Carlos Mendoza — Profilaxis y Diagnóstico 3D',
-    client: 'Carlos Mendoza',
-    clientEmail: 'carlos.mendoza@gmail.com',
-    phone: '+52 55 8899 0011',
-    specialist: 'Dr. Roberto Peña (Maxilofacial)',
-    serviceName: 'Profilaxis Ultrasónica',
-    serviceColor: '#D4FF00',
-    estimatedValue: 850,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-23T11:00:00',
-    end: '2026-10-23T11:45:00',
-    details: 'Arancel bonificado $850 MXN en sillón 3. Cita calificada BILLABLE_LEAD.',
-  },
-  {
-    id: 'apt-d06',
-    tenantId: 'dental',
-    dayId: 'fri',
-    hour: '16:00',
-    title: 'Mariana Solares — Implante Molar y Corona',
-    client: 'Dra. Mariana Solares',
-    clientEmail: 'mariana.solares@outlook.com',
-    phone: '+52 55 8812 9031',
-    specialist: 'Dr. Roberto Peña (Maxilofacial)',
-    serviceName: 'Implante Dental',
-    serviceColor: '#10B981',
-    estimatedValue: 4800,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-23T16:00:00',
-    end: '2026-10-23T17:00:00',
-    details: 'Anticipo verificado $1,500 MXN en Stripe / WhatsApp.',
-  },
-  {
-    id: 'apt-d07',
-    tenantId: 'dental',
-    dayId: 'sat',
-    hour: '10:30',
-    title: 'Sofía Benítez — Blanqueamiento Láser LED',
-    client: 'Sofía Benítez',
-    clientEmail: 'sofia.benitez@gmail.com',
-    phone: '+52 55 3322 1100',
-    specialist: 'Dra. Claudia Ortiz (Ortodoncia)',
-    serviceName: 'Blanqueamiento Dental',
-    serviceColor: '#38BDF8',
-    estimatedValue: 3200,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-24T10:30:00',
-    end: '2026-10-24T11:30:00',
-    details: 'Paquete de sonrisa estética de fin de semana.',
-  },
-
-  // ===================== POLANCO (Restaurante de Cortes & Mixología) =====================
-  {
-    id: 'apt-p01',
-    tenantId: 'polanco',
-    dayId: 'tue',
-    hour: '14:00',
-    title: 'Mauricio Diez — Almuerzo de Negocios (4 personas)',
-    client: 'Mauricio Diez',
-    clientEmail: 'mdiez@holdingmex.com',
-    phone: '+52 55 9911 2233',
-    specialist: 'Capitán de Meseros: Sergio M.',
-    serviceName: 'Comida Ejecutiva Terraza',
-    serviceColor: '#F59E0B',
-    estimatedValue: 3200,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-20T14:00:00',
-    end: '2026-10-20T16:00:00',
-    details: 'Reserva Mesa 8 Terraza Jardín con menú degustación sugerido.',
-  },
-  {
-    id: 'apt-p02',
-    tenantId: 'polanco',
-    dayId: 'wed',
-    hour: '20:00',
-    title: 'Cata Sommelier — Salón Cava Privada (6 personas)',
-    client: 'Familia Slim Domit',
-    clientEmail: 'reserva.cava@polancosteak.mx',
-    phone: '+52 55 4433 2211',
-    specialist: 'Sommelier: Andrea Fuentes',
-    serviceName: 'Maridaje y Cortes Prime',
-    serviceColor: '#EC4899',
-    estimatedValue: 9800,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-21T20:00:00',
-    end: '2026-10-21T23:00:00',
-    details: 'Descorche y maridaje de 5 etiquetas de Valle de Guadalupe.',
-  },
-  {
-    id: 'apt-p03',
-    tenantId: 'polanco',
-    dayId: 'thu',
-    hour: '21:00',
-    title: 'Guillermo Ochoa — Mesa VIP Tomahawk Black Onyx',
-    client: 'Guillermo Ochoa',
-    clientEmail: 'gochoa@sportsmex.com',
-    phone: '+52 55 1209 8877',
-    specialist: 'Capitán de Meseros: Sergio M.',
-    serviceName: 'Tomahawk Flameado en Mesa',
-    serviceColor: '#F59E0B',
-    estimatedValue: 4600,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-22T21:00:00',
-    end: '2026-10-22T23:00:00',
-    details: 'Flameado en mesa con mantequilla de romero y tuétano asado.',
-  },
-  {
-    id: 'apt-p04',
-    tenantId: 'polanco',
-    dayId: 'fri',
-    hour: '14:30',
-    title: 'Alejandro Bastida — Terraza VIP (4 personas)',
-    client: 'Alejandro Bastida',
-    clientEmail: 'alejandro.bastida@empresa.mx',
-    phone: '+52 55 3341 8920',
-    specialist: 'Capitán de Meseros: Sergio M.',
-    serviceName: 'Reserva Comida & Degustación',
-    serviceColor: '#F59E0B',
-    estimatedValue: 3800,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-23T14:30:00',
-    end: '2026-10-23T16:00:00',
-    details: 'Consumo mínimo verificado. Mesa 4 Terraza VIP.',
-  },
-  {
-    id: 'apt-p05',
-    tenantId: 'polanco',
-    dayId: 'fri',
-    hour: '20:30',
-    title: 'Cena Aniversario — Salón Central (2 personas)',
-    client: 'Lic. Rodrigo Elizondo',
-    clientEmail: 'rodrigo.elizondo@holding.com',
-    phone: '+52 55 4120 7890',
-    specialist: 'Sommelier: Andrea Fuentes',
-    serviceName: 'Cena Maridaje 5 Tiempos',
-    serviceColor: '#EC4899',
-    estimatedValue: 4200,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-23T20:30:00',
-    end: '2026-10-23T22:00:00',
-    details: 'Botella de vino espumoso de cortesía reservada.',
-  },
-  {
-    id: 'apt-p06',
-    tenantId: 'polanco',
-    dayId: 'sat',
-    hour: '15:00',
-    title: 'Javier Hernández — Almuerzo Terraza Vista (6 pers)',
-    client: 'Javier Hernández',
-    clientEmail: 'jhernandez@ch14.com',
-    phone: '+52 55 7788 9900',
-    specialist: 'Capitán de Meseros: Sergio M.',
-    serviceName: 'Cortes Sonora Prime',
-    serviceColor: '#F59E0B',
-    estimatedValue: 5600,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-24T15:00:00',
-    end: '2026-10-24T17:30:00',
-    details: 'Mesa 1 panorámica confirmada con depósito de garantía.',
-  },
-
-  // ===================== URBAN (E-Commerce / Fitting Room VIP) =====================
-  {
-    id: 'apt-u01',
-    tenantId: 'urban',
-    dayId: 'mon',
-    hour: '11:00',
-    title: 'Kevin Roldán — Fitting Privado Cyberpunk Drop',
-    client: 'Kevin Roldán',
-    clientEmail: 'kevin.roldan@urbanwear.mx',
-    phone: '+52 55 2211 4455',
-    specialist: 'Stylist VIP: Mateo Ramos',
-    serviceName: 'Fitting Room High-Tops 27.5 MX',
-    serviceColor: '#A855F7',
-    estimatedValue: 2800,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-19T11:00:00',
-    end: '2026-10-19T12:00:00',
-    details: 'Prueba exclusiva de sneakers talla 27.5 con pago diferido Kueski Pay.',
-  },
-  {
-    id: 'apt-u02',
-    tenantId: 'urban',
-    dayId: 'wed',
-    hour: '15:30',
-    title: 'Diego Santoro — Asesoría Streetwear & Customización',
-    client: 'Diego Santoro',
-    clientEmail: 'diego.santoro@gmail.com',
-    phone: '+52 55 8877 6655',
-    specialist: 'Sneaker Artist: Brenda L.',
-    serviceName: 'Custom Sneakers & Hoodies 450 GSM',
-    serviceColor: '#EC4899',
-    estimatedValue: 3500,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-21T15:30:00',
-    end: '2026-10-21T16:30:00',
-    details: 'Grabado láser y ajuste personalizado de cordones reflectivos 3M.',
-  },
-  {
-    id: 'apt-u03',
-    tenantId: 'urban',
-    dayId: 'fri',
-    hour: '13:00',
-    title: 'Mateo Cárdenas — Pick-up Drop Exclusivo Tokio Run',
-    client: 'Mateo Cárdenas',
-    clientEmail: 'mateo.cardenas@outlook.com',
-    phone: '+52 55 3344 5566',
-    specialist: 'Concierge VIP: Mateo Ramos',
-    serviceName: 'Entrega en Showroom Privado',
-    serviceColor: '#A855F7',
-    estimatedValue: 4200,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-23T13:00:00',
-    end: '2026-10-23T13:45:00',
-    details: 'Unboxing en showroom con certificado de autenticidad NFT y tarjeta de garantía.',
-  },
-  {
-    id: 'apt-u04',
-    tenantId: 'urban',
-    dayId: 'sat',
-    hour: '12:00',
-    title: 'Sebastián Yatra — Experiencia Sneakerhead VIP',
-    client: 'Sebastián Yatra',
-    clientEmail: 'syatra@musicagency.com',
-    phone: '+52 55 9900 1122',
-    specialist: 'Director Creativo: Alan V.',
-    serviceName: 'Showroom Privado a Puerta Cerrada',
-    serviceColor: '#10B981',
-    estimatedValue: 12000,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-24T12:00:00',
-    end: '2026-10-24T14:00:00',
-    details: 'Reserva exclusiva del showroom completo para selección de vestuario de tour.',
-  },
-
-  // ===================== CORP (Vector Inside Enterprise B2B) =====================
-  {
-    id: 'apt-c01',
-    tenantId: 'corp',
-    dayId: 'mon',
-    hour: '10:00',
-    title: 'Alberto Slim — Validación Multi-Tenant Holding 4 Razones',
-    client: 'Ing. Alberto Slim',
-    clientEmail: 'aslim@holdingcorp.com',
-    phone: '+52 55 1122 3344',
-    specialist: 'Director de Soluciones: Marcos V.',
-    serviceName: 'Demo Arquitectura Enterprise RLS',
-    serviceColor: '#3B82F6',
-    estimatedValue: 50000,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-19T10:00:00',
-    end: '2026-10-19T11:00:00',
-    details: 'Validación técnica de aislamiento criptográfico PostgreSQL por tenant_id.',
-  },
-  {
-    id: 'apt-c02',
-    tenantId: 'corp',
-    dayId: 'tue',
-    hour: '11:30',
-    title: 'Claudia Morales — Auditoría Meta CAPI Server-to-Server',
-    client: 'Directora Claudia Morales',
-    clientEmail: 'cmorales@retailmex.com',
-    phone: '+52 55 9988 7766',
-    specialist: 'Lead AI Engineer: Víctor Hugo',
-    serviceName: 'Prueba de Carga CAPI S2S',
-    serviceColor: '#10B981',
-    estimatedValue: 35000,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-20T11:30:00',
-    end: '2026-10-20T12:30:00',
-    details: 'Demostración de telemetría de eventos Purchase y AddPaymentInfo sin cookies.',
-  },
-  {
-    id: 'apt-c03',
-    tenantId: 'corp',
-    dayId: 'thu',
-    hour: '10:00',
-    title: 'Holding Femsa Norte — Sesión de Cierre Contrato Anual',
-    client: 'Lic. Fernando Garza (CFO)',
-    clientEmail: 'fgarza@femsanorte.com',
-    phone: '+52 55 5544 3322',
-    specialist: 'VP Enterprise: Marcos V.',
-    serviceName: 'Firma de Contrato & SLA 99.9%',
-    serviceColor: '#D4FF00',
-    estimatedValue: 60000,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-22T10:00:00',
-    end: '2026-10-22T11:30:00',
-    details: 'Revisión final de cláusulas de gobernanza IA y despliegue en AWS dedicado.',
-  },
-  {
-    id: 'apt-c04',
-    tenantId: 'corp',
-    dayId: 'fri',
-    hour: '11:00',
-    title: 'Discovery Call B2B — Logística Global Monterrey',
-    client: 'Lic. Rodrigo Elizondo (VP Operaciones)',
-    clientEmail: 'rodrigo.elizondo@logisticaglobal.com',
-    phone: '+52 55 4120 7890',
-    specialist: 'Director de Soluciones: Marcos V.',
-    serviceName: 'Discovery Call ($45k USD Pipeline)',
-    serviceColor: '#3B82F6',
-    estimatedValue: 45000,
-    depositPaid: true,
-    status: 'CONFIRMED',
-    start: '2026-10-23T11:00:00',
-    end: '2026-10-23T11:30:00',
-    details: 'Enlace Google Meet autogenerado con BANT calificado al 100%.',
-  },
-];
+// Citas precargadas vacías para producción (Zero-State)
+const INITIAL_DEMO_APPOINTMENTS = [];
 
 export const MasterAgenda = () => {
   const { activeTenantId, activeTenant } = useTenant();
-  const [appointments, setAppointments] = useState(INITIAL_DEMO_APPOINTMENTS);
+  const [appointments, setAppointments] = useState([]);
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState(null);
-  const [viewMode, setViewMode] = useState('week_table'); // 'week_table' (Semana Completa) | 'grid' (Horas & Turnos) | 'list'
-  const [selectedDay, setSelectedDay] = useState('fri'); // Viernes activo
+  const [viewMode, setViewMode] = useState('month'); // 'month' (Mes Completo) | 'grid' (Zoom Día / Horas) | 'week_table' (Semana) | 'list'
+  const [liveNow, setLiveNow] = useState(() => new Date());
+  const [currentCalendarMonth, setCurrentCalendarMonth] = useState(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() };
+  });
+  const [selectedDay, setSelectedDay] = useState(() => DAY_IDS_BY_JS_DAY[new Date().getDay()]);
+  const [selectedMonthDate, setSelectedMonthDate] = useState(() => toIsoDateStr(new Date()));
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [filterStatus, setFilterStatus] = useState('ALL'); // 'ALL' | 'CONFIRMED' | 'TRIAGE'
   const [gmailSentSuccess, setGmailSentSuccess] = useState(false);
@@ -663,7 +233,7 @@ export const MasterAgenda = () => {
     };
   });
 
-  const activeKey = activeTenant?.id || activeTenantId || 'dental';
+  const activeKey = activeTenant?.id || activeTenantId || null;
 
   // Almacenar configuraciones por tenant de forma estrictamente aislada
   const [tenantEmailConfigs, setTenantEmailConfigs] = useState(() => {
@@ -676,12 +246,13 @@ export const MasterAgenda = () => {
     return TENANT_EMAIL_TEMPLATES;
   });
 
-  const emailConfig = tenantEmailConfigs[activeKey] || TENANT_EMAIL_TEMPLATES[activeKey] || TENANT_EMAIL_TEMPLATES.dental;
-  const currentTenantTemplate = TENANT_EMAIL_TEMPLATES[activeKey] || TENANT_EMAIL_TEMPLATES.dental;
+  const emailConfig = (activeKey && tenantEmailConfigs[activeKey]) || DEFAULT_EMAIL_TEMPLATE;
+  const currentTenantTemplate = (activeKey && TENANT_EMAIL_TEMPLATES[activeKey]) || DEFAULT_EMAIL_TEMPLATE;
 
   const setEmailConfig = (updaterOrObj) => {
+    if (!activeKey) return;
     setTenantEmailConfigs((prev) => {
-      const current = prev[activeKey] || TENANT_EMAIL_TEMPLATES[activeKey] || TENANT_EMAIL_TEMPLATES.dental;
+      const current = prev[activeKey] || DEFAULT_EMAIL_TEMPLATE;
       const newObj = typeof updaterOrObj === 'function' ? updaterOrObj(current) : updaterOrObj;
       const updated = { ...prev, [activeKey]: newObj };
       if (typeof window !== 'undefined') {
@@ -693,14 +264,70 @@ export const MasterAgenda = () => {
     });
   };
 
-  // Sincronizar si cambia el tenant activo
+  // Reloj en tiempo real (sincronizado segundo a segundo con la hora local/CDMX)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setLiveNow(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Sincronizar si cambia el tenant activo y cargar citas desde PostgreSQL Backend
   useEffect(() => {
     const base = activeTenant?.calendarConfig || DEFAULT_FALLBACK_CONFIG;
     setCalendarConfig({
       ...base,
       shifts: recomputeShiftsHours(base.shifts || [], base.slotDurationMin || 60),
     });
+
+    const tenantKey = activeTenant?.id || activeTenantId;
+    if (!tenantKey) {
+      setAppointments([]);
+      return;
+    }
+
+    calendarService
+      .getAppointments(tenantKey)
+      .then((backendApts) => {
+        setAppointments(Array.isArray(backendApts) ? backendApts : []);
+      })
+      .catch(() => {
+        setAppointments([]);
+      });
   }, [activeTenantId, activeTenant]);
+
+  const handlePrevMonth = () => {
+    setCurrentCalendarMonth((prev) => {
+      const newMonth = prev.month === 0 ? 11 : prev.month - 1;
+      const newYear = prev.month === 0 ? prev.year - 1 : prev.year;
+      const firstDateStr = `${newYear}-${String(newMonth + 1).padStart(2, '0')}-01`;
+      setSelectedMonthDate(firstDateStr);
+      const dt = new Date(`${firstDateStr}T12:00:00`);
+      setSelectedDay(DAY_IDS_BY_JS_DAY[dt.getDay()]);
+      return { year: newYear, month: newMonth };
+    });
+  };
+
+  const handleNextMonth = () => {
+    setCurrentCalendarMonth((prev) => {
+      const newMonth = prev.month === 11 ? 0 : prev.month + 1;
+      const newYear = prev.month === 11 ? prev.year + 1 : prev.year;
+      const firstDateStr = `${newYear}-${String(newMonth + 1).padStart(2, '0')}-01`;
+      setSelectedMonthDate(firstDateStr);
+      const dt = new Date(`${firstDateStr}T12:00:00`);
+      setSelectedDay(DAY_IDS_BY_JS_DAY[dt.getDay()]);
+      return { year: newYear, month: newMonth };
+    });
+  };
+
+  const handleGoToToday = () => {
+    const now = new Date();
+    const isoToday = toIsoDateStr(now);
+    setLiveNow(now);
+    setCurrentCalendarMonth({ year: now.getFullYear(), month: now.getMonth() });
+    setSelectedMonthDate(isoToday);
+    setSelectedDay(DAY_IDS_BY_JS_DAY[now.getDay()]);
+  };
 
   const handleUpdateDuration = (newDuration) => {
     const num = Number(newDuration);
@@ -738,19 +365,22 @@ export const MasterAgenda = () => {
         id: `shift_${Date.now()}`,
         name: `Turno ${newShiftIndex}`,
         icon: newShiftIndex === 2 ? 'sunset' : newShiftIndex >= 3 ? 'moon' : 'sun',
-        start: '16:00',
-        end: '20:00',
-        hours: generateSlotHours('16:00', '20:00', prev.slotDurationMin),
+        start: newShiftIndex === 1 ? '09:00' : '16:00',
+        end: newShiftIndex === 1 ? '14:00' : '20:00',
+        hours: generateSlotHours(
+          newShiftIndex === 1 ? '09:00' : '16:00',
+          newShiftIndex === 1 ? '14:00' : '20:00',
+          prev.slotDurationMin
+        ),
       };
       return { ...prev, shifts: [...(prev.shifts || []), newShift] };
     });
   };
 
   const handleRemoveShift = (index) => {
-    if ((calendarConfig.shifts || []).length <= 1) return;
     setCalendarConfig((prev) => ({
       ...prev,
-      shifts: prev.shifts.filter((_, i) => i !== index),
+      shifts: (prev.shifts || []).filter((_, i) => i !== index),
     }));
   };
 
@@ -765,10 +395,14 @@ export const MasterAgenda = () => {
 
   const handleSaveConfig = () => {
     const finalizedShifts = recomputeShiftsHours(calendarConfig.shifts, calendarConfig.slotDurationMin);
-    setCalendarConfig((prev) => ({
-      ...prev,
+    const updatedConfig = {
+      ...calendarConfig,
       shifts: finalizedShifts,
-    }));
+    };
+    setCalendarConfig(updatedConfig);
+    if (activeKey) {
+      tenantService.updateVerticalConfig(activeKey, updatedConfig).catch(() => {});
+    }
     setSavedConfigSuccess(true);
     try {
       confetti({ particleCount: 40, spread: 60, colors: [emailConfig.accentColor || '#D4FF00', '#10B981'] });
@@ -787,7 +421,30 @@ export const MasterAgenda = () => {
     setTimeout(() => setTestEmailSent(false), 3500);
   };
 
-  const currentDayConfig = DAYS_OF_WEEK.find((d) => d.id === selectedDay) || DAYS_OF_WEEK[4];
+  const todayIsoStr = toIsoDateStr(liveNow);
+  const dynamicWeekDays = buildWeekDaysForDate(selectedMonthDate);
+  const currentWeekNumber = getIsoWeekNumber(selectedMonthDate);
+  const weekStartLabel = dynamicWeekDays[0]?.dateStr || '';
+  const weekEndLabel = dynamicWeekDays[6]?.dateStr || '';
+  const activeMonthName = MONTH_NAMES_ES[currentCalendarMonth.month] || '';
+  const activeYear = currentCalendarMonth.year;
+  const liveTimeFormatted = liveNow.toLocaleTimeString('es-MX', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+
+  // Cálculo dinámico de días del mes seleccionado (Calendario Gregoriano Real)
+  const firstDayOfMonth = new Date(activeYear, currentCalendarMonth.month, 1);
+  const daysInMonth = new Date(activeYear, currentCalendarMonth.month + 1, 0).getDate();
+  const prevMonthDaysCount = new Date(activeYear, currentCalendarMonth.month, 0).getDate();
+  const leadingBlankDays = (firstDayOfMonth.getDay() + 6) % 7; // Lunes = 0 ... Domingo = 6
+  const prevMonthIndex = (currentCalendarMonth.month + 11) % 12;
+  const nextMonthIndex = (currentCalendarMonth.month + 1) % 12;
+  const trailingBlankDays = (7 - ((leadingBlankDays + daysInMonth) % 7)) % 7;
+
+  const currentDayConfig = dynamicWeekDays.find((d) => d.id === selectedDay) || dynamicWeekDays[0];
   const isOperatingDay = !calendarConfig.operatingDays || calendarConfig.operatingDays.includes(selectedDay);
 
   // Total de horas calculadas dinámicamente según los turnos de este tenant
@@ -829,13 +486,18 @@ export const MasterAgenda = () => {
   };
 
   const handleManualBook = (shift, hour) => {
+    const currentTenantKey = activeTenant?.id || activeTenantId || null;
+    if (!currentTenantKey) {
+      alert('Selecciona un negocio activo antes de agendar una cita.');
+      return;
+    }
     const clientName = prompt(`Agendar cita manual para las ${hour} hrs (${shift.name}):\nNombre del cliente / paciente:`);
     if (!clientName) return;
-    const currentTenantKey = activeTenant?.id || activeTenantId || 'dental';
     const newApt = {
       id: `apt-${Date.now()}`,
       tenantId: currentTenantKey,
       dayId: selectedDay,
+      fullDate: currentDayConfig.fullDate,
       hour: hour,
       title: `${clientName} — Cita Directa`,
       client: clientName,
@@ -852,6 +514,7 @@ export const MasterAgenda = () => {
       details: 'Agendado manualmente en Master Agenda',
     };
     setAppointments((prev) => [...prev, newApt]);
+    calendarService.createAppointment({ ...newApt, fullDate: currentDayConfig.fullDate }).catch(() => {});
     try {
       confetti({ particleCount: 30, spread: 50, colors: ['#10B981', '#D4FF00'] });
     } catch (e) {}
@@ -860,10 +523,10 @@ export const MasterAgenda = () => {
   };
 
   // Filtrado de citas (por tenant activo y filtro de estado)
-  const currentTenantId = activeTenant?.id || activeTenantId || 'dental';
-  const tenantAppointments = appointments.filter(
-    (apt) => !apt.tenantId || apt.tenantId === currentTenantId || (currentTenantId === 'dental' && apt.tenantId === 'tenant-mex-001')
-  );
+  const currentTenantId = activeTenant?.id || activeTenantId || null;
+  const tenantAppointments = currentTenantId
+    ? appointments.filter((apt) => !apt.tenantId || apt.tenantId === currentTenantId)
+    : [];
 
   const filteredAppointments = tenantAppointments.filter((apt) => {
     if (filterStatus === 'CONFIRMED') return apt.depositPaid;
@@ -871,8 +534,12 @@ export const MasterAgenda = () => {
     return true;
   });
 
-  // Citas y métricas del día seleccionado
-  const dayAppointments = filteredAppointments.filter((a) => a.dayId === selectedDay);
+  // Citas y métricas del día seleccionado (coincidiendo fecha exacta o dayId)
+  const dayAppointments = filteredAppointments.filter((a) => {
+    if (a.fullDate) return a.fullDate === currentDayConfig.fullDate;
+    if (a.start && a.start.includes('T')) return a.start.startsWith(currentDayConfig.fullDate);
+    return a.dayId === selectedDay;
+  });
   const confirmedCount = dayAppointments.filter((a) => a.depositPaid).length;
   const triageCount = dayAppointments.filter((a) => !a.depositPaid).length;
   const freeSlotsCount = Math.max(0, totalSlotsCount - dayAppointments.length);
@@ -892,7 +559,7 @@ export const MasterAgenda = () => {
             <CalendarIcon className="w-6 h-6" />
           </div>
           <div>
-            <div className="flex items-center gap-2.5">
+            <div className="flex flex-wrap items-center gap-2.5">
               <h2 className="text-2xl font-black text-[var(--text-main)] tracking-tight uppercase">
                 Master <span className="text-neon">Agenda</span>
               </h2>
@@ -900,12 +567,19 @@ export const MasterAgenda = () => {
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Google Calendar 2-Way Sync
               </span>
+              <span
+                suppressHydrationWarning
+                className="px-2.5 py-0.5 rounded-full bg-neon/10 text-lime-700 dark:text-neon border border-neon/30 text-[10px] font-mono font-bold flex items-center gap-1.5"
+              >
+                <Clock className="w-3 h-3" />
+                Tiempo Real CDMX: {liveTimeFormatted} hrs • {todayIsoStr}
+              </span>
             </div>
             <p className="text-xs text-[var(--text-muted)] mt-0.5 flex flex-wrap items-center gap-2 font-mono">
               <span>Negocio activo:</span>
-              <strong className="text-[var(--text-main)]">{activeTenant?.name || 'Clínica Odontológica Integral'}</strong>
+              <strong className="text-[var(--text-main)]">{activeTenant?.name || 'Sin negocio seleccionado'}</strong>
               <span className="text-[var(--text-muted)]">•</span>
-              <span className="text-neon">Giro: {activeTenant?.giro || 'Servicios Profesionales'}</span>
+              <span className="text-neon">Giro: {activeTenant?.giro || 'Sin giro activo'}</span>
             </p>
           </div>
         </div>
@@ -960,15 +634,15 @@ export const MasterAgenda = () => {
         <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)]">
           <button
             type="button"
-            onClick={() => setViewMode('week_table')}
+            onClick={() => setViewMode('month')}
             className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
-              viewMode === 'week_table'
+              viewMode === 'month'
                 ? 'bg-neon text-black font-bold shadow-[0_0_10px_var(--neon-glow)]'
                 : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
             }`}
           >
-            <CalendarDays className="w-3.5 h-3.5" />
-            <span>📅 Semana Completa (Lunes a Domingo)</span>
+            <CalendarIcon className="w-3.5 h-3.5" />
+            <span suppressHydrationWarning>🗓️ Mes Completo ({activeMonthName})</span>
           </button>
 
           <button
@@ -981,7 +655,20 @@ export const MasterAgenda = () => {
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
-            <span>⏱️ Vista Horas & Turnos</span>
+            <span>⏱️ Detalle del Día & Turnos</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setViewMode('week_table')}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
+              viewMode === 'week_table'
+                ? 'bg-neon text-black font-bold shadow-[0_0_10px_var(--neon-glow)]'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+            }`}
+          >
+            <CalendarDays className="w-3.5 h-3.5" />
+            <span suppressHydrationWarning>📅 Semana {currentWeekNumber}</span>
           </button>
 
           <button
@@ -1023,34 +710,284 @@ export const MasterAgenda = () => {
       </div>
 
       {/* ========================================================================= */}
-      {/* 3. VISTA 1: HORAS Y BLOQUES DINÁMICOS SEGÚN EL GIRO DEL TENANT            */}
+      {/* 2.5 VISTA MES COMPLETO (SINCRONIZADO EN TIEMPO REAL Y HORA REAL)          */}
+      {/* ========================================================================= */}
+      {viewMode === 'month' && (
+        <div className="rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-6 space-y-6 animate-fadeIn shadow-2xl">
+          {/* Cabecera del Mes */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-[var(--border-color)] gap-4">
+            <div>
+              <div className="flex items-center gap-3">
+                <span className="p-2.5 rounded-2xl bg-neon/15 text-lime-700 dark:text-neon border border-neon/30">
+                  <CalendarIcon className="w-5 h-5" />
+                </span>
+                <div>
+                  <h3 className="text-lg font-bold text-[var(--text-main)] flex flex-wrap items-center gap-2">
+                    <span suppressHydrationWarning>
+                      {activeMonthName} {activeYear}
+                    </span>
+                    <span
+                      suppressHydrationWarning
+                      className="text-xs font-mono font-normal px-2.5 py-0.5 rounded-full bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-muted)]"
+                    >
+                      {daysInMonth} Días • Sincronizado en Tiempo Real ({liveTimeFormatted} hrs)
+                    </span>
+                  </h3>
+                  <p className="text-xs text-[var(--text-muted)] font-mono mt-0.5">
+                    Negocio: <strong>{activeTenant?.name || 'Sin negocio seleccionado'}</strong> • Haz clic en cualquier día para hacer <strong>Zoom</strong> a sus horarios y citas.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1 bg-[var(--bg-card-subtle)] p-1 rounded-xl border border-[var(--border-color)]">
+                <button
+                  type="button"
+                  onClick={handlePrevMonth}
+                  className="p-1.5 rounded-lg hover:bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
+                  title="Mes Anterior"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleGoToToday}
+                  className="px-2.5 py-1 rounded-lg bg-neon/15 hover:bg-neon hover:text-black text-lime-800 dark:text-neon text-[11px] font-mono font-bold transition-all"
+                  title="Ir al día de hoy en tiempo real"
+                >
+                  Hoy
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNextMonth}
+                  className="p-1.5 rounded-lg hover:bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
+                  title="Mes Siguiente"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+
+              <span className="text-xs font-mono px-3 py-1.5 rounded-xl bg-neon/15 text-lime-800 dark:text-neon border border-neon/30 font-bold">
+                {filteredAppointments.length} Citas del Mes
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowMobileSyncModal(true)}
+                className="px-3.5 py-1.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-xs font-mono font-bold text-[var(--text-main)] flex items-center gap-1.5 transition-all"
+              >
+                <Smartphone className="w-3.5 h-3.5 text-neon" />
+                <span>Móvil Sync</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Días de la semana Header (Lunes a Domingo) */}
+          <div className="grid grid-cols-7 gap-2 text-center text-xs font-mono font-bold uppercase tracking-wider text-[var(--text-muted)] pb-2 border-b border-[var(--border-color)]">
+            <span className="text-lime-700 dark:text-neon">Lun</span>
+            <span>Mar</span>
+            <span>Mié</span>
+            <span>Jue</span>
+            <span>Vie</span>
+            <span>Sáb</span>
+            <span className="text-rose-500/80">Dom</span>
+          </div>
+
+          {/* Grilla Dinámica del Mes Actual */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2.5">
+            {/* Días previos del mes anterior para alinear el Lunes */}
+            {Array.from({ length: leadingBlankDays }, (_, idx) => {
+              const d = prevMonthDaysCount - leadingBlankDays + idx + 1;
+              return (
+                <div
+                  key={`prev-${d}`}
+                  className="min-h-[105px] p-2.5 rounded-2xl bg-[var(--bg-base)]/40 border border-dashed border-[var(--border-color)]/40 opacity-30 select-none flex flex-col justify-between"
+                >
+                  <span className="text-xs font-mono font-bold text-[var(--text-muted)]">{d}</span>
+                  <span className="text-[9px] font-mono text-[var(--text-muted)]">
+                    {MONTH_NAMES_ES[prevMonthIndex]}
+                  </span>
+                </div>
+              );
+            })}
+
+            {/* Días reales del mes activo */}
+            {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((dayNum) => {
+              const dayStr = String(dayNum).padStart(2, '0');
+              const monthStr = String(currentCalendarMonth.month + 1).padStart(2, '0');
+              const fullDate = `${activeYear}-${monthStr}-${dayStr}`;
+
+              const dt = new Date(`${fullDate}T12:00:00`);
+              const dayId = DAY_IDS_BY_JS_DAY[dt.getDay()];
+              const isOperating = activeTenant
+                ? !calendarConfig.operatingDays || calendarConfig.operatingDays.includes(dayId)
+                : false;
+
+              const aptsOnThisDay = !isOperating
+                ? []
+                : filteredAppointments.filter((a) => {
+                    if (a.fullDate === fullDate) return true;
+                    if (a.start && a.start.startsWith(fullDate)) return true;
+                    return false;
+                  });
+
+              const isToday = fullDate === todayIsoStr;
+              const isSelected = selectedMonthDate === fullDate;
+              const hasApts = aptsOnThisDay.length > 0;
+              const dayTotalRevenue = aptsOnThisDay.reduce((acc, curr) => acc + (curr.estimatedValue || 1200), 0);
+
+              return (
+                <div
+                  key={fullDate}
+                  onClick={() => {
+                    setSelectedMonthDate(fullDate);
+                    setSelectedDay(dayId);
+                    setViewMode('grid');
+                  }}
+                  className={`min-h-[115px] p-3 rounded-2xl border flex flex-col justify-between cursor-pointer transition-all duration-200 group relative overflow-hidden ${
+                    isSelected
+                      ? 'bg-neon/15 border-neon shadow-[0_0_20px_var(--neon-glow)] ring-2 ring-neon/40'
+                      : isToday
+                      ? 'bg-emerald-500/10 border-emerald-500/60 ring-1 ring-emerald-500/40'
+                      : hasApts
+                      ? 'bg-[var(--bg-card)] border-neon/40 hover:border-neon hover:shadow-lg hover:-translate-y-0.5'
+                      : isOperating
+                      ? 'bg-[var(--bg-card)] border-[var(--border-color)] hover:border-[var(--text-muted)] hover:bg-[var(--bg-card-subtle)]'
+                      : 'bg-[var(--bg-card-subtle)]/60 border-[var(--border-color)]/60 opacity-50'
+                  }`}
+                  title={`Haz clic para ver el detalle del ${dayNum} de ${activeMonthName} ${activeYear}`}
+                >
+                  {/* Encabezado del número de día */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className={`text-sm font-mono font-black ${
+                          isToday || hasApts
+                            ? 'text-neon'
+                            : 'text-[var(--text-main)] group-hover:text-neon transition-colors'
+                        }`}
+                      >
+                        {dayNum}
+                      </span>
+                      {isToday && (
+                        <span className="px-1.5 py-0.5 rounded bg-neon text-black text-[8px] font-mono font-black uppercase">
+                          HOY
+                        </span>
+                      )}
+                    </div>
+                    {hasApts ? (
+                      <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-mono font-bold flex items-center gap-1 border border-emerald-500/30">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        {aptsOnThisDay.length}
+                      </span>
+                    ) : !activeTenant ? (
+                      <span className="text-[9px] font-mono text-[var(--text-muted)]">Sin negocio</span>
+                    ) : !isOperating ? (
+                      <span className="text-[9px] font-mono text-[var(--text-muted)]">Cerrado</span>
+                    ) : null}
+                  </div>
+
+                  {/* Citas preview dentro del día */}
+                  <div className="space-y-1 my-1">
+                    {aptsOnThisDay.slice(0, 2).map((apt) => (
+                      <div
+                        key={apt.id}
+                        className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--bg-panel)] border border-[var(--border-color)] text-[var(--text-main)] truncate"
+                        style={{ borderLeftColor: apt.serviceColor || '#3B82F6', borderLeftWidth: '2px' }}
+                      >
+                        <span className="font-bold text-neon mr-1">{apt.hour}</span>
+                        <span>{apt.client.split(' ')[0]}</span>
+                      </div>
+                    ))}
+                    {aptsOnThisDay.length > 2 && (
+                      <span className="text-[9px] font-mono text-[var(--text-muted)] block text-right">
+                        +{aptsOnThisDay.length - 2} más...
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Footer del día */}
+                  <div className="pt-1.5 border-t border-[var(--border-color)] flex items-center justify-between text-[10px] font-mono">
+                    {hasApts ? (
+                      <span suppressHydrationWarning className="text-emerald-400 font-bold">
+                        ${String(dayTotalRevenue).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                      </span>
+                    ) : (
+                      <span className="text-[var(--text-muted)] text-[9px]">
+                        {!activeTenant ? 'Selecciona negocio' : isOperating ? 'Libre' : 'No opera'}
+                      </span>
+                    )}
+                    <span className="text-[9px] text-neon opacity-0 group-hover:opacity-100 font-bold transition-opacity">
+                      Zoom →
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Días del mes siguiente para completar la última fila */}
+            {Array.from({ length: trailingBlankDays }, (_, idx) => (
+              <div
+                key={`next-${idx + 1}`}
+                className="min-h-[105px] p-2.5 rounded-2xl bg-[var(--bg-base)]/40 border border-dashed border-[var(--border-color)]/40 opacity-30 select-none flex flex-col justify-between"
+              >
+                <span className="text-xs font-mono font-bold text-[var(--text-muted)]">{idx + 1}</span>
+                <span className="text-[9px] font-mono text-[var(--text-muted)]">
+                  {MONTH_NAMES_ES[nextMonthIndex]}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 3. VISTA 1: HORAS Y BLOQUES DINÁMICOS SEGÚN EL GIRO DEL TENANT (ZOOM DÍA) */}
       {/* ========================================================================= */}
       {viewMode === 'grid' && (
         <div className="space-y-4 animate-fadeIn">
           {/* Header del Día + Selector de Pestañas de Días */}
           <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-4 shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--border-color)]">
-              <div className="flex items-center gap-2.5">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('month')}
+                  className="px-2.5 py-1 rounded-xl bg-neon/15 hover:bg-neon hover:text-black text-lime-800 dark:text-neon border border-neon/30 text-xs font-mono font-bold flex items-center gap-1 transition-all mr-1 shadow-sm"
+                  title="Volver a la vista del mes completo"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  <span>Volver al Mes</span>
+                </button>
                 <CalendarCheck className="w-5 h-5 text-brand-primary" />
-                <span className="text-sm font-bold text-[var(--text-main)] tracking-wide">
-                  Semana 43 • Octubre 2026
+                <span suppressHydrationWarning className="text-sm font-bold text-[var(--text-main)] tracking-wide">
+                  Zoom Detallado • {currentDayConfig.name} {currentDayConfig.dateStr} ({currentDayConfig.fullDate})
                 </span>
-                <span className="px-2 py-0.5 rounded bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[11px] text-[var(--text-muted)] font-mono">
-                  Zona Horaria: Ciudad de México (GMT-6)
+                <span
+                  suppressHydrationWarning
+                  className="px-2 py-0.5 rounded bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[11px] text-[var(--text-muted)] font-mono"
+                >
+                  CDMX (GMT-6) • {liveTimeFormatted} hrs
                 </span>
               </div>
 
-              {/* Selector de Día */}
+              {/* Selector de Día de la Semana Activa */}
               <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
-                {DAYS_OF_WEEK.map((d) => {
-                  const dayAptsCount = filteredAppointments.filter((a) => a.dayId === d.id).length;
-                  const isActive = selectedDay === d.id;
+                {dynamicWeekDays.map((d) => {
+                  const dayAptsCount = filteredAppointments.filter(
+                    (a) => a.fullDate === d.fullDate || (!a.fullDate && a.dayId === d.id)
+                  ).length;
+                  const isActive = selectedDay === d.id && selectedMonthDate === d.fullDate;
                   const isDayOpen = !calendarConfig.operatingDays || calendarConfig.operatingDays.includes(d.id);
+                  const isDayToday = d.fullDate === todayIsoStr;
                   return (
                     <button
-                      key={d.id}
+                      key={d.fullDate}
                       type="button"
-                      onClick={() => setSelectedDay(d.id)}
+                      onClick={() => {
+                        setSelectedDay(d.id);
+                        setSelectedMonthDate(d.fullDate);
+                      }}
                       className={`px-3.5 py-2 rounded-xl text-center transition-all shrink-0 border ${
                         isActive
                           ? 'bg-brand-primary text-black border-brand-primary font-bold shadow-neon-sm'
@@ -1059,7 +996,9 @@ export const MasterAgenda = () => {
                           : 'bg-[var(--bg-card-subtle)] text-[var(--text-muted)] border-[var(--border-color)] line-through opacity-50'
                       }`}
                     >
-                      <span className="block text-xs font-bold leading-tight">{d.name}</span>
+                      <span className="block text-xs font-bold leading-tight">
+                        {d.name} {isDayToday ? '• HOY' : ''}
+                      </span>
                       <div className="flex items-center justify-center gap-1.5 mt-0.5">
                         <span className="text-[10px] font-mono opacity-80">{d.dateStr}</span>
                         {dayAptsCount > 0 && (
@@ -1115,19 +1054,52 @@ export const MasterAgenda = () => {
             </div>
           </div>
 
-          {/* DÍA CERRADO (SI EL NEGOCIO CIERRA ESE DÍA) */}
-          {!isOperatingDay ? (
+          {/* SIN NEGOCIO SELECCIONADO O SIN TURNOS CONFIGURADOS (ZERO-STATE LIMPIO) */}
+          {!activeTenant ? (
+            <div className="p-12 text-center rounded-2xl bg-[var(--bg-panel)] border border-dashed border-[var(--border-color)] space-y-3">
+              <Building2 className="w-10 h-10 text-[var(--text-muted)] mx-auto opacity-50" />
+              <h4 className="text-base font-bold text-[var(--text-main)] font-mono">
+                Sin negocio seleccionado
+              </h4>
+              <p className="text-xs text-[var(--text-muted)] font-mono max-w-md mx-auto">
+                Selecciona o registra un negocio activo en el selector superior para configurar sus turnos operativos y gestionar citas en tiempo real.
+              </p>
+            </div>
+          ) : !isOperatingDay ? (
             <div className="p-12 text-center rounded-2xl bg-[var(--bg-card-subtle)] border border-dashed border-[var(--border-color)] space-y-2">
               <Lock className="w-8 h-8 text-[var(--text-muted)] mx-auto" />
               <h4 className="text-sm font-bold text-[var(--text-main)] font-mono">
                 {currentDayConfig.name} — Día no operativo para {activeTenant?.name}
               </h4>
               <p className="text-xs text-[var(--text-muted)] font-mono">
-                El agente de IA de WhatsApp no ofrecerá citas ni reservas para este día según las políticas extraídas.
+                El agente de IA de WhatsApp no ofrecerá citas ni reservas para este día según las políticas configuradas.
               </p>
             </div>
+          ) : (calendarConfig.shifts || []).length === 0 ? (
+            <div className="p-12 text-center rounded-2xl bg-[var(--bg-panel)] border border-dashed border-[var(--border-color)] space-y-4">
+              <Clock className="w-10 h-10 text-neon mx-auto opacity-70" />
+              <div className="space-y-1">
+                <h4 className="text-base font-bold text-[var(--text-main)] font-mono">
+                  Sin turnos configurados para {activeTenant?.name}
+                </h4>
+                <p className="text-xs text-[var(--text-muted)] font-mono max-w-md mx-auto">
+                  No hay turnos precargados en memoria. Configura los horarios de atención de este negocio para habilitar los bloques de citas.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveModalTab('shifts');
+                  setShowConfigModal(true);
+                }}
+                className="px-4 py-2.5 rounded-xl bg-neon text-black font-mono font-bold text-xs inline-flex items-center gap-2 shadow-[0_0_15px_var(--neon-glow)] hover:scale-105 transition-all"
+              >
+                <Settings2 className="w-4 h-4" />
+                <span>Configurar Turnos Ahora</span>
+              </button>
+            </div>
           ) : (
-            /* TURNOS CONFIGURADOS DINÁMICAMENTE POR EL GIRO */
+            /* TURNOS CONFIGURADOS DINÁMICAMENTE POR EL NEGOCIO ACTIVO */
             <div className="space-y-5">
               {(calendarConfig.shifts || []).map((shift, shiftIndex) => {
                 const isMorning = shift.icon === 'sun';
@@ -1160,7 +1132,9 @@ export const MasterAgenda = () => {
                       {/* Lista de Slots de este Turno */}
                       <div className="space-y-2">
                         {(shift.hours || []).map((hour) => {
-                          const appointment = dayAppointments.find((a) => a.hour === hour);
+                          const appointment = dayAppointments.find(
+                            (a) => a.hour === hour || (calendarConfig.slotDurationMin >= 60 && a.hour?.startsWith(hour.slice(0, 3)))
+                          );
                           return (
                             <SlotRowItem
                               key={hour}
@@ -1206,10 +1180,10 @@ export const MasterAgenda = () => {
             <div>
               <h3 className="text-base font-bold text-[var(--text-main)] flex items-center gap-2">
                 <CalendarDays className="w-5 h-5 text-neon" />
-                <span>Agenda Semanal de Citas & Disponibilidad: <strong>{activeTenant?.name}</strong></span>
+                <span>Agenda Semanal de Citas & Disponibilidad: <strong>{activeTenant?.name || 'Sin negocio seleccionado'}</strong></span>
               </h3>
-              <p className="text-xs text-[var(--text-muted)] font-mono mt-0.5">
-                Semana 43 • 19 al 25 de Octubre 2026 • 2-Way Google Calendar Sincronizado
+              <p suppressHydrationWarning className="text-xs text-[var(--text-muted)] font-mono mt-0.5">
+                Semana {currentWeekNumber} • {weekStartLabel} al {weekEndLabel} {activeYear} • Tiempo Real ({liveTimeFormatted} hrs)
               </p>
             </div>
 
@@ -1229,15 +1203,19 @@ export const MasterAgenda = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-3">
-            {DAYS_OF_WEEK.map((day) => {
-              const aptsForDay = filteredAppointments.filter((a) => a.dayId === day.id);
-              const isDayOpen = !calendarConfig.operatingDays || calendarConfig.operatingDays.includes(day.id);
+            {dynamicWeekDays.map((day) => {
+              const aptsForDay = filteredAppointments.filter(
+                (a) => a.fullDate === day.fullDate || (!a.fullDate && a.dayId === day.id)
+              );
+              const isDayOpen = activeTenant
+                ? !calendarConfig.operatingDays || calendarConfig.operatingDays.includes(day.id)
+                : false;
               const dayRevenue = aptsForDay.reduce((acc, curr) => acc + (curr.estimatedValue || 1200), 0);
-              const isToday = day.id === selectedDay;
+              const isToday = day.fullDate === todayIsoStr;
 
               return (
                 <div
-                  key={day.id}
+                  key={day.fullDate}
                   className={`rounded-2xl border flex flex-col justify-between transition-all ${
                     isToday
                       ? 'bg-gradient-to-b from-neon/10 via-[var(--bg-card)] to-[var(--bg-card)] border-neon shadow-[0_0_20px_var(--neon-glow)]'
@@ -1250,6 +1228,7 @@ export const MasterAgenda = () => {
                   <div
                     onClick={() => {
                       setSelectedDay(day.id);
+                      setSelectedMonthDate(day.fullDate);
                       setViewMode('grid');
                     }}
                     className="p-3 border-b border-[var(--border-color)] text-center cursor-pointer hover:bg-neon/5 transition-colors rounded-t-2xl"
@@ -1257,7 +1236,7 @@ export const MasterAgenda = () => {
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-mono uppercase font-bold text-[var(--text-main)]">
-                        {day.name}
+                        {day.name} {isToday ? '• HOY' : ''}
                       </span>
                       <span
                         className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold ${
@@ -1266,22 +1245,27 @@ export const MasterAgenda = () => {
                             : 'bg-zinc-500/15 text-zinc-500'
                         }`}
                       >
-                        {isDayOpen ? `${aptsForDay.length} citas` : 'Cerrado'}
+                        {!activeTenant ? 'Sin negocio' : isDayOpen ? `${aptsForDay.length} citas` : 'Cerrado'}
                       </span>
                     </div>
                     <span className="text-xs font-mono font-bold text-[var(--text-muted)] block mt-0.5">
                       {day.dateStr}
                     </span>
                     {isDayOpen && dayRevenue > 0 && (
-                      <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold block mt-1">
-                        ${dayRevenue.toLocaleString()} MXN
+                      <span suppressHydrationWarning className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold block mt-1">
+                        ${String(dayRevenue).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} MXN
                       </span>
                     )}
                   </div>
 
                   {/* Cuerpo: Lista de Citas del Día */}
                   <div className="p-2 space-y-2 flex-1">
-                    {!isDayOpen ? (
+                    {!activeTenant ? (
+                      <div className="py-12 text-center text-[10px] text-[var(--text-muted)] font-mono">
+                        <Building2 className="w-4 h-4 mx-auto mb-1 opacity-50" />
+                        Selecciona negocio
+                      </div>
+                    ) : !isDayOpen ? (
                       <div className="py-12 text-center text-[10px] text-[var(--text-muted)] font-mono">
                         <Lock className="w-4 h-4 mx-auto mb-1 opacity-50" />
                         Día No Operativo
@@ -1380,6 +1364,7 @@ export const MasterAgenda = () => {
                         type="button"
                         onClick={() => {
                           setSelectedDay(day.id);
+                          setSelectedMonthDate(day.fullDate);
                           setViewMode('grid');
                         }}
                         className="w-full py-1.5 rounded-lg bg-[var(--bg-card-subtle)] hover:bg-neon hover:text-black text-[var(--text-muted)] text-[10px] font-mono font-bold flex items-center justify-center gap-1 transition-all"
@@ -1403,7 +1388,7 @@ export const MasterAgenda = () => {
         <div className="rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-6 space-y-4 animate-fadeIn">
           <div className="flex items-center justify-between pb-4 border-b border-[var(--border-color)]">
             <div>
-              <h3 className="text-base font-bold text-[var(--text-main)]">Todas las Citas de {activeTenant?.name}</h3>
+              <h3 className="text-base font-bold text-[var(--text-main)]">Todas las Citas de {activeTenant?.name || 'Sin negocio seleccionado'}</h3>
               <p className="text-xs text-[var(--text-muted)]">
                 Mostrando {filteredAppointments.length} citas sincronizadas con Google Calendar API
               </p>
@@ -1414,7 +1399,16 @@ export const MasterAgenda = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredAppointments.map((apt) => (
+            {filteredAppointments.length === 0 ? (
+              <div className="col-span-full p-12 text-center rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-3">
+                <CalendarCheck className="w-12 h-12 text-[var(--text-muted)] mx-auto opacity-40" />
+                <h4 className="text-base font-bold text-[var(--text-main)]">Sin citas agendadas</h4>
+                <p className="text-xs text-[var(--text-muted)] max-w-md mx-auto">
+                  {!activeTenant ? 'Selecciona un negocio para ver su calendario y agenda de citas.' : 'Este negocio aún no cuenta con citas programadas. Las citas confirmadas aparecerán aquí sincronizadas en tiempo real.'}
+                </p>
+              </div>
+            ) : (
+              filteredAppointments.map((apt) => (
               <div
                 key={apt.id}
                 onClick={() => setSelectedAppointment(apt)}
@@ -1451,7 +1445,7 @@ export const MasterAgenda = () => {
                   </div>
                 </div>
               </div>
-            ))}
+            )))}
           </div>
         </div>
       )}
@@ -1689,7 +1683,7 @@ export const MasterAgenda = () => {
               <div className="space-y-1">
                 <span className="text-[10px] font-mono font-bold uppercase text-brand-primary tracking-wider flex items-center gap-1.5">
                   <Settings2 className="w-3.5 h-3.5 text-brand-primary" />
-                  Tenant: {activeTenant?.name} • {activeTenant?.giro}
+                  Tenant: {activeTenant?.name || 'Sin negocio seleccionado'} • {activeTenant?.giro || 'Sin giro'}
                 </span>
                 <h3 className="text-xl sm:text-2xl font-black text-[var(--text-main)] tracking-tight">
                   Centro de Personalización: Agenda, Turnos & Email Studio
@@ -1753,7 +1747,7 @@ export const MasterAgenda = () => {
                       </span>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
-                      {DAYS_OF_WEEK.map((d) => {
+                      {STATIC_WEEK_DAYS_META.map((d) => {
                         const isOpen = !calendarConfig.operatingDays || calendarConfig.operatingDays.includes(d.id);
                         return (
                           <button
@@ -1853,25 +1847,29 @@ export const MasterAgenda = () => {
                     </div>
 
                     <div className="space-y-3">
-                      {(calendarConfig.shifts || []).map((shift, idx) => (
-                        <div
-                          key={shift.id || idx}
-                          className="p-3.5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-3"
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex-1">
-                              <input
-                                type="text"
-                                value={shift.name}
-                                onChange={(e) => handleUpdateShift(idx, 'name', e.target.value)}
-                                className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg px-2.5 py-1.5 text-xs text-[var(--text-main)] font-mono font-bold focus:border-brand-primary outline-none"
-                                placeholder="Nombre del Turno (ej. Turno Matutino)"
-                              />
-                            </div>
-                            <span className="px-2.5 py-1 rounded-md bg-[var(--bg-card)] border border-[var(--border-color)] text-[10px] font-mono text-brand-primary font-bold shrink-0">
-                              ⚡ {shift.hours?.length || 0} slots ({calendarConfig.slotDurationMin} min)
-                            </span>
-                            {(calendarConfig.shifts || []).length > 1 && (
+                      {(calendarConfig.shifts || []).length === 0 ? (
+                        <div className="p-6 rounded-xl bg-[var(--bg-panel)] border border-dashed border-[var(--border-color)] text-center text-xs font-mono text-[var(--text-muted)]">
+                          Sin turnos configurados. Haz clic en <strong>+ Agregar Turno</strong> para añadir bloques de horario.
+                        </div>
+                      ) : (
+                        (calendarConfig.shifts || []).map((shift, idx) => (
+                          <div
+                            key={shift.id || idx}
+                            className="p-3.5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-3"
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex-1">
+                                <input
+                                  type="text"
+                                  value={shift.name}
+                                  onChange={(e) => handleUpdateShift(idx, 'name', e.target.value)}
+                                  className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg px-2.5 py-1.5 text-xs text-[var(--text-main)] font-mono font-bold focus:border-brand-primary outline-none"
+                                  placeholder="Nombre del Turno (ej. Turno Matutino)"
+                                />
+                              </div>
+                              <span className="px-2.5 py-1 rounded-md bg-[var(--bg-card)] border border-[var(--border-color)] text-[10px] font-mono text-brand-primary font-bold shrink-0">
+                                ⚡ {shift.hours?.length || 0} slots ({calendarConfig.slotDurationMin} min)
+                              </span>
                               <button
                                 type="button"
                                 onClick={() => handleRemoveShift(idx)}
@@ -1880,33 +1878,33 @@ export const MasterAgenda = () => {
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
-                            )}
-                          </div>
+                            </div>
 
-                          <div className="grid grid-cols-2 gap-3 text-xs font-mono">
-                            <div>
-                              <span className="text-[10px] text-[var(--text-muted)] block mb-1">Hora Inicio</span>
-                              <input
-                                type="text"
-                                value={shift.start}
-                                onChange={(e) => handleUpdateShift(idx, 'start', e.target.value)}
-                                placeholder="09:00"
-                                className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg p-2 text-center text-[var(--text-main)] focus:border-brand-primary outline-none"
-                              />
-                            </div>
-                            <div>
-                              <span className="text-[10px] text-[var(--text-muted)] block mb-1">Hora Fin</span>
-                              <input
-                                type="text"
-                                value={shift.end}
-                                onChange={(e) => handleUpdateShift(idx, 'end', e.target.value)}
-                                placeholder="14:00"
-                                className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg p-2 text-center text-[var(--text-main)] focus:border-brand-primary outline-none"
-                              />
+                            <div className="grid grid-cols-2 gap-3 text-xs font-mono">
+                              <div>
+                                <span className="text-[10px] text-[var(--text-muted)] block mb-1">Hora Inicio</span>
+                                <input
+                                  type="text"
+                                  value={shift.start}
+                                  onChange={(e) => handleUpdateShift(idx, 'start', e.target.value)}
+                                  placeholder="09:00"
+                                  className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg p-2 text-center text-[var(--text-main)] focus:border-brand-primary outline-none"
+                                />
+                              </div>
+                              <div>
+                                <span className="text-[10px] text-[var(--text-muted)] block mb-1">Hora Fin</span>
+                                <input
+                                  type="text"
+                                  value={shift.end}
+                                  onChange={(e) => handleUpdateShift(idx, 'end', e.target.value)}
+                                  placeholder="14:00"
+                                  className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg p-2 text-center text-[var(--text-main)] focus:border-brand-primary outline-none"
+                                />
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        ))
+                      )}
                     </div>
                   </div>
 

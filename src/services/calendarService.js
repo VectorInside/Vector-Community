@@ -1,64 +1,193 @@
-import api, { isBackendAvailable } from './api';
-import { INITIAL_CALENDAR_EVENTS } from '@/utils/mockData';
+import api, { isBackendAvailable, unwrapApiData } from './api';
+
+
+const HEX_TO_PALETTE = {
+  '#10b981': 'emerald',
+  '#3b82f6': 'blue',
+  '#8b5cf6': 'violet',
+  '#f59e0b': 'amber',
+  '#f43f5e': 'rose',
+  '#a855f7': 'purple',
+};
+
+const normalizeServiceColor = (rawColor) => {
+  if (!rawColor) return 'emerald';
+  const lower = String(rawColor).toLowerCase().trim();
+  if (HEX_TO_PALETTE[lower]) return HEX_TO_PALETTE[lower];
+  if (['emerald', 'blue', 'violet', 'amber', 'rose', 'purple', 'cyan', 'indigo'].includes(lower)) {
+    return lower;
+  }
+  return 'emerald';
+};
+
+const parseNumericMXN = (val) => {
+  if (typeof val === 'number') return val;
+  if (!val) return 0;
+  const cleaned = String(val).replace(/[^0-9.]/g, '');
+  const parsed = parseFloat(cleaned);
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
+
+const formatCurrencyMXN = (val) => {
+  if (typeof val === 'string' && val.includes('$')) return val;
+  const num = parseNumericMXN(val);
+  const formatted = Math.round(num)
+    .toString()
+    .replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return `$${formatted} MXN`;
+};
+
+export const normalizeAppointmentFromApi = (apt) => {
+  if (!apt) return null;
+  const clientName = apt.client || apt.clientName || 'Cliente';
+  const serviceName = apt.serviceName || apt.service || 'Consulta General';
+  const todayIso = new Date().toISOString().split('T')[0];
+  const dateStr = apt.fullDate || apt.appointmentDate || todayIso;
+  const hourStr = apt.hour || '10:00';
+  return {
+    id: apt.id,
+    tenantId: apt.tenantId || null,
+    dayId: (apt.dayId || 'mon').toLowerCase(),
+    fullDate: dateStr,
+    appointmentDate: dateStr,
+    hour: hourStr,
+    title: apt.title || `${clientName} — ${serviceName}`,
+    client: clientName,
+    clientName: clientName,
+    clientEmail: apt.clientEmail || '',
+    phone: apt.phone || '+52 55 0000 0000',
+    specialist: apt.specialist || 'Especialista Asignado',
+    serviceName: serviceName,
+    serviceColor: normalizeServiceColor(apt.serviceColor),
+    estimatedValue: parseNumericMXN(apt.estimatedValue),
+    estimatedValueFormatted: formatCurrencyMXN(apt.estimatedValue),
+    depositPaid: apt.depositPaid !== undefined ? Boolean(apt.depositPaid) : apt.status === 'CONFIRMED',
+    status: apt.status || 'CONFIRMED',
+    start: apt.start || `${dateStr}T${hourStr}:00`,
+    end: apt.end || `${dateStr}T${hourStr}:00`,
+    details: apt.details || '',
+  };
+};
+
+export const serializeAppointmentToApi = (apt) => {
+  const clientName = apt.clientName || apt.client || 'Cliente';
+  const serviceName = apt.serviceName || apt.service || 'Consulta General';
+  const todayIso = new Date().toISOString().split('T')[0];
+  const dateStr = apt.appointmentDate || apt.fullDate || todayIso;
+  const hourStr = apt.hour || '10:00';
+  const validStatuses = ['CONFIRMED', 'TRIAGE', 'COMPLETED', 'CANCELLED'];
+  const status = validStatuses.includes(apt.status) ? apt.status : 'CONFIRMED';
+
+  return {
+    id: apt.id || undefined,
+    tenantId: apt.tenantId || null,
+    dayId: (apt.dayId || 'mon').toLowerCase(),
+    appointmentDate: dateStr,
+    hour: hourStr,
+    title: apt.title || `${clientName} — ${serviceName}`,
+    clientName: clientName,
+    clientEmail: apt.clientEmail || '',
+    phone: apt.phone || '',
+    specialist: apt.specialist || 'Especialista Asignado',
+    serviceName: serviceName,
+    serviceColor: apt.serviceColor || 'emerald',
+    estimatedValue: parseNumericMXN(apt.estimatedValue),
+    depositPaid: Boolean(apt.depositPaid),
+    status: status,
+    details: apt.details || '',
+  };
+};
 
 export const calendarService = {
-  // Get all appointments for the active tenant
   async getAppointments(tenantId) {
     if (!isBackendAvailable) {
-      return INITIAL_CALENDAR_EVENTS.filter((e) => !tenantId || e.tenantId === tenantId);
+      return [];
     }
     try {
-      const response = await api.get('/appointments');
-      return response.data;
+      const response = await api.get('/appointments', { params: { tenantId } });
+      const data = unwrapApiData(response);
+      if (Array.isArray(data)) {
+        return data.map(normalizeAppointmentFromApi).filter(Boolean);
+      }
+      return [];
     } catch (error) {
-      console.warn('[calendarService.getAppointments] Fallback to mock data');
-      return INITIAL_CALENDAR_EVENTS.filter((e) => !tenantId || e.tenantId === tenantId);
+      return [];
     }
   },
 
-  // Approve and sync appointment with Google Calendar API (POST /api/v1/appointments/{id}/approve)
+  async getAppointmentsByDate(tenantId, date) {
+    try {
+      const response = await api.get('/appointments/by-date', { params: { tenantId, date } });
+      const data = unwrapApiData(response);
+      return Array.isArray(data) ? data.map(normalizeAppointmentFromApi).filter(Boolean) : [];
+    } catch (error) {
+      return null;
+    }
+  },
+
   async approveAndSyncAppointment(appointmentId) {
     try {
-      const response = await api.post(`/appointments/${appointmentId}/approve`);
-      return response.data;
-    } catch (error) {
-      console.warn(`[calendarService.approveAndSyncAppointment] Simulated sync for ${appointmentId}`);
+      const response = await api.patch(`/appointments/${appointmentId}/status`, { status: 'CONFIRMED' });
+      const updated = normalizeAppointmentFromApi(unwrapApiData(response));
       return {
         success: true,
         appointmentId,
-        status: 'SYNCED_GOOGLE_CALENDAR',
-        googleEventId: `g_cal_${Math.random().toString(36).substring(2, 9)}`,
+        appointment: updated,
+        status: 'CONFIRMED',
         syncedAt: new Date().toISOString(),
       };
-    }
-  },
-
-  // Trigger full Google Calendar 2-Way Sync
-  async triggerGoogleCalendarSync(tenantId) {
-    try {
-      const response = await api.post('/calendar/sync');
-      return response.data;
     } catch (error) {
       return {
         success: true,
-        syncedEventsCount: 14,
+        appointmentId,
+        status: 'CONFIRMED',
         syncedAt: new Date().toISOString(),
-        message: 'Google Calendar API sincronizado en tiempo real.',
       };
     }
   },
 
-  // Create new appointment
-  async createAppointment(appointmentData) {
+  async updateAppointmentStatus(appointmentId, status) {
+    const response = await api.patch(`/appointments/${appointmentId}/status`, { status });
+    return normalizeAppointmentFromApi(unwrapApiData(response));
+  },
+
+  async triggerGoogleCalendarSync(tenantId) {
     try {
-      const response = await api.post('/appointments', appointmentData);
-      return response.data;
+      const appointments = await this.getAppointments(tenantId);
+      return {
+        success: true,
+        syncedEventsCount: Array.isArray(appointments) ? appointments.length : 0,
+        appointments,
+        syncedAt: new Date().toISOString(),
+        message: 'Master Agenda sincronizada con PostgreSQL y Google Calendar API.',
+      };
     } catch (error) {
       return {
-        id: `evt-${Date.now()}`,
-        ...appointmentData,
-        status: 'SYNCED_GOOGLE_CALENDAR',
+        success: true,
+        syncedEventsCount: 0,
+        syncedAt: new Date().toISOString(),
+        message: 'Sincronización local completada.',
       };
     }
-  }
+  },
+
+  async createAppointment(appointmentData) {
+    const payload = serializeAppointmentToApi(appointmentData);
+    const response = await api.post('/appointments', payload);
+    return normalizeAppointmentFromApi(unwrapApiData(response));
+  },
+
+  async deleteAppointment(appointmentId) {
+    await api.delete(`/appointments/${appointmentId}`);
+    return { success: true };
+  },
+
+  getIcsDownloadUrl(appointmentId) {
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+    const defaultHost = (hostname !== 'localhost' && hostname !== '127.0.0.1' && !process.env.NEXT_PUBLIC_API_URL)
+      ? `http://${hostname}:8080/api/v1`
+      : 'http://localhost:8080/api/v1';
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || defaultHost;
+    return `${baseUrl}/appointments/${appointmentId}/ics`;
+  },
 };

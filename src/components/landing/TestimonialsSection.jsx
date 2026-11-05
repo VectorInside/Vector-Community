@@ -20,7 +20,7 @@ export const TestimonialsSection = ({ lang = 'es' }) => {
             <Star className="w-3.5 h-3.5 fill-neon" />
             {t.tag}
           </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-black text-white tracking-tight">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-black text-white tracking-tight leading-tight sm:leading-snug pb-1 overflow-visible">
             {t.title}
           </h2>
           <p className="text-zinc-400 text-sm sm:text-base leading-relaxed">
@@ -73,10 +73,10 @@ export const TestimonialsSection = ({ lang = 'es' }) => {
                   />
                 </div>
                 <div className="min-w-0">
-                  <h4 className="text-xs font-bold text-white font-mono truncate">
+                  <h4 className="text-xs font-bold text-white font-mono leading-tight">
                     {item.author}
                   </h4>
-                  <p className="text-[10px] text-zinc-400 truncate">
+                  <p className="text-[10px] text-zinc-400 leading-tight mt-0.5">
                     {item.role} • {item.company}
                   </p>
                 </div>

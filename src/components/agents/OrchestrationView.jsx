@@ -74,207 +74,64 @@ export const OrchestrationView = () => {
     setIsSimulating(true);
     setSimulationOutput(null);
 
-    const tenantId = activeTenant?.id || 'dental';
-    const tenantName = activeTenant?.name || 'Odontología Integral';
+    const tenantId = activeTenant?.id;
+    const tenantName = activeTenant?.name || 'Tu Negocio';
 
     setTimeout(() => {
       setIsSimulating(false);
+      if (!tenantId) {
+        setSimulationOutput({
+          status: 'ZERO_STATE',
+          message: 'Selecciona o registra un negocio en el selector superior para probar la orquestación de agentes con su Brand DNA propio.',
+        });
+        return;
+      }
       if (agentKey === 'supervisor') {
-        const supervisorData = {
-          dental: {
-            tenant_id: 'dental',
-            target_agent: 'Sub-Agente Moderador de Cierre',
-            intent_category: 'Consulta de Precios y Aranceles',
-            detected_prospect: 'Carlos Mendoza',
-            confidence_score: 0.985,
-            execution_time_ms: 12,
-            caching_hit: true,
-            token_cost_usd: '$0.0000 (Prompt Caching 100%)',
-            routing_reason: 'Prospecto consulta costo de profilaxis ultrasónica. Canaliza a Closer con RAG dental.',
-          },
-          polanco: {
-            tenant_id: 'polanco',
-            target_agent: 'Sub-Agente Moderador de Cierre',
-            intent_category: 'Reserva Mesa Terraza VIP',
-            detected_prospect: 'Alejandro Bastida',
-            confidence_score: 0.992,
-            execution_time_ms: 11,
-            caching_hit: true,
-            token_cost_usd: '$0.0000 (Prompt Caching 100%)',
-            routing_reason: 'Solicitud de mesa en Terraza para cena de negocios. Enruta a Closer gastronómico.',
-          },
-          urban: {
-            tenant_id: 'urban',
-            target_agent: 'Sub-Agente Moderador de Cierre',
-            intent_category: 'Disponibilidad Talla & Envío Express',
-            detected_prospect: 'Kevin Roldán',
-            confidence_score: 0.978,
-            execution_time_ms: 14,
-            caching_hit: true,
-            token_cost_usd: '$0.0000 (Prompt Caching 100%)',
-            routing_reason: 'Consulta de stock para Sneakers Cyberpunk 27.5 MX. Enruta a Closer e-commerce con Kueski Pay.',
-          },
-          corp: {
-            tenant_id: 'corp',
-            target_agent: 'Sub-Agente Moderador de Cierre',
-            intent_category: 'Cotización Enterprise B2B & RLS Multi-Tenant',
-            detected_prospect: 'Lic. Rodrigo Elizondo',
-            confidence_score: 0.995,
-            execution_time_ms: 9,
-            caching_hit: true,
-            token_cost_usd: '$0.0000 (Prompt Caching 100%)',
-            routing_reason: 'Holding corporativo evaluando 4 subsidiarias. Enruta a Closer B2B con validación BANT.',
-          },
-        };
-
-        setSimulationOutput(supervisorData[tenantId] || supervisorData.dental);
+        setSimulationOutput({
+          tenant_id: tenantId,
+          target_agent: 'Sub-Agente Moderador de Cierre',
+          intent_category: 'Consulta Comercial & Calificación',
+          confidence_score: 0.985,
+          execution_time_ms: 12,
+          caching_hit: true,
+          token_cost_usd: '$0.0000 (Prompt Caching 100%)',
+          routing_reason: `Enrutamiento dinámico activo para ${tenantName} con aislamiento Multi-Tenant RLS.`,
+        });
       } else if (agentKey === 'closer') {
-        const closerData = {
-          dental: {
-            tenant_id: 'dental',
-            message_response: `¡Hola Carlos! Entiendo perfectamente que busques cuidar tu inversión. En ${tenantName}, nuestro tratamiento de profilaxis ultrasónica previene el 90% de cirugías futuras costosas sin dolor. Tu diagnóstico 3D está bonificado en tu primera cita. ¿Te apartamos una sesión de 35 min este jueves a las 11:00 am en nuestro sillón 3?`,
-            lead_qualification_status: {
-              req_1_contact_valid: true,
-              req_2_product_identified: true,
-              req_3_doubts_resolved: true,
-              req_4_cta_accepted: false,
-            },
-            current_lead_temperature: 'Seguimiento con Alta Intención',
-            is_billable_lead: false,
-            execution_time_ms: 310,
-            framework_applied: 'JTBD + Ecuación de Valor (Beneficio clínico antes de arancel $850 MXN)',
+        setSimulationOutput({
+          tenant_id: tenantId,
+          message_response: `¡Hola! Bienvenido a ${tenantName}. Estamos listos para brindarte información personalizada sobre ${coreService} y agendar tu atención. ¿Qué horario te resulta más cómodo?`,
+          lead_qualification_status: {
+            req_1_contact_valid: true,
+            req_2_product_identified: true,
+            req_3_doubts_resolved: true,
+            req_4_cta_accepted: false,
           },
-          polanco: {
-            tenant_id: 'polanco',
-            message_response: `¡Hola Alejandro! Un gusto saludarte. En ${tenantName} preparamos cada servicio como un ritual gastronómico. Nuestro Tomahawk Black Onyx de 1.2kg con flameado en mesa incluye maridaje guiado por sommelier. ¿Deseas asegurar tu mesa en la Terraza VIP este viernes a las 8:30 pm?`,
-            lead_qualification_status: {
-              req_1_contact_valid: true,
-              req_2_product_identified: true,
-              req_3_doubts_resolved: true,
-              req_4_cta_accepted: true,
-            },
-            current_lead_temperature: 'Cierre Confirmado (VIP)',
-            is_billable_lead: true,
-            billing_amount_mxn: '$350.00 MXN',
-            execution_time_ms: 285,
-            framework_applied: 'Storytelling de Alto Estatus + Escasez de Mesas VIP',
-          },
-          urban: {
-            tenant_id: 'urban',
-            message_response: `¡Qué tal Kevin! Te confirmo que los Cyberpunk Sneakers High-Tops en Talla 27.5 MX están en las últimas 3 unidades. Si confirmas hoy antes de las 6:00 pm salen con envío express gratis y puedes diferirlo a 3 quincenas sin intereses con Kueski Pay. ¿Te genero el enlace de pago seguro con tu talla reservada?`,
-            lead_qualification_status: {
-              req_1_contact_valid: true,
-              req_2_product_identified: true,
-              req_3_doubts_resolved: true,
-              req_4_cta_accepted: false,
-            },
-            current_lead_temperature: 'Fiebre de Compra (Escasez)',
-            is_billable_lead: false,
-            execution_time_ms: 260,
-            framework_applied: 'FOMO + Reducción Fricción de Pago (BNPL Kueski)',
-          },
-          corp: {
-            tenant_id: 'corp',
-            message_response: `Estimado Rodrigo, gracias por contactar a ${tenantName}. Nuestra infraestructura con aislamiento RLS a nivel de base de datos y Meta CAPI S2S nativo está diseñada para holdings que gestionan múltiples razones sociales con SLA 99.9%. ¿Coordinamos una sesión de validación de 20 minutos con nuestro Director de Arquitectura este miércoles a las 10:00 am?`,
-            lead_qualification_status: {
-              req_1_contact_valid: true,
-              req_2_product_identified: true,
-              req_3_doubts_resolved: true,
-              req_4_cta_accepted: true,
-            },
-            current_lead_temperature: 'Enterprise SQL (BANT Aprobado)',
-            is_billable_lead: true,
-            billing_amount_mxn: '$350.00 MXN',
-            execution_time_ms: 340,
-            framework_applied: 'BANT Calificado + Demostración de Arquitectura RLS',
-          },
-        };
-
-        setSimulationOutput(closerData[tenantId] || closerData.dental);
+          current_lead_temperature: 'Seguimiento Activo',
+          is_billable_lead: false,
+          execution_time_ms: 280,
+          framework_applied: 'JTBD + Calificación Consultiva 4/4',
+        });
       } else if (agentKey === 'reengagement') {
-        const reengagementData = {
-          dental: {
-            tenant_id: 'dental',
-            followup_message: `Hola Carlos, estuve pensando en tu consulta sobre la profilaxis. ¿Sabías que el 90% de nuestros pacientes previenen molestias graves con una revisión preventiva anual? Te aparté un espacio con escaneo 3D incluido para este viernes. ¿Te funciona?`,
-            scheduled_time: 'Disparo Programado a 24h (Upstash Redis)',
-            new_status: 'Seguimiento Enviado',
-            word_count: 36,
-            rule_compliance: 'Vaca Púrpura aplicada: gancho de curiosidad < 40 palabras con micro-CTA sin fricción',
-          },
-          polanco: {
-            tenant_id: 'polanco',
-            followup_message: `Alejandro, el Chef sommelier nos liberó 2 mesas exclusivas con vista en Terraza VIP para este fin de semana con copa de champaña de bienvenida. ¿Te gustaría que te reserve una antes de que se agoten?`,
-            scheduled_time: 'Disparo Programado a 24h (Upstash Redis)',
-            new_status: 'Seguimiento Enviado',
-            word_count: 34,
-            rule_compliance: 'Regla 95/5: reactivación de alto valor percibido con cortesía exclusiva',
-          },
-          urban: {
-            tenant_id: 'urban',
-            followup_message: `Kevin, solo queda 1 par en Talla 27.5 MX del drop Cyberpunk y tu cupón de 10% OFF vence hoy a medianoche. ¿Te aparto el último par antes de pasarlo a lista general?`,
-            scheduled_time: 'Disparo Programado a 24h (Upstash Redis)',
-            new_status: 'Seguimiento Enviado',
-            word_count: 33,
-            rule_compliance: 'Vaca Púrpura: stock unitario y límite temporal de expiración de cupón',
-          },
-          corp: {
-            tenant_id: 'corp',
-            followup_message: `Rodrigo, preparamos un caso de éxito confidencial sobre cómo una red corporativa redujo 42% su CAC usando nuestro router LangGraph con RLS. ¿Te comparto el brief ejecutivo en PDF de 2 páginas por aquí?`,
-            scheduled_time: 'Disparo Programado a 24h (Upstash Redis)',
-            new_status: 'Seguimiento Enviado',
-            word_count: 35,
-            rule_compliance: 'Valor puro sin venta agresiva (< 40 palabras) enfocado en métricas C-Level',
-          },
-        };
-
-        setSimulationOutput(reengagementData[tenantId] || reengagementData.dental);
+        setSimulationOutput({
+          tenant_id: tenantId,
+          followup_message: `Hola, seguimos atentos en ${tenantName} por si deseas confirmar tu solicitud sobre ${coreService}. ¿Te ayudamos a reservar un horario disponible?`,
+          scheduled_time: 'Disparo Programado a 24h',
+          new_status: 'Seguimiento Enviado',
+          word_count: 26,
+          rule_compliance: 'Mensaje de valor < 40 palabras con micro-CTA sin fricción',
+        });
       } else if (agentKey === 'analyst') {
-        const analystData = {
-          dental: {
-            tenant_id: 'dental',
-            roas_real_backend: 5.82,
-            cac_real_backend: 18.5,
-            creative_fatigue_detected: true,
-            fatigued_ad_ids: ['AdSet Profilaxis Sonrisa V1'],
-            web_friction_alert: Boolean(activeTenant?.hasWebsite),
-            friction_diagnosis: activeTenant?.hasWebsite
-              ? 'Fricción en Landing Page: Click-to-WhatsApp 1.4% (< 3.0%). Requiere botón flotante de alto contraste.'
-              : 'Embudo Directo Óptimo: Tráfico 100% canalizado a WhatsApp API con atribución CAPI.',
-            recommended_action: 'Pausar Anuncio A por alta frecuencia (3.8) y activar variante Reel Vaca Púrpura con Dr. Juan Pablo.',
-          },
-          polanco: {
-            tenant_id: 'polanco',
-            roas_real_backend: 7.45,
-            cac_real_backend: 12.8,
-            creative_fatigue_detected: false,
-            fatigued_ad_ids: [],
-            web_friction_alert: false,
-            friction_diagnosis: 'Embudo VIP Óptimo: Tasa de reserva 14.8% en WhatsApp. CAPI Server-to-Server validado al 100%.',
-            recommended_action: 'Escalar presupuesto 25% en horario jueves a sábado 18:00 a 22:00 hrs enfocado en cortes Prime.',
-          },
-          urban: {
-            tenant_id: 'urban',
-            roas_real_backend: 4.12,
-            cac_real_backend: 8.2,
-            creative_fatigue_detected: true,
-            fatigued_ad_ids: ['Reel Drop Cyberpunk V1'],
-            web_friction_alert: true,
-            friction_diagnosis: 'Fricción en Checkout Shopify: Abandono de carrito en paso de envío. Habilitar Kueski Pay en PDP.',
-            recommended_action: 'Reemplazar Reel V1 (Hook Rate 16%) por unboxing dinámico de Kevin con calzado puesto en calle.',
-          },
-          corp: {
-            tenant_id: 'corp',
-            roas_real_backend: 12.4,
-            cac_real_backend: 145.0,
-            creative_fatigue_detected: false,
-            fatigued_ad_ids: [],
-            web_friction_alert: true,
-            friction_diagnosis: 'Fricción en Formulario Web B2B: 7 campos obligatorios reducen conversión al 0.8%. Migrar a WhatsApp Bot.',
-            recommended_action: 'Enrutar tráfico de LinkedIn Ads directamente al Lobo Vectorial en WhatsApp para pre-calificación BANT inmediata.',
-          },
-        };
-
-        setSimulationOutput(analystData[tenantId] || analystData.dental);
+        setSimulationOutput({
+          tenant_id: tenantId,
+          roas_real_backend: 0.0,
+          cac_real_backend: 0.0,
+          creative_fatigue_detected: false,
+          fatigued_ad_ids: [],
+          web_friction_alert: Boolean(activeTenant?.hasWebsite),
+          friction_diagnosis: 'Telemetría lista para conciliar eventos reales de Meta CAPI y WhatsApp Cloud API.',
+          recommended_action: 'Conectar campañas activas para iniciar análisis de atribución en tiempo real.',
+        });
       }
       try {
         confetti({
@@ -290,47 +147,16 @@ export const OrchestrationView = () => {
   // Replace template variables for live preview
   const formatPromptWithTenant = (xml) => {
     if (!xml) return '';
-    const tenantId = activeTenant?.id || 'dental';
-
-    const tenantPreviewData = {
-      dental: {
-        userName: 'Carlos Mendoza',
-        productInterest: 'Limpieza Dental Ultrasónica & Carillas',
-        lastObjection: 'El tratamiento se me hace costoso',
-        ragPassages: '[Fragmento 1: Profilaxis Ultrasónica arancel $850 MXN, incluye diagnóstico 3D y pulido en sillón 3.]\n[Fragmento 2: Horarios Lun-Vie 09:00 a 19:00 hrs. Tratamiento previene 90% de cirugías invasivas sin dolor.]',
-      },
-      polanco: {
-        userName: 'Alejandro Bastida',
-        productInterest: 'Tomahawk Black Onyx 1.2kg & Mesa Terraza VIP',
-        lastObjection: 'Solo quiero ver el menú antes de reservar',
-        ragPassages: '[Fragmento 1: Cortes Sonora Prime y Menú Degustación 8 Tiempos. Descorche $650 MXN por botella.]\n[Fragmento 2: Terraza VIP con vista panorámica. Flameado en mesa por Sommelier. Horario 13:00 a 01:00 hrs.]',
-      },
-      urban: {
-        userName: 'Kevin Roldán',
-        productInterest: 'Cyberpunk High-Tops Sneakers Edición Limitada Talla 27.5 MX',
-        lastObjection: 'Tengo duda de cuánto tarda el envío a Monterrey',
-        ragPassages: '[Fragmento 1: Sneakers manufacturados en gamuza y reflectivo 3M. Suela antideslizante con drop ergonómico.]\n[Fragmento 2: Envío express DHL 24-48h gratis. Métodos de pago: Kueski Pay 3 quincenas sin tarjeta, Mercado Pago y SPEI.]',
-      },
-      corp: {
-        userName: 'Lic. Rodrigo Elizondo',
-        productInterest: 'Licenciamiento Multi-Tenant Vector OS con RLS & CAPI S2S',
-        lastObjection: 'Queremos validar el aislamiento de bases de datos antes de contratar',
-        ragPassages: '[Fragmento 1: Arquitectura RLS (Row-Level Security) en PostgreSQL con aislamiento criptográfico por tenant_id.]\n[Fragmento 2: Meta CAPI S2S sin cookies, servidor dedicado en AWS con SLA 99.9% y soporte técnico 24/7.]',
-      },
-    };
-
-    const preview = tenantPreviewData[tenantId] || tenantPreviewData.dental;
-
     return xml
-      .replaceAll('{tenant_id}', activeTenant?.id || 'dental')
-      .replaceAll('{vertical_tipo}', activeTenant?.vertical || 'service_appointments')
-      .replaceAll('{has_website}', String(activeTenant?.hasWebsite ?? true))
-      .replaceAll('{brand_purpose}', activeTenant?.brandPurpose || 'Democratizar la salud bucal con tecnología avanzada sin dolor')
-      .replaceAll('{business_name}', activeTenant?.name || 'Odontología Integral')
-      .replaceAll('{user_name}', preview.userName)
-      .replaceAll('{product_interest}', preview.productInterest)
-      .replaceAll('{last_objection}', preview.lastObjection)
-      .replaceAll('{rag_retrieved_passages}', preview.ragPassages);
+      .replaceAll('{tenant_id}', activeTenant?.id || 'sin_negocio_activo')
+      .replaceAll('{vertical_tipo}', activeTenant?.vertical || 'sin_vertical')
+      .replaceAll('{has_website}', String(activeTenant?.hasWebsite ?? false))
+      .replaceAll('{brand_purpose}', activeTenant?.brandPurpose || 'Propósito del negocio configurado en Perfil de Marca')
+      .replaceAll('{business_name}', activeTenant?.name || 'Sin negocio seleccionado')
+      .replaceAll('{user_name}', 'Prospecto en Conversación')
+      .replaceAll('{product_interest}', activeTenant?.commercialOffer?.hook || 'Servicio principal del negocio')
+      .replaceAll('{last_objection}', 'Consulta de disponibilidad y precios')
+      .replaceAll('{rag_retrieved_passages}', activeTenant ? `[ Base de Conocimiento RAG de ${activeTenant.name} ]` : '[ Selecciona un negocio para inyectar fragmentos RAG ]');
   };
 
   return (
@@ -445,7 +271,7 @@ export const OrchestrationView = () => {
             </p>
 
             <div className="mt-4 pt-3 border-t border-[var(--border-color)] flex items-center justify-between text-[11px] font-mono text-[var(--text-muted)]">
-              <span className="text-emerald-600 dark:text-emerald-400 font-bold">● {SUB_AGENTS_METRICS_MOCK.supervisor.status}</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-bold">● {SUB_AGENTS_METRICS_MOCK?.supervisor?.status || 'Activo'}</span>
               <span className="group-hover:text-lime-700 dark:group-hover:text-neon transition-colors font-bold">
                 Auditar Prompt XML & Schema →
               </span>
@@ -483,7 +309,7 @@ export const OrchestrationView = () => {
                 </p>
 
                 <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                  Aplica embudo AIDA, JTBD (beneficio antes de precio) y valida los 4 requisitos booleanos para cobrar $350 MXN (BILLABLE_LEAD).
+                  Aplica embudo de ventas comercial y valida los 4 criterios de calidad para confirmar el prospecto calificado ($350 MXN).
                 </p>
 
                 <div className="mt-3 p-2 rounded-lg bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[10px] font-mono text-[var(--text-muted)] space-y-1">
@@ -499,7 +325,7 @@ export const OrchestrationView = () => {
               </div>
 
               <div className="mt-4 pt-3 border-t border-[var(--border-color)] flex items-center justify-between text-[11px] font-mono text-[var(--text-muted)] group-hover:text-amber-500 dark:group-hover:text-amber-400 transition-colors">
-                <span>14 Leads Calificados</span>
+                <span>0 Leads Calificados</span>
                 <span className="font-bold">Ver Prompt →</span>
               </div>
             </div>
@@ -537,13 +363,13 @@ export const OrchestrationView = () => {
                   </div>
                   <div className="flex justify-between">
                     <span>Cola Redis:</span>
-                    <strong className="text-purple-600 dark:text-purple-400 font-bold">{SUB_AGENTS_METRICS_MOCK.reengagement.active24hQueueCount} leads en espera</strong>
+                    <strong className="text-purple-600 dark:text-purple-400 font-bold">{SUB_AGENTS_METRICS_MOCK?.reengagement?.active24hQueueCount ?? 0} leads en espera</strong>
                   </div>
                 </div>
               </div>
 
               <div className="mt-4 pt-3 border-t border-[var(--border-color)] flex items-center justify-between text-[11px] font-mono text-[var(--text-muted)] group-hover:text-purple-500 dark:group-hover:text-purple-400 transition-colors">
-                <span>39.1% Tasa Reactivación</span>
+                <span>0.0% Tasa Reactivación</span>
                 <span className="font-bold">Ver Prompt →</span>
               </div>
             </div>
@@ -587,7 +413,7 @@ export const OrchestrationView = () => {
               </div>
 
               <div className="mt-4 pt-3 border-t border-[var(--border-color)] flex items-center justify-between text-[11px] font-mono text-[var(--text-muted)] group-hover:text-cyan-500 dark:group-hover:text-cyan-400 transition-colors">
-                <span>ROAS Real: 5.82x</span>
+                <span>ROAS Real: 0.0x</span>
                 <span className="font-bold">Ver Prompt →</span>
               </div>
             </div>

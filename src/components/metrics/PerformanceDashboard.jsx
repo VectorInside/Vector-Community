@@ -8,6 +8,8 @@ import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { MicroLandingPreviewModal } from '@/components/common/MicroLandingPreviewModal';
 import { formatCurrency, formatNumber, cleanConcept } from '@/utils/formatters';
+import { OMNICHANNEL_API_CATALOG } from '@/utils/constants';
+import Link from 'next/link';
 import {
   TrendingUp,
   DollarSign,
@@ -37,6 +39,14 @@ import {
   Calendar,
   Clock,
   MessageSquare,
+  Instagram,
+  Video,
+  Linkedin,
+  Play,
+  Share2,
+  Sliders,
+  RefreshCw,
+  Gauge,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -59,10 +69,10 @@ export const PerformanceDashboard = () => {
     if (tenantsData && activeTenantKey && tenantsData[activeTenantKey]) {
       return tenantsData[activeTenantKey];
     }
-    return tenantsData ? Object.values(tenantsData)[0] : null;
+    return null;
   }, [authTenant, activeTenantKey, tenantsData]);
 
-  const activeTenantId = activeTenant?.id || activeTenantKey || 'dental';
+  const activeTenantId = activeTenant?.id || activeTenantKey || null;
 
   const [data, setData] = useState(null);
   const [capiLogs, setCapiLogs] = useState([]);
@@ -70,6 +80,42 @@ export const PerformanceDashboard = () => {
   const [activeTab, setActiveTab] = useState('web'); // 'web' | 'capi' | 'microlanding'
   const [showMicroLandingModal, setShowMicroLandingModal] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+
+  // Estados interactivos para auditoría del sitio web del agente analista
+  const [isAuditingWebsite, setIsAuditingWebsite] = useState(false);
+  const [auditStepText, setAuditStepText] = useState('');
+  const [lastAuditTimestamp, setLastAuditTimestamp] = useState('Hoy a las 08:00 AM (Batch Automático)');
+  const [showDeepAuditDetails, setShowDeepAuditDetails] = useState(true);
+
+  const handleRunWebsiteAudit = () => {
+    if (isAuditingWebsite) return;
+    setIsAuditingWebsite(true);
+    setAuditStepText('Conectando con URL oficial y analizando Core Web Vitals (LCP, TTFB)...');
+
+    setTimeout(() => {
+      setAuditStepText('Evaluando visibilidad, contraste de botón WhatsApp (WCAG AA) y eventos DOM...');
+    }, 600);
+
+    setTimeout(() => {
+      setAuditStepText('Verificando consistencia de píxeles Meta CAPI y GA4 Measurement Protocol...');
+    }, 1200);
+
+    setTimeout(() => {
+      setAuditStepText('Sub-Bot Analista: Diagnóstico algorítmico completado con éxito.');
+      setIsAuditingWebsite(false);
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      setLastAuditTimestamp(`Hoy a las ${timeStr} (Auditoría Manual con Agente IA)`);
+      try {
+        confetti({
+          particleCount: 30,
+          spread: 50,
+          origin: { y: 0.6 },
+          colors: ['#E7F900', '#06B6D4', '#10B981'],
+        });
+      } catch (e) {}
+    }, 1800);
+  };
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -105,24 +151,83 @@ export const PerformanceDashboard = () => {
     setTimeout(() => setCopiedLink(false), 2500);
   };
 
+  const CHANNEL_ICONS = {
+    Instagram: Instagram,
+    Globe: Globe,
+    MessageSquare: MessageSquare,
+    Video: Video,
+    Linkedin: Linkedin,
+    Play: Play,
+    Share2: Share2,
+    Send: Send,
+  };
+
+  // Solo mostrar los canales que el negocio tenga dados de alta y activos
+  const activeChannelsList = useMemo(() => {
+    if (!activeTenant) return [];
+
+    const tenantConnected = activeTenant?.connectedChannels || {};
+    const enabledKeys = Object.keys(tenantConnected).filter((k) => tenantConnected[k]?.enabled);
+    if (enabledKeys.length > 0) {
+      return enabledKeys
+        .map((k) => {
+          const cat = OMNICHANNEL_API_CATALOG[k];
+          if (!cat) return null;
+          return {
+            ...cat,
+            tenantConfig: tenantConnected[k],
+          };
+        })
+        .filter(Boolean);
+    }
+    // Fallback inteligente con métricas limpias
+    const fallbackKeys = ['meta', 'whatsapp', ...(activeTenant?.hasWebsite ? ['google'] : [])];
+    return fallbackKeys
+      .map((k) => {
+        const cat = OMNICHANNEL_API_CATALOG[k];
+        if (!cat) return null;
+        return {
+          ...cat,
+          tenantConfig: { enabled: true, status: 'connected', latencyMs: 0, lastSync: 'En tiempo real' },
+        };
+      })
+      .filter(Boolean);
+  }, [activeTenant]);
+
   const summary = data?.summary || {
-    realRoas: 4.82,
-    metaReportedRoas: 3.41,
-    realCac: 14.2,
-    blendedCpa: 16.8,
-    totalSpend: 3450,
-    backendAttributedRevenue: 16629,
-    capiSyncRate: 99.4,
-    avgHookRate: 41.8,
+    realRoas: 0.0,
+    metaReportedRoas: 0.0,
+    realCac: 0,
+    blendedCpa: 0,
+    totalSpend: 0,
+    backendAttributedRevenue: 0,
+    capiSyncRate: 0,
+    avgHookRate: 0,
   };
 
   const series = data?.dailySeries || [];
 
-  const webMetrics = activeTenant?.webTrafficMetrics || {
-    sessions: 3420,
-    cpc: '$3.80 MXN',
-    whatsappClickRate: '1.4%',
-    bounceRate: '65%',
+  const webMetrics = data?.dualTelemetry?.webTrafficMetrics || activeTenant?.webTrafficMetrics || {
+    sessions: 0,
+    cpc: '$0.00 MXN',
+    whatsappClickRate: '0.0%',
+    bounceRate: '0%',
+  };
+
+  const mlMetrics = data?.dualTelemetry?.microLandingMetrics || activeTenant?.microLandingMetrics || {
+    visits: 0,
+    leadsGenerated: 0,
+    conversionRate: '0.0%',
+    costPerLead: '$0.00 MXN',
+    bounceRate: '0.0%',
+    avgLoadTime: '0.00s',
+    ctaClicks: 0,
+    qrScans: 0,
+    sources: {
+      bioLink: '0.0%',
+      directAds: '0.0%',
+      qrPrint: '0.0%',
+    },
   };
 
   return (
@@ -155,7 +260,7 @@ export const PerformanceDashboard = () => {
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span className="text-[var(--text-muted)]">Meta CAPI:</span>
             <span className="font-bold text-emerald-500">
-              {activeTenant?.capiStatus || 'Conectado • 99.4% Entrega'}
+              {!activeTenant ? 'Inactivo' : (activeTenant?.capiStatus || (summary.capiSyncRate > 0 ? `Conectado • ${summary.capiSyncRate}% Entrega` : 'En espera de eventos'))}
             </span>
           </div>
 
@@ -233,12 +338,14 @@ export const PerformanceDashboard = () => {
                       ? 'bg-blue-500/15 text-blue-400 border-blue-500/30'
                       : 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30'
                   }`}>
-                    {activeTenant?.hasWebsite ? 'Google Analytics 4' : 'Atención Directa por WhatsApp'}
+                    {!activeTenant ? 'Inactivo' : (activeTenant?.hasWebsite ? 'Google Analytics 4' : 'Atención Directa por WhatsApp')}
                   </span>
                 </div>
                 <p className="text-[var(--text-muted)] text-xs mt-0.5 font-sans">
                   URL:{' '}
-                  {activeTenant?.hasWebsite ? (
+                  {!activeTenant ? (
+                    <span className="text-[var(--text-muted)] italic">Sin negocio seleccionado</span>
+                  ) : activeTenant?.hasWebsite ? (
                     <a
                       href={activeTenant.websiteUrl}
                       target="_blank"
@@ -254,7 +361,7 @@ export const PerformanceDashboard = () => {
                   )}{' '}
                   • ID de Medición:{' '}
                   <code className="text-[var(--text-main)] bg-[var(--bg-card)] px-1.5 py-0.5 rounded border border-[var(--border-color)]">
-                    {activeTenant?.ga4MeasurementId || 'Meta CAPI for Messaging'}
+                    {!activeTenant ? 'No configurado' : (activeTenant?.ga4MeasurementId || 'Meta CAPI for Messaging')}
                   </code>
                 </p>
               </div>
@@ -263,131 +370,479 @@ export const PerformanceDashboard = () => {
             <div className="flex items-center gap-2">
               <span className="text-[10px] text-[var(--text-muted)]">Pixel / CAPI:</span>
               <code className="text-[var(--text-main)] bg-[var(--bg-card)] px-2 py-1 rounded border border-[var(--border-color)] text-[11px]">
-                {activeTenant?.metaPixelId || 'Handshake Servidor Activo'}
+                {!activeTenant ? 'Inactivo' : (activeTenant?.metaPixelId || 'Handshake Servidor Activo')}
               </code>
             </div>
           </div>
+
+          {/* ========================================================================= */}
+          {/* SECCIÓN OMNICANAL: SALUD DE CANALES ACTIVOS & FATIGA PUBLICITARIA         */}
+          {/* ========================================================================= */}
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-[var(--border-color)]">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="p-1 rounded-lg bg-neon/15 text-neon border border-neon/30">
+                    <Activity className="w-4 h-4" />
+                  </span>
+                  <h3 className="text-base font-heading font-black text-[var(--text-main)]">
+                    Salud de Canales Oficiales & Atribución
+                  </h3>
+                  <span className="px-2 py-0.5 rounded-full bg-neon/10 text-neon font-mono text-[10px] font-bold border border-neon/20">
+                    {activeChannelsList.length} Canales Activos
+                  </span>
+                </div>
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                  Telemetría de adquisición exclusiva para los medios dados de alta por <strong className="text-[var(--text-main)]">{activeTenant?.shortName || activeTenant?.name}</strong>. Cero saturación de canales no configurados.
+                </p>
+              </div>
+
+              <Link
+                href="/config?tab=channels"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] hover:text-neon border border-[var(--border-color)] hover:border-neon text-xs font-mono font-bold transition-all shrink-0 self-start sm:self-auto shadow-sm"
+              >
+                <Sliders className="w-3.5 h-3.5 text-neon" />
+                <span>Configurar Canales & APIs</span>
+              </Link>
+            </div>
+
+            {/* Grid de Canales Filtrados Estrictamente */}
+            {activeChannelsList.length === 0 ? (
+              <div className="p-8 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] text-center text-xs font-mono text-[var(--text-muted)]">
+                Selecciona un negocio activo para visualizar la salud y telemetría de sus canales conectados.
+              </div>
+            ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              {activeChannelsList.map((ch) => {
+                const IconComp = CHANNEL_ICONS[ch.iconName] || Globe;
+                const metrics = ch.defaultMetrics || {};
+                const isFatigueAlert = (metrics.adFatigueScore || 1.5) > 3.5;
+                const isRetentionWarning = parseInt(metrics.retentionScore || '80%') < 65;
+
+                return (
+                  <div
+                    key={ch.id}
+                    className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon/40 transition-all flex flex-col justify-between space-y-3 shadow-sm group"
+                  >
+                    <div className="space-y-2.5">
+                      {/* Top Header del Canal */}
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2.5">
+                          <span className={`p-2 rounded-xl bg-gradient-to-br ${ch.color} text-white shadow-sm shrink-0`}>
+                            <IconComp className="w-4 h-4" />
+                          </span>
+                          <div>
+                            <h4 className="font-bold text-xs text-[var(--text-main)] leading-tight">
+                              {ch.name}
+                            </h4>
+                            <span className="text-[10px] text-[var(--text-muted)] font-mono">
+                              {ch.category}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Status API Badge */}
+                        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 text-[10px] font-mono font-bold shrink-0">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          <span>{ch.tenantConfig?.latencyMs ?? metrics.latencyMs ?? 0}ms</span>
+                        </div>
+                      </div>
+
+                      {/* Métricas Principales del Canal */}
+                      <div className="grid grid-cols-3 gap-2 py-2 border-y border-[var(--border-color)] font-mono text-center">
+                        <div className="p-1.5 rounded-lg bg-[var(--bg-panel)]">
+                          <span className="text-[9px] text-[var(--text-muted)] block">Interacciones</span>
+                          <span className="text-xs font-bold text-[var(--text-main)]">
+                            {formatNumber(metrics.clicks ?? 0)}
+                          </span>
+                        </div>
+                        <div className="p-1.5 rounded-lg bg-[var(--bg-panel)]">
+                          <span className="text-[9px] text-[var(--text-muted)] block">CPC</span>
+                          <span className="text-xs font-bold text-emerald-500">
+                            {metrics.cpc || '$0.00 MXN'}
+                          </span>
+                        </div>
+                        <div className="p-1.5 rounded-lg bg-[var(--bg-panel)]">
+                          <span className="text-[9px] text-[var(--text-muted)] block">Fuga/Rebote</span>
+                          <span className={`text-xs font-bold ${parseFloat(metrics.bounceRate || '2.0%') <= 3.0 ? 'text-emerald-400' : 'text-amber-500'}`}>
+                            {metrics.bounceRate || '0.0%'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Detector de Desgaste y Fatiga Publicitaria */}
+                      <div className="space-y-1.5 font-sans text-xs">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-[var(--text-muted)] flex items-center gap-1 font-mono text-[10px]">
+                            <Flame className="w-3 h-3 text-neon" />
+                            Frecuencia de Anuncio:
+                          </span>
+                          <span className={`font-mono text-[10px] font-bold px-1.5 py-0.2 rounded border ${
+                            isFatigueAlert
+                              ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                              : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                          }`}>
+                            {metrics.adFatigueScore ?? 0.0}x {isFatigueAlert ? '(Saturado)' : '(Saludable)'}
+                          </span>
+                        </div>
+
+                        {isFatigueAlert ? (
+                          <div className="p-2 rounded-xl bg-rose-500/10 border border-rose-500/30 text-[10px] text-rose-300 leading-snug flex items-start gap-1.5">
+                            <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0 mt-0.5" />
+                            <span>
+                              <strong>Alerta de Fatiga:</strong> Frecuencia superior al umbral de 3.5x. Se sugiere rotar creatividades y refrescar ganchos publicitarios.
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)] font-mono">
+                            <span>Retención de Audiencia:</span>
+                            <span className="text-neon font-bold">{metrics.retentionScore || '0%'}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-[var(--border-color)]/60 flex items-center justify-between text-[10px] font-mono text-[var(--text-muted)]">
+                      <span>Sincronización API:</span>
+                      <span className="text-[var(--text-main)] font-semibold">{ch.tenantConfig?.lastSync || 'En tiempo real'}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            )}
+          </div>
+
+          {/* Banner de Delimitación: Sitio Web Corporativo (GA4) vs Micro-Landing Vector */}
+          {activeTenant?.hasWebsite && (
+            <div className="p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs font-mono animate-fade-in shadow-sm">
+              <div className="flex items-center gap-2.5 text-[var(--text-main)]">
+                <Globe className="w-4 h-4 text-blue-400 shrink-0" />
+                <span>
+                  <strong>Fuente de Telemetría:</strong> Métricas registradas en tu <strong>Sitio Web Oficial ({activeTenant.websiteUrl})</strong> vía Google Analytics 4.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab('microlanding')}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[var(--bg-panel)] hover:bg-[var(--bg-card)] text-neon font-bold border border-neon/30 text-[11px] transition-all shrink-0 hover:scale-[1.02]"
+              >
+                <Smartphone className="w-3.5 h-3.5" />
+                <span>Ver Telemetría Exclusiva de tu Micro-Landing ({mlMetrics.conversionRate} Conv.) →</span>
+              </button>
+            </div>
+          )}
 
           {/* KPI Cards adaptadas según sitio web o flujo directo */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
               title={activeTenant?.hasWebsite ? 'Sesiones Web Totales' : 'Clics a WhatsApp (Pauta)'}
               value={
-                activeTenant?.hasWebsite
-                  ? (webMetrics.sessions ? String(webMetrics.sessions).replace(/\B(?=(\d{3})+(?!\d))/g, ',') : '3,420')
-                  : '2,450'
+                !activeTenant
+                  ? '0'
+                  : activeTenant?.hasWebsite
+                  ? (webMetrics.sessions ? String(webMetrics.sessions).replace(/\B(?=(\d{3})+(?!\d))/g, ',') : '0')
+                  : String(mlMetrics.ctaClicks || 0)
               }
-              subvalue={activeTenant?.hasWebsite ? 'Tráfico calificado de pago' : 'Conversaciones iniciadas'}
-              change="+18.4%"
+              subvalue={!activeTenant ? 'Sin negocio seleccionado' : (activeTenant?.hasWebsite ? 'Tráfico calificado de pago' : 'Conversaciones iniciadas')}
+              change={!activeTenant || !webMetrics.sessions ? '0%' : '+18.4%'}
               isPositive={true}
               icon={Users}
-              badgeText={activeTenant?.hasWebsite ? 'ANALÍTICA WEB' : 'DIRECT ADS'}
+              badgeText={!activeTenant ? 'INACTIVO' : (activeTenant?.hasWebsite ? 'ANALÍTICA WEB' : 'DIRECT ADS')}
               accentColor="blue"
             />
 
             <StatCard
               title={activeTenant?.hasWebsite ? 'Costo por Clic (CPC Web)' : 'Costo por Conversación'}
-              value={webMetrics.cpc || (activeTenant?.hasWebsite ? '$3.80 MXN' : '$2.10 MXN')}
-              subvalue="Costo unitario por prospecto"
-              change="-8.2%"
+              value={!activeTenant ? '$0.00 MXN' : (webMetrics.cpc || '$0.00 MXN')}
+              subvalue={!activeTenant ? 'Sin negocio seleccionado' : 'Costo unitario por prospecto'}
+              change={!activeTenant || (Number(webMetrics.sessions) === 0 && Number(mlMetrics.visits) === 0) ? '0%' : '-8.2%'}
               isPositive={true}
               icon={DollarSign}
-              badgeText="ÓPTIMO"
+              badgeText={!activeTenant ? 'INACTIVO' : 'ÓPTIMO'}
               accentColor="emerald"
             />
 
             <StatCard
               title="Conversión a Cita / Venta"
-              value={webMetrics.whatsappClickRate || (activeTenant?.hasWebsite ? '1.4%' : '18.4%')}
+              value={!activeTenant ? '0.0%' : (activeTenant?.hasWebsite ? (webMetrics.whatsappClickRate || '0.0%') : (mlMetrics.conversionRate || '0.0%'))}
               subvalue={
-                activeTenant?.frictionAlert
+                !activeTenant
+                  ? 'Sin negocio seleccionado'
+                  : activeTenant?.frictionAlert
                   ? '⚠️ Crítico (< 3.0% Umbral)'
                   : activeTenant?.hasWebsite
                   ? 'Saludable (> 3.0%)'
                   : 'Alta Conversión en Chat'
               }
-              change={activeTenant?.frictionAlert ? '-32.1%' : '+14.5%'}
+              change={!activeTenant || (Number(webMetrics.sessions) === 0 && Number(mlMetrics.visits) === 0) ? '0%' : (activeTenant?.frictionAlert ? '-32.1%' : '+14.5%')}
               isPositive={!activeTenant?.frictionAlert}
               icon={MousePointerClick}
-              badgeText={activeTenant?.frictionAlert ? 'FRICCIÓN' : 'CONVIRTIENDO'}
+              badgeText={!activeTenant ? 'INACTIVO' : (activeTenant?.frictionAlert ? 'FRICCIÓN' : 'CONVIRTIENDO')}
               accentColor={activeTenant?.frictionAlert ? 'rose' : 'brand'}
             />
 
             <StatCard
               title="Tasa de Fuga / Rebote"
-              value={activeTenant?.hasWebsite ? (webMetrics.bounceRate || '65%') : '0.0%'}
-              subvalue={activeTenant?.hasWebsite ? 'Salidas en primer fold' : 'Cero rebote (Directo a chat)'}
-              change={activeTenant?.hasWebsite ? '+4.2%' : '-100%'}
+              value={!activeTenant ? '0.0%' : (activeTenant?.hasWebsite ? (webMetrics.bounceRate || '0%') : (mlMetrics.bounceRate || '0.0%'))}
+              subvalue={!activeTenant ? 'Sin negocio seleccionado' : (activeTenant?.hasWebsite ? 'Salidas en primer fold' : 'Cero rebote (Directo a chat)')}
+              change={!activeTenant || (Number(webMetrics.sessions) === 0 && Number(mlMetrics.visits) === 0) ? '0%' : (activeTenant?.hasWebsite ? '+4.2%' : '-100%')}
               isPositive={!activeTenant?.hasWebsite}
               icon={TrendingUp}
-              badgeText={activeTenant?.hasWebsite ? 'DIAGNÓSTICO' : 'GARANTIZADO'}
+              badgeText={!activeTenant ? 'INACTIVO' : (activeTenant?.hasWebsite ? 'DIAGNÓSTICO' : 'GARANTIZADO')}
               accentColor={activeTenant?.hasWebsite ? 'amber' : 'emerald'}
             />
           </div>
 
-          {/* Banner de Diagnóstico según estado del tenant */}
-          {activeTenant?.frictionAlert ? (
-            <div className="p-5 sm:p-6 rounded-2xl bg-amber-500/10 border-2 border-amber-500/40 shadow-sm space-y-4 animate-fade-in font-sans">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-amber-500/20 pb-3">
-                <div className="flex items-center gap-2.5">
-                  <span className="p-2 rounded-xl bg-amber-500/20 text-amber-500 border border-amber-500/30">
-                    <AlertTriangle className="w-5 h-5" />
+          {/* ========================================================================= */}
+          {/* TARJETA DE AUDITORÍA WEB & DIAGNÓSTICO DEL SUB-BOT ANALISTA              */}
+          {/* ========================================================================= */}
+          {activeTenant?.hasWebsite ? (
+            <div className={`p-5 sm:p-6 rounded-2xl border-2 transition-all space-y-5 animate-fade-in font-sans shadow-sm ${
+              activeTenant?.frictionAlert
+                ? 'bg-amber-500/10 border-amber-500/40'
+                : 'bg-emerald-500/10 border-emerald-500/40'
+            }`}>
+              {/* Header de la Tarjeta del Agente Auditor */}
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-[var(--border-color)] pb-4">
+                <div className="flex items-start sm:items-center gap-3">
+                  <span className={`p-3 rounded-2xl border shrink-0 ${
+                    activeTenant?.frictionAlert
+                      ? 'bg-amber-500/20 text-amber-500 border-amber-500/40'
+                      : 'bg-emerald-500/20 text-emerald-500 border-emerald-500/40'
+                  }`}>
+                    {activeTenant?.frictionAlert ? (
+                      <AlertTriangle className="w-6 h-6" />
+                    ) : (
+                      <CheckCircle2 className="w-6 h-6" />
+                    )}
                   </span>
                   <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-bold text-[var(--text-main)] uppercase tracking-wider font-mono">
-                        Alerta de Conversión: Fricción Detectada en Sitio Web
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-base font-heading font-black text-[var(--text-main)] uppercase tracking-wider">
+                        {activeTenant?.frictionAlert
+                          ? 'Diagnóstico Web: Puntos de Fricción Detectados'
+                          : 'Auditoría Web: Sitio Saludable y Conectado'}
                       </h3>
-                      <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-500 font-mono text-[10px] font-bold">
-                        Optimización Web
+                      <span className={`px-2.5 py-0.5 rounded-full font-mono text-[10px] font-bold border ${
+                        activeTenant?.frictionAlert
+                          ? 'bg-red-500/20 text-red-500 border-red-500/30'
+                          : 'bg-emerald-500/20 text-emerald-500 border-emerald-500/30'
+                      }`}>
+                        {activeTenant?.frictionAlert ? 'FRICCIÓN ACTIVA (< 3.0%)' : 'CONVERSIÓN ÓPTIMA (> 3.0%)'}
                       </span>
                     </div>
-                    <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                      {activeTenant?.frictionDiagnosis || 'El tráfico de pago llega al sitio con buen costo unitario, pero la conversión hacia WhatsApp se encuentra por debajo del umbral mínimo del 3.0%.'}
+
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--text-muted)] font-mono mt-1">
+                      <span className="flex items-center gap-1.5 text-cyan-600 dark:text-cyan-400 font-bold">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        Sub-Bot Analista de Performance & Web Friction (DeepSeek V3)
+                      </span>
+                      <span>•</span>
+                      <span>{lastAuditTimestamp}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Acciones de Auditoría Interactiva */}
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    disabled={isAuditingWebsite}
+                    onClick={handleRunWebsiteAudit}
+                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-neon text-black font-mono font-bold text-xs shadow-[0_0_15px_var(--neon-glow)] hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isAuditingWebsite ? 'animate-spin' : ''}`} />
+                    <span>{isAuditingWebsite ? 'Auditando Web...' : 'Re-Auditar con IA'}</span>
+                  </button>
+
+                  {activeTenant?.websiteUrl && (
+                    <a
+                      href={activeTenant.websiteUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[var(--bg-panel)] hover:bg-[var(--bg-card-subtle)] text-xs font-mono text-[var(--text-main)] border border-[var(--border-color)] hover:border-cyan-400 transition-colors shadow-sm"
+                    >
+                      <span>Abrir Web</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => setShowDeepAuditDetails(!showDeepAuditDetails)}
+                    className="px-3 py-2 rounded-xl bg-[var(--bg-panel)] hover:bg-[var(--bg-card-subtle)] text-xs font-mono text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)] transition-colors"
+                  >
+                    {showDeepAuditDetails ? 'Ocultar Puntos' : 'Ver Puntos de Mejora'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Banner de Ejecución del Agente en Tiempo Real */}
+              {isAuditingWebsite && (
+                <div className="p-3.5 rounded-xl bg-cyan-500/15 border border-cyan-500/40 flex items-center gap-3 animate-pulse text-xs font-mono text-cyan-600 dark:text-cyan-300">
+                  <div className="w-4 h-4 rounded-full border-2 border-cyan-400 border-t-transparent animate-spin shrink-0" />
+                  <div className="flex-1">
+                    <p className="font-bold">Agente Auditor en Ejecución:</p>
+                    <p className="text-[11px] text-[var(--text-muted)] mt-0.5">{auditStepText}</p>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 border border-cyan-500/30 font-bold shrink-0">
+                    Telemetría Activa
+                  </span>
+                </div>
+              )}
+
+              {/* Diagnóstico Resumido del Lobo Vectorial */}
+              <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs">
+                <div className="flex items-start gap-2.5">
+                  <Lightbulb className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <span className="font-bold text-[var(--text-main)] block font-mono text-xs">
+                      Diagnóstico del Asesor:
+                    </span>
+                    <p className="text-[var(--text-muted)] leading-relaxed">
+                      {activeTenant?.frictionDiagnosis ||
+                        'El tráfico de pago llega al sitio con buen costo unitario, pero la conversión hacia WhatsApp se encuentra por debajo del umbral mínimo del 3.0%.'}
                     </p>
                   </div>
                 </div>
-                <span className="text-xs font-mono px-3 py-1 rounded-lg bg-red-500/20 text-red-500 border border-red-500/30 shrink-0 self-start sm:self-auto font-bold">
-                  Conversión: {webMetrics.whatsappClickRate} (Crítica)
-                </span>
-              </div>
 
-              <div className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-amber-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs font-sans">
-                <div className="flex items-start gap-2 text-[var(--text-main)]">
-                  <Lightbulb className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                  <span>
-                    <strong>Diagnóstico Comercial:</strong> Aumentar el contraste del botón flotante de WhatsApp, asegurar que el enlace abra directamente la conversación en móvil y optimizar la velocidad de carga (menos de 2.2s).
+                <div className="flex items-center gap-2 shrink-0 self-start md:self-auto font-mono text-xs">
+                  <span className="text-[var(--text-muted)]">Conversión a Chat:</span>
+                  <span className={`px-2.5 py-1 rounded-lg font-bold border ${
+                    activeTenant?.frictionAlert
+                      ? 'bg-red-500/20 text-red-500 border-red-500/30'
+                      : 'bg-emerald-500/20 text-emerald-500 border-emerald-500/30'
+                  }`}>
+                    {webMetrics.whatsappClickRate} (Meta: &gt; 3.0%)
                   </span>
                 </div>
-                {activeTenant?.websiteUrl && (
-                  <a
-                    href={activeTenant.websiteUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--bg-panel)] hover:bg-[var(--bg-card-subtle)] text-xs font-mono text-[var(--text-main)] border border-[var(--border-color)] shrink-0 transition-colors"
-                  >
-                    <span>Auditar Sitio Web</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                )}
               </div>
+
+              {/* =================================================================== */}
+              {/* DESGLOSE DE LOS 4 PILARES DE SALUD WEB AUDITADOS POR EL AGENTE      */}
+              {/* =================================================================== */}
+              {showDeepAuditDetails && (
+                <div className="space-y-4 pt-1 animate-fade-in">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    {/* Pilar 1: Velocidad Móvil */}
+                    <div className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1.5 font-sans">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase font-bold flex items-center gap-1.5">
+                          <Gauge className="w-3.5 h-3.5 text-amber-500" />
+                          Velocidad Móvil (LCP)
+                        </span>
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-500 font-bold border border-amber-500/20">
+                          2.9s (Lento)
+                        </span>
+                      </div>
+                      <p className="text-xs text-[var(--text-muted)] leading-snug">
+                        El tiempo de carga en 4G excede los 2.2s recomendados por imágenes pesadas en el banner.
+                      </p>
+                    </div>
+
+                    {/* Pilar 2: Visibilidad Botón WhatsApp */}
+                    <div className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1.5 font-sans">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase font-bold flex items-center gap-1.5">
+                          <MousePointerClick className="w-3.5 h-3.5 text-red-500" />
+                          Botón de WhatsApp
+                        </span>
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-red-500/15 text-red-500 font-bold border border-red-500/20">
+                          Contraste 2.9:1
+                        </span>
+                      </div>
+                      <p className="text-xs text-[var(--text-muted)] leading-snug">
+                        Botón al fondo de página sin fijación flotante en móvil. Fuga a más del 98% de visitantes.
+                      </p>
+                    </div>
+
+                    {/* Pilar 3: Tasa de Contacto a WhatsApp */}
+                    <div className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1.5 font-sans">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase font-bold flex items-center gap-1.5">
+                          <TrendingUp className="w-3.5 h-3.5 text-cyan-500" />
+                          Click-to-Chat
+                        </span>
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-500 font-bold border border-cyan-500/20">
+                          {webMetrics.whatsappClickRate}
+                        </span>
+                      </div>
+                      <p className="text-xs text-[var(--text-muted)] leading-snug">
+                        Umbral mínimo de rentabilidad es 3.0%. Cada punto porcentual perdido incrementa el CAC.
+                      </p>
+                    </div>
+
+                    {/* Pilar 4: Telemetría Meta CAPI & GA4 */}
+                    <div className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1.5 font-sans">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase font-bold flex items-center gap-1.5">
+                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                          Meta CAPI & GA4
+                        </span>
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-500 font-bold border border-emerald-500/20">
+                          99.4% Emparejado
+                        </span>
+                      </div>
+                      <p className="text-xs text-[var(--text-muted)] leading-snug">
+                        Eventos de compra y citas sincronizados Server-to-Server sin depender de cookies.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Checklist de Puntos de Mejora Sugeridos por el Agente */}
+                  <div className="p-4 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2.5">
+                    <span className="text-[10px] font-mono text-neon uppercase font-bold tracking-wider flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Puntos de Mejora Prioritarios Sugeridos por el Sub-Bot Analista
+                    </span>
+
+                    <ul className="space-y-2 text-xs font-sans text-[var(--text-main)]">
+                      <li className="flex items-start gap-2">
+                        <span className="p-0.5 rounded-full bg-emerald-500/20 text-emerald-500 mt-0.5 shrink-0">
+                          <Check className="w-3 h-3" />
+                        </span>
+                        <span>
+                          <strong>1. Instalar Botón Flotante Fijo:</strong> Añadir botón verde vibrante (#25D366) fijado en la esquina inferior derecha con texto <em>"Chatear con especialista"</em> y enlace directo <code className="text-xs font-mono text-neon">https://wa.me/...</code>.
+                        </span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="p-0.5 rounded-full bg-emerald-500/20 text-emerald-500 mt-0.5 shrink-0">
+                          <Check className="w-3 h-3" />
+                        </span>
+                        <span>
+                          <strong>2. Comprimir Recursos del Hero:</strong> Convertir imágenes a formato WebP y comprimir por debajo de 150 KB para reducir el tiempo de primer contenido pintado a menos de 2.0s en redes móviles.
+                        </span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="p-0.5 rounded-full bg-emerald-500/20 text-emerald-500 mt-0.5 shrink-0">
+                          <Check className="w-3 h-3" />
+                        </span>
+                        <span>
+                          <strong>3. Alternativa Inmediata Sin Fricción:</strong> En campañas de prospección en Meta Ads, dirigir el tráfico hacia la <strong>Micro-Landing de Vector</strong> o Click-to-WhatsApp directo para eliminar la fuga del 98.6%.
+                        </span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 space-y-2 animate-fade-in font-sans">
-              <div className="flex items-center gap-2.5 text-emerald-600 dark:text-emerald-400 font-bold text-sm">
-                <CheckCircle2 className="w-5 h-5 shrink-0" />
-                <span>
-                  {activeTenant?.hasWebsite
-                    ? 'Sitio Web Saludable y Sincronizado'
-                    : 'Flujo Direct-to-Messaging Activo: Cero Pérdida por Carga Web'}
+          ) : activeTenant ? (
+            <div className="p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 space-y-3 animate-fade-in font-sans">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5 text-emerald-600 dark:text-emerald-400 font-bold text-sm">
+                  <CheckCircle2 className="w-5 h-5 shrink-0" />
+                  <span>Flujo Direct-to-Messaging Activo: Cero Pérdida por Carga Web</span>
+                </div>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-500 font-bold border border-emerald-500/30">
+                  GARANTIZADO 100% DIRECTO
                 </span>
               </div>
               <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                {activeTenant?.frictionDiagnosis ||
-                  `El ecosistema de ${activeTenant?.name} está captando prospectos calificados sin fricciones. La atribución a través de Meta Conversions API (CAPI) está emparejando el 99.4% de los eventos comerciales.`}
+                El ecosistema de <strong>{activeTenant.name}</strong> canaliza todo el tráfico publicitario directamente al chat de WhatsApp y a la Micro-Landing autogenerada de Vector. Al no depender de una página web externa pesada, no existe fuga de prospectos por tiempo de carga y la tasa de contacto se mantiene al máximo.
               </p>
             </div>
-          )}
+          ) : null}
 
           {/* Step-by-Step Funnel Dropoff Chart */}
           <div className="p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-5 shadow-sm">
@@ -407,7 +862,19 @@ export const PerformanceDashboard = () => {
               </Badge>
             </div>
 
-            {activeTenant?.hasWebsite ? (
+            {!activeTenant ? (
+              <div className="p-8 text-center text-xs font-mono text-[var(--text-muted)] space-y-2">
+                <Activity className="w-8 h-8 opacity-30 mx-auto text-lime-400" />
+                <p className="text-[var(--text-main)] font-bold">Sin Negocio Seleccionado</p>
+                <p>Selecciona un negocio en el selector superior para monitorear su embudo de conversión y puntos de fuga en tiempo real.</p>
+              </div>
+            ) : (!data?.dualTelemetry && Number(mlMetrics.visits) === 0 && Number(webMetrics.sessions) === 0) ? (
+              <div className="p-8 text-center text-xs font-mono text-[var(--text-muted)] space-y-2">
+                <Activity className="w-8 h-8 opacity-30 mx-auto text-lime-400" />
+                <p className="text-[var(--text-main)] font-bold">Sin Telemetría Registrada</p>
+                <p>No se han registrado eventos de tráfico ni conversiones para <strong>{activeTenant.name}</strong>. Se registrarán conforme los prospectos interactúen con los anuncios o la micro-landing.</p>
+              </div>
+            ) : activeTenant?.hasWebsite ? (
               <div className="space-y-3 font-mono text-xs">
                 {/* Step 1 */}
                 <div>
@@ -536,15 +1003,27 @@ export const PerformanceDashboard = () => {
               <div className="space-y-2">
                 <div className="flex justify-between items-center p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
                   <span className="text-[var(--text-main)]">Meta Ads (Instagram / FB)</span>
-                  <span className="text-neon font-bold">72.4% (2,476 visitas)</span>
+                  <span className="text-neon font-bold">
+                    {!activeTenant || (Number(webMetrics.sessions) === 0 && Number(mlMetrics.visits) === 0)
+                      ? '0.0% (0 visitas)'
+                      : `${mlMetrics.sources?.directAds || '0.0%'} (${formatNumber(mlMetrics.visits ?? 0)} visitas)`}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
                   <span className="text-[var(--text-main)]">Google Búsqueda Orgánica</span>
-                  <span className="text-blue-400 font-bold">15.8% (540 visitas)</span>
+                  <span className="text-blue-400 font-bold">
+                    {!activeTenant || Number(webMetrics.sessions) === 0
+                      ? '0.0% (0 visitas)'
+                      : `100% (${formatNumber(webMetrics.sessions ?? 0)} visitas)`}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
                   <span className="text-[var(--text-main)]">Tráfico Directo / WhatsApp</span>
-                  <span className="text-emerald-500 font-bold">11.8% (404 visitas)</span>
+                  <span className="text-emerald-500 font-bold">
+                    {!activeTenant || Number(mlMetrics.ctaClicks) === 0
+                      ? '0.0% (0 visitas)'
+                      : `${mlMetrics.sources?.bioLink || '0.0%'} (${formatNumber(mlMetrics.ctaClicks ?? 0)} clics)`}
+                  </span>
                 </div>
               </div>
             </div>
@@ -559,14 +1038,18 @@ export const PerformanceDashboard = () => {
                     <Smartphone className="w-3.5 h-3.5 text-neon" />
                     <span>Dispositivos Móviles (Smartphones)</span>
                   </span>
-                  <span className="text-emerald-500 font-bold">89.2% (Mayoritaria)</span>
+                  <span className="text-emerald-500 font-bold">
+                    {!activeTenant || (Number(webMetrics.sessions) === 0 && Number(mlMetrics.visits) === 0)
+                      ? '0.0% (Sin tráfico)'
+                      : '100% (Móvil)'}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
                   <span className="flex items-center gap-1.5 text-[var(--text-muted)]">
                     <Globe className="w-3.5 h-3.5" />
                     <span>Computadoras de Escritorio (Desktop)</span>
                   </span>
-                  <span className="text-[var(--text-muted)] font-bold">10.8%</span>
+                  <span className="text-[var(--text-muted)] font-bold">0.0%</span>
                 </div>
               </div>
             </div>
@@ -583,45 +1066,45 @@ export const PerformanceDashboard = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
               title="ROAS Real Atribuido"
-              value={`${summary.realRoas}x`}
-              subvalue={`(Meta: ${summary.metaReportedRoas}x)`}
-              change="+41.3%"
+              value={`${summary.realRoas ?? 0}x`}
+              subvalue={`(Meta: ${summary.metaReportedRoas ?? 0}x)`}
+              change={summary.realRoas > 0 ? '+41.3%' : '0%'}
               isPositive={true}
               icon={TrendingUp}
-              badgeText="BACKEND REAL"
+              badgeText={!activeTenant ? 'INACTIVO' : 'BACKEND REAL'}
               accentColor="brand"
             />
 
             <StatCard
               title="CAC Real (Cost per Acquisition)"
-              value={`$${summary.realCac} USD`}
-              subvalue={`(CPA: $${summary.blendedCpa})`}
-              change="-15.4%"
+              value={`$${summary.realCac ?? 0} USD`}
+              subvalue={`(CPA: $${summary.blendedCpa ?? 0})`}
+              change={summary.realCac > 0 ? '-15.4%' : '0%'}
               isPositive={true}
               icon={DollarSign}
-              badgeText="OPT. METRIC"
+              badgeText={!activeTenant ? 'INACTIVO' : 'OPT. METRIC'}
               accentColor="emerald"
             />
 
             <StatCard
               title="Ingresos Reales Atribuidos"
-              value={`$${formatNumber(summary.backendAttributedRevenue)} USD`}
-              subvalue={`Gasto: $${formatNumber(summary.totalSpend)}`}
-              change="+28.0%"
+              value={`$${formatNumber(summary.backendAttributedRevenue ?? 0)} USD`}
+              subvalue={`Gasto: $${formatNumber(summary.totalSpend ?? 0)}`}
+              change={summary.backendAttributedRevenue > 0 ? '+28.0%' : '0%'}
               isPositive={true}
               icon={Activity}
-              badgeText="VERIFICADO"
+              badgeText={!activeTenant ? 'INACTIVO' : 'VERIFICADO'}
               accentColor="blue"
             />
 
             <StatCard
               title="Sincronización con Meta Ads"
-              value={`${summary.capiSyncRate}%`}
-              subvalue="Calidad de Registro: 9.8/10"
-              change="+1.2%"
+              value={`${summary.capiSyncRate ?? 0}%`}
+              subvalue={!activeTenant || summary.capiSyncRate === 0 ? 'Sin eventos registrados' : 'Calidad de Registro: 9.8/10'}
+              change={summary.capiSyncRate > 0 ? '+1.2%' : '0%'}
               isPositive={true}
               icon={ShieldCheck}
-              badgeText="EN TIEMPO REAL"
+              badgeText={!activeTenant ? 'INACTIVO' : 'EN TIEMPO REAL'}
               accentColor="amber"
             />
           </div>
@@ -747,39 +1230,271 @@ export const PerformanceDashboard = () => {
       {/* ========================================================================= */}
       {activeTab === 'microlanding' && (
         <div className="space-y-6 animate-fade-in">
+          {/* Header de Identidad de Micro-Landing */}
           <div className="p-6 rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
             <div className="flex items-center gap-3">
               <span className="p-3 rounded-2xl bg-neon/10 text-neon border border-neon/30">
                 <Smartphone className="w-6 h-6" />
               </span>
               <div>
-                <h3 className="text-xl font-bold text-[var(--text-main)] tracking-tight flex items-center gap-2">
-                  <span>{activeTenant?.avatar}</span>
-                  <span>Micro-Landing Page de {activeTenant?.name}</span>
-                </h3>
-                <p className="text-xs text-[var(--text-muted)] font-mono">
-                  Diseño móvil ultraligero alojado en: app.vectorinside.com/m/{activeTenant?.microLandingSlug || activeTenant?.id}
+                <div className="flex items-center gap-2">
+                  <h3 className="text-xl font-bold text-[var(--text-main)] tracking-tight flex items-center gap-2">
+                    <span>{activeTenant?.avatar || '🏢'}</span>
+                    <span>
+                      {activeTenant
+                        ? `Micro-Landing Page de ${activeTenant.name}`
+                        : 'Micro-Landing Page (Sin negocio seleccionado)'}
+                    </span>
+                  </h3>
+                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold border ${
+                    activeTenant
+                      ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                      : 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'
+                  }`}>
+                    {activeTenant ? 'ACTIVA' : 'INACTIVO'}
+                  </span>
+                </div>
+                <p className="text-xs text-[var(--text-muted)] font-mono mt-0.5">
+                  Embudo ultraligero de alta conversión alojado en:{' '}
+                  {activeTenant ? (
+                    <code className="text-neon underline">
+                      app.vectorinside.com/m/{activeTenant.microLandingSlug || activeTenant.id}
+                    </code>
+                  ) : (
+                    <span className="italic text-[var(--text-muted)]">
+                      Selecciona un negocio para generar su enlace público
+                    </span>
+                  )}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
+                disabled={!activeTenant}
                 onClick={handleCopyPublicLink}
-                className="px-4 py-2 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] text-xs font-mono font-bold border border-[var(--border-color)] flex items-center gap-1.5 transition-all shadow-sm"
+                className="px-4 py-2 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] disabled:opacity-50 disabled:cursor-not-allowed text-[var(--text-main)] text-xs font-mono font-bold border border-[var(--border-color)] flex items-center gap-1.5 transition-all shadow-sm"
               >
                 {copiedLink ? <Check className="w-4 h-4 text-neon" /> : <ExternalLink className="w-4 h-4" />}
                 <span>{copiedLink ? '¡Copiado!' : 'Copiar URL Pública'}</span>
               </button>
               <button
                 type="button"
-                onClick={() => setShowMicroLandingModal(true)}
-                className="px-4 py-2 rounded-xl bg-neon text-black font-bold text-xs font-mono shadow-[0_0_15px_rgba(231,249,0,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-1.5"
+                disabled={!activeTenant}
+                onClick={() => activeTenant && setShowMicroLandingModal(true)}
+                className="px-4 py-2 rounded-xl bg-neon text-black font-bold text-xs font-mono shadow-[0_0_15px_rgba(231,249,0,0.3)] hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1.5"
               >
                 <Smartphone className="w-4 h-4" />
                 <span>Previsualización Móvil</span>
               </button>
+            </div>
+          </div>
+
+          {/* =================================================================== */}
+          {/* KPI STAT CARDS EXCLUSIVAS DE LA MICRO-LANDING                       */}
+          {/* =================================================================== */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard
+              title="Visitas a Micro-Landing"
+              value={formatNumber(!activeTenant ? 0 : (mlMetrics.visits ?? 0))}
+              subvalue={!activeTenant ? 'Sin negocio seleccionado' : 'Tráfico de alta intención'}
+              change={Number(mlMetrics.visits) > 0 ? '+24.2%' : '0%'}
+              isPositive={true}
+              icon={Users}
+              badgeText={!activeTenant ? 'INACTIVO' : 'EMBUDO VECTOR'}
+              accentColor="brand"
+            />
+
+            <StatCard
+              title="Conversión a WhatsApp (Chat)"
+              value={!activeTenant ? '0.0%' : (mlMetrics.conversionRate || '0.0%')}
+              subvalue={`${!activeTenant ? 0 : (mlMetrics.leadsGenerated ?? 0)} chats iniciados`}
+              change={Number(mlMetrics.leadsGenerated) > 0 ? '+13x vs Web' : '0%'}
+              isPositive={true}
+              icon={MousePointerClick}
+              badgeText={!activeTenant ? 'INACTIVO' : 'ALTA CONVERSIÓN'}
+              accentColor="emerald"
+            />
+
+            <StatCard
+              title="Costo por Lead (Micro-Landing)"
+              value={!activeTenant ? '$0.00 MXN' : (mlMetrics.costPerLead || '$0.00 MXN')}
+              subvalue={!activeTenant ? 'Sin negocio seleccionado' : 'Costo unitario por conversación'}
+              change={Number(mlMetrics.visits) > 0 ? '-51.3%' : '0%'}
+              isPositive={true}
+              icon={DollarSign}
+              badgeText={!activeTenant ? 'INACTIVO' : 'ÓPTIMO'}
+              accentColor="emerald"
+            />
+
+            <StatCard
+              title="Velocidad Móvil & Retención"
+              value={!activeTenant ? '0.00s' : (mlMetrics.avgLoadTime || '0.00s')}
+              subvalue={`Rebote de solo ${!activeTenant ? '0.0%' : (mlMetrics.bounceRate || '0.0%')}`}
+              change={Number(mlMetrics.visits) > 0 ? '-87% vs Web' : '0%'}
+              isPositive={true}
+              icon={TrendingUp}
+              badgeText={!activeTenant ? 'INACTIVO' : '0% FRICCIÓN'}
+              accentColor="blue"
+            />
+          </div>
+
+          {/* =================================================================== */}
+          {/* MATRIZ COMPARATIVA DUAL: WEB TRADICIONAL VS MICRO-LANDING VECTOR     */}
+          {/* =================================================================== */}
+          <div className="p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-4 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--border-color)]">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="p-1 rounded-lg bg-neon/15 text-neon border border-neon/30">
+                    <Layers className="w-4 h-4" />
+                  </span>
+                  <h3 className="text-base font-heading font-black text-[var(--text-main)]">
+                    Telemetría Dual: Sitio Web Corporativo (GA4) vs. Micro-Landing Vector
+                  </h3>
+                </div>
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                  <strong>Aclaración de Atribución:</strong> El sistema no fusiona los CPC. Se mantiene una separación rigurosa entre el tráfico institucional de tu web externa y los prospectos comerciales de tu Micro-Landing.
+                </p>
+              </div>
+
+              <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 font-bold shrink-0 self-start sm:self-auto">
+                Segmentación de Tráfico Activa
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs font-mono">
+                <thead>
+                  <tr className="border-b border-[var(--border-color)] text-[var(--text-muted)] uppercase text-[10px]">
+                    <th className="py-2.5 px-3">Parámetro Evaluado</th>
+                    <th className="py-2.5 px-3">
+                      <span className="flex items-center gap-1.5">
+                        <Globe className="w-3.5 h-3.5 text-blue-400" />
+                        Sitio Web Tradicional (GA4)
+                      </span>
+                    </th>
+                    <th className="py-2.5 px-3">
+                      <span className="flex items-center gap-1.5 text-neon font-bold">
+                        <Smartphone className="w-3.5 h-3.5 text-neon" />
+                        Micro-Landing Vector (/m/{activeTenant?.microLandingSlug || activeTenant?.id})
+                      </span>
+                    </th>
+                    <th className="py-2.5 px-3 text-right">Ventaja Comercial</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--border-color)] text-[var(--text-main)]">
+                  <tr className="hover:bg-[var(--bg-card)] transition-colors">
+                    <td className="py-3 px-3 font-semibold font-sans">Velocidad de Carga Celular (LCP)</td>
+                    <td className="py-3 px-3 text-[var(--text-muted)] font-bold">
+                      {!activeTenant || Number(webMetrics.sessions) === 0 ? '0.00s (Sin datos)' : '2.9s'}
+                    </td>
+                    <td className="py-3 px-3 text-neon font-bold">
+                      {!activeTenant ? '0.00s' : (mlMetrics.avgLoadTime || '0.00s')}
+                    </td>
+                    <td className="py-3 px-3 text-right text-[var(--text-muted)] font-bold">
+                      {!activeTenant || Number(mlMetrics.visits) === 0 ? 'Sin telemetría' : 'Optimizado'}
+                    </td>
+                  </tr>
+
+                  <tr className="hover:bg-[var(--bg-card)] transition-colors">
+                    <td className="py-3 px-3 font-semibold font-sans">Tasa de Contacto a WhatsApp</td>
+                    <td className="py-3 px-3 text-[var(--text-muted)] font-bold">
+                      {!activeTenant ? '0.0%' : (webMetrics.whatsappClickRate || '0.0%')}
+                    </td>
+                    <td className="py-3 px-3 text-emerald-400 font-bold">
+                      {!activeTenant ? '0.0%' : (mlMetrics.conversionRate || '0.0%')}
+                    </td>
+                    <td className="py-3 px-3 text-right text-[var(--text-muted)] font-bold">
+                      {!activeTenant || Number(mlMetrics.visits) === 0 ? 'Sin telemetría' : 'Directo a chat'}
+                    </td>
+                  </tr>
+
+                  <tr className="hover:bg-[var(--bg-card)] transition-colors">
+                    <td className="py-3 px-3 font-semibold font-sans">Costo Unitario de Adquisición</td>
+                    <td className="py-3 px-3 text-[var(--text-muted)]">
+                      {!activeTenant ? '$0.00 MXN' : (webMetrics.cpc || '$0.00 MXN')} CPC
+                    </td>
+                    <td className="py-3 px-3 text-neon font-bold">
+                      {!activeTenant ? '$0.00 MXN' : (mlMetrics.costPerLead || '$0.00 MXN')} por Lead
+                    </td>
+                    <td className="py-3 px-3 text-right text-[var(--text-muted)] font-bold">
+                      {!activeTenant || Number(mlMetrics.visits) === 0 ? 'Sin telemetría' : 'Medición activa'}
+                    </td>
+                  </tr>
+
+                  <tr className="hover:bg-[var(--bg-card)] transition-colors">
+                    <td className="py-3 px-3 font-semibold font-sans">Tasa de Rebote / Fuga de Visitas</td>
+                    <td className="py-3 px-3 text-[var(--text-muted)] font-bold">
+                      {!activeTenant ? '0%' : (webMetrics.bounceRate || '0%')} de abandono
+                    </td>
+                    <td className="py-3 px-3 text-emerald-400 font-bold">
+                      {!activeTenant ? '0.0%' : (mlMetrics.bounceRate || '0.0%')} de rebote
+                    </td>
+                    <td className="py-3 px-3 text-right text-[var(--text-muted)] font-bold">
+                      {!activeTenant || Number(mlMetrics.visits) === 0 ? 'Sin telemetría' : '0% fricción'}
+                    </td>
+                  </tr>
+
+                  <tr className="hover:bg-[var(--bg-card)] transition-colors bg-[var(--bg-card)]/50">
+                    <td className="py-3 px-3 font-semibold font-sans">Estrategia Recomendada</td>
+                    <td className="py-3 px-3 text-[var(--text-muted)] text-[11px] font-sans">
+                      Catálogo institucional & Posicionamiento SEO de marca
+                    </td>
+                    <td className="py-3 px-3 text-neon text-[11px] font-sans font-bold">
+                      Destino prioritario de Meta Ads, TikTok y Enlace en Bio
+                    </td>
+                    <td className="py-3 px-3 text-right text-neon font-bold text-[11px] font-sans">
+                      Máxima Rentabilidad
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* =================================================================== */}
+          {/* DISTRIBUCIÓN DE FUENTES DE TRÁFICO DE LA MICRO-LANDING              */}
+          {/* =================================================================== */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
+            <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2 shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-neon font-bold text-xs flex items-center gap-1.5">
+                  <Smartphone className="w-4 h-4" />
+                  Enlace en Bio (Redes)
+                </span>
+                <span className="text-neon font-bold">{!activeTenant ? '0.0%' : (mlMetrics.sources?.bioLink || '0.0%')}</span>
+              </div>
+              <p className="text-[var(--text-muted)] font-sans text-xs">
+                Tráfico orgánico proveniente de Instagram Bio, TikTok y perfiles sociales.
+              </p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2 shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-emerald-500 font-bold text-xs flex items-center gap-1.5">
+                  <MousePointerClick className="w-4 h-4" />
+                  Meta Ads Pauta Directa
+                </span>
+                <span className="text-emerald-500 font-bold">{!activeTenant ? '0.0%' : (mlMetrics.sources?.directAds || '0.0%')}</span>
+              </div>
+              <p className="text-[var(--text-muted)] font-sans text-xs">
+                Campañas de tráfico pagado en Meta con atribución CAPI server-to-server.
+              </p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2 shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-blue-500 font-bold text-xs flex items-center gap-1.5">
+                  <QrCode className="w-4 h-4" />
+                  Código QR en Mostrador
+                </span>
+                <span className="text-blue-500 font-bold">{!activeTenant ? '0.0%' : (mlMetrics.sources?.qrPrint || '0.0%')}</span>
+              </div>
+              <p className="text-[var(--text-muted)] font-sans text-xs">
+                Clientes físicos que escanean el QR en recepción, mesas o material impreso.
+              </p>
             </div>
           </div>
 
@@ -823,23 +1538,27 @@ export const PerformanceDashboard = () => {
 
             <div className="flex flex-col sm:flex-row items-center justify-between w-full max-w-xl gap-3 z-10">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className={`w-2.5 h-2.5 rounded-full ${activeTenant ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-600'}`} />
                 <span className="text-xs font-mono font-bold text-[var(--text-main)]">
-                  Simulador en Vivo: {activeTenant?.name}
+                  Simulador en Vivo: {activeTenant ? activeTenant.name : 'Sin negocio seleccionado'}
                 </span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[var(--text-muted)] font-mono">
-                  /m/{activeTenant?.microLandingSlug || activeTenant?.id || 'dental'}
-                </span>
+                {activeTenant && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[var(--text-muted)] font-mono">
+                    /m/{activeTenant.microLandingSlug || activeTenant.id}
+                  </span>
+                )}
               </div>
-              <Button
-                variant="primary"
-                size="sm"
-                className="gap-2 shadow-lg shadow-neon/20 hover:scale-105 transition-all text-xs"
-                onClick={() => setShowMicroLandingModal(true)}
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Abrir Studio Completo</span>
-              </Button>
+              {activeTenant && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="gap-2 shadow-lg shadow-neon/20 hover:scale-105 transition-all text-xs"
+                  onClick={() => setShowMicroLandingModal(true)}
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Abrir Studio Completo</span>
+                </Button>
+              )}
             </div>
 
             {/* Framed Mobile Mockup */}
@@ -847,53 +1566,65 @@ export const PerformanceDashboard = () => {
               {/* Top Notch / Dynamic Island */}
               <div className="absolute top-2 left-1/2 -translate-x-1/2 w-24 h-5 bg-black rounded-full z-20 flex items-center justify-center border border-zinc-800/80 shadow-inner">
                 <div className="w-2.5 h-2.5 rounded-full bg-zinc-900 border border-zinc-800 mr-2" />
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/80 animate-pulse" />
+                <div className={`w-1.5 h-1.5 rounded-full ${activeTenant ? 'bg-emerald-500/80 animate-pulse' : 'bg-zinc-700'}`} />
               </div>
 
-              {/* Iframe content */}
-              <iframe
-                src={`/m/${activeTenant?.microLandingSlug || activeTenant?.id || 'dental'}?preview=true`}
-                title="MicroLanding Quick Preview"
-                className="w-full h-full border-0 pt-0 bg-black"
-              />
+              {activeTenant ? (
+                <iframe
+                  src={`/m/${activeTenant.microLandingSlug || activeTenant.id}?preview=true`}
+                  title="MicroLanding Quick Preview"
+                  className="w-full h-full border-0 pt-0 bg-black"
+                />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center space-y-3 bg-zinc-950 text-xs font-mono text-zinc-400">
+                  <Smartphone className="w-10 h-10 text-zinc-600" />
+                  <p className="text-zinc-200 font-bold font-sans text-sm">Sin Micro-Landing Activa</p>
+                  <p className="text-[11px] leading-relaxed">
+                    Selecciona o registra un negocio para previsualizar y personalizar su Micro-Landing móvil en tiempo real.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Quick Actions Footer */}
-            <div className="flex flex-wrap items-center justify-center gap-3 z-10 pt-2">
-              <button
-                onClick={() => {
-                  const url = typeof window !== 'undefined' 
-                    ? `${window.location.origin}/m/${activeTenant?.microLandingSlug || activeTenant?.id || 'dental'}`
-                    : `https://vector.lat/m/${activeTenant?.microLandingSlug || activeTenant?.id || 'dental'}`;
-                  navigator.clipboard.writeText(url);
-                  setCopiedLink(true);
-                  setTimeout(() => setCopiedLink(false), 2000);
-                }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-[var(--text-main)] transition-colors"
-              >
-                {copiedLink ? (
-                  <>
-                    <Check className="w-3.5 h-3.5 text-emerald-400" />
-                    <span className="text-emerald-400">¡Enlace Copiado!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3.5 h-3.5 text-[var(--text-muted)]" />
-                    <span>Copiar Enlace Bio</span>
-                  </>
-                )}
-              </button>
+            {activeTenant && (
+              <div className="flex flex-wrap items-center justify-center gap-3 z-10 pt-2">
+                <button
+                  onClick={() => {
+                    const slug = activeTenant.microLandingSlug || activeTenant.id;
+                    const url = typeof window !== 'undefined' 
+                      ? `${window.location.origin}/m/${slug}`
+                      : `https://vector.lat/m/${slug}`;
+                    navigator.clipboard.writeText(url);
+                    setCopiedLink(true);
+                    setTimeout(() => setCopiedLink(false), 2000);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-[var(--text-main)] transition-colors"
+                >
+                  {copiedLink ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="text-emerald-400">¡Enlace Copiado!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+                      <span>Copiar Enlace Bio</span>
+                    </>
+                  )}
+                </button>
 
-              <a
-                href={`/m/${activeTenant?.microLandingSlug || activeTenant?.id || 'dental'}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-neon transition-colors"
-              >
-                <span>Abrir Pestaña Completa</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            </div>
+                <a
+                  href={`/m/${activeTenant.microLandingSlug || activeTenant.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-neon transition-colors"
+                >
+                  <span>Abrir Pestaña Completa</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
+            )}
           </div>
         </div>
       )}

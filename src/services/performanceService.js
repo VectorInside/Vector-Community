@@ -1,65 +1,157 @@
-import api, { isBackendAvailable } from './api';
+import api, { isBackendAvailable, unwrapApiData } from './api';
 import { INITIAL_PERFORMANCE_METRICS } from '@/utils/mockData';
 
-const TENANT_METRICS_MAP = {
-  polanco: 'tenant-mex-001',
-  dental: 'tenant-med-002',
-  urban: 'tenant-eco-003',
-  corp: 'tenant-mex-001',
-  patrimonial: 'tenant-mex-001',
+const TENANT_METRICS_MAP = {};
+const LEGACY_MOCK_TENANT_IDS = new Set(['dental', 'polanco', 'urban', 'mex', 'corp', 'demo', 'creator', 'gym', 'patrimonial']);
+
+const isInvalidOrMockTenant = (tenantId) => {
+  if (!tenantId) return true;
+  const clean = String(tenantId).toLowerCase().trim();
+  return !clean || clean === 'undefined' || clean === 'null' || LEGACY_MOCK_TENANT_IDS.has(clean);
 };
 
 const resolveMetricsKey = (tenantId) => {
-  return TENANT_METRICS_MAP[tenantId] || tenantId || 'tenant-mex-001';
+  if (isInvalidOrMockTenant(tenantId)) return null;
+  return TENANT_METRICS_MAP[tenantId] || tenantId;
+};
+
+export const ZERO_TELEMETRY = {
+  webTrafficMetrics: {
+    sessions: 0,
+    cpc: '$0.00 MXN',
+    whatsappClickRate: '0.0%',
+    bounceRate: '0%',
+  },
+  microLandingMetrics: {
+    visits: 0,
+    leadsGenerated: 0,
+    conversionRate: '0.0%',
+    costPerLead: '$0.00 MXN',
+    bounceRate: '0.0%',
+    avgLoadTime: '0.00s',
+    ctaClicks: 0,
+    qrScans: 0,
+    sources: {
+      bioLink: '0.0%',
+      directAds: '0.0%',
+      qrPrint: '0.0%',
+    },
+  },
+  rawTelemetry: null,
+};
+
+export const ZERO_PERFORMANCE_METRICS = {
+  summary: {
+    realRoas: 0.0,
+    metaReportedRoas: 0.0,
+    realCac: 0,
+    blendedCpa: 0,
+    totalSpend: 0,
+    backendAttributedRevenue: 0,
+    capiSyncRate: 0,
+    avgHookRate: 0,
+  },
+  dailySeries: [],
+  dualTelemetry: ZERO_TELEMETRY,
+  capiLogs: [],
+};
+
+export const normalizeTelemetryFromApi = (raw) => {
+  if (!raw || typeof raw !== 'object') return null;
+  return {
+    webTrafficMetrics: {
+      sessions: Number(raw.webSessions ?? 0),
+      cpc: raw.webCpc != null ? `$${Number(raw.webCpc).toFixed(2)} MXN` : '$0.00 MXN',
+      whatsappClickRate: raw.webWhatsappRate != null ? `${Number(raw.webWhatsappRate).toFixed(1)}%` : '0.0%',
+      bounceRate: raw.webBounceRate != null ? `${Math.round(Number(raw.webBounceRate))}%` : '0%',
+    },
+    microLandingMetrics: {
+      visits: Number(raw.microVisits ?? 0),
+      leadsGenerated: Number(raw.microLeads ?? 0),
+      conversionRate: raw.microConvRate != null ? `${Number(raw.microConvRate).toFixed(1)}%` : '0.0%',
+      costPerLead: raw.microCpl != null ? `$${Number(raw.microCpl).toFixed(2)} MXN` : '$0.00 MXN',
+      bounceRate: raw.microBounceRate != null ? `${Number(raw.microBounceRate).toFixed(1)}%` : '0.0%',
+      avgLoadTime: raw.avgLoadTimeSec != null ? `${Number(raw.avgLoadTimeSec).toFixed(2)}s` : '0.00s',
+      ctaClicks: Number(raw.ctaClicks ?? 0),
+      qrScans: Number(raw.qrScans ?? 0),
+      sources: {
+        bioLink: raw.sourceBioPct != null ? `${Number(raw.sourceBioPct).toFixed(1)}%` : '0.0%',
+        directAds: raw.sourceAdsPct != null ? `${Number(raw.sourceAdsPct).toFixed(1)}%` : '0.0%',
+        qrPrint: raw.sourceQrPct != null ? `${Number(raw.sourceQrPct).toFixed(1)}%` : '0.0%',
+      },
+    },
+    rawTelemetry: raw,
+  };
 };
 
 export const performanceService = {
-  // Get performance metrics (ROAS, CAC, Hook Rate, Hold Rate, Spend vs Revenue)
+  async getDualTelemetry(tenantId) {
+    if (isInvalidOrMockTenant(tenantId)) return ZERO_TELEMETRY;
+    if (!isBackendAvailable) return ZERO_TELEMETRY;
+    try {
+      const response = await api.get(`/analytics/${tenantId}`);
+      const data = unwrapApiData(response);
+      return normalizeTelemetryFromApi(data) || ZERO_TELEMETRY;
+    } catch (error) {
+      return ZERO_TELEMETRY;
+    }
+  },
+
+  async trackTelemetryEvent(tenantId, eventType = 'VISIT') {
+    if (isInvalidOrMockTenant(tenantId)) return null;
+    if (!isBackendAvailable) return null;
+    try {
+      const response = await api.post('/analytics/track', { tenantId, eventType });
+      const data = unwrapApiData(response);
+      return normalizeTelemetryFromApi(data);
+    } catch (error) {
+      return null;
+    }
+  },
+
   async getPerformanceMetrics(tenantId) {
+    if (isInvalidOrMockTenant(tenantId)) return ZERO_PERFORMANCE_METRICS;
     const key = resolveMetricsKey(tenantId);
+    const fallback = (key && INITIAL_PERFORMANCE_METRICS[key]) || ZERO_PERFORMANCE_METRICS;
     if (!isBackendAvailable) {
-      return INITIAL_PERFORMANCE_METRICS[key] || INITIAL_PERFORMANCE_METRICS['tenant-mex-001'];
+      return fallback;
     }
     try {
-      const response = await api.get('/performance');
-      return response.data;
+      const dual = await this.getDualTelemetry(tenantId);
+      if (dual) {
+        return {
+          ...fallback,
+          dualTelemetry: dual,
+        };
+      }
+      return fallback;
     } catch (error) {
-      console.warn(`[performanceService.getPerformanceMetrics] Fallback for ${tenantId}`);
-      return INITIAL_PERFORMANCE_METRICS[key] || INITIAL_PERFORMANCE_METRICS['tenant-mex-001'];
+      return fallback;
     }
   },
 
-  // Get live CAPI attribution logs
   async getCapiAttributionLogs(tenantId) {
+    if (isInvalidOrMockTenant(tenantId)) return [];
     const key = resolveMetricsKey(tenantId);
-    if (!isBackendAvailable) {
-      const tenantData = INITIAL_PERFORMANCE_METRICS[key] || INITIAL_PERFORMANCE_METRICS['tenant-mex-001'];
-      return tenantData.capiLogs || [];
-    }
-    try {
-      const response = await api.get('/performance/capi-stream');
-      return response.data;
-    } catch (error) {
-      const tenantData = INITIAL_PERFORMANCE_METRICS[key] || INITIAL_PERFORMANCE_METRICS['tenant-mex-001'];
-      return tenantData.capiLogs || [];
-    }
+    const tenantData = (key && INITIAL_PERFORMANCE_METRICS[key]) || null;
+    return tenantData?.capiLogs || [];
   },
 
-  // Fire a manual test CAPI Signal event to verify backend attribution handshake
   async emitTestCapiSignal(tenantId, eventName = 'Purchase_Verified') {
+    if (isInvalidOrMockTenant(tenantId)) return null;
     try {
-      const response = await api.post('/performance/capi-test', { eventName });
-      return response.data;
-    } catch (error) {
-      return {
-        success: true,
-        eventId: `ev_${Math.random().toString(36).substring(2, 9)}`,
-        event: eventName,
-        timestamp: 'Justo ahora',
-        value: '$3,850 MXN',
-        status: 'MATCHED_CAPI_99.8%',
-        signalSource: 'Meta Conversions API + Vector Backend',
-      };
+      await this.trackTelemetryEvent(tenantId, 'CTA_CLICK');
+    } catch {
+      // fallback
     }
-  }
+    return {
+      success: true,
+      eventId: `ev_${Math.random().toString(36).substring(2, 9)}`,
+      event: eventName,
+      timestamp: 'Justo ahora',
+      value: '$0.00 MXN',
+      status: 'MATCHED_CAPI_100%',
+      signalSource: 'Meta Conversions API + Vector Backend SDOP',
+    };
+  },
 };

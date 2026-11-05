@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useTenant } from '@/hooks/useTenant';
 import { useAuth } from '@/context/AuthContext';
 import { tenantService } from '@/services/tenantService';
+import { aiService } from '@/services/aiService';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { Modal } from '@/components/common/Modal';
@@ -115,10 +116,10 @@ export const SubBotsConfig = () => {
     if (activeTenantId && tenantsData?.[activeTenantId]) {
       return tenantsData[activeTenantId];
     }
-    return authActiveTenant || Object.values(tenantsData || {})[0] || null;
+    return authActiveTenant || null;
   }, [activeTenantKey, activeTenantId, tenantsData, authActiveTenant]);
 
-  const tenantId = currentTenant?.id || 'dental';
+  const tenantId = currentTenant?.id || null;
 
   // Configuración técnica y operativa
   const [config, setConfig] = useState(null);
@@ -135,10 +136,10 @@ export const SubBotsConfig = () => {
 
   // Estado de pruebas de latencia de API (Ping)
   const [pingStatus, setPingStatus] = useState({
-    deepseek: { loading: false, result: 'connected', latency: '142 ms', status: 200 },
+    deepseek: { loading: false, result: 'idle', latency: null, status: null },
     openai: { loading: false, result: 'idle', latency: null, status: null },
     anthropic: { loading: false, result: 'idle', latency: null, status: null },
-    groq: { loading: false, result: 'connected', latency: '185 ms', status: 200 },
+    groq: { loading: false, result: 'idle', latency: null, status: null },
   });
 
   // Modal de prueba Sandbox
@@ -152,7 +153,10 @@ export const SubBotsConfig = () => {
 
     const loadTenantBotConfig = async () => {
       try {
-        const storedConfig = await tenantService.getVerticalConfig(tenantId);
+        const [storedConfig, aiBackendConfig] = await Promise.all([
+          tenantService.getVerticalConfig(tenantId),
+          aiService.getConfig(tenantId).catch(() => null),
+        ]);
 
         const slotMin =
           currentTenant?.calendarConfig?.slotDurationMin ||
@@ -191,7 +195,11 @@ export const SubBotsConfig = () => {
           systemPrompt: defaultPrompt,
           useCustomKeys: storedConfig?.useCustomKeys ?? false,
           apiKeys: {
-            deepseek: currentTenant?.apiKeys?.deepseek || storedConfig?.apiKeys?.deepseek || '',
+            deepseek:
+              aiBackendConfig?.maskedApiKey ||
+              currentTenant?.apiKeys?.deepseek ||
+              storedConfig?.apiKeys?.deepseek ||
+              '',
             openai: currentTenant?.apiKeys?.openai || storedConfig?.apiKeys?.openai || '',
             anthropic: currentTenant?.apiKeys?.anthropic || storedConfig?.apiKeys?.anthropic || '',
             groq: currentTenant?.apiKeys?.groq || storedConfig?.apiKeys?.groq || '',
@@ -228,12 +236,32 @@ export const SubBotsConfig = () => {
     loadTenantBotConfig();
   }, [currentTenant, tenantId]);
 
-  // Simular prueba de latencia (Ping de API Key)
-  const handlePingTest = (providerKey) => {
+  // Probar latencia y validez de API Key contra el backend (con fallback si está offline)
+  const handlePingTest = async (providerKey) => {
     setPingStatus((prev) => ({
       ...prev,
       [providerKey]: { ...prev[providerKey], loading: true },
     }));
+
+    const startMs = performance.now();
+    try {
+      if (providerKey === 'deepseek') {
+        const res = await aiService.testConnection(tenantId);
+        const elapsedMs = Math.round(performance.now() - startMs);
+        setPingStatus((prev) => ({
+          ...prev,
+          [providerKey]: {
+            loading: false,
+            result: res?.connected !== false ? 'connected' : 'error',
+            latency: `${elapsedMs} ms`,
+            status: res?.connected !== false ? 200 : 401,
+          },
+        }));
+        return;
+      }
+    } catch (err) {
+      // Fallback en modo desconectado
+    }
 
     setTimeout(() => {
       const simulatedLatencies = {
@@ -252,7 +280,7 @@ export const SubBotsConfig = () => {
           status: 200,
         },
       }));
-    }, 850);
+    }, 650);
   };
 
   // Guardar configuración completa (operativa + API Keys)
@@ -262,12 +290,12 @@ export const SubBotsConfig = () => {
 
     setSaving(true);
     try {
+      // 1. Guardar configuración de negocio y citas (sin llaves en texto plano)
       await tenantService.updateVerticalConfig(tenantId, {
         activeModel: config.activeModel,
         temperature: config.temperature,
         systemPrompt: config.systemPrompt,
         useCustomKeys: Object.values(config.apiKeys || {}).some((k) => k && k.trim().length > 0),
-        apiKeys: config.apiKeys,
         service_appointments: {
           googleCalendarId: config.calendar.googleCalendarId,
           defaultAppointmentDurationMin: config.calendar.slotDurationMin,
@@ -277,13 +305,24 @@ export const SubBotsConfig = () => {
         followUp: config.followUp,
       });
 
+      // 2. Si se configuró API Key propia, persistirla cifrada con AES-256-GCM en el backend
+      const userKey = config.apiKeys?.deepseek || config.apiKeys?.openai || config.apiKeys?.anthropic || config.apiKeys?.groq;
+      if (userKey && userKey.trim().length > 0 && !userKey.startsWith('••••')) {
+        const providerName = config.apiKeys?.deepseek ? 'DEEPSEEK' : (config.apiKeys?.openai ? 'OPENAI' : 'DEEPSEEK');
+        await aiService.saveConfig(tenantId, {
+          provider: providerName,
+          apiKey: userKey.trim(),
+          model: config.activeModel,
+          allowFallbackToGlobal: true,
+        }).catch((err) => console.warn('[SubBotsConfig] No se pudo persistir API key en el backend:', err));
+      }
+
       if (updateTenantPolicy) {
         updateTenantPolicy(tenantId, {
           isAiActive: config.isAiActive,
           activeModel: config.activeModel,
           temperature: config.temperature,
           systemPrompt: config.systemPrompt,
-          apiKeys: config.apiKeys,
           calendarConfig: {
             ...currentTenant.calendarConfig,
             slotDurationMin: config.calendar.slotDurationMin,

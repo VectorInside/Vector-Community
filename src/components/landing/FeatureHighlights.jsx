@@ -76,9 +76,9 @@ export const FeatureHighlights = ({ lang = 'es' }) => {
             <Sparkles className="w-3.5 h-3.5" />
             {t.tag}
           </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-black text-white tracking-tight">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-black text-white tracking-tight leading-tight sm:leading-snug pb-1 overflow-visible">
             {t.title1} <br className="hidden sm:inline" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon via-cyan-300 to-purple-400 drop-shadow-[0_0_30px_rgba(231,249,0,0.2)]">
+            <span className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-neon via-cyan-300 to-purple-400 drop-shadow-[0_0_30px_rgba(231,249,0,0.2)] pb-3 pt-1 -mb-3 -mt-1 overflow-visible align-baseline">
               {t.title2}
             </span>
           </h2>

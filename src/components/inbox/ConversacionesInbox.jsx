@@ -33,486 +33,13 @@ import confetti from 'canvas-confetti';
 import { PreCitaDrawer } from '@/components/hitl/PreCitaDrawer';
 import { formatNumber } from '@/utils/formatters';
 import { MeasurementGuideModal } from '@/components/common/MeasurementGuideModal';
+import { leadService } from '@/services/leadService';
 
 // =========================================================================
 // CANONICAL OMNICHANNEL INBOX BY TENANT (ADR-001, ADR-002, ADR-011)
 // =========================================================================
 
-const CANONICAL_INBOX_BY_TENANT = {
-  dental: [
-    {
-      id: 'dent-001',
-      name: 'Carlos Mendoza',
-      company: 'Consultorio Particular',
-      channel: 'WhatsApp',
-      phone: '+52 55 4912 3840',
-      need: 'Implante Dental Inmediato',
-      campaign: 'Ad: Implante 3D Sin Dolor',
-      date: 'Hoy, 10:42 AM',
-      contacted: false,
-      owner: 'Lobo Vectorial (Agencia)',
-      stage: 'Calificado',
-      slaMinutesRemaining: 8,
-      potentialTicket: 28000,
-      qualification: {
-        contactValid: true,
-        productIdentified: true,
-        doubtsResolved: true,
-        ctaAccepted: false,
-      },
-      messages: [
-        {
-          id: 'm1',
-          direction: 'in',
-          text: 'Hola, vi su anuncio sobre implantes guiados por computadora. Quisiera saber el costo y si manejan financiamiento a meses sin intereses.',
-          time: '10:42 AM',
-        },
-      ],
-    },
-    {
-      id: 'dent-002',
-      name: 'Dra. Mariana Solares',
-      company: 'Clínica Nápoles',
-      channel: 'Instagram DM',
-      phone: '+52 55 8812 9031',
-      need: 'Valoración Implante Molar 3D',
-      campaign: 'Reel: 3 Mitos Anestesia Computarizada',
-      date: 'Hoy, 09:15 AM',
-      contacted: false,
-      owner: 'Sin asignar',
-      stage: 'Nuevo',
-      slaMinutesRemaining: 5,
-      potentialTicket: 18500,
-      qualification: {
-        contactValid: true,
-        productIdentified: true,
-        doubtsResolved: false,
-        ctaAccepted: false,
-      },
-      messages: [
-        {
-          id: 'm1',
-          direction: 'in',
-          text: 'Buenas tardes doctor, me urge cita con el cirujano maxilofacial para valorar un implante con tomografía. ¿Tienen disponible esta semana?',
-          time: '09:15 AM',
-        },
-      ],
-    },
-    {
-      id: 'dent-003',
-      name: 'Javier Ponce',
-      company: 'Particular Polanco',
-      channel: 'Facebook',
-      phone: '+52 55 1209 8833',
-      need: 'Limpieza con Ultrasonido 3D',
-      campaign: 'Ad: Diagnóstico 3D Gratis',
-      date: 'Ayer, 04:20 PM',
-      contacted: true,
-      owner: 'Lobo Vectorial (Agencia)',
-      stage: 'Cita Agendada',
-      slaMinutesRemaining: null,
-      potentialTicket: 2400,
-      qualification: {
-        contactValid: true,
-        productIdentified: true,
-        doubtsResolved: true,
-        ctaAccepted: true,
-      },
-      messages: [
-        {
-          id: 'm1',
-          direction: 'in',
-          text: 'Hola, me interesa agendar una limpieza profunda para este sábado en la mañana.',
-          time: 'Ayer, 04:20 PM',
-        },
-        {
-          id: 'm2',
-          direction: 'out',
-          text: '¡Hola Javier! Te agendamos con gusto este sábado a las 10:00 AM con la Dra. Méndez en la sucursal Roma Sur. ¿Confirmas tu cita?',
-          time: 'Ayer, 04:26 PM',
-        },
-      ],
-    },
-    {
-      id: 'dent-004',
-      name: 'Patricia Albarrán',
-      company: 'Empresa Privada',
-      channel: 'WhatsApp',
-      phone: '+52 55 9931 2244',
-      need: 'Alineadores Invisibles Sin Brackets',
-      campaign: 'Micro-Landing /m/dental',
-      date: 'Hoy, 11:05 AM',
-      contacted: false,
-      owner: 'Lobo Vectorial (Agencia)',
-      stage: 'Calificado',
-      slaMinutesRemaining: 18,
-      potentialTicket: 42000,
-      qualification: {
-        contactValid: true,
-        productIdentified: true,
-        doubtsResolved: true,
-        ctaAccepted: false,
-      },
-      messages: [
-        {
-          id: 'm1',
-          direction: 'in',
-          type: 'audio',
-          duration: '0:38',
-          text: 'Hola doctor, quería saber si los alineadores transparentes sirven para corregir mordida cruzada o si forzosamente tienen que ser brackets metálicos.',
-          time: '11:05 AM',
-        },
-      ],
-    },
-  ],
-  polanco: [
-    {
-      id: 'pol-001',
-      name: 'Alejandro Bastida',
-      company: 'Grupo Empresarial CDMX',
-      channel: 'WhatsApp',
-      phone: '+52 55 3341 8920',
-      need: 'Reserva VIP Terraza (4 personas)',
-      campaign: 'Ad: Tomahawk 800°C Mesa',
-      date: 'Hoy, 10:35 AM',
-      contacted: false,
-      owner: 'Lobo Vectorial (Agencia)',
-      stage: 'Calificado',
-      slaMinutesRemaining: 5,
-      potentialTicket: 4200,
-      qualification: {
-        contactValid: true,
-        productIdentified: true,
-        doubtsResolved: true,
-        ctaAccepted: false,
-      },
-      messages: [
-        {
-          id: 'm1',
-          direction: 'in',
-          text: 'Hola! Quiero reservar hoy a las 9pm en terraza para 4 personas, es nuestro aniversario.',
-          time: '10:35 AM',
-        },
-      ],
-    },
-    {
-      id: 'pol-002',
-      name: 'Regina Covarrubias',
-      company: 'Consultoría Financiera',
-      channel: 'Instagram DM',
-      phone: '+52 55 7712 0099',
-      need: 'Mesa Salón Privado 8 Personas',
-      campaign: 'Reel: El Ritual de la Brasa',
-      date: 'Hoy, 09:40 AM',
-      contacted: false,
-      owner: 'Sin asignar',
-      stage: 'Nuevo',
-      slaMinutesRemaining: 12,
-      potentialTicket: 14000,
-      qualification: {
-        contactValid: true,
-        productIdentified: true,
-        doubtsResolved: false,
-        ctaAccepted: false,
-      },
-      messages: [
-        {
-          id: 'm1',
-          direction: 'in',
-          text: 'Hola, buenas tardes. ¿Tienen disponible el salón privado para una cena de negocios de 8 directivos este viernes a las 20:30 hrs?',
-          time: '09:40 AM',
-        },
-      ],
-    },
-    {
-      id: 'pol-003',
-      name: 'Mauricio Treviño',
-      company: 'Particular Polanco',
-      channel: 'Facebook',
-      phone: '+52 55 6601 3322',
-      need: 'Menú Degustación & Maridaje',
-      campaign: 'Campaña Cenas de Fin de Semana',
-      date: 'Ayer, 05:10 PM',
-      contacted: true,
-      owner: 'Lobo Vectorial (Agencia)',
-      stage: 'Reserva Confirmada',
-      slaMinutesRemaining: null,
-      potentialTicket: 3800,
-      qualification: {
-        contactValid: true,
-        productIdentified: true,
-        doubtsResolved: true,
-        ctaAccepted: true,
-      },
-      messages: [
-        {
-          id: 'm1',
-          direction: 'in',
-          text: 'Hola, leí en su post que dan cóctel de bienvenida con la reserva de terraza. ¿Aún aplica para este viernes?',
-          time: 'Ayer, 05:10 PM',
-        },
-        {
-          id: 'm2',
-          direction: 'out',
-          text: '¡Hola Mauricio! Es correcto. Tu mesa en terraza principal para 2 personas está confirmada para este viernes a las 21:00 hrs con cóctel de bienvenida de cortesía.',
-          time: 'Ayer, 05:15 PM',
-        },
-      ],
-    },
-    {
-      id: 'pol-004',
-      name: 'Santiago Beristáin',
-      company: 'Club Sibaritas',
-      channel: 'WhatsApp',
-      phone: '+52 55 4488 1122',
-      need: 'Cena Maridaje y Mixología Secreta',
-      campaign: 'Direct-to-WhatsApp CAPI',
-      date: 'Hoy, 11:20 AM',
-      contacted: false,
-      owner: 'Lobo Vectorial (Agencia)',
-      stage: 'Calificado',
-      slaMinutesRemaining: 22,
-      potentialTicket: 5500,
-      qualification: {
-        contactValid: true,
-        productIdentified: true,
-        doubtsResolved: true,
-        ctaAccepted: false,
-      },
-      messages: [
-        {
-          id: 'm1',
-          direction: 'in',
-          type: 'audio',
-          duration: '0:26',
-          text: 'Qué tal, me gustaría apartar mesa cerca de la barra de mixología para el sábado en la noche, seríamos 2 parejas para degustar cortes Prime.',
-          time: '11:20 AM',
-        },
-      ],
-    },
-  ],
-  urban: [
-    {
-      id: 'urb-001',
-      name: 'Kevin Almonte',
-      company: 'Comunidad Sneakerhead',
-      channel: 'WhatsApp',
-      phone: '+52 55 9812 3344',
-      need: 'Jordan 1 Retro High Talla 27.5mx',
-      campaign: 'Ad: Streetwear Drops Otono',
-      date: 'Hoy, 10:15 AM',
-      contacted: false,
-      owner: 'Lobo Vectorial (Agencia)',
-      stage: 'Calificado',
-      slaMinutesRemaining: 9,
-      potentialTicket: 7800,
-      qualification: {
-        contactValid: true,
-        productIdentified: true,
-        doubtsResolved: true,
-        ctaAccepted: false,
-      },
-      messages: [
-        {
-          id: 'm1',
-          direction: 'in',
-          text: 'Hola bro! Tienen disponible el Jordan 1 Retro High en 27.5mx? Es 100% original con caja y certificado físico?',
-          time: '10:15 AM',
-        },
-      ],
-    },
-    {
-      id: 'urb-002',
-      name: 'Camila Rivas',
-      company: 'Cliente Particular',
-      channel: 'Instagram DM',
-      phone: '+52 55 4421 9900',
-      need: 'Dunk Low Panda Talla 24.5mx',
-      campaign: 'Reel: Detectar Tenis Fake',
-      date: 'Hoy, 09:28 AM',
-      contacted: false,
-      owner: 'Sin asignar',
-      stage: 'Nuevo',
-      slaMinutesRemaining: 16,
-      potentialTicket: 4500,
-      qualification: {
-        contactValid: true,
-        productIdentified: true,
-        doubtsResolved: false,
-        ctaAccepted: false,
-      },
-      messages: [
-        {
-          id: 'm1',
-          direction: 'in',
-          text: 'Hola! Si compro hoy antes de las 2pm me llega hoy mismo en CDMX? Cuánto cuesta el envío express?',
-          time: '09:28 AM',
-        },
-      ],
-    },
-    {
-      id: 'urb-003',
-      name: 'Rodrigo Montes',
-      company: 'Coleccionista Hype',
-      channel: 'Web Chat',
-      phone: '+52 55 1199 4433',
-      need: 'Apartado Preventa Drop Limitado',
-      campaign: 'Promo Lookbook 2026',
-      date: 'Ayer, 07:45 PM',
-      contacted: true,
-      owner: 'Lobo Vectorial (Agencia)',
-      stage: 'Pedido Despachado',
-      slaMinutesRemaining: null,
-      potentialTicket: 9200,
-      qualification: {
-        contactValid: true,
-        productIdentified: true,
-        doubtsResolved: true,
-        ctaAccepted: true,
-      },
-      messages: [
-        {
-          id: 'm1',
-          direction: 'in',
-          text: 'Ya aparté mi par con el anticipo en el checkout. ¿Me mandan el código de rastreo por aquí?',
-          time: 'Ayer, 07:45 PM',
-        },
-        {
-          id: 'm2',
-          direction: 'out',
-          text: '¡Confirmado Rodrigo! Tu guía express de Estafeta es MX-882910. Sale hoy a primera hora con tag holográfico serializado.',
-          time: 'Ayer, 07:50 PM',
-        },
-      ],
-    },
-    {
-      id: 'urb-004',
-      name: 'Diego Zaldívar',
-      company: 'Street Style CDMX',
-      channel: 'WhatsApp',
-      phone: '+52 55 7788 4411',
-      need: 'Asesoría Tallas US vs CM',
-      campaign: 'Micro-Landing /m/urban',
-      date: 'Hoy, 10:55 AM',
-      contacted: false,
-      owner: 'Lobo Vectorial (Agencia)',
-      stage: 'Calificado',
-      slaMinutesRemaining: 11,
-      potentialTicket: 6200,
-      qualification: {
-        contactValid: true,
-        productIdentified: true,
-        doubtsResolved: true,
-        ctaAccepted: false,
-      },
-      messages: [
-        {
-          id: 'm1',
-          direction: 'in',
-          type: 'audio',
-          duration: '0:22',
-          text: 'Oye amigo, calzo del 8.5 americano, ¿ese modelo viene amplio o me recomiendas pedir medio número más para no fallarle?',
-          time: '10:55 AM',
-        },
-      ],
-    },
-  ],
-  corp: [
-    {
-      id: 'corp-001',
-      name: 'Ing. Fernando Arteaga',
-      company: 'TechCorp Latam',
-      channel: 'WhatsApp',
-      phone: '+52 55 6677 8899',
-      need: 'Auditoría Fuga de Leads B2B',
-      campaign: 'LinkedIn: Trampa de Bots Genéricos',
-      date: 'Hoy, 08:45 AM',
-      contacted: false,
-      owner: 'Lobo Vectorial (Agencia)',
-      stage: 'Calificado',
-      slaMinutesRemaining: 15,
-      potentialTicket: 85000,
-      qualification: {
-        contactValid: true,
-        productIdentified: true,
-        doubtsResolved: true,
-        ctaAccepted: false,
-      },
-      messages: [
-        {
-          id: 'm1',
-          direction: 'in',
-          text: 'Estimado equipo de Vector, revisé su informe sobre fuga de leads B2B. Quisiéramos agendar la sesión de diagnóstico técnico para 30 agentes de ventas.',
-          time: '08:45 AM',
-        },
-      ],
-    },
-    {
-      id: 'corp-002',
-      name: 'Lic. Mónica Villarreal',
-      company: 'Fintech Solutions SC',
-      channel: 'Instagram DM',
-      phone: '+52 55 3322 1100',
-      need: 'Integración Salesforce + Cloud API',
-      campaign: 'Dossier Soberanía IA 2026',
-      date: 'Hoy, 09:30 AM',
-      contacted: false,
-      owner: 'Sin asignar',
-      stage: 'Nuevo',
-      slaMinutesRemaining: 24,
-      potentialTicket: 120000,
-      qualification: {
-        contactValid: true,
-        productIdentified: true,
-        doubtsResolved: false,
-        ctaAccepted: false,
-      },
-      messages: [
-        {
-          id: 'm1',
-          direction: 'in',
-          text: 'Hola, buscamos implementar un stack de IA conversacional para sector financiero con soberanía de datos estricta. ¿Tienen disponibilidad este jueves?',
-          time: '09:30 AM',
-        },
-      ],
-    },
-    {
-      id: 'corp-003',
-      name: 'Dr. Salvador Peña',
-      company: 'Corporativo Salud Médica',
-      channel: 'Web Chat',
-      phone: '+52 55 8899 0011',
-      need: 'Licenciamiento Enterprise On-Premise',
-      campaign: 'Direct Inbound Enterprise',
-      date: '12 Oct, 11:00 AM',
-      contacted: true,
-      owner: 'Lobo Vectorial (Agencia)',
-      stage: 'Propuesta Firmada',
-      slaMinutesRemaining: null,
-      potentialTicket: 240000,
-      qualification: {
-        contactValid: true,
-        productIdentified: true,
-        doubtsResolved: true,
-        ctaAccepted: true,
-      },
-      messages: [
-        {
-          id: 'm1',
-          direction: 'in',
-          text: 'Revisamos los términos del contrato marco y están aprobados por el área jurídica.',
-          time: '12 Oct, 11:00 AM',
-        },
-        {
-          id: 'm2',
-          direction: 'out',
-          text: 'Excelente Dr. Peña. Procedemos con la emisión de accesos y asignación de arquitecto de cabecera.',
-          time: '12 Oct, 11:20 AM',
-        },
-      ],
-    },
-  ],
-};
+const CANONICAL_INBOX_BY_TENANT = {};
 
 const CHANNEL_BADGES = {
   WhatsApp: {
@@ -541,26 +68,15 @@ export const ConversacionesInbox = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { activeTenant, triggerModal } = useAuth();
-  const tenantKey = activeTenant?.id || 'dental';
+  const tenantKey = activeTenant?.id || null;
 
   // Read URL query parameter for direct jump from notification
   const targetThreadId = searchParams.get('threadId');
 
-  // Load threads partitioned by tenant
-  const [threads, setThreads] = useState(() => {
-    const canonical = CANONICAL_INBOX_BY_TENANT[tenantKey] || CANONICAL_INBOX_BY_TENANT.dental;
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem(`vector_inbox_threads_${tenantKey}`);
-        if (saved) return JSON.parse(saved);
-      } catch (e) {}
-    }
-    return canonical;
-  });
-
-  const [selectedThreadId, setSelectedThreadId] = useState(() => {
-    return targetThreadId || threads[0]?.id || 'dent-001';
-  });
+  // Load threads partitioned by tenant from real backend /api/v1/leads
+  const [threads, setThreads] = useState([]);
+  const [selectedThreadId, setSelectedThreadId] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const [filterMode, setFilterMode] = useState('all'); // 'all' | 'pending' | 'attended'
   const [channelFilter, setChannelFilter] = useState('all');
@@ -570,34 +86,74 @@ export const ConversacionesInbox = () => {
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [playingAudioId, setPlayingAudioId] = useState(null);
 
-  // Synchronize when tenant changes or query param changes
+  // Synchronize when activeTenant changes
   useEffect(() => {
-    const canonical = CANONICAL_INBOX_BY_TENANT[tenantKey] || CANONICAL_INBOX_BY_TENANT.dental;
-    let loaded = canonical;
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem(`vector_inbox_threads_${tenantKey}`);
-        if (saved) loaded = JSON.parse(saved);
-      } catch (e) {}
+    const tenantId = activeTenant?.id;
+    if (!tenantId) {
+      setThreads([]);
+      setSelectedThreadId(null);
+      return;
     }
-    setThreads(loaded);
 
-    // If query param points to a specific thread, select it
-    if (targetThreadId && loaded.some((t) => t.id === targetThreadId)) {
-      setSelectedThreadId(targetThreadId);
-    } else {
-      setSelectedThreadId(loaded[0]?.id);
-    }
-  }, [tenantKey, targetThreadId]);
+    setIsLoading(true);
+    leadService
+      .getLeadsByTenant(tenantId)
+      .then((backendLeads) => {
+        if (Array.isArray(backendLeads) && backendLeads.length > 0) {
+          const mapped = backendLeads.map((lead) => ({
+            id: lead.id,
+            name: lead.name,
+            company: lead.notes || 'Contacto Directo',
+            channel: lead.channel || 'WhatsApp',
+            phone: lead.phone || '',
+            need: lead.customerNeeds?.intent || lead.notes || 'Consulta Comercial',
+            campaign: lead.channel || 'Inbound Directo',
+            date: lead.createdAt ? new Date(lead.createdAt).toLocaleDateString() : 'Reciente',
+            contacted: lead.leadState === 'BILLABLE_LEAD',
+            owner: 'Lobo Vectorial (Agencia)',
+            stage: lead.status || (lead.leadState === 'BILLABLE_LEAD' ? 'Calificado' : 'Nuevo'),
+            slaMinutesRemaining: lead.countdown24h ? 15 : null,
+            potentialTicket: typeof lead.estimatedValue === 'number' ? lead.estimatedValue : 0,
+            qualification: {
+              contactValid: Boolean(lead.criteriaAudit?.identityValidated),
+              productIdentified: Boolean(lead.criteriaAudit?.catalogIdentified),
+              doubtsResolved: Boolean(lead.criteriaAudit?.financialClarified),
+              ctaAccepted: Boolean(lead.criteriaAudit?.consentOrBooked),
+            },
+            messages: Array.isArray(lead.messages) && lead.messages.length > 0
+              ? lead.messages.map((m, idx) => ({
+                  id: m.id || `m-${idx}`,
+                  direction: m.isUser ? 'in' : 'out',
+                  text: m.text,
+                  time: m.time || 'Reciente',
+                }))
+              : [
+                  {
+                    id: `m-${lead.id}-1`,
+                    direction: 'in',
+                    text: lead.notes || 'Hola, deseo informes sobre sus servicios.',
+                    time: 'Reciente',
+                  },
+                ],
+          }));
+          setThreads(mapped);
+          setSelectedThreadId((prev) => (prev && mapped.some((t) => t.id === prev) ? prev : mapped[0]?.id));
+        } else {
+          setThreads([]);
+          setSelectedThreadId(null);
+        }
+      })
+      .catch(() => {
+        setThreads([]);
+        setSelectedThreadId(null);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, [activeTenant?.id]);
 
-  // Save changes to localStorage
   const persistThreads = (newThreads) => {
     setThreads(newThreads);
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem(`vector_inbox_threads_${tenantKey}`, JSON.stringify(newThreads));
-      } catch (e) {}
-    }
   };
 
   // Active Thread
@@ -719,68 +275,24 @@ export const ConversacionesInbox = () => {
 
   // DeepSeek R1 AI Prompt Suggestions tailored to tenant
   const tenantSuggestions = useMemo(() => {
-    if (tenantKey === 'polanco') {
-      return [
-        {
-          label: 'Confirmar Mesa Terraza',
-          text: `Hola ${activeThread?.name}! Con gusto te confirmo la disponibilidad de mesa en terraza VIP para 4 personas hoy a las 21:00 hrs. ¿Deseas que preparemos un cóctel de bienvenida cortesía de la casa?`,
-        },
-        {
-          label: 'Enviar Menú & Vinos',
-          text: `Te comparto nuestro Menú Degustación Prime y la selección de maridaje de autor: https://app.vectorinside.com/m/polanco. ¿Te reservo la mesa?`,
-        },
-        {
-          label: 'Proponer Horario Alterno',
-          text: `Para terraza principal tenemos slot libre a las 20:30 o a las 21:30 hrs. ¿Cuál de los dos te acomoda mejor para apartarte el lugar?`,
-        },
-      ];
-    } else if (tenantKey === 'urban') {
-      return [
-        {
-          label: 'Validar Talla & Stock',
-          text: `Hola ${activeThread?.name}! Sí, tenemos disponible la talla solicitada con tag holográfico de autenticidad blindada y envío express inmediato en CDMX.`,
-        },
-        {
-          label: 'Enviar Link de Checkout',
-          text: `Puedes apartar tu par antes de que se agote el stock directo en nuestro checkout protegido: https://urbansneaks.shop. ¿Requieres factura?`,
-        },
-        {
-          label: 'Garantía Legit Check',
-          text: `Todos nuestros pares pasan doble verificación física y luz ultravioleta. Si no es 100% original, te devolvemos 3x tu dinero.`,
-        },
-      ];
-    } else if (tenantKey === 'corp') {
-      return [
-        {
-          label: 'Agendar Zoom con CTO',
-          text: `Estimado(a) ${activeThread?.name}, con gusto coordinamos la sesión de diagnóstico técnico 1-on-1 de 30 minutos vía Zoom con un Arquitecto Senior de Vector Inside. ¿Te funciona este jueves a las 11:00 hrs?`,
-        },
-        {
-          label: 'Enviar Dossier B2B',
-          text: `Te adjunto el dossier técnico sobre soberanía de IA y arquitectura de agentes HITL: https://vectorinside.com/enterprise.`,
-        },
-        {
-          label: 'Confirmar Stack Técnico',
-          text: `Nuestra infraestructura se integra directamente a Meta Cloud API y tu CRM legado sin middleware frágil. ¿Qué CRM utilizan actualmente?`,
-        },
-      ];
-    } else {
-      return [
-        {
-          label: 'Confirmar Diagnóstico 3D',
-          text: `Hola ${activeThread?.name}! Con gusto te agendamos para tu diagnóstico computarizado 3D sin costo. Usamos tecnología digital sin dolor y te entregamos tu presupuesto transparente en 15 minutos.`,
-        },
-        {
-          label: 'Aclarar Financiamiento MSI',
-          text: `Manejamos hasta 12 Meses Sin Intereses con todas las tarjetas bancarias y planes de pago directo en tratamientos de implantes.`,
-        },
-        {
-          label: 'Proponer Cita',
-          text: `Tenemos disponible mañana a las 11:30 hrs o a las 16:00 hrs con nuestro cirujano especialista. ¿Cuál horario te queda mejor?`,
-        },
-      ];
-    }
-  }, [tenantKey, activeThread]);
+    if (!activeTenant || !activeThread) return [];
+    const bizName = activeTenant?.name || 'nuestro negocio';
+    const leadName = activeThread?.name || 'estimado(a)';
+    return [
+      {
+        label: 'Confirmar Atención',
+        text: `Hola ${leadName}, gracias por comunicarte con ${bizName}. Con gusto damos seguimiento inmediato a tu solicitud.`,
+      },
+      {
+        label: 'Compartir Información',
+        text: `Te compartimos los detalles de nuestros servicios y disponibilidad en ${bizName}. ¿Tienes alguna duda adicional?`,
+      },
+      {
+        label: 'Proponer Cita',
+        text: `Tenemos disponibilidad para agendarte en ${bizName}. ¿Qué horario te resulta más cómodo?`,
+      },
+    ];
+  }, [activeTenant, activeThread]);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 block animate-fade-in space-y-6">
@@ -792,7 +304,7 @@ export const ConversacionesInbox = () => {
               OPERACIÓN / BANDEJA DE ATENCIÓN
             </span>
             <span className="text-xs text-[var(--text-muted)] font-mono">
-              Espacio: <strong className="text-[var(--text-main)]">{activeTenant?.name || 'Vector Inside'}</strong>
+              Espacio: <strong className="text-[var(--text-main)]">{activeTenant?.name || 'Sin negocio seleccionado'}</strong>
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-heading font-black text-[var(--text-main)]">
@@ -825,9 +337,17 @@ export const ConversacionesInbox = () => {
       {/* Meta Omnichannel Status Banner */}
       <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-[var(--text-muted)]">
         <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-lime-400 animate-pulse shrink-0" />
+          <span className={`w-2 h-2 rounded-full shrink-0 ${activeTenant ? 'bg-lime-400 animate-pulse' : 'bg-zinc-600'}`} />
           <span className="font-mono text-[11px]">
-            <strong>Canales Conectados a Meta Graph API v21.0:</strong> WhatsApp Cloud API, Instagram Direct & Facebook Messenger · SLA Objetivo: <strong>15 min</strong>
+            {activeTenant ? (
+              <>
+                <strong>Canales Conectados a Meta Graph API v21.0 ({activeTenant.name}):</strong> WhatsApp Cloud API, Instagram Direct & Facebook Messenger · SLA Objetivo: <strong>15 min</strong>
+              </>
+            ) : (
+              <>
+                <strong>Sin canales activos:</strong> Selecciona un negocio en el selector superior para sincronizar las bandejas de Meta Graph API.
+              </>
+            )}
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -896,7 +416,16 @@ export const ConversacionesInbox = () => {
 
           {/* Threads Scrollable List */}
           <div className="flex-1 overflow-y-auto divide-y divide-[var(--border-color)] custom-scrollbar">
-            {filteredThreads.map((thread) => {
+            {filteredThreads.length === 0 ? (
+              <div className="p-8 text-center text-xs font-mono text-[var(--text-muted)] space-y-2">
+                <MessageSquare className="w-8 h-8 opacity-30 mx-auto" />
+                <p className="font-bold">{!activeTenant ? 'Selecciona un negocio' : 'Sin conversaciones registradas'}</p>
+                <p className="text-[10px] text-[var(--text-faint)]">
+                  {!activeTenant ? 'Elige un negocio activo para gestionar sus chats.' : 'No hay mensajes entrantes para este negocio.'}
+                </p>
+              </div>
+            ) : (
+              filteredThreads.map((thread) => {
               const isSelected = activeThread?.id === thread.id;
               const channelBadge = CHANNEL_BADGES[thread.channel] || CHANNEL_BADGES['Web Chat'];
 
@@ -953,7 +482,7 @@ export const ConversacionesInbox = () => {
                   </div>
                 </button>
               );
-            })}
+            }))}
           </div>
         </div>
 

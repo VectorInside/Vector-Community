@@ -191,24 +191,28 @@ export const Sidebar = () => {
 
               {/* Tarjeta Visual del Negocio Actual en Supervisión */}
               <div className="p-2.5 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] flex items-center gap-2.5 text-left shadow-sm">
-                <span className="text-xl shrink-0">{activeTenant?.avatar || '🏢'}</span>
+                <span className="text-xl shrink-0" suppressHydrationWarning>{activeTenant?.avatar || '🏢'}</span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-1">
-                    <p className="text-xs font-bold text-[var(--text-main)] truncate font-sans">
-                      {activeTenant?.shortName || activeTenant?.name}
+                    <p className="text-xs font-bold text-[var(--text-main)] truncate font-sans" suppressHydrationWarning>
+                      {activeTenant?.shortName || activeTenant?.name || 'Sin negocio activo'}
                     </p>
-                    {activeTenant?.isAiActive ? (
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" title="IA Activa" />
+                    {activeTenant ? (
+                      activeTenant.isAiActive ? (
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" title="IA Activa" />
+                      ) : (
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" title="IA Pausada" />
+                      )
                     ) : (
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" title="IA Pausada" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-zinc-600 shrink-0" title="Sin negocio seleccionado" />
                     )}
                   </div>
                   <div className="flex items-center justify-between gap-1 mt-0.5">
-                    <span className="text-[9px] text-[var(--text-muted)] truncate font-mono">
-                      {activeTenant?.giro || 'Giro comercial'}
+                    <span className="text-[9px] text-[var(--text-muted)] truncate font-mono" suppressHydrationWarning>
+                      {activeTenant?.giro || 'Selecciona un negocio'}
                     </span>
-                    <span className="text-[8px] font-mono font-bold text-cyan-400 uppercase shrink-0">
-                      En foco
+                    <span className={`text-[8px] font-mono font-bold uppercase shrink-0 ${activeTenant ? 'text-cyan-400' : 'text-zinc-500'}`}>
+                      {activeTenant ? 'En foco' : 'Sin foco'}
                     </span>
                   </div>
                 </div>
@@ -226,13 +230,13 @@ export const Sidebar = () => {
                 </span>
               </div>
               <div className="p-2.5 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] flex items-center gap-2.5">
-                <span className="text-xl shrink-0">{activeTenant?.avatar || '🏢'}</span>
+                <span className="text-xl shrink-0" suppressHydrationWarning>{activeTenant?.avatar || '🏢'}</span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold text-[var(--text-main)] truncate font-sans">
-                    {activeTenant?.shortName || activeTenant?.name}
+                  <p className="text-xs font-bold text-[var(--text-main)] truncate font-sans" suppressHydrationWarning>
+                    {activeTenant?.shortName || activeTenant?.name || 'Sin negocio activo'}
                   </p>
-                  <span className="text-[9px] text-neon font-bold block truncate uppercase">
-                    {activeTenant?.giro || 'Dueño de Negocio'}
+                  <span className="text-[9px] text-neon font-bold block truncate uppercase" suppressHydrationWarning>
+                    {activeTenant?.giro || 'Selecciona un negocio'}
                   </span>
                 </div>
               </div>
@@ -273,21 +277,7 @@ export const Sidebar = () => {
                       <>
                         <span className="text-xs font-sans truncate">{mod.label}</span>
                         {/* Dynamic Notification Badges */}
-                        {mod.id === 'inbox' && (
-                          <span className={`ml-auto text-[9px] font-mono font-bold px-1.5 py-0.5 rounded ${
-                            active ? 'bg-black text-lime-400' : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                          }`}>
-                            3
-                          </span>
-                        )}
-                        {mod.id === 'content' && (
-                          <span className={`ml-auto text-[9px] font-mono font-bold px-1.5 py-0.5 rounded ${
-                            active ? 'bg-black text-lime-400' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                          }`}>
-                            2
-                          </span>
-                        )}
-                        {mod.id === 'crm' && (
+                        {mod.id === 'crm' && activeTenant && (
                           <span className={`ml-auto text-[9px] font-mono font-bold px-1.5 py-0.5 rounded ${
                             active ? 'bg-black text-lime-400' : 'bg-lime-400/20 text-lime-400 border border-lime-400/30'
                           }`}>
@@ -295,11 +285,6 @@ export const Sidebar = () => {
                           </span>
                         )}
                       </>
-                    )}
-
-                    {/* Collapsed dot indicators */}
-                    {isSidebarCollapsed && mod.id === 'inbox' && (
-                      <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-400 animate-pulse" />
                     )}
                   </Link>
                 );
