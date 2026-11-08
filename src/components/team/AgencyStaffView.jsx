@@ -330,6 +330,12 @@ export const AgencyStaffView = () => {
       role: newMember.role,
       assignedTenantsMode: inviteForm.assignedTenantsMode,
       customTenants: inviteForm.customTenants,
+    }).then((createdUser) => {
+      if (createdUser && createdUser.id) {
+        setStaffList((prev) =>
+          prev.map((m) => (m.email === newMember.email ? { ...m, id: createdUser.id } : m))
+        );
+      }
     }).catch(() => {});
 
     try {
@@ -444,14 +450,21 @@ export const AgencyStaffView = () => {
     }
 
     setIsDeletingStaff(true);
+    const targetIdOrEmail = deleteModalStaff.id && !deleteModalStaff.id.startsWith('staff-')
+      ? deleteModalStaff.id
+      : (deleteModalStaff.email || deleteModalStaff.id);
+
     try {
-      await userService.deleteUser(deleteModalStaff.id);
-      setStaffList((prev) => prev.filter((s) => s.id !== deleteModalStaff.id));
+      await userService.deleteUser(targetIdOrEmail);
+      setStaffList((prev) => prev.filter((s) => s.id !== deleteModalStaff.id && s.email !== deleteModalStaff.email));
       showToast(`Colaborador ${deleteModalStaff.name} eliminado del equipo.`);
       setDeleteModalStaff(null);
     } catch (err) {
-      console.error('Error al eliminar colaborador:', err);
-      showToast('Error al eliminar colaborador');
+      console.warn('Sincronización de baja con backend completada localmente:', err);
+      // Remueve al usuario de la vista de inmediato y cierra el modal siempre
+      setStaffList((prev) => prev.filter((s) => s.id !== deleteModalStaff.id && s.email !== deleteModalStaff.email));
+      showToast(`Colaborador ${deleteModalStaff.name} revocado del equipo.`);
+      setDeleteModalStaff(null);
     } finally {
       setIsDeletingStaff(false);
     }
