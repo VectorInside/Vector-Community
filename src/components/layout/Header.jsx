@@ -268,6 +268,8 @@ export const Header = () => {
             <div className="relative">
               <button
                 type="button"
+                id="tour-tenant-switcher"
+                data-tour="header-tenant-switcher"
                 onClick={() => setIsOpen(!isOpen)}
                 className={`flex items-center gap-2 px-2.5 py-1 rounded-xl bg-[var(--bg-base)] border text-xs font-mono font-bold transition-all ${isOpen
                   ? 'border-lime-400 ring-1 ring-lime-400/40 shadow-sm text-[var(--text-main)]'
@@ -360,6 +362,8 @@ export const Header = () => {
                   <div className="pt-2 border-t border-[var(--border-color)]">
                     <button
                       type="button"
+                      id="tour-btn-alta-negocio"
+                      data-tour="header-create-tenant-btn"
                       onClick={handleCreateNewTenant}
                       className="w-full py-2 rounded-xl bg-lime-400 text-black font-mono font-black text-xs uppercase flex items-center justify-center gap-1.5 hover:bg-lime-300 transition-all shadow-sm"
                     >
@@ -371,7 +375,7 @@ export const Header = () => {
               )}
             </div>
           ) : (
-            <div className="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] text-xs font-bold text-[var(--text-main)]">
+            <div id="tour-tenant-identity" data-tour="header-tenant-identity" className="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] text-xs font-bold text-[var(--text-main)]">
               <span suppressHydrationWarning>{activeTenant?.avatar}</span>
               <span className="truncate max-w-[140px]" suppressHydrationWarning>{activeTenant?.name}</span>
             </div>
@@ -383,6 +387,8 @@ export const Header = () => {
           {/* Quick Search Trigger with Command K */}
           <button
             type="button"
+            id="tour-search"
+            data-tour="header-search"
             onClick={() => setIsCommandPaletteOpen(true)}
             className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] hover:border-lime-400 text-xs text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all cursor-pointer group shadow-sm active:scale-95"
             title="Abrir buscador global y comandos rápidos (⌘ K / Ctrl+K)"
@@ -410,6 +416,8 @@ export const Header = () => {
           <div className="relative" ref={notifRef}>
             <button
               type="button"
+              id="tour-notifications"
+              data-tour="header-notifications"
               onClick={() => setIsNotifOpen((prev) => !prev)}
               title={`${unreadCount} notificaciones sin atender`}
               className={`p-2 rounded-xl bg-[var(--bg-base)] border transition-all relative ${isNotifOpen
@@ -570,6 +578,8 @@ export const Header = () => {
           <div className="relative" ref={userMenuRef}>
             <button
               type="button"
+              id="tour-user-menu"
+              data-tour="header-user-profile"
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
               title={`Perfil actual: ${role === 'admin' ? 'Administrador' : 'Usuario'} - Haz clic para ver opciones`}
               className={`w-8 h-8 rounded-xl border flex items-center justify-center font-mono font-black text-xs shrink-0 transition-all cursor-pointer ${isUserMenuOpen
@@ -749,6 +759,26 @@ export const Header = () => {
                       <div className="text-[10px] text-[var(--text-muted)]">
                         {role === 'admin' ? 'Políticas y gobernanza de agencia' : 'Identidad, SLA y propuesta de valor'}
                       </div>
+                    </div>
+                  </button>
+
+                  {/* Reiniciar Tour Guiado */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      if (typeof window !== 'undefined') {
+                        window.dispatchEvent(new CustomEvent('vector_restart_tour'));
+                      }
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-mono text-[var(--text-main)] hover:bg-[var(--bg-card)] hover:text-lime-400 transition-colors cursor-pointer group text-left"
+                  >
+                    <div className="w-6 h-6 rounded-lg bg-lime-400/10 border border-lime-400/30 flex items-center justify-center text-lime-400 group-hover:bg-lime-400 group-hover:text-black transition-colors shrink-0">
+                      <Sparkles className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-lime-400">Repetir Tour Guiado</div>
+                      <div className="text-[10px] text-[var(--text-muted)]">Recorrido interactivo por la plataforma</div>
                     </div>
                   </button>
 

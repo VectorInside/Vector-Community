@@ -364,7 +364,7 @@ export const CentroDeMando = () => {
       </section>
 
       {/* 4 Core Cohort KPI Cards (Taxonomía UX/UI Oficial - Estado Legítimo) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-sans">
+      <div id="tour-kpi-cards" data-tour="dashboard-kpis" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-sans">
         {/* Card 1: Contactos Nuevos */}
         <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2 shadow-sm">
           <div className="flex items-center justify-between">
