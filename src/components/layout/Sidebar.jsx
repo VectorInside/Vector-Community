@@ -90,7 +90,7 @@ export const Sidebar = () => {
         {/* Brand Header */}
         {isSidebarCollapsed ? (
           <>
-            <div className="h-16 px-2 border-b border-[var(--border-color)] flex items-center justify-between lg:justify-center shrink-0">
+            <div id="tour-brand-header" className="h-16 px-2 border-b border-[var(--border-color)] flex items-center justify-between lg:justify-center shrink-0">
               <Link
                 href="/dashboard"
                 onClick={closeMobileSidebar}
@@ -121,7 +121,7 @@ export const Sidebar = () => {
             </div>
           </>
         ) : (
-          <div className="h-16 px-3.5 border-b border-[var(--border-color)] flex items-center justify-between shrink-0 gap-2">
+          <div id="tour-brand-header" className="h-16 px-3.5 border-b border-[var(--border-color)] flex items-center justify-between shrink-0 gap-2">
             <Link
               href="/dashboard"
               onClick={closeMobileSidebar}
@@ -261,6 +261,8 @@ export const Sidebar = () => {
                 return (
                   <Link
                     key={mod.id}
+                    id={`tour-nav-${mod.id}`}
+                    data-tour={`sidebar-nav-${mod.id}`}
                     href={mod.path}
                     onClick={closeMobileSidebar}
                     title={mod.label}

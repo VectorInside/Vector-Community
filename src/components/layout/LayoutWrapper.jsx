@@ -7,6 +7,7 @@ import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { GeneralModal } from '@/components/common/GeneralModal';
 import { ClientPasswordChangeModal } from '@/components/common/ClientPasswordChangeModal';
+import { OnboardingTour } from '@/components/common/OnboardingTour';
 import { INITIAL_BUSINESS_ACCOUNTS } from '@/utils/mockAccounts';
 
 export const LayoutWrapper = ({ children }) => {
@@ -80,6 +81,7 @@ export const LayoutWrapper = ({ children }) => {
   return (
     <div className="flex h-screen overflow-hidden selection:bg-[#c3f400] selection:text-black">
       <GeneralModal />
+      <OnboardingTour />
 
       {/* Pop-up de Actualización de Contraseña Obligatoria al entrar para Clientes */}
       {clientMustChangeAccount && (

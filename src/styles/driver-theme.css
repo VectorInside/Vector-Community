@@ -1,0 +1,125 @@
+/* Vector Inside Community OS - Driver.js Custom Cyberpunk Theme */
+@import 'driver.js/dist/driver.css';
+
+.driver-popover.vector-tour-popover {
+  background-color: #141519 !important;
+  color: #f3f3f5 !important;
+  border: 1px solid #303139 !important;
+  border-radius: 18px !important;
+  padding: 20px 24px !important;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 25px rgba(195, 244, 0, 0.15) !important;
+  max-width: 420px !important;
+  font-family: inherit !important;
+  backdrop-filter: blur(16px) !important;
+}
+
+/* Arrow styling */
+.driver-popover.vector-tour-popover .driver-popover-arrow-side-left.driver-popover-arrow {
+  border-left-color: #141519 !important;
+}
+.driver-popover.vector-tour-popover .driver-popover-arrow-side-right.driver-popover-arrow {
+  border-right-color: #141519 !important;
+}
+.driver-popover.vector-tour-popover .driver-popover-arrow-side-top.driver-popover-arrow {
+  border-top-color: #141519 !important;
+}
+.driver-popover.vector-tour-popover .driver-popover-arrow-side-bottom.driver-popover-arrow {
+  border-bottom-color: #141519 !important;
+}
+
+/* Title */
+.driver-popover.vector-tour-popover .driver-popover-title {
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  color: #c3f400 !important;
+  letter-spacing: -0.01em !important;
+  margin-bottom: 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+/* Description */
+.driver-popover.vector-tour-popover .driver-popover-description {
+  font-size: 13px !important;
+  line-height: 1.55 !important;
+  color: #a4a6b2 !important;
+  margin-bottom: 18px !important;
+}
+
+/* Footer Container */
+.driver-popover.vector-tour-popover .driver-popover-footer {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-top: 14px !important;
+  padding-top: 14px !important;
+  border-top: 1px solid #202127 !important;
+}
+
+/* Step Progress Indicator */
+.driver-popover.vector-tour-popover .driver-popover-progress-text {
+  font-size: 11px !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  color: #727581 !important;
+  font-weight: 600 !important;
+}
+
+/* Buttons */
+.driver-popover.vector-tour-popover .driver-popover-navigation-btns {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.driver-popover.vector-tour-popover .driver-popover-prev-btn {
+  background-color: #202127 !important;
+  color: #a4a6b2 !important;
+  border: 1px solid #303139 !important;
+  padding: 6px 14px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  border-radius: 10px !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+  text-shadow: none !important;
+}
+
+.driver-popover.vector-tour-popover .driver-popover-prev-btn:hover {
+  background-color: #2d2f38 !important;
+  color: #f3f3f5 !important;
+  border-color: #4a4d5b !important;
+}
+
+.driver-popover.vector-tour-popover .driver-popover-next-btn {
+  background-color: #c3f400 !important;
+  color: #07080a !important;
+  border: 1px solid #c3f400 !important;
+  padding: 6px 16px !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  border-radius: 10px !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+  box-shadow: 0 0 15px rgba(195, 244, 0, 0.3) !important;
+  text-shadow: none !important;
+}
+
+.driver-popover.vector-tour-popover .driver-popover-next-btn:hover {
+  background-color: #b0dc00 !important;
+  box-shadow: 0 0 20px rgba(195, 244, 0, 0.45) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Close button - hidden because the tour is mandatory on first login */
+.driver-popover.vector-tour-popover .driver-popover-close-btn {
+  display: none !important;
+}
+
+/* Highlight Stage Box */
+.driver-stage {
+  border-radius: 14px !important;
+  outline: 2px solid #c3f400 !important;
+  box-shadow: 0 0 25px rgba(195, 244, 0, 0.35) !important;
+}
+
