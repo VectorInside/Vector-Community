@@ -11,6 +11,19 @@ import api, { unwrapApiData } from './api';
 
 export const userService = {
   /**
+   * Comprueba en tiempo real la conectividad y salud del backend (PostgreSQL)
+   */
+  async checkHealth() {
+    try {
+      const response = await api.get('/health');
+      const data = unwrapApiData(response);
+      return data?.status === 'UP' || response?.status === 200;
+    } catch {
+      return false;
+    }
+  },
+
+  /**
    * Autenticación estricta contra PostgreSQL 17
    * Lanza error si el servidor backend o la base de datos PostgreSQL están apagados.
    */

@@ -116,8 +116,8 @@ export const AuthProvider = ({ children }) => {
       setAuthChecking(false);
       setIsMounted(true);
       userService
-        .getAgencyStaff()
-        .then(() => setDbConnected(true))
+        .checkHealth()
+        .then((isUp) => setDbConnected(Boolean(isUp)))
         .catch(() => setDbConnected(false));
       return;
     }

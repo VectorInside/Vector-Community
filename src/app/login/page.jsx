@@ -21,7 +21,7 @@ import { isValidEmail } from '@/utils/formatters';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { loginAs } = useAuth();
+  const { loginAs, dbConnected } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -289,9 +289,12 @@ export default function LoginPage() {
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                 <span>Conexión Segura & Privada</span>
               </div>
-              <div className="flex items-center justify-end gap-1.5">
-                <Server className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                <span>Servidor en Línea</span>
+              <div className="flex items-center justify-end gap-1.5" title={dbConnected === true ? "Backend y PostgreSQL 17 conectados y sincronizados" : dbConnected === false ? "No se pudo conectar al backend" : "Comprobando latencia..."}>
+                <span className={`w-2 h-2 rounded-full ${dbConnected === true ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]' : dbConnected === false ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]' : 'bg-amber-400 animate-pulse'}`} />
+                <Server className={`w-3.5 h-3.5 shrink-0 ${dbConnected === true ? 'text-emerald-400' : dbConnected === false ? 'text-rose-400' : 'text-amber-400'}`} />
+                <span className={dbConnected === true ? 'text-emerald-300 font-medium' : dbConnected === false ? 'text-rose-400 font-semibold' : 'text-zinc-400'}>
+                  {dbConnected === true ? 'Servidor en Línea' : dbConnected === false ? 'Servidor Fuera de Línea' : 'Verificando Enlace...'}
+                </span>
               </div>
             </div>
           </div>
