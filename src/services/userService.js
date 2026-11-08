@@ -24,6 +24,17 @@ export const userService = {
   },
 
   /**
+   * Actualiza la contraseña personal definitiva y desactiva mustChangePassword
+   */
+  async changePassword(userId, newPassword) {
+    if (!userId) {
+      throw new Error('ID de usuario requerido para actualizar contraseña.');
+    }
+    const response = await api.post(`/users/${userId}/change-password`, { newPassword });
+    return unwrapApiData(response);
+  },
+
+  /**
    * Verifica la sesión activa y obtiene el perfil real del usuario desde PostgreSQL 17
    */
   async getCurrentUser(userId) {
