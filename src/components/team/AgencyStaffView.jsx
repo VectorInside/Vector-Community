@@ -436,12 +436,12 @@ export const AgencyStaffView = () => {
   const handleDeleteStaffConfirm = async () => {
     if (!deleteModalStaff) return;
 
-    // Blindaje Maestro: Inmunidad para Edgar Lobo Vectorial
+    // Blindaje Maestro: Inmunidad exclusiva para la cuenta fundadora maestra (Edgar Lobo Vectorial)
     const isMaster =
       deleteModalStaff.id === 'usr-admin-01' ||
       deleteModalStaff.id === 'staff-1' ||
       deleteModalStaff.email?.toLowerCase().includes('edgaradmin') ||
-      (deleteModalStaff.role === 'SUPER_ADMIN' && deleteModalStaff.name?.toLowerCase().includes('edgar'));
+      (deleteModalStaff.role === 'SUPER_ADMIN' && deleteModalStaff.name?.toLowerCase().includes('lobo vectorial'));
 
     if (isMaster) {
       showToast('Operación denegada: La cuenta del Super Admin Maestro es inmutable.');
@@ -897,7 +897,7 @@ export const AgencyStaffView = () => {
                     {member.id === 'usr-admin-01' ||
                     member.id === 'staff-1' ||
                     member.email?.toLowerCase().includes('edgaradmin') ||
-                    (member.role === 'SUPER_ADMIN' && member.name?.toLowerCase().includes('edgar')) ? (
+                    (member.role === 'SUPER_ADMIN' && member.name?.toLowerCase().includes('lobo vectorial')) ? (
                       <div
                         className="px-3 py-2 rounded-xl bg-neon/10 border border-neon/30 text-neon flex items-center gap-1.5 min-h-[44px] cursor-not-allowed select-none opacity-90"
                         title="Cuenta Fundadora Maestra Inmutable (Protegida por Gobernanza WORM)"
