@@ -229,7 +229,7 @@ export const StaffInvitationModal = ({
                       <p className="font-bold">{sendResult.message}</p>
                       {sendResult.messageId && (
                         <p className="text-[10px] text-zinc-400">
-                          ID de Entrega Resend: <code className="text-white">{sendResult.messageId}</code>
+                          ID de Transmisión Oficial: <code className="text-white">{sendResult.messageId}</code>
                         </p>
                       )}
 
