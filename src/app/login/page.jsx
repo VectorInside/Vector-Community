@@ -15,6 +15,8 @@ import {
   EyeOff,
   Server,
   AlertCircle,
+  KeyRound,
+  CheckCircle2,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { isValidEmail } from '@/utils/formatters';
@@ -29,6 +31,14 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [authStage, setAuthStage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Estados para Cambio Obligatorio de Contraseña en Primer Inicio
+  const [mustChangePasswordStep, setMustChangePasswordStep] = useState(false);
+  const [authenticatedUser, setAuthenticatedUser] = useState(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -78,7 +88,18 @@ export default function LoginPage() {
           (Array.isArray(userRes.assignedTenants) ? userRes.assignedTenants[0] : null),
         roleTitle: userRes.roleLabel || (isClient ? 'Dueño de Negocio' : 'Super Admin'),
         avatar: userRes.avatar || userRes.tenantAvatar || '⚡',
+        mustChangePassword: userRes.mustChangePassword,
       };
+
+      // Si el usuario tiene activo el requerimiento de cambio obligatorio en primer inicio
+      if (userRes.mustChangePassword) {
+        setAuthenticatedUser(userObj);
+        setMustChangePasswordStep(true);
+        setLoading(false);
+        setAuthStage('');
+        return;
+      }
+
       loginAs(userObj);
 
       setAuthStage('Cargando permisos y espacio de trabajo...');
@@ -114,7 +135,56 @@ export default function LoginPage() {
     }
   };
 
-    return (
+  const handleChangePasswordSubmit = async (e) => {
+    e.preventDefault();
+    setErrorMessage('');
+
+    if (!newPassword || newPassword.length < 8) {
+      setErrorMessage('La nueva contraseña debe contener al menos 8 caracteres.');
+      return;
+    }
+
+    if (newPassword === 'Vec#Auth2026!') {
+      setErrorMessage('Por seguridad, debes definir una contraseña distinta a la temporal por defecto.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setErrorMessage('Las contraseñas no coinciden. Por favor verifícalas.');
+      return;
+    }
+
+    setChangingPassword(true);
+    setAuthStage('Guardando contraseña definitiva...');
+
+    try {
+      await userService.changePassword(authenticatedUser.id, newPassword);
+      loginAs({ ...authenticatedUser, mustChangePassword: false });
+
+      setAuthStage('¡Contraseña establecida con éxito! Ingresando...');
+      try {
+        confetti({
+          particleCount: 60,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#E7F900', '#00F0FF', '#10B981'],
+        });
+      } catch (err) {}
+
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 450);
+    } catch (err) {
+      setChangingPassword(false);
+      setAuthStage('');
+      setErrorMessage(
+        err?.response?.data?.message ||
+          'Error al actualizar la contraseña definitiva. Intenta nuevamente.'
+      );
+    }
+  };
+
+  return (
       <div className="min-h-screen bg-[#07080A] text-white flex flex-col justify-between relative overflow-hidden font-sans selection:bg-[#E7F900] selection:text-black">
         {/* Dynamic Cyber-Holographic Ambient Glows */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[380px] bg-gradient-to-b from-[#E7F900]/15 via-cyan-500/10 to-transparent rounded-full blur-[140px] pointer-events-none" />
@@ -193,95 +263,205 @@ export default function LoginPage() {
             {/* Subtle top edge border glow */}
             <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-neon/60 to-transparent" />
 
-            {/* Header del Formulario */}
-            <div className="space-y-1">
-              <h2 className="text-base sm:text-lg font-bold text-white tracking-wide">
-                Iniciar Sesión
-              </h2>
-              <p className="text-xs text-zinc-400 font-mono">
-                Ingresa tus credenciales autorizadas para acceder a la plataforma.
-              </p>
-            </div>
-
-            {/* Feedback de Error si las credenciales fallan */}
-            {errorMessage && (
-              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center gap-2.5 text-xs text-rose-400 font-mono animate-fade-in">
-                <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
-                <span>{errorMessage}</span>
-              </div>
-            )}
-
-            {/* Formulario de Acceso Limpio */}
-            <form onSubmit={handleSubmit} className="space-y-4 pt-1">
-              {/* Input: Email */}
-              <div className="space-y-1.5">
-                <label className="block text-xs font-mono font-medium text-zinc-300">
-                  Correo Electrónico
-                </label>
-                <div className="relative group">
-                  <Mail className="w-4 h-4 text-zinc-500 group-focus-within:text-neon absolute left-3.5 top-3.5 transition-colors" />
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-zinc-900/90 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder-zinc-500 focus:border-neon focus:bg-black focus:outline-none focus:ring-1 focus:ring-neon font-mono transition-all"
-                    placeholder="usuario@vectorinside.com"
-                    autoComplete="email"
-                  />
+            {mustChangePasswordStep ? (
+              <div className="space-y-5 animate-fade-in">
+                {/* Header Primer Inicio */}
+                <div className="space-y-1.5">
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-[10px] font-mono text-amber-400">
+                    <KeyRound className="w-3 h-3 text-amber-400" />
+                    <span>PRIMER INICIO · PROTOCOLO DE SEGURIDAD</span>
+                  </div>
+                  <h2 className="text-base sm:text-lg font-bold text-white tracking-wide">
+                    Establecer Contraseña Definitiva
+                  </h2>
+                  <p className="text-xs text-zinc-400 font-mono">
+                    Hola <span className="text-neon font-bold">{authenticatedUser?.name}</span> ({authenticatedUser?.email}), por política de seguridad corporativa debes definir tu contraseña personal antes de ingresar al sistema operativo.
+                  </p>
                 </div>
-              </div>
 
-              {/* Input: Password */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="block text-xs font-mono font-medium text-zinc-300">
-                    Contraseña
-                  </label>
-                  <span className="text-[10px] font-mono text-zinc-500 hover:text-neon transition-colors cursor-pointer">
-                    ¿Olvidaste tu contraseña?
-                  </span>
-                </div>
-                <div className="relative group">
-                  <Lock className="w-4 h-4 text-zinc-500 group-focus-within:text-neon absolute left-3.5 top-3.5 transition-colors" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-zinc-900/90 border border-white/10 rounded-xl pl-10 pr-10 py-3 text-xs text-white placeholder-zinc-500 focus:border-neon focus:bg-black focus:outline-none focus:ring-1 focus:ring-neon font-mono transition-all"
-                    placeholder="Ingresa tu contraseña"
-                    autoComplete="current-password"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-3.5 text-zinc-500 hover:text-white transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Submission Button with Neon Glow and Dynamic Loading State */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full mt-2 bg-gradient-to-r from-neon via-[#D9EA00] to-cyan-400 text-black font-mono font-black text-xs uppercase tracking-wider py-3.5 rounded-xl hover:brightness-110 transition-all duration-200 shadow-[0_0_25px_rgba(231,249,0,0.35)] flex items-center justify-center gap-2 active:scale-98 disabled:opacity-80 cursor-pointer"
-              >
-                {loading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                    <span>{authStage || 'Iniciando Sesión...'}</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Ingresar al Sistema Operativo</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
+                {/* Feedback de Error */}
+                {errorMessage && (
+                  <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center gap-2.5 text-xs text-rose-400 font-mono animate-fade-in">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                    <span>{errorMessage}</span>
+                  </div>
                 )}
-              </button>
-            </form>
+
+                <form onSubmit={handleChangePasswordSubmit} className="space-y-4 pt-1">
+                  {/* Nueva Contraseña */}
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-mono font-medium text-zinc-300">
+                      Nueva Contraseña Personal
+                    </label>
+                    <div className="relative group">
+                      <Lock className="w-4 h-4 text-zinc-500 group-focus-within:text-neon absolute left-3.5 top-3.5 transition-colors" />
+                      <input
+                        type={showNewPassword ? 'text' : 'password'}
+                        required
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        className="w-full bg-zinc-900/90 border border-white/10 rounded-xl pl-10 pr-10 py-3 text-xs text-white placeholder-zinc-500 focus:border-neon focus:bg-black focus:outline-none focus:ring-1 focus:ring-neon font-mono transition-all"
+                        placeholder="Mínimo 8 caracteres"
+                        autoComplete="new-password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        className="absolute right-3.5 top-3.5 text-zinc-500 hover:text-white transition-colors"
+                      >
+                        {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Confirmar Contraseña */}
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-mono font-medium text-zinc-300">
+                      Confirmar Nueva Contraseña
+                    </label>
+                    <div className="relative group">
+                      <Lock className="w-4 h-4 text-zinc-500 group-focus-within:text-neon absolute left-3.5 top-3.5 transition-colors" />
+                      <input
+                        type={showNewPassword ? 'text' : 'password'}
+                        required
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="w-full bg-zinc-900/90 border border-white/10 rounded-xl pl-10 pr-10 py-3 text-xs text-white placeholder-zinc-500 focus:border-neon focus:bg-black focus:outline-none focus:ring-1 focus:ring-neon font-mono transition-all"
+                        placeholder="Repite tu nueva contraseña"
+                        autoComplete="new-password"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Checklist visual de seguridad */}
+                  <div className="p-3 rounded-xl bg-zinc-900/60 border border-white/5 space-y-1.5 text-[11px] font-mono">
+                    <div className={`flex items-center gap-2 ${newPassword.length >= 8 ? 'text-emerald-400' : 'text-zinc-500'}`}>
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Mínimo 8 caracteres</span>
+                    </div>
+                    <div className={`flex items-center gap-2 ${newPassword && newPassword !== 'Vec#Auth2026!' ? 'text-emerald-400' : 'text-zinc-500'}`}>
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Distinta a la clave temporal de invitación</span>
+                    </div>
+                    <div className={`flex items-center gap-2 ${newPassword && newPassword === confirmPassword ? 'text-emerald-400' : 'text-zinc-500'}`}>
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Las contraseñas coinciden</span>
+                    </div>
+                  </div>
+
+                  {/* Botón de Confirmación */}
+                  <button
+                    type="submit"
+                    disabled={changingPassword || newPassword.length < 8 || newPassword !== confirmPassword}
+                    className="w-full mt-2 bg-gradient-to-r from-neon via-[#D9EA00] to-cyan-400 text-black font-mono font-black text-xs uppercase tracking-wider py-3.5 rounded-xl hover:brightness-110 transition-all duration-200 shadow-[0_0_25px_rgba(231,249,0,0.35)] flex items-center justify-center gap-2 active:scale-98 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    {changingPassword ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                        <span>{authStage || 'Actualizando...'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Guardar Contraseña y Continuar</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+                </form>
+              </div>
+            ) : (
+              <>
+                {/* Header del Formulario */}
+                <div className="space-y-1">
+                  <h2 className="text-base sm:text-lg font-bold text-white tracking-wide">
+                    Iniciar Sesión
+                  </h2>
+                  <p className="text-xs text-zinc-400 font-mono">
+                    Ingresa tus credenciales autorizadas para acceder a la plataforma.
+                  </p>
+                </div>
+
+                {/* Feedback de Error si las credenciales fallan */}
+                {errorMessage && (
+                  <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center gap-2.5 text-xs text-rose-400 font-mono animate-fade-in">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                    <span>{errorMessage}</span>
+                  </div>
+                )}
+
+                {/* Formulario de Acceso Limpio */}
+                <form onSubmit={handleSubmit} className="space-y-4 pt-1">
+                  {/* Input: Email */}
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-mono font-medium text-zinc-300">
+                      Correo Electrónico
+                    </label>
+                    <div className="relative group">
+                      <Mail className="w-4 h-4 text-zinc-500 group-focus-within:text-neon absolute left-3.5 top-3.5 transition-colors" />
+                      <input
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full bg-zinc-900/90 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder-zinc-500 focus:border-neon focus:bg-black focus:outline-none focus:ring-1 focus:ring-neon font-mono transition-all"
+                        placeholder="usuario@vectorinside.com"
+                        autoComplete="email"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Input: Password */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-mono font-medium text-zinc-300">
+                        Contraseña
+                      </label>
+                      <span className="text-[10px] font-mono text-zinc-500 hover:text-neon transition-colors cursor-pointer">
+                        ¿Olvidaste tu contraseña?
+                      </span>
+                    </div>
+                    <div className="relative group">
+                      <Lock className="w-4 h-4 text-zinc-500 group-focus-within:text-neon absolute left-3.5 top-3.5 transition-colors" />
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full bg-zinc-900/90 border border-white/10 rounded-xl pl-10 pr-10 py-3 text-xs text-white placeholder-zinc-500 focus:border-neon focus:bg-black focus:outline-none focus:ring-1 focus:ring-neon font-mono transition-all"
+                        placeholder="Ingresa tu contraseña"
+                        autoComplete="current-password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3.5 top-3.5 text-zinc-500 hover:text-white transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Submission Button with Neon Glow and Dynamic Loading State */}
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full mt-2 bg-gradient-to-r from-neon via-[#D9EA00] to-cyan-400 text-black font-mono font-black text-xs uppercase tracking-wider py-3.5 rounded-xl hover:brightness-110 transition-all duration-200 shadow-[0_0_25px_rgba(231,249,0,0.35)] flex items-center justify-center gap-2 active:scale-98 disabled:opacity-80 cursor-pointer"
+                  >
+                    {loading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                        <span>{authStage || 'Iniciando Sesión...'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Ingresar al Sistema Operativo</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+                </form>
+              </>
+            )}
 
             {/* Security & Access Details */}
             <div className="pt-3 border-t border-white/10 grid grid-cols-2 gap-2 text-[10px] font-mono text-zinc-400">
