@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
+import nodemailer from 'nodemailer';
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const RESEND_FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'Vector Inside <onboarding@resend.dev>';
+const SMTP_USER = process.env.SMTP_USER;
+const SMTP_PASS = process.env.SMTP_PASS;
 
 export async function POST(request) {
   try {
@@ -96,46 +99,80 @@ export async function POST(request) {
 </html>
     `;
 
-    const resendResponse = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: RESEND_FROM_EMAIL,
-        to: [email],
+    // ── ESTRATEGIA 1: Despacho Directo por Gmail / Google Workspace (Sin espera de DNS) ──
+    if (SMTP_USER && SMTP_PASS) {
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: SMTP_USER,
+          pass: SMTP_PASS.replace(/\s+/g, ''), // limpia espacios
+        },
+      });
+
+      const info = await transporter.sendMail({
+        from: `"Vector Inside OS" <${SMTP_USER}>`,
+        to: email,
         subject: `Invitación oficial: Acceso a Vector Inside OS (${cleanRole})`,
         html: emailHtml,
-      }),
-    });
+      });
 
-    const resendData = await resendResponse.json();
+      return NextResponse.json({
+        success: true,
+        provider: 'GMAIL_DIRECT',
+        messageId: info.messageId,
+        recipient: email,
+        message: `Correo despachado con éxito vía Gmail a ${email} (ID: ${info.messageId})`,
+      });
+    }
 
-    if (!resendResponse.ok) {
-      // Manejar error específico de sandbox (solo permite enviar al correo del dueño hasta verificar dominio)
-      if (resendResponse.status === 403 && resendData.message?.includes('testing emails')) {
+    // ── ESTRATEGIA 2: Resend API Gateway (Para dominio verificado) ──
+    if (RESEND_API_KEY) {
+      const resendResponse = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: RESEND_FROM_EMAIL,
+          to: [email],
+          subject: `Invitación oficial: Acceso a Vector Inside OS (${cleanRole})`,
+          html: emailHtml,
+        }),
+      });
+
+      const resendData = await resendResponse.json();
+
+      if (!resendResponse.ok) {
+        if (resendResponse.status === 403 && resendData.message?.includes('testing emails')) {
+          return NextResponse.json({
+            success: false,
+            code: 'RESEND_SANDBOX_RESTRICTION',
+            message: 'Modo Sandbox de Resend activo: Por seguridad, Resend sólo entrega correos directos a la cuenta registrada hasta verificar el dominio corporativo en resend.com/domains.',
+            details: resendData.message,
+          }, { status: 403 });
+        }
+
         return NextResponse.json({
           success: false,
-          code: 'RESEND_SANDBOX_RESTRICTION',
-          message: 'Modo Sandbox de Resend activo: Por seguridad, Resend sólo entrega correos directos a la cuenta registrada (edgar.gonzalez@syborx.com) hasta verificar el dominio corporativo en resend.com/domains.',
-          details: resendData.message,
-        }, { status: 403 });
+          message: resendData.message || 'Error al despachar el correo con Resend.',
+          details: resendData,
+        }, { status: resendResponse.status });
       }
 
       return NextResponse.json({
-        success: false,
-        message: resendData.message || 'Error al despachar el correo con Resend.',
-        details: resendData,
-      }, { status: resendResponse.status });
+        success: true,
+        provider: 'RESEND_API',
+        messageId: resendData.id,
+        recipient: email,
+        message: `Correo despachado con éxito a ${email} (ID de entrega: ${resendData.id})`,
+      });
     }
 
-    return NextResponse.json({
-      success: true,
-      messageId: resendData.id,
-      recipient: email,
-      message: `Correo despachado con éxito a ${email} (ID de entrega: ${resendData.id})`,
-    });
+    return NextResponse.json(
+      { success: false, message: 'No hay proveedor de correo configurado (SMTP_USER o RESEND_API_KEY).' },
+      { status: 500 }
+    );
   } catch (error) {
     return NextResponse.json({
       success: false,
@@ -143,4 +180,3 @@ export async function POST(request) {
     }, { status: 500 });
   }
 }
-
