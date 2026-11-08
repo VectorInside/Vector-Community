@@ -15,6 +15,8 @@ import {
   MessageCircle,
   AlertCircle,
   Info,
+  Loader2,
+  SendHorizontal,
 } from 'lucide-react';
 import { Portal } from '@/components/common/Portal';
 import { formatPhoneDisplay } from '@/utils/formatters';
@@ -27,6 +29,8 @@ export const StaffInvitationModal = ({
 }) => {
   const [activeTab, setActiveTab] = useState('email_preview'); // 'email_preview' | 'whatsapp' | 'smtp_settings'
   const [copiedField, setCopiedField] = useState(null);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [sendResult, setSendResult] = useState(null);
 
   if (!isOpen || !invitationData) return null;
 
@@ -38,13 +42,13 @@ export const StaffInvitationModal = ({
     roleLabel,
     assignedSummary,
     tempPassword,
+    isPendingSave,
   } = invitationData;
 
   const originUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
   const loginUrl = `${originUrl}/login`;
 
-  const senderEmail = 'notificaciones@vectorinside.com';
-  const senderDisplayName = 'Vector Inside OS';
+  const senderEmail = 'Vector Inside <onboarding@resend.dev>';
   const emailSubject = `Invitación oficial: Acceso al sistema Vector Inside (${roleLabel})`;
 
   const whatsappMessage = `👋 Hola *${name}*,\n\nHas sido dado de alta como *${roleLabel}* en la plataforma oficial de *Vector Inside*:\n\n🔗 *Enlace de Acceso:* ${loginUrl}\n✉️ *Usuario:* ${email}\n🔑 *Contraseña Provisional:* ${tempPassword}\n\n⚠️ *AVISO DE SEGURIDAD:* Al ingresar a tu cuenta por primera vez, el sistema te solicitará obligatoriamente definir tu *contraseña personal definitiva*. Nadie más conocerá tu clave.\n\n¡Bienvenido al equipo!`;
@@ -62,6 +66,51 @@ export const StaffInvitationModal = ({
     window.open(url, '_blank');
   };
 
+  const handleDispatchEmail = async (overrideRecipient = null) => {
+    const targetEmail = overrideRecipient || email;
+    setSendingEmail(true);
+    setSendResult(null);
+
+    try {
+      const response = await fetch('/api/send-invitation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          email: targetEmail,
+          roleLabel,
+          assignedSummary,
+          tempPassword,
+          loginUrl,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setSendResult({
+          success: true,
+          message: `¡Correo despachado con éxito a ${targetEmail}!`,
+          messageId: data.messageId,
+        });
+      } else {
+        setSendResult({
+          success: false,
+          code: data.code,
+          message: data.message || 'Error al conectar con el servidor de correo.',
+          details: data.details,
+        });
+      }
+    } catch (err) {
+      setSendResult({
+        success: false,
+        message: err.message || 'Error de conexión al enviar el correo.',
+      });
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
   return (
     <Portal>
       <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-fade-in font-sans">
@@ -77,7 +126,7 @@ export const StaffInvitationModal = ({
                   Ficha de Invitación & Despacho Oficial
                 </h3>
                 <p className="text-xs text-zinc-400 font-mono">
-                  Gestión corporativa de credenciales y plantilla transaccional
+                  Gestión corporativa de credenciales y motor de correo Resend
                 </p>
               </div>
             </div>
@@ -126,28 +175,95 @@ export const StaffInvitationModal = ({
               }`}
             >
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Gobernanza & SMTP</span>
+              <span>Gobernanza & Resend</span>
             </button>
           </div>
 
           {/* Tab 1: Email HTML Preview */}
           {activeTab === 'email_preview' && (
             <div className="space-y-4 overflow-y-auto pr-1 flex-1">
-              {/* Delivery Meta Header */}
-              <div className="p-3 rounded-2xl bg-zinc-900/90 border border-zinc-800 space-y-1.5 text-xs font-mono">
-                <div className="flex items-center justify-between text-zinc-400 text-[11px]">
-                  <span><strong>De:</strong> {senderDisplayName} &lt;{senderEmail}&gt;</span>
-                  <span className="px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-bold">
-                    DKIM / SPF Verificado
-                  </span>
+              {/* Resend Action Dispatch Banner */}
+              <div className="p-3.5 rounded-2xl bg-zinc-900/90 border border-zinc-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 font-mono text-xs">
+                <div>
+                  <span className="text-zinc-400 block text-[11px]">Destinatario:</span>
+                  <span className="text-white font-bold text-xs">{email}</span>
                 </div>
-                <div className="text-zinc-300 text-[11px]">
-                  <strong>Para:</strong> {name} &lt;{email}&gt;
-                </div>
-                <div className="text-zinc-200 text-[11px]">
-                  <strong>Asunto:</strong> {emailSubject}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => handleDispatchEmail()}
+                  disabled={sendingEmail}
+                  className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#E7F900] text-black font-bold hover:bg-[#d4e500] transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 cursor-pointer active:scale-95"
+                >
+                  {sendingEmail ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-black" />
+                      <span>Despachando Vía Resend...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4 text-black" />
+                      <span>Despachar Correo Ahora</span>
+                    </>
+                  )}
+                </button>
               </div>
+
+              {/* Status Alert if Sent or Failed */}
+              {sendResult && (
+                <div
+                  className={`p-3.5 rounded-2xl border text-xs font-mono transition-all ${
+                    sendResult.success
+                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                      : sendResult.code === 'RESEND_SANDBOX_RESTRICTION'
+                      ? 'bg-amber-500/10 border-amber-500/30 text-amber-200'
+                      : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+                  }`}
+                >
+                  <div className="flex items-start gap-2.5">
+                    {sendResult.success ? (
+                      <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                    )}
+                    <div className="space-y-2 flex-1">
+                      <p className="font-bold">{sendResult.message}</p>
+                      {sendResult.messageId && (
+                        <p className="text-[10px] text-zinc-400">
+                          ID de Entrega Resend: <code className="text-white">{sendResult.messageId}</code>
+                        </p>
+                      )}
+
+                      {sendResult.code === 'RESEND_SANDBOX_RESTRICTION' && (
+                        <div className="space-y-2 pt-1 border-t border-amber-500/20 text-[11px] text-zinc-300">
+                          <p>
+                            ℹ️ Para enviar a <strong>{email}</strong>, agrega tu dominio en{' '}
+                            <a
+                              href="https://resend.com/domains"
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-[#E7F900] underline font-bold"
+                            >
+                              resend.com/domains
+                            </a>
+                            .
+                          </p>
+                          <div className="pt-1">
+                            <button
+                              type="button"
+                              onClick={() => handleDispatchEmail('edgar.gonzalez@syborx.com')}
+                              disabled={sendingEmail}
+                              className="px-3 py-1.5 rounded-lg bg-amber-400 text-black font-bold text-[10px] hover:bg-amber-300 transition-all flex items-center gap-1.5"
+                            >
+                              <Send className="w-3 h-3 text-black" />
+                              <span>Enviar copia de prueba a mi correo (edgar.gonzalez@syborx.com)</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Rendered HTML Email Container */}
               <div className="rounded-2xl border border-zinc-800 bg-[#07080A] p-5 sm:p-6 space-y-5 text-zinc-200 font-sans shadow-inner">
@@ -201,41 +317,26 @@ export const StaffInvitationModal = ({
                   </div>
                 </div>
 
-                {/* CTA Button */}
+                {/* Simulated Button */}
                 <div className="text-center pt-2 pb-1">
-                  <a
-                    href={loginUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#E7F900] hover:bg-[#d4e500] text-black font-heading font-black text-xs tracking-wider uppercase transition-all shadow-[0_0_20px_rgba(231,249,0,0.3)]"
-                  >
-                    <span>Activar Cuenta e Ingresar al Sistema</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
+                  <span className="inline-block px-6 py-3 rounded-xl bg-[#E7F900] text-black font-extrabold text-xs tracking-wide shadow-[0_0_20px_rgba(231,249,0,0.25)]">
+                    INGRESAR AL SISTEMA OPERATIVO &rarr;
+                  </span>
                 </div>
 
-                {/* Security Note */}
-                <div className="p-3 rounded-xl bg-zinc-900/40 border border-zinc-800/60 text-[11px] text-zinc-400 space-y-1">
-                  <div className="flex items-center gap-1.5 font-bold text-amber-400">
-                    <AlertCircle className="w-3.5 h-3.5" />
-                    <span>Aviso de Seguridad Criptográfico</span>
-                  </div>
-                  <p className="text-[10.5px] leading-relaxed text-zinc-500">
-                    Al ingresar por primera vez con tu clave provisional, el sistema te solicitará de forma obligatoria definir tu contraseña definitiva. Esta invitación expira en 48 horas.
-                  </p>
+                <div className="p-3 rounded-xl bg-zinc-900/40 border border-zinc-800/60 text-[11px] text-zinc-400">
+                  ⚠️ <strong>Protocolo de Seguridad:</strong> Al ingresar por primera vez, deberás definir obligatoriamente tu contraseña personal definitiva.
                 </div>
               </div>
             </div>
           )}
 
-          {/* Tab 2: WhatsApp / Slack Direct Copy */}
+          {/* Tab 2: WhatsApp Card */}
           {activeTab === 'whatsapp' && (
             <div className="space-y-4 overflow-y-auto pr-1 flex-1 font-mono text-xs">
-              <div className="p-3.5 rounded-2xl bg-zinc-900/70 border border-zinc-800 space-y-2">
+              <div className="p-4 rounded-2xl bg-zinc-900/90 border border-zinc-800 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-zinc-400 text-[11px]">
-                    Mensaje Formateado para WhatsApp / Slack:
-                  </span>
+                  <span className="text-zinc-300 font-bold">Mensaje Preformateado WhatsApp:</span>
                   <button
                     type="button"
                     onClick={() => handleCopy(whatsappMessage, 'wa_msg')}
@@ -291,36 +392,26 @@ export const StaffInvitationModal = ({
               <div className="p-4 rounded-2xl bg-zinc-900 border border-zinc-800 space-y-3 font-mono">
                 <div className="flex items-center gap-2 text-white font-bold text-sm">
                   <ShieldCheck className="w-4 h-4 text-[#E7F900]" />
-                  <span>Configuración del Canal Transaccional</span>
+                  <span>Motor de Despacho Transaccional Conectado</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div className="p-3 rounded-xl bg-black/50 border border-zinc-800">
-                    <span className="text-zinc-500 text-[10px] block">Remitente Autorizado:</span>
-                    <span className="text-white font-bold">{senderEmail}</span>
+                    <span className="text-zinc-500 text-[10px] block">Proveedor Conectado:</span>
+                    <span className="text-[#E7F900] font-bold">Resend API v1 (Live)</span>
                   </div>
                   <div className="p-3 rounded-xl bg-black/50 border border-zinc-800">
-                    <span className="text-zinc-500 text-[10px] block">Proveedor Recomendado:</span>
-                    <span className="text-[#E7F900] font-bold">Resend / Google Workspace SMTP</span>
+                    <span className="text-zinc-500 text-[10px] block">Remitente Predeterminado:</span>
+                    <span className="text-white font-bold">onboarding@resend.dev</span>
                   </div>
                   <div className="p-3 rounded-xl bg-black/50 border border-zinc-800">
-                    <span className="text-zinc-500 text-[10px] block">Protocolo de Cifrado:</span>
-                    <span className="text-white font-bold">TLS 1.3 / STARTTLS (Puerto 587)</span>
+                    <span className="text-zinc-500 text-[10px] block">Dominio Personalizado:</span>
+                    <span className="text-cyan-400 font-bold">vectorinside.com (Opcional)</span>
                   </div>
                   <div className="p-3 rounded-xl bg-black/50 border border-zinc-800">
-                    <span className="text-zinc-500 text-[10px] block">Tasa de Entrega Esperada:</span>
-                    <span className="text-emerald-400 font-bold">99.8% (Cero Spam)</span>
+                    <span className="text-zinc-500 text-[10px] block">Cifrado de Entrega:</span>
+                    <span className="text-emerald-400 font-bold">TLS 1.3 / HTTPS API</span>
                   </div>
                 </div>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-zinc-900/50 border border-zinc-800/80 text-zinc-400 text-xs space-y-2">
-                <div className="flex items-center gap-1.5 text-zinc-200 font-bold font-mono">
-                  <Info className="w-4 h-4 text-cyan-400" />
-                  <span>¿Cómo funciona en producción (Stripe / Auth0 Style)?</span>
-                </div>
-                <p className="text-[11px] leading-relaxed text-zinc-400">
-                  En producción se registra la llave API de tu proveedor transaccional en el archivo <code>.env</code> del backend (ej. <code>RESEND_API_KEY</code> o <code>SPRING_MAIL_HOST</code>). El backend se encarga de despachar el correo en segundo plano y registrar el log de auditoría en la base de datos PostgreSQL.
-                </p>
               </div>
             </div>
           )}
@@ -335,18 +426,38 @@ export const StaffInvitationModal = ({
               Cerrar Ficha
             </button>
 
-            <button
-              type="button"
-              onClick={onConfirmSend}
-              className="px-5 py-2.5 rounded-xl bg-[#E7F900] text-black font-bold hover:bg-[#d4e500] transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(231,249,0,0.3)] active:scale-95"
-            >
-              <Check className="w-4 h-4 text-black" />
-              <span>Confirmar & Registrar en PostgreSQL</span>
-            </button>
+            {isPendingSave ? (
+              <button
+                type="button"
+                onClick={onConfirmSend}
+                className="px-5 py-2.5 rounded-xl bg-[#E7F900] text-black font-bold hover:bg-[#d4e500] transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(231,249,0,0.3)] active:scale-95"
+              >
+                <Check className="w-4 h-4 text-black" />
+                <span>Confirmar & Registrar en PostgreSQL</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => handleDispatchEmail()}
+                disabled={sendingEmail}
+                className="px-5 py-2.5 rounded-xl bg-[#E7F900] text-black font-bold hover:bg-[#d4e500] transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(231,249,0,0.3)] active:scale-95 disabled:opacity-50"
+              >
+                {sendingEmail ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-black" />
+                    <span>Despachando Correo...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 text-black" />
+                    <span>Despachar Correo Ahora</span>
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>
     </Portal>
   );
 };
-
