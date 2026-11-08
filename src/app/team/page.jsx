@@ -11,9 +11,19 @@ import { KeyRound, Users, ShieldCheck, Lock } from 'lucide-react';
 function TeamPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isAdmin, role } = useAuth();
+  const { isAdmin, isSuperAdmin, currentUser } = useAuth();
   const initialTab = searchParams.get('tab') || 'accounts';
-  const [activeTab, setActiveTab] = useState(initialTab);
+  const [activeTab, setActiveTab] = useState(() => {
+    if (!isSuperAdmin) return 'accounts';
+    return initialTab;
+  });
+
+  // Si no es Super Admin, bloquear cualquier acceso a staff o governance
+  React.useEffect(() => {
+    if (!isSuperAdmin && activeTab !== 'accounts') {
+      setActiveTab('accounts');
+    }
+  }, [isSuperAdmin, activeTab]);
 
   if (!isAdmin) {
     return (
@@ -74,41 +84,53 @@ function TeamPageContent() {
             <span>1. Clientes (Dueños de Negocio)</span>
           </button>
 
-          {/* Tab 2: Equipo de la Agencia (Staff) */}
-          <button
-            type="button"
-            role="tab"
-            id="tab-staff"
-            aria-selected={activeTab === 'staff'}
-            aria-controls="panel-staff"
-            onClick={() => setActiveTab('staff')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-mono text-xs font-bold transition-all min-h-[44px] ${
-              activeTab === 'staff'
-                ? 'bg-neon text-black shadow-[0_0_15px_rgba(195,244,0,0.35)]'
-                : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)]'
-            }`}
-          >
-            <Users className="w-4 h-4 shrink-0" />
-            <span>2. Equipo de la Agencia (Staff)</span>
-          </button>
+          {/* Tabs 2 y 3: Exclusivos para Super Admin (Dirección de la Agencia) */}
+          {isSuperAdmin && (
+            <>
+              {/* Tab 2: Equipo de la Agencia (Staff) */}
+              <button
+                type="button"
+                role="tab"
+                id="tab-staff"
+                aria-selected={activeTab === 'staff'}
+                aria-controls="panel-staff"
+                onClick={() => setActiveTab('staff')}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-mono text-xs font-bold transition-all min-h-[44px] ${
+                  activeTab === 'staff'
+                    ? 'bg-neon text-black shadow-[0_0_15px_rgba(195,244,0,0.35)]'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)]'
+                }`}
+              >
+                <Users className="w-4 h-4 shrink-0" />
+                <span>2. Equipo de la Agencia (Staff)</span>
+              </button>
 
-          {/* Tab 3: Roles, Gobernanza & Auditoría */}
-          <button
-            type="button"
-            role="tab"
-            id="tab-governance"
-            aria-selected={activeTab === 'governance'}
-            aria-controls="panel-governance"
-            onClick={() => setActiveTab('governance')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-mono text-xs font-bold transition-all min-h-[44px] ${
-              activeTab === 'governance'
-                ? 'bg-neon text-black shadow-[0_0_15px_rgba(195,244,0,0.35)]'
-                : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)]'
-            }`}
-          >
-            <ShieldCheck className="w-4 h-4 shrink-0" />
-            <span>3. Roles & Auditoría de Seguridad</span>
-          </button>
+              {/* Tab 3: Roles, Gobernanza & Auditoría */}
+              <button
+                type="button"
+                role="tab"
+                id="tab-governance"
+                aria-selected={activeTab === 'governance'}
+                aria-controls="panel-governance"
+                onClick={() => setActiveTab('governance')}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-mono text-xs font-bold transition-all min-h-[44px] ${
+                  activeTab === 'governance'
+                    ? 'bg-neon text-black shadow-[0_0_15px_rgba(195,244,0,0.35)]'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)]'
+                }`}
+              >
+                <ShieldCheck className="w-4 h-4 shrink-0" />
+                <span>3. Roles & Auditoría de Seguridad</span>
+              </button>
+            </>
+          )}
+
+          {!isSuperAdmin && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-[10px] font-mono text-cyan-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+              <span>ROL: ADMINISTRADOR DE NEGOCIOS ASIGNADOS</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -125,7 +147,7 @@ function TeamPageContent() {
           </div>
         )}
 
-        {activeTab === 'staff' && (
+        {isSuperAdmin && activeTab === 'staff' && (
           <div
             id="panel-staff"
             role="tabpanel"
@@ -136,7 +158,7 @@ function TeamPageContent() {
           </div>
         )}
 
-        {activeTab === 'governance' && (
+        {isSuperAdmin && activeTab === 'governance' && (
           <div
             id="panel-governance"
             role="tabpanel"

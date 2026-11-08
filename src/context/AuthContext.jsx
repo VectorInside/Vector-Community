@@ -485,9 +485,17 @@ export const AuthProvider = ({ children }) => {
 
   const isAdmin = role === 'admin';
   const isClient = role === 'client';
+  const isSuperAdmin =
+    isAdmin &&
+    (currentUser?.globalRole === 'SUPER_ADMIN' ||
+      currentUser?.role === 'SUPER_ADMIN' ||
+      currentUser?.id === 'usr-admin-01' ||
+      currentUser?.email?.toLowerCase().includes('edgaradmin') ||
+      currentUser?.name?.toLowerCase().includes('lobo vectorial'));
+
   const permissions = {
     canSwitchTenant: isAdmin,
-    canManageTeam: isAdmin,
+    canManageTeam: isSuperAdmin,
     canConfigureAi: isAdmin,
   };
 
@@ -500,6 +508,7 @@ export const AuthProvider = ({ children }) => {
         authChecking,
         dbConnected,
         isAdmin,
+        isSuperAdmin,
         isClient,
         permissions,
         isMounted,

@@ -50,7 +50,7 @@ import { userService } from '@/services/userService';
  */
 
 export const CuentasAccesosView = () => {
-  const { tenantsData, deleteTenant } = useAuth();
+  const { tenantsData, deleteTenant, currentUser, isSuperAdmin } = useAuth();
   const { currentTenant } = useTenant();
 
   // Accounts state (persisted in localStorage for preview consistency)
@@ -132,6 +132,10 @@ export const CuentasAccesosView = () => {
   const [toastMessage, setToastMessage] = useState(null);
   const [copiedField, setCopiedField] = useState(null);
 
+  // Email & WhatsApp Dispatch States for Business Owners
+  const [sendingClientEmail, setSendingClientEmail] = useState(false);
+  const [clientEmailResult, setClientEmailResult] = useState(null);
+
   // 1-Click WhatsApp Direct Dispatch with Temporary Password Notice
   const handleSendWhatsApp = (account) => {
     const cleanPhone = normalizePhone10(account.phone);
@@ -139,10 +143,62 @@ export const CuentasAccesosView = () => {
       showToast('El usuario no cuenta con un teléfono válido de 10 dígitos.');
       return;
     }
-    const message = `👋 Hola ${account.ownerName},\n\nTe compartimos las credenciales de acceso oficial para el portal de *${account.tenantName}* en Vector Inside:\n\n🔗 *Enlace de Acceso:* http://localhost:3000/login\n✉️ *Usuario:* ${account.email}\n🔑 *Contraseña Provisional:* ${account.tempPassword}\n\n⚠️ *AVISO DE SEGURIDAD:* Al ingresar a tu cuenta, el sistema te solicitará automáticamente definir tu *contraseña personal definitiva*. Nadie más conocerá tu clave.\n\n¡Cualquier duda o soporte estamos para servirte!`;
+    const loginUrl =
+      typeof window !== 'undefined'
+        ? `${window.location.origin}/login`
+        : 'https://vector-community.vercel.app/login';
+    const message = `👋 Hola ${account.ownerName},\n\nTe compartimos las credenciales de acceso oficial para el portal de *${account.tenantName}* en Vector Inside:\n\n🔗 *Enlace de Acceso:* ${loginUrl}\n✉️ *Usuario:* ${account.email}\n🔑 *Contraseña Provisional:* ${account.tempPassword}\n\n⚠️ *AVISO DE SEGURIDAD:* Al ingresar a tu cuenta, el sistema te solicitará automáticamente definir tu *contraseña personal definitiva*. Nadie más conocerá tu clave.\n\n¡Cualquier duda o soporte estamos para servirte!`;
     const encoded = encodeURIComponent(message);
     window.open(`https://wa.me/52${cleanPhone}?text=${encoded}`, '_blank');
     showToast(`Abriendo WhatsApp para ${account.ownerName}...`);
+  };
+
+  // Despacho de Correo Oficial al Dueño de Negocio (Google SMTP)
+  const handleSendClientEmail = async (account) => {
+    if (!account?.email) return;
+    setSendingClientEmail(true);
+    setClientEmailResult(null);
+
+    const loginUrl =
+      typeof window !== 'undefined'
+        ? `${window.location.origin}/login`
+        : 'https://vector-community.vercel.app/login';
+
+    try {
+      const res = await fetch('/api/send-invitation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: account.ownerName,
+          email: account.email,
+          roleLabel: 'Dueño de Negocio (Cliente)',
+          assignedSummary: `Portal Maestro de ${account.tenantName}`,
+          tempPassword: account.tempPassword,
+          loginUrl,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setClientEmailResult({
+          success: true,
+          message: `¡Correo despachado con éxito a ${account.email}!`,
+          messageId: data.messageId,
+        });
+        showToast('Invitación oficial enviada por correo electrónico');
+      } else {
+        setClientEmailResult({
+          success: false,
+          message: data.message || 'Error al despachar el correo.',
+        });
+      }
+    } catch (err) {
+      setClientEmailResult({
+        success: false,
+        message: 'No fue posible conectar con el servicio de correo.',
+      });
+    } finally {
+      setSendingClientEmail(false);
+    }
   };
 
   // New Account Form State
@@ -187,10 +243,16 @@ export const CuentasAccesosView = () => {
     showToast('Contraseña provisional generada');
   };
 
-  // Business List mapped from tenantsData
+  // Business List mapped from tenantsData (Filtered by assigned businesses if staff admin)
   const tenantsList = useMemo(() => {
-    return Object.values(tenantsData || {});
-  }, [tenantsData]);
+    const all = Object.values(tenantsData || {});
+    if (isSuperAdmin || currentUser?.hasGlobalTenantAccess || currentUser?.assignedTenants === 'all') {
+      return all;
+    }
+    const assignedIds = Array.isArray(currentUser?.assignedTenants) ? currentUser.assignedTenants : [];
+    if (assignedIds.length === 0) return all;
+    return all.filter((t) => assignedIds.includes(t.id));
+  }, [tenantsData, isSuperAdmin, currentUser]);
 
   // Available Businesses without an account yet (Enforcing 1:1 rule strictly)
   const availableTenantsWithoutAccount = useMemo(() => {
@@ -1343,10 +1405,30 @@ export const CuentasAccesosView = () => {
                   <strong className="text-white font-bold">{shareCredentialsUser.tenantName}</strong>:
                 </p>
 
+                {/* Feedback de envío de correo */}
+                {clientEmailResult && (
+                  <div
+                    className={`p-3 rounded-xl border text-xs font-mono animate-fade-in ${
+                      clientEmailResult.success
+                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                        : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+                    }`}
+                  >
+                    <p className="font-bold">{clientEmailResult.message}</p>
+                    {clientEmailResult.messageId && (
+                      <p className="text-[10px] text-zinc-400 mt-1">
+                        ID de Transmisión Oficial: <code className="text-white">{clientEmailResult.messageId}</code>
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1.5 text-xs">
                   <div className="flex items-center gap-2">
                     <span className="text-[var(--text-muted)]">🔗 Enlace:</span>
-                    <span className="font-bold text-white">http://localhost:3000/login</span>
+                    <span className="font-bold text-white">
+                      {typeof window !== 'undefined' ? `${window.location.origin}/login` : 'https://vector-community.vercel.app/login'}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-[var(--text-muted)]">✉️ Usuario:</span>
@@ -1360,31 +1442,52 @@ export const CuentasAccesosView = () => {
 
                 <p className="text-[11px] text-[var(--text-muted)] font-sans flex items-center gap-1.5 pt-1">
                   <span>💡</span>
-                  <span>Te recomendamos cambiar tu contraseña temporal una vez dentro de la plataforma.</span>
+                  <span>Al ingresar por primera vez, el sistema solicitará obligatoriamente cambiar la contraseña provisional.</span>
                 </p>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center justify-between gap-3 pt-2">
+              {/* Action Buttons: Email, WhatsApp, Copy */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShareCredentialsUser(null)}
-                  className="px-4 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-muted)] hover:text-white"
+                  onClick={() => {
+                    setShareCredentialsUser(null);
+                    setClientEmailResult(null);
+                  }}
+                  className="px-3 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-muted)] hover:text-white"
                 >
                   Cerrar
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    const message = `👋 Hola ${shareCredentialsUser.ownerName},\n\nAquí tienes tus credenciales para ingresar al panel de control de ${shareCredentialsUser.tenantName}:\n\n🔗 Enlace: http://localhost:3000/login\n📧 Usuario: ${shareCredentialsUser.email}\n🔑 Contraseña: ${shareCredentialsUser.tempPassword}\n\n¡Bienvenido a Vector Community!`;
-                    handleCopy(message, 'whatsapp-msg');
-                  }}
-                  className="px-4 py-2 rounded-xl bg-neon text-black font-mono font-bold text-xs hover:bg-[var(--neon-hover)] transition-all flex items-center gap-1.5 shadow-sm"
-                >
-                  <Copy className="w-3.5 h-3.5" />
-                  <span>Copiar Mensaje Completo</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={sendingClientEmail}
+                    onClick={() => handleSendClientEmail(shareCredentialsUser)}
+                    className="px-3.5 py-2 rounded-xl bg-neon text-black font-mono font-black text-xs hover:bg-[var(--neon-hover)] transition-all flex items-center gap-1.5 shadow-[0_0_15px_rgba(231,249,0,0.3)] disabled:opacity-60 cursor-pointer"
+                  >
+                    {sendingClientEmail ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                        <span>Despachando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-3.5 h-3.5" />
+                        <span>Despachar Correo Ahora</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleSendWhatsApp(shareCredentialsUser)}
+                    className="px-3 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 hover:text-white hover:bg-emerald-500/25 transition-all text-xs flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
+                    <span>WhatsApp</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>

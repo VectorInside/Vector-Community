@@ -37,6 +37,7 @@ export const Header = () => {
     logout,
     updateCurrentUserProfile,
     isAdmin,
+    isSuperAdmin,
     activeTenantKey,
     activeTenant,
     switchTenantContext,
@@ -199,7 +200,15 @@ export const Header = () => {
     };
   }, []);
 
-  const tenantsList = useMemo(() => Object.values(tenantsData || {}), [tenantsData]);
+  const tenantsList = useMemo(() => {
+    const all = Object.values(tenantsData || {});
+    if (isSuperAdmin || currentUser?.hasGlobalTenantAccess || currentUser?.assignedTenants === 'all') {
+      return all;
+    }
+    const assignedIds = Array.isArray(currentUser?.assignedTenants) ? currentUser.assignedTenants : [];
+    if (assignedIds.length === 0) return all;
+    return all.filter((t) => assignedIds.includes(t.id));
+  }, [tenantsData, isSuperAdmin, currentUser]);
 
   const filteredTenants = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
