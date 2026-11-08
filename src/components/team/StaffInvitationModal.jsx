@@ -48,7 +48,7 @@ export const StaffInvitationModal = ({
   const originUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
   const loginUrl = `${originUrl}/login`;
 
-  const senderEmail = 'Vector Inside <onboarding@resend.dev>';
+  const senderEmail = 'Vector Inside OS <area21.2110@gmail.com>';
   const emailSubject = `Invitación oficial: Acceso al sistema Vector Inside (${roleLabel})`;
 
   const whatsappMessage = `👋 Hola *${name}*,\n\nHas sido dado de alta como *${roleLabel}* en la plataforma oficial de *Vector Inside*:\n\n🔗 *Enlace de Acceso:* ${loginUrl}\n✉️ *Usuario:* ${email}\n🔑 *Contraseña Provisional:* ${tempPassword}\n\n⚠️ *AVISO DE SEGURIDAD:* Al ingresar a tu cuenta por primera vez, el sistema te solicitará obligatoriamente definir tu *contraseña personal definitiva*. Nadie más conocerá tu clave.\n\n¡Bienvenido al equipo!`;
@@ -397,19 +397,19 @@ export const StaffInvitationModal = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div className="p-3 rounded-xl bg-black/50 border border-zinc-800">
                     <span className="text-zinc-500 text-[10px] block">Proveedor Conectado:</span>
-                    <span className="text-[#E7F900] font-bold">Resend API v1 (Live)</span>
+                    <span className="text-[#E7F900] font-bold">Google SMTP Direct (En Vivo)</span>
                   </div>
                   <div className="p-3 rounded-xl bg-black/50 border border-zinc-800">
-                    <span className="text-zinc-500 text-[10px] block">Remitente Predeterminado:</span>
-                    <span className="text-white font-bold">onboarding@resend.dev</span>
+                    <span className="text-zinc-500 text-[10px] block">Remitente Autorizado:</span>
+                    <span className="text-white font-bold">area21.2110@gmail.com</span>
                   </div>
                   <div className="p-3 rounded-xl bg-black/50 border border-zinc-800">
-                    <span className="text-zinc-500 text-[10px] block">Dominio Personalizado:</span>
-                    <span className="text-cyan-400 font-bold">vectorinside.com (Opcional)</span>
+                    <span className="text-zinc-500 text-[10px] block">Alcance de Entrega:</span>
+                    <span className="text-emerald-400 font-bold">Universal (Sin Restricciones)</span>
                   </div>
                   <div className="p-3 rounded-xl bg-black/50 border border-zinc-800">
                     <span className="text-zinc-500 text-[10px] block">Cifrado de Entrega:</span>
-                    <span className="text-emerald-400 font-bold">TLS 1.3 / HTTPS API</span>
+                    <span className="text-emerald-400 font-bold">TLS 1.3 / STARTTLS (Google MX)</span>
                   </div>
                 </div>
               </div>
