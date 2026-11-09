@@ -34,7 +34,7 @@ import {
 import confetti from 'canvas-confetti';
 import { Portal } from '@/components/common/Portal';
 import { userService } from '@/services/userService';
-import { isValidEmail, normalizePhone10, formatPhoneDisplay } from '@/utils/formatters';
+import { isValidEmail, normalizePhone10, formatPhoneDisplay, getEmailDomainTypoSuggestion } from '@/utils/formatters';
 import { StaffInvitationModal } from './StaffInvitationModal';
 
 const ROLE_DEFINITIONS = {
@@ -236,9 +236,16 @@ export const AgencyStaffView = () => {
     const displayName = rawName || 'Colaborador Nuevo';
     const displayEmail = rawEmail || 'colaborador@vectorinside.com';
 
-    if (rawEmail && !isValidEmail(rawEmail)) {
-      showToast('Ingresa un correo electrónico válido con dominio (ej. usuario@dominio.com)');
-      return;
+    if (rawEmail) {
+      const emailTypo = getEmailDomainTypoSuggestion(rawEmail);
+      if (emailTypo) {
+        showToast(`¿Quisiste decir @${emailTypo.suggestedDomain}? Corrígelo antes de previsualizar.`);
+        return;
+      }
+      if (!isValidEmail(rawEmail)) {
+        showToast('Ingresa un correo electrónico válido con dominio (ej. usuario@dominio.com)');
+        return;
+      }
     }
     const cleanPhone = normalizePhone10(inviteForm.phone);
     const assignedSummary =
@@ -275,6 +282,11 @@ export const AgencyStaffView = () => {
     if (e && e.preventDefault) e.preventDefault();
     if (!inviteForm.name.trim() || !inviteForm.email.trim()) {
       showToast('Completa el nombre y correo electrónico');
+      return;
+    }
+    const emailTypo = getEmailDomainTypoSuggestion(inviteForm.email.trim());
+    if (emailTypo) {
+      showToast(`El correo parece tener un error tipográfico. ¿Quisiste decir ${emailTypo.suggestedEmail}?`);
       return;
     }
     if (!isValidEmail(inviteForm.email.trim())) {
@@ -981,6 +993,24 @@ export const AgencyStaffView = () => {
                       onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
                       className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] focus:border-neon rounded-xl px-3.5 py-2.5 text-xs text-[var(--text-main)] outline-none"
                     />
+                    {(() => {
+                      const typo = getEmailDomainTypoSuggestion(inviteForm.email);
+                      if (!typo) return null;
+                      return (
+                        <div className="mt-1.5 p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-between text-[11px] text-amber-300 animate-fade-in">
+                          <span className="truncate mr-2">
+                            ¿Quisiste decir <strong>@{typo.suggestedDomain}</strong>?
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setInviteForm({ ...inviteForm, email: typo.suggestedEmail })}
+                            className="shrink-0 px-2 py-0.5 rounded bg-amber-400 text-black font-bold hover:bg-amber-300 transition-colors"
+                          >
+                            Corregir a {typo.suggestedDomain}
+                          </button>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   <div>

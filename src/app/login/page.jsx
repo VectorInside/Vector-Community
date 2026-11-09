@@ -19,7 +19,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { isValidEmail } from '@/utils/formatters';
+import { isValidEmail, getEmailDomainTypoSuggestion } from '@/utils/formatters';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -57,6 +57,12 @@ export default function LoginPage() {
     const cleanEmail = email.trim().toLowerCase();
     if (!cleanEmail || !password) {
       setErrorMessage('Por favor ingresa tu correo y contraseña.');
+      return;
+    }
+
+    const typo = getEmailDomainTypoSuggestion(cleanEmail);
+    if (typo) {
+      setErrorMessage(`El correo parece tener un error de dedo (@${typo.wrongDomain}). ¿Quisiste decir ${typo.suggestedEmail}?`);
       return;
     }
 
@@ -408,6 +414,24 @@ export default function LoginPage() {
                         autoComplete="email"
                       />
                     </div>
+                    {(() => {
+                      const typo = getEmailDomainTypoSuggestion(email);
+                      if (!typo) return null;
+                      return (
+                        <div className="mt-1.5 p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-between text-[11px] text-amber-300 animate-fade-in font-mono">
+                          <span className="truncate mr-2">
+                            ¿Quisiste decir <strong>@{typo.suggestedDomain}</strong>?
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setEmail(typo.suggestedEmail)}
+                            className="shrink-0 px-2 py-0.5 rounded bg-amber-400 text-black font-bold hover:bg-amber-300 transition-colors"
+                          >
+                            Corregir
+                          </button>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* Input: Password */}

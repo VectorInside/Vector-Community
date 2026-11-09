@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
+import { getEmailDomainTypoSuggestion } from '@/utils/formatters';
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const RESEND_FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'Vector Inside <onboarding@resend.dev>';
@@ -14,6 +15,22 @@ export async function POST(request) {
     if (!email) {
       return NextResponse.json(
         { success: false, message: 'El correo del destinatario es obligatorio.' },
+        { status: 400 }
+      );
+    }
+
+    // Validación preventiva de errores tipográficos en el dominio (ej. gmial.com)
+    // Previene el bloqueo de 48 horas en la cola de Google SMTP por rebote RFC 5321
+    const typo = getEmailDomainTypoSuggestion(email);
+    if (typo) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: 'EMAIL_DOMAIN_TYPO',
+          message: `El correo '${email}' parece contener un error de dedo en el dominio (@${typo.wrongDomain}). ¿Quisiste decir '${typo.suggestedEmail}'? Por favor corrige el correo antes de realizar el despacho.`,
+          suggestion: typo.suggestedEmail,
+          suggestedDomain: typo.suggestedDomain,
+        },
         { status: 400 }
       );
     }
