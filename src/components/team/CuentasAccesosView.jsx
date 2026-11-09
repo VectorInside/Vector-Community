@@ -33,7 +33,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Portal } from '@/components/common/Portal';
-import { isValidEmail, normalizePhone10, formatPhoneDisplay } from '@/utils/formatters';
+import { isValidEmail, normalizePhone10, formatPhoneDisplay, getEmailDomainTypoSuggestion } from '@/utils/formatters';
 import { tenantService } from '@/services/tenantService';
 import { userService } from '@/services/userService';
 
@@ -156,6 +156,17 @@ export const CuentasAccesosView = () => {
   // Despacho de Correo Oficial al Dueño de Negocio (Google SMTP)
   const handleSendClientEmail = async (account) => {
     if (!account?.email) return;
+
+    const emailTypo = getEmailDomainTypoSuggestion(account.email);
+    if (emailTypo) {
+      showToast(`El correo contiene un error de dominio (@${emailTypo.wrongDomain}). Despacho cancelado.`);
+      setClientEmailResult({
+        success: false,
+        message: `El correo contiene un error de dominio (@${emailTypo.wrongDomain}). ¿Quisiste decir ${emailTypo.suggestedEmail}?`,
+      });
+      return;
+    }
+
     setSendingClientEmail(true);
     setClientEmailResult(null);
 
@@ -300,6 +311,11 @@ export const CuentasAccesosView = () => {
     e.preventDefault();
     if (!newAccountForm.ownerName.trim() || !newAccountForm.email.trim()) {
       showToast('Por favor completa todos los campos requeridos');
+      return;
+    }
+    const emailTypo = getEmailDomainTypoSuggestion(newAccountForm.email.trim());
+    if (emailTypo) {
+      showToast(`El correo parece tener un error tipográfico. ¿Quisiste decir ${emailTypo.suggestedEmail}?`);
       return;
     }
     if (!isValidEmail(newAccountForm.email.trim())) {
@@ -1261,6 +1277,24 @@ export const CuentasAccesosView = () => {
                     placeholder="ej. contacto@odontointegral.com"
                     className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] focus:border-neon rounded-xl p-2.5 text-xs text-[var(--text-main)] font-mono outline-none"
                   />
+                  {(() => {
+                    const typo = getEmailDomainTypoSuggestion(newAccountForm.email);
+                    if (!typo) return null;
+                    return (
+                      <div className="mt-1.5 p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-between text-[11px] text-amber-300 animate-fade-in font-sans">
+                        <span className="truncate mr-2">
+                          ¿Quisiste decir <strong>@{typo.suggestedDomain}</strong>?
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setNewAccountForm({ ...newAccountForm, email: typo.suggestedEmail })}
+                          className="shrink-0 px-2 py-0.5 rounded bg-amber-400 text-black font-bold hover:bg-amber-300 transition-colors"
+                        >
+                          Corregir a {typo.suggestedDomain}
+                        </button>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Teléfono WhatsApp */}

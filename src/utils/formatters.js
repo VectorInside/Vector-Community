@@ -134,13 +134,134 @@ export const cleanConcept = (val) => {
 };
 
 /**
+ * Diccionario de errores tipográficos comunes en dominios de correo electrónico.
+ * Previene el despacho accidental de correos a servidores inexistentes o erróneos (ej. gmial.com en vez de gmail.com).
+ */
+export const COMMON_DOMAIN_TYPOS = {
+  // Gmail typos
+  'gmial.com': 'gmail.com',
+  'gmai.com': 'gmail.com',
+  'gamil.com': 'gmail.com',
+  'gmaill.com': 'gmail.com',
+  'gmil.com': 'gmail.com',
+  'gmai.co': 'gmail.com',
+  'gmail.co': 'gmail.com',
+  'gmail.cpm': 'gmail.com',
+  'gmaik.com': 'gmail.com',
+  'gmeil.com': 'gmail.com',
+  'gmai.es': 'gmail.com',
+  'gmaill.es': 'gmail.com',
+  'gmail.con': 'gmail.com',
+  'gmaill.con': 'gmail.com',
+  'gmail.om': 'gmail.com',
+  'gmaio.com': 'gmail.com',
+
+  // Hotmail typos
+  'hotmial.com': 'hotmail.com',
+  'hotmai.com': 'hotmail.com',
+  'hotamil.com': 'hotmail.com',
+  'hotmaill.com': 'hotmail.com',
+  'homail.com': 'hotmail.com',
+  'hotmial.es': 'hotmail.es',
+  'hotmai.es': 'hotmail.es',
+  'hotmaill.es': 'hotmail.es',
+  'hotnail.com': 'hotmail.com',
+
+  // Outlook typos
+  'outlok.com': 'outlook.com',
+  'outloo.com': 'outlook.com',
+  'outluk.com': 'outlook.com',
+  'outlock.com': 'outlook.com',
+  'outllok.com': 'outlook.com',
+  'outlok.es': 'outlook.es',
+  'outllok.es': 'outlook.es',
+
+  // Yahoo typos
+  'yaho.com': 'yahoo.com',
+  'yahooo.com': 'yahoo.com',
+  'yhaoo.com': 'yahoo.com',
+  'yaho.es': 'yahoo.es',
+  'yahooo.es': 'yahoo.es',
+
+  // iCloud typos
+  'iclod.com': 'icloud.com',
+  'icoud.com': 'icloud.com',
+  'icloud.co': 'icloud.com',
+  'iclou.com': 'icloud.com',
+
+  // Live / MSN typos
+  'liv.com': 'live.com',
+  'livee.com': 'live.com',
+};
+
+/**
+ * Detecta si un correo electrónico contiene un error de dedo común en su dominio.
+ * Retorna un objeto con la sugerencia de corrección o null si no se detectó ningún error.
+ * @param {string} email
+ * @returns {{ originalEmail: string, suggestedEmail: string, wrongDomain: string, suggestedDomain: string } | null}
+ */
+export const getEmailDomainTypoSuggestion = (email) => {
+  if (!email || typeof email !== 'string') return null;
+  const clean = email.trim().toLowerCase();
+  const atIndex = clean.lastIndexOf('@');
+  if (atIndex === -1 || atIndex === clean.length - 1) return null;
+
+  const domain = clean.slice(atIndex + 1);
+  if (COMMON_DOMAIN_TYPOS[domain]) {
+    const suggestedDomain = COMMON_DOMAIN_TYPOS[domain];
+    const username = clean.slice(0, atIndex);
+    return {
+      originalEmail: clean,
+      suggestedEmail: `${username}@${suggestedDomain}`,
+      wrongDomain: domain,
+      suggestedDomain,
+    };
+  }
+
+  return null;
+};
+
+/**
+ * Validador estricto de correo electrónico (exige usuario, @, dominio y extensión >= 2 caracteres)
+ * y comprueba adicionalmente que no contenga errores de dedo en dominios populares.
+ * @param {string} email
+ * @returns {{ isValid: boolean, error?: string, suggestion?: string, suggestedDomain?: string }}
+ */
+export const validateEmailStrict = (email) => {
+  if (!email || typeof email !== 'string' || !email.trim()) {
+    return { isValid: false, error: 'El correo electrónico es requerido.' };
+  }
+
+  const clean = email.trim().toLowerCase();
+  const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  if (!re.test(clean)) {
+    return { isValid: false, error: 'Ingresa un correo electrónico válido con dominio (ej. usuario@dominio.com).' };
+  }
+
+  const typo = getEmailDomainTypoSuggestion(clean);
+  if (typo) {
+    return {
+      isValid: false,
+      typoDetected: true,
+      suggestion: typo.suggestedEmail,
+      suggestedDomain: typo.suggestedDomain,
+      error: `¿Quisiste decir @${typo.suggestedDomain}? El dominio parece contener un error de dedo.`,
+    };
+  }
+
+  return { isValid: true, normalized: clean };
+};
+
+/**
  * Validador estricto de correo electrónico (exige usuario, @, dominio y extensión >= 2 caracteres)
  * Ej: usuario@empresa.com, contacto@vectorinside.mx
  */
 export const isValidEmail = (email) => {
   if (!email || typeof email !== 'string') return false;
   const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-  return re.test(email.trim().toLowerCase());
+  if (!re.test(email.trim().toLowerCase())) return false;
+  // También rechaza dominios con errores de dedo obvios
+  return !getEmailDomainTypoSuggestion(email);
 };
 
 /**

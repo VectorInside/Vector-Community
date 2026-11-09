@@ -19,7 +19,7 @@ import {
   SendHorizontal,
 } from 'lucide-react';
 import { Portal } from '@/components/common/Portal';
-import { formatPhoneDisplay } from '@/utils/formatters';
+import { formatPhoneDisplay, getEmailDomainTypoSuggestion } from '@/utils/formatters';
 
 export const StaffInvitationModal = ({
   isOpen,
@@ -68,6 +68,16 @@ export const StaffInvitationModal = ({
 
   const handleDispatchEmail = async (overrideRecipient = null) => {
     const targetEmail = overrideRecipient || email;
+    const emailTypo = getEmailDomainTypoSuggestion(targetEmail);
+    if (emailTypo) {
+      setSendResult({
+        success: false,
+        code: 'EMAIL_DOMAIN_TYPO',
+        message: `El correo ${targetEmail} contiene un error de dominio (@${emailTypo.wrongDomain}). Sugerencia: ${emailTypo.suggestedEmail}. Por favor corrige antes de despachar.`,
+      });
+      return;
+    }
+
     setSendingEmail(true);
     setSendResult(null);
 
