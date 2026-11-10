@@ -49,6 +49,16 @@ api.interceptors.request.use((config) => {
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
+
+    // Permitir que el navegador defina automáticamente multipart/form-data + boundary al enviar archivos binarios
+    if (typeof FormData !== 'undefined' && config.data instanceof FormData && config.headers) {
+      if (typeof config.headers.delete === 'function') {
+        config.headers.delete('Content-Type');
+        config.headers.delete('content-type');
+      }
+      delete config.headers['Content-Type'];
+      delete config.headers['content-type'];
+    }
   } catch (err) {
     console.error('[API Interceptor Error]:', err);
   }
