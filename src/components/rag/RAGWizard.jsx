@@ -1969,15 +1969,26 @@ export const RAGWizard = ({
 
   // 1-Click Master Briefing AI Ingestion Bridge (Real AI & Fallback)
   const handleAnalyzeMasterBriefing = async () => {
+    if (!masterFile && !masterDocText.trim()) {
+      triggerModal(
+        'Documento o Texto Requerido',
+        'Por favor selecciona o arrastra tu documento maestro (.pdf, .docx, .md, .txt) o escribe las instrucciones en el cuadro de texto antes de ejecutar el análisis con IA.',
+        () => {},
+        'Entendido'
+      );
+      return;
+    }
+
     setIsAnalyzingBriefing(true);
     setBriefingAnalyzed(false);
     briefingAbortRef.current?.abort();
     briefingAbortRef.current = new AbortController();
 
     try {
-      const vert = BUSINESS_VERTICALS_CONFIG[wizardData.vertical] || BUSINESS_VERTICALS_CONFIG.gym_fitness;
-      const adaptive = VERTICAL_PILLARS_ADAPTIVE_CONFIG[wizardData.vertical] || VERTICAL_PILLARS_ADAPTIVE_CONFIG.gym_fitness;
-      
+      const fallbackVertKey = wizardData.vertical || 'b2b';
+      const vert = BUSINESS_VERTICALS_CONFIG[fallbackVertKey] || BUSINESS_VERTICALS_CONFIG.b2b || BUSINESS_VERTICALS_CONFIG.gym_fitness;
+      const adaptive = VERTICAL_PILLARS_ADAPTIVE_CONFIG[fallbackVertKey] || VERTICAL_PILLARS_ADAPTIVE_CONFIG.b2b || VERTICAL_PILLARS_ADAPTIVE_CONFIG.gym_fitness;
+
       const result = await BriefingBridge.analyze({
         file: masterFile,
         text: masterDocText,
@@ -1989,42 +2000,59 @@ export const RAGWizard = ({
       setIsAnalyzingBriefing(false);
       setBriefingAnalyzed(true);
 
+      const resolvedVerticalKey =
+        wizardData.vertical ||
+        (result.verticalSuggested && BUSINESS_VERTICALS_CONFIG[result.verticalSuggested] ? result.verticalSuggested : fallbackVertKey);
+      const resolvedVertObj = BUSINESS_VERTICALS_CONFIG[resolvedVerticalKey] || vert;
+
+      if (!wizardData.vertical) {
+        setIsGiroSelectorOpen(false);
+      }
+
       const fileObj = masterFile ? { name: masterFile.name, size: masterFile.size, type: masterFile.type } : null;
 
-      // Auto-popular los 4 pilares + propuesta comercial + reglas con la extracción de IA
-      setWizardData((prev) => ({
-        ...prev,
-        businessName: result.businessName || prev.businessName || `Centro de Excelencia (${vert.name.split(',')[0]})`,
-        legalNameTaxId: result.legalNameTaxId || prev.legalNameTaxId || '',
-        primaryContact: result.primaryContact || prev.primaryContact || '',
-        ownerPhone: result.ownerPhone || prev.ownerPhone || '',
-        websiteUrl: result.websiteUrl || prev.websiteUrl || '',
-        brandColor: result.brandColor || prev.brandColor || '#E7F900',
-        brandSecondaryColor: result.brandSecondaryColor || prev.brandSecondaryColor || '#000000',
-        microLandingCustomSlug: (result.businessName || prev.businessName || '')
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/(^-|-$)/g, ''),
-        // Pilar 2: Brandbook & Tono
-        brandTone: result.brandTone || adaptive?.pilar2?.placeholder?.replace(/^ej\.\s*/, '') || 'Profesional, Empático y Orientado a Resultados',
-        brandbookDoc: (result.brandbookDoc && typeof result.brandbookDoc === 'object') ? result.brandbookDoc : (fileObj ? { name: `Brandbook_${fileObj.name}`, size: Math.round(fileObj.size * 0.42), type: 'text/markdown' } : { name: `Brandbook_${vert.id}.md`, size: 45000, type: 'text/markdown' }),
-        archetype: result.archetype || vert.badge || 'El Asesor Experto',
-        // Propuesta Comercial & Gancho
-        offerHook: result.offerHook || adaptive?.offer?.placeholder?.replace(/^ej\.\s*/, '') || 'Diagnóstico de Valoración Sin Costo',
-        offerCta: result.offerCta || 'Envía mensaje para apartar cupo',
-        offerValidity: result.offerValidity || 'Válido por tiempo limitado',
-        commercialProposalDoc: (result.commercialProposalDoc && typeof result.commercialProposalDoc === 'object') ? result.commercialProposalDoc : (fileObj || { name: `Oferta_${vert.id}.pdf`, size: 185000, type: 'application/pdf' }),
-        // Pilar 1: Precios & Servicios
-        pricingDetails: result.pricingDetails || adaptive?.pilar1?.placeholder?.replace(/^ej\.\s*/, '') || 'Tarifas base y opciones de pago diferido',
-        pricingDoc: (result.pricingDoc && typeof result.pricingDoc === 'object') ? result.pricingDoc : (fileObj ? { name: `Tarifario_${fileObj.name}`, size: Math.round(fileObj.size * 0.75), type: 'application/pdf' } : { name: `Tarifario_${vert.id}.pdf`, size: 98000, type: 'application/pdf' }),
-        // Pilar 3: Políticas & FAQs
-        faqDetails: result.faqDetails || adaptive?.pilar3?.placeholder?.replace(/^ej\.\s*/, '') || 'Cancelaciones con 24h de anticipación',
-        faqsDoc: (result.faqsDoc && typeof result.faqsDoc === 'object') ? result.faqsDoc : (fileObj ? { name: `FAQs_Reglamento_${fileObj.name}`, size: Math.round(fileObj.size * 0.38), type: 'text/markdown' } : { name: `FAQs_${vert.id}.md`, size: 52000, type: 'text/markdown' }),
-        // Pilar 4 & Reglas
-        enableCommercialProposal: true,
-        enableCrisisPillar: true,
-        inviolableRules: result.inviolableRules?.length > 0 ? result.inviolableRules : (vert.defaultRules || prev.inviolableRules),
-      }));
+      // Auto-popular los 6 pasos (Entidad, Web, 4 Pilares RAG, Propuesta Comercial y Reglas) con la extracción real de IA
+      setWizardData((prev) => {
+        const cleanExtractedName =
+          result.businessName && !result.businessName.startsWith('Centro de Excelencia')
+            ? result.businessName
+            : prev.businessName || result.businessName || resolvedVertObj.name.split(',')[0];
+
+        return {
+          ...prev,
+          vertical: prev.vertical || resolvedVerticalKey,
+          businessName: cleanExtractedName,
+          legalNameTaxId: result.legalNameTaxId || prev.legalNameTaxId || '',
+          primaryContact: result.primaryContact || prev.primaryContact || '',
+          ownerPhone: result.ownerPhone || prev.ownerPhone || '',
+          websiteUrl: result.websiteUrl || prev.websiteUrl || '',
+          brandColor: result.brandColor || prev.brandColor || '#E7F900',
+          brandSecondaryColor: result.brandSecondaryColor || prev.brandSecondaryColor || '#000000',
+          microLandingCustomSlug: cleanExtractedName
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)/g, ''),
+          // Pilar 2: Brandbook & Tono
+          brandTone: result.brandTone || adaptive?.pilar2?.placeholder?.replace(/^ej\.\s*/, '') || 'Profesional, Empático y Orientado a Resultados',
+          brandbookDoc: (result.brandbookDoc && typeof result.brandbookDoc === 'object') ? result.brandbookDoc : (fileObj ? { name: `Brandbook_${fileObj.name}`, size: Math.round(fileObj.size * 0.42), type: 'text/markdown' } : { name: `Brandbook_${resolvedVertObj.id}.md`, size: 45000, type: 'text/markdown' }),
+          archetype: result.archetype || resolvedVertObj.badge || 'El Asesor Experto',
+          // Propuesta Comercial & Gancho
+          offerHook: result.offerHook || adaptive?.offer?.placeholder?.replace(/^ej\.\s*/, '') || 'Diagnóstico de Valoración Sin Costo',
+          offerCta: result.offerCta || 'Envía mensaje para apartar cupo',
+          offerValidity: result.offerValidity || 'Válido por tiempo limitado',
+          commercialProposalDoc: (result.commercialProposalDoc && typeof result.commercialProposalDoc === 'object') ? result.commercialProposalDoc : (fileObj || { name: `Oferta_${resolvedVertObj.id}.pdf`, size: 185000, type: 'application/pdf' }),
+          // Pilar 1: Precios & Servicios
+          pricingDetails: result.pricingDetails || adaptive?.pilar1?.placeholder?.replace(/^ej\.\s*/, '') || 'Tarifas base y opciones de pago diferido',
+          pricingDoc: (result.pricingDoc && typeof result.pricingDoc === 'object') ? result.pricingDoc : (fileObj ? { name: `Tarifario_${fileObj.name}`, size: Math.round(fileObj.size * 0.75), type: 'application/pdf' } : { name: `Tarifario_${resolvedVertObj.id}.pdf`, size: 98000, type: 'application/pdf' }),
+          // Pilar 3: Políticas & FAQs
+          faqDetails: result.faqDetails || adaptive?.pilar3?.placeholder?.replace(/^ej\.\s*/, '') || 'Cancelaciones con 24h de anticipación',
+          faqsDoc: (result.faqsDoc && typeof result.faqsDoc === 'object') ? result.faqsDoc : (fileObj ? { name: `FAQs_Reglamento_${fileObj.name}`, size: Math.round(fileObj.size * 0.38), type: 'text/markdown' } : { name: `FAQs_${resolvedVertObj.id}.md`, size: 52000, type: 'text/markdown' }),
+          // Pilar 4 & Reglas
+          enableCommercialProposal: true,
+          enableCrisisPillar: true,
+          inviolableRules: result.inviolableRules?.length > 0 ? result.inviolableRules : (resolvedVertObj.defaultRules || prev.inviolableRules),
+        };
+      });
 
       try {
         confetti({
@@ -2038,10 +2066,10 @@ export const RAGWizard = ({
       setCurrentStep(2);
 
       triggerModal(
-        '¡Análisis Semántico con IA Completado!',
-        `El documento y directrices fueron analizados para el giro "${vert.name}". La IA extrajo e indexó los datos clave en los 6 pasos del negocio. Ahora puedes revisar y afinar antes del despliegue.`,
+        '¡Extracción Documental con IA Completada!',
+        `El documento "${masterFile?.name || 'Briefing'}" fue analizado con DeepSeek IA para "${resolvedVertObj.name}". Se extrajeron los datos de la marca (${result.businessName || resolvedVertObj.name}), contacto (${result.primaryContact || 'detectado'}), tono, arquetipo y reglas inviolables. Revísalos en el Paso 2.`,
         () => {},
-        'Revisar Datos del Negocio'
+        'Revisar Datos Extraídos'
       );
     } catch (err) {
       if (err.message === 'AbortError') return;
@@ -3467,7 +3495,21 @@ export const RAGWizard = ({
                   ¿Tienes un Brief, Brandbook, Catálogo o Documento Maestro (.pdf, .docx, .md)? Súbelo o pega el texto para pre-llenar los 6 pasos automáticamente.
                 </p>
 
-                <div className="border-2 border-dashed border-[var(--border-color)] hover:border-brand-primary rounded-2xl p-5 text-center space-y-2.5 bg-[var(--bg-card-subtle)] transition-all">
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const droppedFile = e.dataTransfer?.files?.[0];
+                    if (droppedFile) {
+                      setMasterFile(droppedFile);
+                    }
+                  }}
+                  className="border-2 border-dashed border-[var(--border-color)] hover:border-brand-primary rounded-2xl p-5 text-center space-y-2.5 bg-[var(--bg-card-subtle)] transition-all"
+                >
                   <div className="w-10 h-10 mx-auto rounded-full bg-neon/10 border border-neon/30 flex items-center justify-center text-neon">
                     <Upload className="w-5 h-5" />
                   </div>
