@@ -1365,6 +1365,21 @@ export const RAGWizard = ({
   const [internalAdminViewMode, setInternalAdminViewMode] = useState(externalAdminViewMode || 'list');
   const [currentStep, setCurrentStep] = useState(1);
 
+  // Listener para control reactivo desde el Tutor Contextual Multi-Nivel
+  useEffect(() => {
+    const handleWizardControl = (e) => {
+      const { action, step, ensureWizardMode } = e.detail || {};
+      if (ensureWizardMode && onAdminViewModeChange) {
+        onAdminViewModeChange('wizard');
+      }
+      if (action === 'set_step' && typeof step === 'number') {
+        setCurrentStep(step);
+      }
+    };
+    window.addEventListener('vector_wizard_control', handleWizardControl);
+    return () => window.removeEventListener('vector_wizard_control', handleWizardControl);
+  }, [onAdminViewModeChange]);
+
   // Manejador para eliminación segura de un negocio con popup modal
   const handleDeleteTenant = (tenant) => {
     if (!tenant) return;
@@ -3032,9 +3047,9 @@ export const RAGWizard = ({
         <div className="vector-bg-card vector-border rounded-2xl p-4 sm:p-6 lg:p-8 w-full shadow-2xl space-y-8 animate-fade-in">
 
           {/* Stepper Header: Barra de Progreso y Estados Visuales (Stripe / Linear standard) */}
-          <div className="space-y-4 border-b border-[var(--border-color)] pb-6 font-mono">
+          <div id="tour-wizard-stepper" className="space-y-4 border-b border-[var(--border-color)] pb-6 font-mono">
             {/* Barra superior de métrica de avance */}
-            <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-[var(--text-muted)]">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-neon animate-pulse" />
                 <span className="font-bold text-[var(--text-main)]">Paso {currentStep} de 6:</span>
@@ -3047,9 +3062,29 @@ export const RAGWizard = ({
                   {currentStep === 6 && 'Reglas & Despliegue'}
                 </span>
               </div>
-              <span className="font-bold text-[var(--text-muted)] text-[11px]">
-                {Math.round((currentStep / 6) * 100)}% Completado
-              </span>
+              <div className="flex items-center gap-2 self-end sm:self-auto">
+                <button
+                  type="button"
+                  onClick={() => window.dispatchEvent(new CustomEvent('vector_start_tour', { detail: { tourId: `wizard_step_${currentStep}` } }))}
+                  title={`Explicar a detalle el Paso ${currentStep}`}
+                  className="px-2.5 py-1 rounded-lg bg-neon/10 border border-neon/30 text-neon hover:bg-neon/20 font-mono text-[10px] font-bold transition-all flex items-center gap-1.5 active:scale-95"
+                >
+                  <Sparkles className="w-3 h-3 text-neon" />
+                  <span>Explicar Paso {currentStep}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => window.dispatchEvent(new CustomEvent('vector_start_tour', { detail: { tourId: 'wizard_6_steps' } }))}
+                  title="Tour guiado completo de los 6 pasos para dar de alta un negocio"
+                  className="px-2.5 py-1 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] hover:border-neon text-[var(--text-main)] hover:text-neon font-mono text-[10px] font-bold transition-all flex items-center gap-1.5 active:scale-95"
+                >
+                  <GraduationCap className="w-3 h-3" />
+                  <span className="hidden md:inline">Tour 6 Pasos</span>
+                </button>
+                <span className="font-bold text-[var(--text-muted)] text-[11px] ml-1">
+                  {Math.round((currentStep / 6) * 100)}%
+                </span>
+              </div>
             </div>
 
             {/* Track de Progreso */}
@@ -3121,6 +3156,8 @@ export const RAGWizard = ({
           {currentStep === 1 && (
             <div className="space-y-6 animate-fade-in">
 
+              {/* Contenedor del Giro Comercial (Hero Card o Catálogo de 17 opciones) */}
+              <div id="tour-wizard-step1-catalog" className="space-y-4">
               {/* CASO A: VISTA ENFOQUE HERO CARD (10/10) - Cuando un giro ya fue seleccionado y el catálogo está colapsado */}
               {!isGiroSelectorOpen && wizardData.vertical && (
                 <div className="space-y-3 animate-in fade-in duration-300">
@@ -3476,9 +3513,10 @@ export const RAGWizard = ({
               )}
             </div>
           )}
+              </div>
 
               {/* Acelerador Opcional 1-Click con IA */}
-              <div className="p-5 rounded-2xl bg-[var(--bg-card)] border-2 border-brand-primary/30 space-y-4 shadow-sm">
+              <div id="tour-wizard-step1-ai-accelerator" className="p-5 rounded-2xl bg-[var(--bg-card)] border-2 border-brand-primary/30 space-y-4 shadow-sm">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--border-color)] pb-3">
                   <div className="flex items-center gap-2">
                     <Zap className="w-4 h-4 text-neon" />
@@ -3590,6 +3628,7 @@ export const RAGWizard = ({
               {/* Botón de continuación al Paso 2 */}
               <div className="flex justify-end pt-4 border-t border-[var(--border-color)]">
                 <button
+                  id="tour-wizard-step1-next"
                   type="button"
                   onClick={() => {
                     if (!wizardData.vertical) {
@@ -3633,7 +3672,7 @@ export const RAGWizard = ({
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                  <div id="tour-wizard-step2-identity" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                     <div>
                       <label className="flex items-center justify-between text-xs font-mono font-bold text-[var(--text-main)] mb-1">
                         <span>Nombre Comercial del Negocio</span>
@@ -3706,7 +3745,7 @@ export const RAGWizard = ({
                     </div>
 
                     {/* Micro-Landing Universal Card */}
-                    <div className="p-4 rounded-xl bg-[var(--bg-panel)] border border-neon/30 space-y-3">
+                    <div id="tour-wizard-step2-microlanding" className="p-4 rounded-xl bg-[var(--bg-panel)] border border-neon/30 space-y-3">
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl bg-neon/15 border border-neon/30 flex items-center justify-center text-neon shrink-0">
@@ -3786,7 +3825,7 @@ export const RAGWizard = ({
                     </div>
 
                     {/* Selector de Sitio Web Oficial */}
-                    <div className="space-y-3 pt-2">
+                    <div id="tour-wizard-step2-website-toggle" className="space-y-3 pt-2">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                         <label className="text-xs font-mono font-bold text-[var(--text-main)]">
                           ¿El Negocio Cuenta con Sitio Web Oficial Corporativo?
@@ -3859,6 +3898,7 @@ export const RAGWizard = ({
 
                   <div className="flex justify-end pt-4 border-t border-[var(--border-color)]">
                     <button
+                      id="tour-wizard-step2-next"
                       type="button"
                       onClick={() => setCurrentStep(3)}
                       className="bg-neon text-black font-mono font-bold text-xs px-6 py-3 rounded-xl hover:bg-[var(--neon-hover)] transition-all flex items-center gap-2 shadow-neon"
@@ -3890,7 +3930,7 @@ export const RAGWizard = ({
                   </div>
 
                   {/* Telemetría y Píxeles */}
-                  <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-4">
+                  <div id="tour-wizard-step3-pixels" className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-4">
                     <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
                       <span className="text-xs font-mono font-bold uppercase text-[var(--text-main)] flex items-center gap-2">
                         <Activity className="w-4 h-4 text-neon" />
@@ -3943,7 +3983,7 @@ export const RAGWizard = ({
                   </div>
 
                   {/* Modelo de Cobro por Lead */}
-                  <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-4">
+                  <div id="tour-wizard-step3-billing" className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-4">
                     <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
                       <span className="text-xs font-mono font-bold uppercase text-[var(--text-main)] flex items-center gap-2">
                         <DollarSign className="w-4 h-4 text-emerald-400" />
@@ -3998,6 +4038,7 @@ export const RAGWizard = ({
                       <span>Atrás</span>
                     </button>
                     <button
+                      id="tour-wizard-step3-next"
                       type="button"
                       onClick={() => setCurrentStep(4)}
                       className="bg-neon text-black font-mono font-bold text-xs px-6 py-3 rounded-xl hover:bg-[var(--neon-hover)] transition-all flex items-center gap-2 shadow-neon"
@@ -4029,7 +4070,7 @@ export const RAGWizard = ({
                   </div>
 
                   {/* Sincronización Google Calendar */}
-                  <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-3">
+                  <div id="tour-wizard-step4-gcal" className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-3">
                     <label className="block text-xs font-mono font-bold text-[var(--text-main)] mb-1">
                       Google Calendar ID (Master Agenda para Citas)
                     </label>
@@ -4046,7 +4087,7 @@ export const RAGWizard = ({
                   </div>
 
                   {/* Agenda Inteligente Auto-Calibrada según Giro Comercial */}
-                  <div className="p-4 sm:p-5 rounded-2xl bg-[var(--bg-card)] border border-neon/30 space-y-4">
+                  <div id="tour-wizard-step4-schedule" className="p-4 sm:p-5 rounded-2xl bg-[var(--bg-card)] border border-neon/30 space-y-4">
                     {/* Tarjeta Ejecutiva Resumida */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="flex items-start gap-3">
@@ -4449,6 +4490,7 @@ export const RAGWizard = ({
                       <span>Atrás</span>
                     </button>
                     <button
+                      id="tour-wizard-step4-next"
                       type="button"
                       onClick={() => setCurrentStep(5)}
                       className="bg-neon text-black font-mono font-bold text-xs px-6 py-3 rounded-xl hover:bg-[var(--neon-hover)] transition-all flex items-center gap-2 shadow-neon"
@@ -4482,7 +4524,7 @@ export const RAGWizard = ({
                   </div>
 
                   {/* Banner de Diagnóstico de Deficiencias & Sugerencias IA del Plan Maestro */}
-                  <div className="p-4 sm:p-5 rounded-2xl bg-[var(--bg-card)] border border-neon/30 space-y-3.5 shadow-sm">
+                  <div id="tour-wizard-step5-audit" className="p-4 sm:p-5 rounded-2xl bg-[var(--bg-card)] border border-neon/30 space-y-3.5 shadow-sm">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                       <div className="flex items-center gap-2.5">
                         <div className="w-9 h-9 rounded-xl bg-neon/10 border border-neon/30 flex items-center justify-center text-neon shrink-0">
@@ -4574,7 +4616,7 @@ export const RAGWizard = ({
                     )}
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div id="tour-wizard-step5-pilar2-offer" className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     {/* Pilar 2: Brandbook (Obligatorio) */}
                     <div className="p-5 rounded-2xl bg-[var(--bg-card)] border-2 border-cyan-400/80 space-y-3.5">
                       <div className="flex items-center justify-between">
@@ -4742,7 +4784,10 @@ export const RAGWizard = ({
                         )}
                       </div>
                     </div>
+                  </div>
 
+                  {/* Pilar 1 & Pilar 3: Catálogo, Precios & FAQs */}
+                  <div id="tour-wizard-step5-pilar1-pilar3" className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     {/* Pilar 1: Catálogo & Precios */}
                     <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-3.5">
                       <div className="flex items-center justify-between">
@@ -4908,8 +4953,10 @@ export const RAGWizard = ({
                         )}
                       </div>
                     </div>
+                  </div>
 
-                  <div className="col-span-1 md:col-span-2 p-5 rounded-2xl bg-[var(--bg-card)] border border-emerald-500/30 space-y-3">
+                  {/* Pilar 4: Casos de Éxito & Calificación 4/4 AND */}
+                  <div id="tour-wizard-step5-pilar4" className="p-5 rounded-2xl bg-[var(--bg-card)] border border-emerald-500/30 space-y-3">
                       <div className="flex items-center justify-between flex-wrap gap-2">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-mono font-bold text-emerald-400 flex items-center gap-1.5">
@@ -4974,7 +5021,6 @@ export const RAGWizard = ({
                         ))}
                       </div>
                     </div>
-                  </div>
 
                   <div className="flex justify-between pt-4 border-t border-[var(--border-color)]">
                     <button
@@ -4986,6 +5032,7 @@ export const RAGWizard = ({
                       <span>Atrás</span>
                     </button>
                     <button
+                      id="tour-wizard-step5-next"
                       type="button"
                       onClick={() => setCurrentStep(6)}
                       className="bg-neon text-black font-mono font-bold text-xs px-6 py-3 rounded-xl hover:bg-[var(--neon-hover)] transition-all flex items-center gap-2 shadow-neon"
@@ -5018,7 +5065,7 @@ export const RAGWizard = ({
                   </div>
 
                   {/* Bloque 1: Reglas Inviolables del Negocio */}
-                  <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-4">
+                  <div id="tour-wizard-step6-rules" className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--border-color)] pb-3">
                       <div className="flex items-center gap-2">
                         <Lock className="w-4 h-4 text-neon" />
@@ -5098,7 +5145,7 @@ export const RAGWizard = ({
                   </div>
 
                   {/* Bloque 2: Resumen Ejecutivo Integral de Auditoría & Pilares RAG */}
-                  <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-neon/30 space-y-4 font-mono text-xs shadow-sm">
+                  <div id="tour-wizard-step6-summary" className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-neon/30 space-y-4 font-mono text-xs shadow-sm">
                     <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)]">
                       <div className="flex items-center gap-3">
                         <VectorLobo size={32} showStatus={true} status="active" />
@@ -5343,6 +5390,7 @@ export const RAGWizard = ({
                       <span>Atrás: Pilares RAG</span>
                     </button>
                     <button
+                      id="tour-wizard-step6-deploy"
                       type="button"
                       onClick={handleDeploySwarm}
                       className="bg-neon text-black font-mono font-black text-xs uppercase px-8 py-3.5 rounded-xl hover:bg-[var(--neon-hover)] transition-all flex items-center gap-2 shadow-neon active:scale-95 w-full sm:w-auto justify-center"
