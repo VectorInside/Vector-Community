@@ -2286,6 +2286,45 @@ export const RAGWizard = ({
     const currentVerticalObj = BUSINESS_VERTICALS_CONFIG[wizardData.vertical] || BUSINESS_VERTICALS_CONFIG.gym_fitness;
   const currentPillarsAdaptive = VERTICAL_PILLARS_ADAPTIVE_CONFIG[wizardData.vertical] || VERTICAL_PILLARS_ADAPTIVE_CONFIG.gym_fitness;
 
+  const hasPendingAnalysis = (Boolean(masterFile) || Boolean(masterDocText?.trim())) && !briefingAnalyzed;
+
+  const canProceedFromStep = (stepNumber) => {
+    if (stepNumber === 1) {
+      if (!wizardData.vertical) {
+        return { valid: false, reason: 'Debes seleccionar un giro comercial en la lista antes de continuar al Paso 2.' };
+      }
+      if (isAnalyzingBriefing) {
+        return { valid: false, reason: 'El análisis semántico con DeepSeek IA está en proceso. Por favor espera a que finalice.' };
+      }
+      if (hasPendingAnalysis) {
+        return {
+          valid: false,
+          reason: `Tienes un archivo cargado ("${masterFile?.name || 'Documento Maestro'}") pendiente de análisis. Para auto-llenar los 6 pasos y extraer las directrices de la marca, haz clic en "Auto-Clasificar con IA", o retira el archivo si prefieres llenar los datos manualmente.`,
+          isPendingAnalysis: true,
+        };
+      }
+      return { valid: true };
+    }
+    if (stepNumber === 2) {
+      if (!wizardData.businessName?.trim()) {
+        return { valid: false, reason: 'El Nombre Comercial del Negocio es obligatorio para continuar.' };
+      }
+      const cleanPhone = (wizardData.ownerPhone || '').replace(/\D/g, '');
+      if (!cleanPhone || cleanPhone.length < 10) {
+        return { valid: false, reason: 'El Teléfono / WhatsApp de Escalación Humana (HITL) es obligatorio (mínimo 10 dígitos) para continuar.' };
+      }
+      return { valid: true };
+    }
+    if (stepNumber === 3) {
+      const price = Number(wizardData.costPerQualifiedLead);
+      if (!Number.isFinite(price) || price < 350) {
+        return { valid: false, reason: 'El costo por lead calificado debe ser mayor o igual a $350 MXN.' };
+      }
+      return { valid: true };
+    }
+    return { valid: true };
+  };
+
   const shouldShowHeader = !hideHeader && !externalAdminViewMode;
 
   return (
@@ -3118,7 +3157,28 @@ export const RAGWizard = ({
                   <button
                     key={st.num}
                     type="button"
-                    onClick={() => setCurrentStep(st.num)}
+                    disabled={isAnalyzingBriefing}
+                    onClick={() => {
+                      if (isAnalyzingBriefing) return;
+                      if (st.num === currentStep) return;
+
+                      // Si intenta avanzar hacia un paso mayor, validar todos los pasos intermedios
+                      if (st.num > currentStep) {
+                        for (let s = currentStep; s < st.num; s++) {
+                          const check = canProceedFromStep(s);
+                          if (!check.valid) {
+                            triggerModal(
+                              check.isPendingAnalysis ? 'Análisis con IA Pendiente' : 'Paso Incompleto',
+                              check.reason,
+                              check.isPendingAnalysis ? () => handleAnalyzeMasterBriefing() : null,
+                              check.isPendingAnalysis ? 'Auto-Clasificar con IA Ahora' : 'Completar Datos'
+                            );
+                            return;
+                          }
+                        }
+                      }
+                      setCurrentStep(st.num);
+                    }}
                     className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 relative group ${
                       isCurrent
                         ? 'bg-neon/15 border-neon text-[var(--text-main)] shadow-neon-sm ring-1 ring-neon/40'
@@ -3550,6 +3610,7 @@ export const RAGWizard = ({
                     const droppedFile = e.dataTransfer?.files?.[0];
                     if (droppedFile) {
                       setMasterFile(droppedFile);
+                      setBriefingAnalyzed(false);
                     }
                   }}
                   className="border-2 border-dashed border-[var(--border-color)] hover:border-brand-primary rounded-2xl p-5 text-center space-y-2.5 bg-[var(--bg-card-subtle)] transition-all"
@@ -3569,7 +3630,10 @@ export const RAGWizard = ({
                     type="file"
                     className="text-xs text-[var(--text-muted)] file:mr-3 file:py-1.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-neon file:text-black hover:file:bg-[var(--neon-hover)] cursor-pointer"
                     accept=".pdf,.docx,.doc,.txt,.md"
-                    onChange={(e) => setMasterFile(e.target.files?.[0] || null)}
+                    onChange={(e) => {
+                    setMasterFile(e.target.files?.[0] || null);
+                    setBriefingAnalyzed(false);
+                  }}
                   />
                   {masterFile && (
                     <div className="flex items-center justify-center gap-2 text-xs font-mono text-emerald-400 font-bold pt-1">
@@ -3577,7 +3641,10 @@ export const RAGWizard = ({
                       <span>Archivo listo para IA: {masterFile.name} ({(masterFile.size / 1024).toFixed(1)} KB)</span>
                       <button
                         type="button"
-                        onClick={() => setMasterFile(null)}
+                        onClick={() => {
+                        setMasterFile(null);
+                        setBriefingAnalyzed(false);
+                      }}
                         className="text-red-400 hover:text-red-300 ml-2"
                         title="Quitar archivo"
                       >
@@ -3595,7 +3662,10 @@ export const RAGWizard = ({
                     rows={3}
                     placeholder={`Pega la información de ${currentVerticalObj.name}, precios, reglas inviolables, tono de voz o propuesta comercial...`}
                     value={masterDocText}
-                    onChange={(e) => setMasterDocText(e.target.value)}
+                    onChange={(e) => {
+                    setMasterDocText(e.target.value);
+                    setBriefingAnalyzed(false);
+                  }}
                     className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs rounded-xl p-3 text-[var(--text-main)] focus:border-neon outline-none font-mono"
                   />
                 </div>
@@ -3632,28 +3702,68 @@ export const RAGWizard = ({
               </div>
 
               {/* Botón de continuación al Paso 2 */}
-              <div className="flex justify-end pt-4 border-t border-[var(--border-color)]">
-                <button
-                  id="tour-wizard-step1-next"
-                  type="button"
-                  onClick={() => {
-                    if (!wizardData.vertical) {
-                      triggerModal(
-                        'Selecciona un Giro Comercial',
-                        'Para continuar al Paso 2, por favor selecciona el sector comercial de tu negocio en la lista. Así la IA calibrará el arquetipo, metas y reglas de forma precisa.',
-                        null,
-                        'Seleccionar Giro Ahora'
-                      );
-                      setIsGiroSelectorOpen(true);
-                      return;
-                    }
-                    setCurrentStep(2);
-                  }}
-                  className="bg-neon text-black font-mono font-bold text-xs px-6 py-3 rounded-xl hover:bg-[var(--neon-hover)] transition-all flex items-center gap-2 shadow-neon active:scale-95"
-                >
-                  <span>Siguiente: Entidad del Negocio & Web</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
+                            {/* Botón de continuación al Paso 2 con Bloqueo Estricto de Análisis */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-[var(--border-color)]">
+                {hasPendingAnalysis ? (
+                  <div className="flex items-center gap-2 text-xs font-mono text-amber-400 bg-amber-500/10 px-3.5 py-2.5 rounded-xl border border-amber-500/30 w-full sm:w-auto">
+                    <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />
+                    <span>Archivo cargado pendiente de procesar. Haz clic en <strong>Auto-Clasificar con IA</strong> para continuar.</span>
+                  </div>
+                ) : isAnalyzingBriefing ? (
+                  <div className="flex items-center gap-2 text-xs font-mono text-neon bg-neon/10 px-3.5 py-2.5 rounded-xl border border-neon/30 w-full sm:w-auto">
+                    <RefreshCw className="w-4 h-4 shrink-0 text-neon animate-spin" />
+                    <span>{briefingAnalysisStage || 'Analizando documento maestro con DeepSeek IA...'}</span>
+                  </div>
+                ) : briefingAnalyzed ? (
+                  <div className="flex items-center gap-2 text-xs font-mono text-emerald-400 bg-emerald-500/10 px-3.5 py-2.5 rounded-xl border border-emerald-500/30 w-full sm:w-auto">
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+                    <span>Extracción con IA completada. Datos listos para revisar en el Paso 2.</span>
+                  </div>
+                ) : (
+                  <div className="text-xs text-[var(--text-muted)] font-mono">
+                    Paso 1 de 6: Giro Comercial & Acelerador IA
+                  </div>
+                )}
+
+                <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+                  {hasPendingAnalysis ? (
+                    <button
+                      id="tour-wizard-step1-next"
+                      type="button"
+                      disabled={isAnalyzingBriefing}
+                      onClick={handleAnalyzeMasterBriefing}
+                      className="w-full sm:w-auto bg-neon text-black font-mono font-black text-xs px-6 py-3 rounded-xl hover:bg-[var(--neon-hover)] transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_var(--neon-glow)] active:scale-95 animate-pulse"
+                      title="Procesa el documento cargado para pre-llenar los 6 pasos y continuar"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      <span>Auto-Clasificar con IA para Continuar</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  ) : (
+                    <button
+                      id="tour-wizard-step1-next"
+                      type="button"
+                      disabled={isAnalyzingBriefing}
+                      onClick={() => {
+                        const check = canProceedFromStep(1);
+                        if (!check.valid) {
+                          triggerModal(
+                            check.isPendingAnalysis ? 'Análisis con IA Pendiente' : 'Selecciona un Giro Comercial',
+                            check.reason,
+                            check.isPendingAnalysis ? () => handleAnalyzeMasterBriefing() : () => setIsGiroSelectorOpen(true),
+                            check.isPendingAnalysis ? 'Auto-Clasificar con IA Ahora' : 'Seleccionar Giro'
+                          );
+                          return;
+                        }
+                        setCurrentStep(2);
+                      }}
+                      className="w-full sm:w-auto bg-neon text-black font-mono font-bold text-xs px-6 py-3 rounded-xl hover:bg-[var(--neon-hover)] transition-all flex items-center justify-center gap-2 shadow-neon active:scale-95 disabled:opacity-50"
+                    >
+                      <span>Siguiente: Entidad del Negocio & Web</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -3902,11 +4012,18 @@ export const RAGWizard = ({
                     </div>
                   </div>
 
-                  <div className="flex justify-end pt-4 border-t border-[var(--border-color)]">
+                                    <div className="flex justify-end pt-4 border-t border-[var(--border-color)]">
                     <button
                       id="tour-wizard-step2-next"
                       type="button"
-                      onClick={() => setCurrentStep(3)}
+                      onClick={() => {
+                        const check = canProceedFromStep(2);
+                        if (!check.valid) {
+                          triggerModal('Datos Obligatorios Requeridos', check.reason, null, 'Completar Datos');
+                          return;
+                        }
+                        setCurrentStep(3);
+                      }}
                       className="bg-neon text-black font-mono font-bold text-xs px-6 py-3 rounded-xl hover:bg-[var(--neon-hover)] transition-all flex items-center gap-2 shadow-neon"
                     >
                       <span>Siguiente: Marketing & Tracking</span>
