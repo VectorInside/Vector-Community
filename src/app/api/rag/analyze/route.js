@@ -253,3 +253,4 @@ Devuelve ÚNICAMENTE este JSON con los valores reales:
     );
   }
 }
+
