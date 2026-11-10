@@ -1495,6 +1495,17 @@ export const RAGWizard = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [verticalViewMode, setVerticalViewMode] = useState('compact'); // 'compact' | 'detailed'
 
+  // Control de interfaz enfocada Paso 1: Hero Card colapsada (10/10) vs Catálogo abierto de 17 giros
+  const [isGiroSelectorOpen, setIsGiroSelectorOpen] = useState(false);
+  const [justCalibratedGiro, setJustCalibratedGiro] = useState(false);
+
+  useEffect(() => {
+    if (justCalibratedGiro) {
+      const timer = setTimeout(() => setJustCalibratedGiro(false), 4500);
+      return () => clearTimeout(timer);
+    }
+  }, [justCalibratedGiro]);
+
   const categoryCounts = useMemo(() => {
     const counts = { all: Object.keys(BUSINESS_VERTICALS_CONFIG).length };
     Object.values(BUSINESS_VERTICALS_CONFIG).forEach((v) => {
@@ -1952,6 +1963,8 @@ export const RAGWizard = ({
     }));
 
     setSuggestions(verticalConfig.proactiveSuggestions || []);
+    setJustCalibratedGiro(true);
+    setIsGiroSelectorOpen(false); // Colapso automático a Hero Card (10/10)
   };
 
   // 1-Click Master Briefing AI Ingestion Bridge (Real AI & Fallback)
@@ -3064,26 +3077,144 @@ export const RAGWizard = ({
           {/* ============================================================= */}
           {currentStep === 1 && (
             <div className="space-y-6 animate-fade-in">
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded-full bg-neon/15 text-neon border border-neon/30 text-[10px] font-mono font-bold uppercase">
-                        Paso 1 de 6
+
+              {/* CASO A: VISTA ENFOQUE HERO CARD (10/10) - Cuando el catálogo está colapsado */}
+              {!isGiroSelectorOpen && (
+                <div className="space-y-3 animate-in fade-in duration-300">
+                  {/* Micro-banner reactivo de Calibración IA en Vivo (10/10) */}
+                  {justCalibratedGiro && (
+                    <div className="p-3 rounded-xl bg-neon/15 border border-neon/40 flex items-center justify-between text-xs font-mono text-neon animate-in fade-in slide-in-from-top-2 duration-300 shadow-[0_0_20px_rgba(231,249,0,0.2)]">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-neon animate-spin" />
+                        <span className="font-bold">
+                          ⚡ ¡IA Calibrada con éxito para {currentVerticalObj.name}! Arquetipo y directrices precargadas.
+                        </span>
+                      </div>
+                      <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-black/40 text-neon font-black">
+                        Score {healthScore}%
                       </span>
-                      <h3 className="text-lg font-black text-[var(--text-main)] uppercase flex items-center gap-2">
-                        <Target className="w-5 h-5 text-neon" />
-                        <span>Giro Comercial del Negocio & Acelerador con IA</span>
-                      </h3>
                     </div>
-                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-neon/15 text-neon border border-neon/30">
-                      {filteredVerticals.length} disponibles
-                    </span>
+                  )}
+
+                  {/* Hero Card Enfoque */}
+                  <div className="p-5 md:p-6 rounded-2xl bg-[var(--bg-card)] border-2 border-brand-primary/40 shadow-sm relative overflow-hidden transition-all duration-300">
+                    <div className="absolute top-0 right-0 w-80 h-80 bg-neon/5 rounded-full blur-3xl pointer-events-none" />
+
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 relative z-10">
+                      {/* Lado Izquierdo: Avatar + Títulos + Badges */}
+                      <div className="flex items-start sm:items-center gap-4">
+                        <div className="w-14 h-14 rounded-2xl bg-neon/15 border border-neon/30 flex items-center justify-center text-3xl shrink-0 shadow-inner">
+                          {currentVerticalObj.avatar}
+                        </div>
+                        <div className="space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-neon/20 text-neon border border-neon/40 uppercase">
+                              {currentVerticalObj.canonicalId || 'V01'}
+                            </span>
+                            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                              Giro Activo & Calibrado
+                            </span>
+                            <span className="text-[10px] font-mono text-[var(--text-muted)] hidden sm:inline">
+                              {currentVerticalObj.badge}
+                            </span>
+                          </div>
+                          <h3 className="text-base sm:text-lg font-black text-[var(--text-main)] font-mono">
+                            {currentVerticalObj.name}
+                          </h3>
+                          <p className="text-xs text-[var(--text-muted)] font-mono line-clamp-1">
+                            {currentVerticalObj.description}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Lado Derecho: Botón Ergonómico Cambiar Giro */}
+                      <div className="flex items-center gap-2 self-stretch lg:self-auto shrink-0 pt-3 lg:pt-0 border-t lg:border-t-0 border-[var(--border-color)]">
+                        <button
+                          type="button"
+                          onClick={() => setIsGiroSelectorOpen(true)}
+                          className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[var(--bg-panel)] hover:bg-neon/15 border border-[var(--border-color)] hover:border-neon text-[var(--text-main)] hover:text-neon text-xs font-mono font-bold flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95 group"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5 text-neon group-hover:rotate-180 transition-transform duration-500" />
+                          <span>Cambiar Giro Comercial</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Fila de 3 Certezas Automáticas (Metas, Agenda & RAG) (10/10) */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 mt-4 border-t border-[var(--border-color)]/70 text-xs font-mono">
+                      <div className="p-2.5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)]/50 space-y-1">
+                        <span className="text-[10px] text-[var(--text-muted)] block flex items-center gap-1 uppercase font-bold">
+                          <Target className="w-3 h-3 text-neon" /> Meta Comercial
+                        </span>
+                        <span className="font-bold text-[var(--text-main)] block truncate">
+                          {currentVerticalObj.conversionGoal}
+                        </span>
+                      </div>
+
+                      <div className="p-2.5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)]/50 space-y-1">
+                        <span className="text-[10px] text-[var(--text-muted)] block flex items-center gap-1 uppercase font-bold">
+                          <Calendar className="w-3 h-3 text-cyan-400" /> Agenda Calibrada
+                        </span>
+                        <span className="font-bold text-[var(--text-main)] block truncate">
+                          {wizardData.calendarScheduleType === 'hospitality'
+                            ? 'Mesas & Comensales (90m)'
+                            : wizardData.calendarScheduleType === 'calls'
+                            ? 'Llamadas & Discovery (30-45m)'
+                            : 'Citas & Sesiones (45-60m)'}
+                        </span>
+                      </div>
+
+                      <div className="p-2.5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)]/50 space-y-1">
+                        <span className="text-[10px] text-[var(--text-muted)] block flex items-center gap-1 uppercase font-bold">
+                          <Sparkles className="w-3 h-3 text-emerald-400" /> RAG Score
+                        </span>
+                        <span className="font-bold text-emerald-400 block">
+                          {healthScore}% Calibrado ({currentVerticalObj.defaultRules?.length || 3} reglas)
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-xs text-[var(--text-muted)] font-mono mt-1">
-                    Selecciona el sector comercial de tu negocio para calibrar automáticamente arquetipo de ventas, metas y directrices. Opcionalmente, carga tu documento maestro para auto-llenar los 6 pasos.
-                  </p>
                 </div>
+              )}
+
+              {/* CASO B: MODO EXPLORACIÓN (CATÁLOGO ABIERTO CON LAS 17 OPCIONES) */}
+              {isGiroSelectorOpen && (
+                <div className="space-y-4 animate-in fade-in duration-200">
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded-full bg-neon/15 text-neon border border-neon/30 text-[10px] font-mono font-bold uppercase">
+                            Paso 1 de 6
+                          </span>
+                          <h3 className="text-lg font-black text-[var(--text-main)] uppercase flex items-center gap-2">
+                            <Target className="w-5 h-5 text-neon" />
+                            <span>Catálogo de Giros Comerciales</span>
+                          </h3>
+                        </div>
+                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-neon/15 text-neon border border-neon/30">
+                          {filteredVerticals.length} disponibles
+                        </span>
+                      </div>
+                      <p className="text-xs text-[var(--text-muted)] font-mono mt-1">
+                        Selecciona el sector comercial de tu negocio para calibrar automáticamente arquetipo de ventas, metas y directrices.
+                      </p>
+                    </div>
+
+                    {/* Botón Salida Rápida: Mantener Giro Actual sin cambios (Heurística de Nielsen #3) */}
+                    <div className="flex items-center gap-2 self-stretch lg:self-auto">
+                      <button
+                        type="button"
+                        onClick={() => setIsGiroSelectorOpen(false)}
+                        className="px-3.5 py-2 rounded-xl bg-[var(--bg-panel)] hover:bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon text-xs font-mono font-bold text-[var(--text-main)] hover:text-neon flex items-center gap-1.5 transition-all shadow-sm"
+                        title="Cerrar catálogo y mantener giro seleccionado"
+                      >
+                        <X className="w-3.5 h-3.5 text-neon" />
+                        <span>Mantener {currentVerticalObj.name}</span>
+                      </button>
+                    </div>
+                  </div>
 
                 {/* Controls: Search Bar + View Toggle */}
                 <div className="flex items-center gap-2 self-stretch lg:self-auto">
@@ -3137,7 +3268,6 @@ export const RAGWizard = ({
                     </button>
                   </div>
                 </div>
-              </div>
 
               {/* Taxonomy Category Filter Tabs */}
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
@@ -3299,33 +3429,8 @@ export const RAGWizard = ({
                   })}
                 </div>
               )}
-
-              {/* Compact Active Vertical Calibration Indicator */}
-              <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 font-mono text-xs">
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">{currentVerticalObj.avatar}</span>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-[var(--text-main)]">{currentVerticalObj.name}</span>
-                      <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-neon/15 text-neon border border-neon/30">
-                        {currentVerticalObj.canonicalId}
-                      </span>
-                      <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                        Giro Activo
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-[var(--text-muted)] mt-0.5">
-                      Meta de conversión: <strong className="text-neon">{currentVerticalObj.conversionGoal}</strong>
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--bg-panel)] border border-neon/30 shrink-0">
-                  <Sparkles className="w-3.5 h-3.5 text-neon" />
-                  <span className="text-[11px] font-bold text-[var(--text-main)]">RAG Score Calibrado:</span>
-                  <span className="text-xs font-black text-neon">{healthScore}%</span>
-                </div>
-              </div>
+            </div>
+          )}
 
               {/* Acelerador Opcional 1-Click con IA */}
               <div className="p-5 rounded-2xl bg-[var(--bg-card)] border-2 border-brand-primary/30 space-y-4 shadow-sm">
