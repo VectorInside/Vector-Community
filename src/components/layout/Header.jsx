@@ -775,26 +775,6 @@ export const Header = () => {
                     </div>
                   </button>
 
-                  {/* Reiniciar Tour Guiado */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsUserMenuOpen(false);
-                      if (typeof window !== 'undefined') {
-                        window.dispatchEvent(new CustomEvent('vector_restart_tour'));
-                      }
-                    }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-mono text-[var(--text-main)] hover:bg-[var(--bg-card)] hover:text-lime-400 transition-colors cursor-pointer group text-left"
-                  >
-                    <div className="w-6 h-6 rounded-lg bg-lime-400/10 border border-lime-400/30 flex items-center justify-center text-lime-400 group-hover:bg-lime-400 group-hover:text-black transition-colors shrink-0">
-                      <Sparkles className="w-3.5 h-3.5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-bold text-lime-400">Repetir Tour Guiado</div>
-                      <div className="text-[10px] text-[var(--text-muted)]">Recorrido interactivo por la plataforma</div>
-                    </div>
-                  </button>
-
                   {/* Modo Oscuro / Claro Toggle */}
                   <button
                     type="button"
