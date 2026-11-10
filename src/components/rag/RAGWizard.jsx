@@ -2030,19 +2030,43 @@ export const RAGWizard = ({
 
       // Auto-popular los 6 pasos (Entidad, Web, 4 Pilares RAG, Propuesta Comercial y Reglas) con la extracción real de IA
       setWizardData((prev) => {
+        const sanitizeField = (val, fallback = '') => {
+          if (!val || typeof val !== 'string') return fallback;
+          const lower = val.toLowerCase().trim();
+          if (
+            lower.startsWith('no especifica') ||
+            lower.startsWith('no disponible') ||
+            lower.startsWith('sin especific') ||
+            lower === 'pendiente' ||
+            lower === 'n/a'
+          ) {
+            return fallback;
+          }
+          return val.trim();
+        };
+
         const cleanExtractedName =
           result.businessName && !result.businessName.startsWith('Centro de Excelencia')
-            ? result.businessName
-            : prev.businessName || result.businessName || resolvedVertObj.name.split(',')[0];
+            ? sanitizeField(result.businessName, prev.businessName || resolvedVertObj.name.split(',')[0])
+            : prev.businessName || resolvedVertObj.name.split(',')[0];
+
+        // Limpiar teléfono para asegurar que solo se guarde si contiene dígitos reales
+        const rawPhone = sanitizeField(result.ownerPhone, '');
+        const phoneDigits = rawPhone.replace(/\D/g, '');
+        const cleanPhone = phoneDigits.length >= 10 ? rawPhone : (prev.ownerPhone || '');
+
+        // Limpiar URL oficial si no parece enlace web válido
+        const rawUrl = sanitizeField(result.websiteUrl, '');
+        const cleanUrl = (/^https?:\/\//i.test(rawUrl) || /^www\./i.test(rawUrl)) ? rawUrl : (prev.websiteUrl || '');
 
         return {
           ...prev,
           vertical: prev.vertical || resolvedVerticalKey,
           businessName: cleanExtractedName,
-          legalNameTaxId: result.legalNameTaxId || prev.legalNameTaxId || '',
-          primaryContact: result.primaryContact || prev.primaryContact || '',
-          ownerPhone: result.ownerPhone || prev.ownerPhone || '',
-          websiteUrl: result.websiteUrl || prev.websiteUrl || '',
+          legalNameTaxId: sanitizeField(result.legalNameTaxId, prev.legalNameTaxId || ''),
+          primaryContact: sanitizeField(result.primaryContact, prev.primaryContact || ''),
+          ownerPhone: cleanPhone,
+          websiteUrl: cleanUrl,
           brandColor: result.brandColor || prev.brandColor || '#E7F900',
           brandSecondaryColor: result.brandSecondaryColor || prev.brandSecondaryColor || '#000000',
           microLandingCustomSlug: cleanExtractedName
@@ -2050,19 +2074,19 @@ export const RAGWizard = ({
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/(^-|-$)/g, ''),
           // Pilar 2: Brandbook & Tono
-          brandTone: result.brandTone || adaptive?.pilar2?.placeholder?.replace(/^ej\.\s*/, '') || 'Profesional, Empático y Orientado a Resultados',
+          brandTone: sanitizeField(result.brandTone, adaptive?.pilar2?.placeholder?.replace(/^ej\.\s*/, '') || 'Profesional, Empático y Orientado a Resultados'),
           brandbookDoc: (result.brandbookDoc && typeof result.brandbookDoc === 'object') ? result.brandbookDoc : (fileObj ? { name: `Brandbook_${fileObj.name}`, size: Math.round(fileObj.size * 0.42), type: 'text/markdown' } : { name: `Brandbook_${resolvedVertObj.id}.md`, size: 45000, type: 'text/markdown' }),
-          archetype: result.archetype || resolvedVertObj.badge || 'El Asesor Experto',
+          archetype: sanitizeField(result.archetype, resolvedVertObj.badge || 'El Asesor Experto'),
           // Propuesta Comercial & Gancho
-          offerHook: result.offerHook || adaptive?.offer?.placeholder?.replace(/^ej\.\s*/, '') || 'Diagnóstico de Valoración Sin Costo',
-          offerCta: result.offerCta || 'Envía mensaje para apartar cupo',
-          offerValidity: result.offerValidity || 'Válido por tiempo limitado',
+          offerHook: sanitizeField(result.offerHook, adaptive?.offer?.placeholder?.replace(/^ej\.\s*/, '') || 'Diagnóstico de Valoración Sin Costo'),
+          offerCta: sanitizeField(result.offerCta, 'Envía mensaje para apartar cupo'),
+          offerValidity: sanitizeField(result.offerValidity, 'Válido por tiempo limitado'),
           commercialProposalDoc: (result.commercialProposalDoc && typeof result.commercialProposalDoc === 'object') ? result.commercialProposalDoc : (fileObj || { name: `Oferta_${resolvedVertObj.id}.pdf`, size: 185000, type: 'application/pdf' }),
           // Pilar 1: Precios & Servicios
-          pricingDetails: result.pricingDetails || adaptive?.pilar1?.placeholder?.replace(/^ej\.\s*/, '') || 'Tarifas base y opciones de pago diferido',
+          pricingDetails: sanitizeField(result.pricingDetails, adaptive?.pilar1?.placeholder?.replace(/^ej\.\s*/, '') || 'Tarifas base y opciones de pago diferido'),
           pricingDoc: (result.pricingDoc && typeof result.pricingDoc === 'object') ? result.pricingDoc : (fileObj ? { name: `Tarifario_${fileObj.name}`, size: Math.round(fileObj.size * 0.75), type: 'application/pdf' } : { name: `Tarifario_${resolvedVertObj.id}.pdf`, size: 98000, type: 'application/pdf' }),
           // Pilar 3: Políticas & FAQs
-          faqDetails: result.faqDetails || adaptive?.pilar3?.placeholder?.replace(/^ej\.\s*/, '') || 'Cancelaciones con 24h de anticipación',
+          faqDetails: sanitizeField(result.faqDetails, adaptive?.pilar3?.placeholder?.replace(/^ej\.\s*/, '') || 'Cancelaciones con 24h de anticipación'),
           faqsDoc: (result.faqsDoc && typeof result.faqsDoc === 'object') ? result.faqsDoc : (fileObj ? { name: `FAQs_Reglamento_${fileObj.name}`, size: Math.round(fileObj.size * 0.38), type: 'text/markdown' } : { name: `FAQs_${resolvedVertObj.id}.md`, size: 52000, type: 'text/markdown' }),
           // Pilar 4 & Reglas
           enableCommercialProposal: true,

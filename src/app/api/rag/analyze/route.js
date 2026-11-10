@@ -147,13 +147,13 @@ ${isVector ? 'Contexto detectado: Manual Maestro oficial de la marca Vector Insi
 ${extractedText.slice(0, 10000)}
 ====================================
 
-Devuelve ÚNICAMENTE este JSON con los valores reales:
+Devuelve ÚNICAMENTE este JSON con los valores reales (si un campo de contacto o enlace no aparece en el texto, devuelve una cadena vacía "" sin explicaciones adicionales):
 {
   "businessName": "Nombre comercial real de la marca o negocio (PROHIBIDO usar 'Centro de Excelencia')",
-  "legalNameTaxId": "Razón social o RFC si aparece, o nombre corporativo S.A.S. de C.V.",
-  "primaryContact": "Nombre completo del fundador, CEO o director mencionado en el documento",
-  "ownerPhone": "Teléfono o WhatsApp oficial si aparece en el documento, o vacío",
-  "websiteUrl": "URL del sitio web oficial de la marca",
+  "legalNameTaxId": "Razón social o RFC si aparece explícitamente; si no aparece devuelve \"\"",
+  "primaryContact": "Nombre completo del fundador, CEO o director mencionado; si no aparece devuelve \"\"",
+  "ownerPhone": "Teléfono o WhatsApp con código de país si aparece; si no aparece devuelve \"\"",
+  "websiteUrl": "URL del sitio web oficial si aparece; si no aparece devuelve \"\"",
   "verticalSuggested": "${verticalId}",
   "brandTone": "Tono de voz y personalidad de la marca según el documento",
   "archetype": "Arquetipo de marca y símbolo mencionados en el documento",
@@ -161,7 +161,7 @@ Devuelve ÚNICAMENTE este JSON con los valores reales:
   "brandSecondaryColor": "Color secundario hexadecimal (ej. #000000)",
   "offerHook": "Eslogan oficial, promesa central o gancho comercial del documento",
   "offerCta": "Llamado a la acción (CTA) principal recomendado",
-  "offerValidity": "Condición de vigencia o SLA de atención",
+  "offerValidity": "Condición de vigencia o SLA de atención al cliente",
   "pricingDetails": "Resumen de servicios, soluciones o tarifas del documento",
   "faqDetails": "Resumen de políticas, garantías y protocolos de atención",
   "inviolableRules": [
