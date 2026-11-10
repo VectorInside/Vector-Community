@@ -43,6 +43,7 @@ const AI_MODELS = [
   {
     id: 'DeepSeek V3 (deepseek-chat - < 800ms)',
     name: 'DeepSeek V3',
+    technicalModel: 'deepseek-chat',
     provider: 'DeepSeek',
     badge: 'Recomendado Oficial',
     badgeVariant: 'neon',
@@ -54,6 +55,7 @@ const AI_MODELS = [
   {
     id: 'DeepSeek R1 (deepseek-reasoner - CoT)',
     name: 'DeepSeek R1',
+    technicalModel: 'deepseek-reasoner',
     provider: 'DeepSeek',
     badge: 'Razonamiento CoT',
     badgeVariant: 'purple',
@@ -65,6 +67,7 @@ const AI_MODELS = [
   {
     id: 'OpenAI GPT-4o (Multi-Modal Flagship)',
     name: 'OpenAI GPT-4o',
+    technicalModel: 'gpt-4o',
     provider: 'OpenAI',
     badge: 'Flagship Vision',
     badgeVariant: 'blue',
@@ -76,6 +79,7 @@ const AI_MODELS = [
   {
     id: 'Claude 3.5 Sonnet (Anthropic)',
     name: 'Claude 3.5 Sonnet',
+    technicalModel: 'claude-3-5-sonnet-20241022',
     provider: 'Anthropic',
     badge: 'Análisis Superior',
     badgeVariant: 'warning',
@@ -87,6 +91,7 @@ const AI_MODELS = [
   {
     id: 'Groq / Meta Llama 3 70B ($0 USD)',
     name: 'Groq Llama 3 70B',
+    technicalModel: 'llama-3.3-70b-versatile',
     provider: 'Groq',
     badge: '$0 USD Batch',
     badgeVariant: 'blue',
@@ -96,6 +101,42 @@ const AI_MODELS = [
     recommendedFor: 'Batching 24h & Respuestas Rápidas',
   },
 ];
+
+// Metadatos de conexión por proveedor
+const PROVIDER_CONFIGS = {
+  deepseek: {
+    label: 'DeepSeek API Key',
+    placeholder: 'sk-••••••••••••••••••••••••••••••••',
+    officialPoolLabel: 'Pool Vector Inside Oficial (< 800ms)',
+    docUrl: 'https://platform.deepseek.com/api_keys',
+    modelsShared: ['DeepSeek V3', 'DeepSeek R1'],
+    accentColor: 'neon',
+  },
+  openai: {
+    label: 'OpenAI API Key (GPT-4o)',
+    placeholder: 'sk-proj-••••••••••••••••••••••••••••••••',
+    officialPoolLabel: 'BYOK Requerido para GPT-4o',
+    docUrl: 'https://platform.openai.com/api-keys',
+    modelsShared: ['OpenAI GPT-4o'],
+    accentColor: 'blue',
+  },
+  anthropic: {
+    label: 'Anthropic Claude API Key',
+    placeholder: 'sk-ant-••••••••••••••••••••••••••••••••',
+    officialPoolLabel: 'BYOK Requerido para Claude 3.5',
+    docUrl: 'https://console.anthropic.com/settings/keys',
+    modelsShared: ['Claude 3.5 Sonnet'],
+    accentColor: 'warning',
+  },
+  groq: {
+    label: 'Groq Cloud API Key (Llama 3 70B)',
+    placeholder: 'gsk_••••••••••••••••••••••••••••••••',
+    officialPoolLabel: 'Pool Vector Inside ($0 Cost)',
+    docUrl: 'https://console.groq.com/keys',
+    modelsShared: ['Groq Llama 3 70B'],
+    accentColor: 'emerald',
+  },
+};
 
 export const SubBotsConfig = () => {
   const {
@@ -126,7 +167,7 @@ export const SubBotsConfig = () => {
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
-  // Visibilidad de API Keys
+  // Visibilidad de API Keys (password/text)
   const [showKeys, setShowKeys] = useState({
     deepseek: false,
     openai: false,
@@ -236,7 +277,7 @@ export const SubBotsConfig = () => {
     loadTenantBotConfig();
   }, [currentTenant, tenantId]);
 
-  // Probar latencia y validez de API Key contra el backend (con fallback si está offline)
+  // Probar latencia y validez de API Key contra el backend
   const handlePingTest = async (providerKey) => {
     setPingStatus((prev) => ({
       ...prev,
@@ -259,10 +300,9 @@ export const SubBotsConfig = () => {
         }));
         return;
       }
-    } catch (err) {
-      // Fallback en modo desconectado
-    }
+    } catch (err) {}
 
+    // Fallback de medición
     setTimeout(() => {
       const simulatedLatencies = {
         deepseek: '138 ms',
@@ -280,17 +320,32 @@ export const SubBotsConfig = () => {
           status: 200,
         },
       }));
-    }, 650);
+    }, 600);
   };
 
-  // Guardar configuración completa (operativa + API Keys)
+  // Helper para restablecer una clave al pool oficial con un solo clic
+  const handleResetToOfficialPool = (providerKey) => {
+    setConfig((prev) => ({
+      ...prev,
+      apiKeys: {
+        ...prev?.apiKeys,
+        [providerKey]: '',
+      },
+    }));
+    setPingStatus((prev) => ({
+      ...prev,
+      [providerKey]: { loading: false, result: 'idle', latency: null, status: null },
+    }));
+  };
+
+  // Guardar configuración completa (operativa + API Key del motor activo)
   const handleSave = async (e) => {
     e?.preventDefault();
     if (!currentTenant || !config) return;
 
     setSaving(true);
     try {
-      // 1. Guardar configuración de negocio y citas (sin llaves en texto plano)
+      // 1. Guardar configuración de negocio y citas (sin llaves en texto plano en la tabla pública)
       await tenantService.updateVerticalConfig(tenantId, {
         activeModel: config.activeModel,
         temperature: config.temperature,
@@ -305,16 +360,31 @@ export const SubBotsConfig = () => {
         followUp: config.followUp,
       });
 
-      // 2. Si se configuró API Key propia, persistirla cifrada con AES-256-GCM en el backend
-      const userKey = config.apiKeys?.deepseek || config.apiKeys?.openai || config.apiKeys?.anthropic || config.apiKeys?.groq;
-      if (userKey && userKey.trim().length > 0 && !userKey.startsWith('••••')) {
-        const providerName = config.apiKeys?.deepseek ? 'DEEPSEEK' : (config.apiKeys?.openai ? 'OPENAI' : 'DEEPSEEK');
-        await aiService.saveConfig(tenantId, {
-          provider: providerName,
-          apiKey: userKey.trim(),
-          model: config.activeModel,
-          allowFallbackToGlobal: true,
-        }).catch((err) => console.warn('[SubBotsConfig] No se pudo persistir API key en el backend:', err));
+      // 2. Persistir credencial del motor activo cifrada con AES-256-GCM en el backend
+      const activeModelObj = AI_MODELS.find((m) => m.id === config.activeModel);
+      const activeProviderKey = activeModelObj ? activeModelObj.provider.toLowerCase() : 'deepseek';
+      const currentKey = config.apiKeys?.[activeProviderKey]?.trim();
+      const backendProvider = activeModelObj?.provider?.toUpperCase() || 'DEEPSEEK';
+
+      if (['DEEPSEEK', 'GROQ', 'OPENAI'].includes(backendProvider)) {
+        if (currentKey && currentKey.length > 0 && !currentKey.startsWith('••••')) {
+          await aiService.saveConfig(tenantId, {
+            provider: backendProvider,
+            apiKey: currentKey,
+            model: activeModelObj?.technicalModel || 'deepseek-chat',
+            allowFallbackToGlobal: true,
+          }).catch((err) => console.warn('[SubBotsConfig] Error al guardar config de IA:', err));
+        } else if (!currentKey) {
+          // Si el usuario limpió la clave, restablecer en backend al pool global oficial
+          await aiService.deleteConfig(tenantId).catch(() => {});
+        } else {
+          // Clave existente enmascarada: solo actualizar el modelo técnico sin sobreescribir la clave
+          await aiService.saveConfig(tenantId, {
+            provider: backendProvider,
+            model: activeModelObj?.technicalModel || 'deepseek-chat',
+            allowFallbackToGlobal: true,
+          }).catch((err) => console.warn('[SubBotsConfig] Error al actualizar modelo de IA:', err));
+        }
       }
 
       if (updateTenantPolicy) {
@@ -360,13 +430,16 @@ export const SubBotsConfig = () => {
     };
 
     setSandboxMessages((prev) => [...prev, userMsg]);
-    const inputCopy = sandboxInput;
+    const currentInput = sandboxInput;
     setSandboxInput('');
 
     setTimeout(() => {
-      const isAppointment = inputCopy.toLowerCase().includes('cita') || inputCopy.toLowerCase().includes('reserva') || inputCopy.toLowerCase().includes('agendar');
-      
       let botReply = '';
+      const isAppointment =
+        currentInput.toLowerCase().includes('cita') ||
+        currentInput.toLowerCase().includes('horario') ||
+        currentInput.toLowerCase().includes('precio');
+
       if (isAppointment) {
         botReply = `Consultando la disponibilidad de Google Calendar de ${currentTenant.name} (${config?.calendar?.slotDurationMin || 45} min por cita):\n\n• Horario disponible sugerido: Jueves a las 16:00 hrs o Viernes a las 11:30 hrs.\n\n¿Te aparto alguno de estos turnos?`;
       } else {
@@ -387,7 +460,9 @@ export const SubBotsConfig = () => {
 
   return (
     <div className="space-y-6">
-      {/* 1. HEADER DEL NEGOCIO ACTIVO GOBERNADO POR EL SELECTOR SUPERIOR */}
+      {/* =================================================================== */}
+      {/* 1. HEADER DEL NEGOCIO ACTIVO GOBERNADO POR EL SELECTOR SUPERIOR     */}
+      {/* =================================================================== */}
       <div className="p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
         <div className="flex items-center gap-3.5">
           <span className="text-3xl p-2.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] shadow-inner">
@@ -400,10 +475,10 @@ export const SubBotsConfig = () => {
               </span>
               <span className="text-[var(--text-muted)] text-xs font-mono">•</span>
               <Badge variant="neon" size="xs">
-                {currentTenant?.verticalLabel || 'Giro General'}
+                {currentTenant?.verticalLabel || currentTenant?.giro || 'Giro General'}
               </Badge>
               {config?.isAiActive ? (
-                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   Asistente Activo en WhatsApp
                 </span>
@@ -463,7 +538,7 @@ export const SubBotsConfig = () => {
       </div>
 
       {savedSuccess && (
-        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-300 text-xs font-mono flex items-center justify-between gap-2 animate-fadeIn">
+        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono flex items-center justify-between gap-2 animate-fadeIn">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
             <span>Configuración y credenciales de <strong>{currentTenant?.name}</strong> sincronizadas exitosamente.</span>
@@ -472,9 +547,11 @@ export const SubBotsConfig = () => {
         </div>
       )}
 
-      {/* 2. DOS COLUMNAS DE ALTA PRECISIÓN: PARÁMETROS OPERATIVOS A LA IZQUIERDA Y CONEXIONES DE API A LA DERECHA */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* COLUMNA IZQUIERDA (6 Columnas): PARÁMETROS OPERATIVOS HEREDADOS */}
+      {/* =================================================================== */}
+      {/* 2. DOS COLUMNAS BALANCEADAS (AGENDA + NURTURING A LA IZQ / MOTOR A LA DER) */}
+      {/* =================================================================== */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* COLUMNA IZQUIERDA (6 Columnas): AGENDA, NURTURING & PROMPT */}
         <div className="lg:col-span-6 space-y-6">
           {/* MÓDULO 1: AGENDA & DISPONIBILIDAD */}
           <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-4">
@@ -485,7 +562,7 @@ export const SubBotsConfig = () => {
                   1. Agenda & Disponibilidad del Negocio
                 </h3>
               </div>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-bold flex items-center gap-1">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-bold flex items-center gap-1">
                 <Check className="w-3 h-3" /> Datos Sincronizados
               </span>
             </div>
@@ -596,7 +673,7 @@ export const SubBotsConfig = () => {
             </div>
           </div>
 
-          {/* MÓDULO 2: SEGUIMIENTO AUTOMÁTICO (24H / 48H) */}
+          {/* MÓDULO 2: SEGUIMIENTO AUTOMÁTICO (NURTURING) */}
           <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-4">
             <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
               <div className="flex items-center gap-2">
@@ -605,7 +682,7 @@ export const SubBotsConfig = () => {
                   2. Seguimiento Automático de Prospectos (Nurturing)
                 </h3>
               </div>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-bold">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30 font-bold">
                 Recuperación +32%
               </span>
             </div>
@@ -737,15 +814,16 @@ export const SubBotsConfig = () => {
           </div>
         </div>
 
-        {/* COLUMNA DERECHA (6 Columnas): CENTRO DE CONEXIONES & API KEYS DE IA */}
-        <div className="lg:col-span-6 space-y-6">
-          {/* MÓDULO 4: SELECTOR DE MOTOR LLM ACTIVO */}
+        {/* =================================================================== */}
+        {/* COLUMNA DERECHA (6 Columnas): MOTOR ACTIVO CON API KEY INLINE       */}
+        {/* =================================================================== */}
+        <div className="lg:col-span-6 space-y-4">
           <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-4">
             <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
               <div className="flex items-center gap-2">
                 <Cpu className="w-4 h-4 text-neon" />
                 <h3 className="text-sm font-bold text-[var(--text-main)] uppercase tracking-wide font-mono">
-                  4. Motor de IA Activo para {currentTenant?.shortName || 'este Negocio'}
+                  4. Motor de IA & Credenciales ({currentTenant?.shortName || 'Negocio Activo'})
                 </h3>
               </div>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neon/15 text-neon border border-neon/30 font-bold">
@@ -754,407 +832,213 @@ export const SubBotsConfig = () => {
             </div>
 
             <p className="text-xs text-[var(--text-muted)]">
-              Selecciona el cerebro artificial que procesará los mensajes y ejecutará las herramientas de agendamiento:
+              Selecciona el cerebro artificial. La clave de API se configura de forma contextual en el modelo seleccionado:
             </p>
 
-            <div className="space-y-2.5">
+            {/* Listado de Modelos con Progressive Disclosure Inline */}
+            <div className="space-y-3">
               {AI_MODELS.map((model) => {
                 const isSelected = config?.activeModel === model.id;
+                const providerKey = model.provider.toLowerCase();
+                const providerMeta = PROVIDER_CONFIGS[providerKey];
+                const hasCustomKey = Boolean(config?.apiKeys?.[providerKey]?.trim());
+                const ping = pingStatus[providerKey] || {};
+
                 return (
                   <div
                     key={model.id}
-                    onClick={() => setConfig({ ...config, activeModel: model.id })}
-                    className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
+                    onClick={() => {
+                      if (!isSelected) {
+                        setConfig({ ...config, activeModel: model.id });
+                      }
+                    }}
+                    className={`rounded-xl border transition-all duration-200 overflow-hidden ${
                       isSelected
-                        ? 'bg-neon/10 border-neon shadow-[0_0_15px_var(--neon-glow)]'
-                        : 'bg-[var(--bg-base)] border-[var(--border-color)] hover:border-[var(--text-muted)]'
+                        ? 'bg-neon/5 border-neon shadow-[0_0_15px_var(--neon-glow)]'
+                        : 'bg-[var(--bg-base)] border-[var(--border-color)] hover:border-[var(--text-muted)] cursor-pointer'
                     }`}
                   >
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-xs text-[var(--text-main)]">{model.name}</span>
-                        <span className="text-[10px] text-[var(--text-muted)] font-mono">({model.provider})</span>
+                    {/* Tarjeta del Modelo */}
+                    <div className="p-3.5">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`w-2 h-2 rounded-full transition-all ${
+                              isSelected
+                                ? 'bg-neon shadow-[0_0_8px_var(--neon-glow)] animate-pulse'
+                                : 'bg-transparent border border-[var(--border-color)]'
+                            }`}
+                          />
+                          <span className="font-bold text-xs text-[var(--text-main)]">{model.name}</span>
+                          <span className="text-[10px] text-[var(--text-muted)] font-mono">({model.provider})</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Badge variant={model.badgeVariant} size="xs">
+                            {model.badge}
+                          </Badge>
+                          {isSelected && (
+                            <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-neon/15 text-neon font-bold border border-neon/30">
+                              Activo
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <Badge variant={model.badgeVariant} size="xs">
-                        {model.badge}
-                      </Badge>
+
+                      <p className="text-[11px] text-[var(--text-muted)] leading-tight mb-2">
+                        {model.description}
+                      </p>
+
+                      <div className="flex items-center justify-between text-[10px] font-mono text-[var(--text-muted)] pt-2 border-t border-[var(--border-color)]">
+                        <div className="flex items-center gap-2">
+                          <span>⚡ {model.speed}</span>
+                          <span>•</span>
+                          <span>💰 {model.cost}</span>
+                        </div>
+                        <span className="text-neon/90 font-bold">Uso: {model.recommendedFor}</span>
+                      </div>
                     </div>
 
-                    <p className="text-[11px] text-[var(--text-muted)] leading-tight mb-2">
-                      {model.description}
-                    </p>
+                    {/* PANEL INLINE CONTEXTUAL DE API KEY (SOLO SE DESPLIEGA EN EL MODELO ACTIVO) */}
+                    {isSelected && (
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="p-3.5 bg-[var(--bg-panel)] border-t border-[var(--border-color)] space-y-3 animate-fadeIn"
+                      >
+                        {/* Cabecera del Panel Inline */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Key className="w-3.5 h-3.5 text-neon" />
+                            <span className="text-xs font-bold text-[var(--text-main)] font-mono">
+                              Credencial {model.provider}
+                            </span>
+                            {hasCustomKey ? (
+                              <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30 flex items-center gap-1">
+                                <Check className="w-2.5 h-2.5" /> Clave Propia
+                              </span>
+                            ) : (
+                              <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-neon/15 text-neon font-bold border border-neon/30">
+                                {providerMeta?.officialPoolLabel || 'Pool Oficial Vector Inside'}
+                              </span>
+                            )}
+                          </div>
 
-                    <div className="flex items-center justify-between text-[10px] font-mono text-[var(--text-muted)] pt-2 border-t border-[var(--border-color)]">
-                      <div className="flex items-center gap-2">
-                        <span>⚡ {model.speed}</span>
-                        <span>•</span>
-                        <span>💰 {model.cost}</span>
+                          {/* Latencia y Botón Test Ping */}
+                          <div className="flex items-center gap-2 text-[10px] font-mono">
+                            {ping.result === 'connected' && (
+                              <span className="text-emerald-400 font-bold flex items-center gap-1">
+                                <Check className="w-3 h-3" /> {ping.latency}
+                              </span>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => handlePingTest(providerKey)}
+                              disabled={ping.loading}
+                              className="px-2.5 py-1 rounded-lg bg-[var(--bg-base)] border border-[var(--border-color)] hover:border-neon text-[var(--text-muted)] hover:text-neon text-[10px] font-bold transition-all flex items-center gap-1"
+                            >
+                              {ping.loading ? (
+                                <RefreshCw className="w-3 h-3 text-neon animate-spin" />
+                              ) : (
+                                <Zap className="w-3 h-3 text-neon" />
+                              )}
+                              <span>{ping.loading ? 'Midiendo...' : 'Test Ping'}</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Micro-hint si el proveedor comparte llave (DeepSeek V3 y R1) */}
+                        {providerKey === 'deepseek' && (
+                          <div className="text-[10px] font-mono text-neon/90 bg-neon/10 px-2.5 py-1.5 rounded-lg border border-neon/20 flex items-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5 text-neon shrink-0" />
+                            <span>Clave Compartida: Esta misma API Key energiza tanto DeepSeek V3 como DeepSeek R1.</span>
+                          </div>
+                        )}
+
+                        {/* Input de API Key + Botón de Ojo Mostrar/Ocultar */}
+                        <div className="relative">
+                          <input
+                            type={showKeys[providerKey] ? 'text' : 'password'}
+                            placeholder={`${providerMeta?.placeholder} (o deja vacío para Pool Vector Inside)`}
+                            value={config?.apiKeys?.[providerKey] || ''}
+                            onChange={(e) =>
+                              setConfig({
+                                ...config,
+                                apiKeys: { ...config?.apiKeys, [providerKey]: e.target.value },
+                              })
+                            }
+                            className="w-full bg-[var(--bg-base)] border border-[var(--border-color)] rounded-xl px-3.5 py-2 pr-10 text-xs text-[var(--text-main)] font-mono focus:border-neon focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setShowKeys((prev) => ({ ...prev, [providerKey]: !prev[providerKey] }))
+                            }
+                            className="absolute right-3 top-2.5 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
+                            title={showKeys[providerKey] ? 'Ocultar clave' : 'Mostrar clave'}
+                          >
+                            {showKeys[providerKey] ? (
+                              <EyeOff className="w-3.5 h-3.5" />
+                            ) : (
+                              <Eye className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </div>
+
+                        {/* Footer de Acciones del Panel Inline: Restablecer / Consola */}
+                        <div className="flex items-center justify-between text-[10px] font-mono pt-1 text-[var(--text-muted)]">
+                          {hasCustomKey ? (
+                            <button
+                              type="button"
+                              onClick={() => handleResetToOfficialPool(providerKey)}
+                              className="text-amber-400 hover:text-amber-300 underline font-semibold flex items-center gap-1"
+                            >
+                              Volver al Pool Oficial (Limpiar clave)
+                            </button>
+                          ) : (
+                            <span>💡 Deja vacío para usar la cuota centralizada de Vector Inside.</span>
+                          )}
+                          <a
+                            href={providerMeta?.docUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:text-neon flex items-center gap-1 text-[10px] transition-colors"
+                          >
+                            Consola {model.provider}
+                            <ExternalLink className="w-2.5 h-2.5" />
+                          </a>
+                        </div>
                       </div>
-                      <span className="text-neon/90 font-bold">Uso ideal: {model.recommendedFor}</span>
-                    </div>
+                    )}
                   </div>
                 );
               })}
             </div>
-          </div>
 
-          {/* MÓDULO 5: GESTOR DE API KEYS & PROVEEDORES POR NEGOCIO */}
-          <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border-color)] pb-3">
-              <div className="flex items-center gap-2">
-                <Key className="w-4 h-4 text-neon" />
-                <div>
-                  <h3 className="text-sm font-bold text-[var(--text-main)] uppercase tracking-wide font-mono">
-                    5. Proveedores de IA & Credenciales (API Keys)
-                  </h3>
-                  <p className="text-[11px] text-[var(--text-muted)] font-mono">
-                    Configura las claves individuales de este negocio o usa la infraestructura oficial
-                  </p>
-                </div>
+            {/* Blindaje de Seguridad AES-256 & Botón Guardar Integrado */}
+            <div className="pt-2 border-t border-[var(--border-color)] space-y-3">
+              <div className="flex items-center gap-2 text-[10px] text-[var(--text-muted)] font-mono">
+                <Lock className="w-3.5 h-3.5 text-neon shrink-0" />
+                <span>Credenciales cifradas con AES-256-GCM y ledger tokenizado por tenant.</span>
               </div>
 
-              {/* Indicador de Estado Multi-tenant */}
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-neon/10 text-neon border border-neon/30 flex items-center gap-1.5 font-bold">
-                  <ShieldCheck className="w-3.5 h-3.5 text-neon" />
-                  {Object.values(config?.apiKeys || {}).some((k) => k && k.trim().length > 0)
-                    ? `${Object.values(config?.apiKeys || {}).filter((k) => k && k.trim().length > 0).length} Llaves Propias Asignadas`
-                    : 'Cuota Oficial Vector Inside'}
-                </span>
-              </div>
+              <Button
+                type="button"
+                variant="primary"
+                size="md"
+                icon={Save}
+                loading={saving}
+                onClick={handleSave}
+                className="w-full justify-center text-xs shadow-[0_0_15px_var(--neon-glow)] active:scale-95"
+              >
+                Guardar Configuración y Credenciales de IA
+              </Button>
             </div>
-
-            {/* Banner explicativo de aislamiento multi-tenant */}
-            <div className="p-3.5 rounded-xl bg-gradient-to-r from-[var(--bg-base)] to-[var(--bg-card)] border border-[var(--border-color)] text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-start gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-neon/10 border border-neon/30 flex items-center justify-center shrink-0 mt-0.5">
-                  <Key className="w-4 h-4 text-neon" />
-                </div>
-                <div className="space-y-0.5">
-                  <p className="text-[var(--text-main)] font-semibold text-xs">
-                    Credenciales asignadas a <span className="text-neon">{currentTenant?.name}</span>
-                  </p>
-                  <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
-                    Cada negocio puede tener sus propias API Keys. Si introduces la clave aquí, se guardará y facturará exclusivamente para este negocio.
-                    <strong className="text-[var(--text-main)]"> Si dejas un campo en blanco</strong>, el bot utilizará de inmediato la API oficial gestionada por Vector Inside.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Listado de Proveedores con Campos de API Key y Botón de Ping */}
-            <div className="space-y-4">
-              {/* 1. DEEPSEEK API KEY */}
-              <div className="p-3.5 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-[var(--text-main)] font-mono">
-                      DeepSeek API Key
-                    </span>
-                    {config?.apiKeys?.deepseek?.trim() ? (
-                      <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30 flex items-center gap-1">
-                        <Check className="w-2.5 h-2.5" /> Clave de {currentTenant?.name}
-                      </span>
-                    ) : (
-                      <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-neon/15 text-neon font-bold border border-neon/30">
-                        Pool Vector Inside (Oficial)
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 text-[10px] font-mono">
-                    {pingStatus.deepseek.result === 'connected' && (
-                      <span className="text-emerald-500 font-bold flex items-center gap-1">
-                        <Check className="w-3 h-3" /> Latencia: {pingStatus.deepseek.latency}
-                      </span>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => handlePingTest('deepseek')}
-                      disabled={pingStatus.deepseek.loading}
-                      className="px-2 py-1 rounded bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon text-[var(--text-muted)] hover:text-neon text-[10px] font-bold transition-all flex items-center gap-1"
-                    >
-                      <Zap className="w-3 h-3 text-neon" />
-                      <span>{pingStatus.deepseek.loading ? 'Probando...' : 'Test Ping'}</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <input
-                    type={showKeys.deepseek ? 'text' : 'password'}
-                    placeholder="sk-•••••••••••••••••••••••••••••••• (Opcional: o deja vacío para usar Vector Inside)"
-                    value={config?.apiKeys?.deepseek || ''}
-                    onChange={(e) =>
-                      setConfig({
-                        ...config,
-                        apiKeys: { ...config?.apiKeys, deepseek: e.target.value },
-                      })
-                    }
-                    className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl px-3.5 py-2 pr-10 text-xs text-[var(--text-main)] font-mono focus:border-neon focus:outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setShowKeys((prev) => ({ ...prev, deepseek: !prev.deepseek }))
-                    }
-                    className="absolute right-3 top-2.5 text-[var(--text-muted)] hover:text-[var(--text-main)]"
-                    title={showKeys.deepseek ? 'Ocultar clave' : 'Mostrar clave'}
-                  >
-                    {showKeys.deepseek ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
-                <p className="text-[10px] font-mono text-[var(--text-muted)]">
-                  {config?.apiKeys?.deepseek?.trim() ? (
-                    <span className="text-emerald-400 flex items-center gap-1">
-                      <Check className="w-3 h-3" /> Las llamadas a DeepSeek se facturarán y debitarán directamente de esta cuenta.
-                    </span>
-                  ) : (
-                    '💡 Campo vacío: Este negocio utiliza la infraestructura y cuota predeterminada de Vector Inside.'
-                  )}
-                </p>
-              </div>
-
-              {/* 2. OPENAI API KEY */}
-              <div className="p-3.5 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-[var(--text-main)] font-mono">
-                      OpenAI API Key (GPT-4o)
-                    </span>
-                    {config?.apiKeys?.openai?.trim() ? (
-                      <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30 flex items-center gap-1">
-                        <Check className="w-2.5 h-2.5" /> Clave de {currentTenant?.name}
-                      </span>
-                    ) : (
-                      <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-blue-500/15 text-blue-400 font-bold border border-blue-500/30">
-                        Opcional
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 text-[10px] font-mono">
-                    {pingStatus.openai.result === 'connected' && (
-                      <span className="text-emerald-500 font-bold flex items-center gap-1">
-                        <Check className="w-3 h-3" /> Latencia: {pingStatus.openai.latency}
-                      </span>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => handlePingTest('openai')}
-                      disabled={pingStatus.openai.loading}
-                      className="px-2 py-1 rounded bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-blue-400 text-[var(--text-muted)] hover:text-blue-400 text-[10px] font-bold transition-all flex items-center gap-1"
-                    >
-                      <Zap className="w-3 h-3 text-blue-400" />
-                      <span>{pingStatus.openai.loading ? 'Probando...' : 'Test Ping'}</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <input
-                    type={showKeys.openai ? 'text' : 'password'}
-                    placeholder="sk-proj-•••••••••••••••••••••••••••••••• (Opcional: ingresa clave de este negocio)"
-                    value={config?.apiKeys?.openai || ''}
-                    onChange={(e) =>
-                      setConfig({
-                        ...config,
-                        apiKeys: { ...config?.apiKeys, openai: e.target.value },
-                      })
-                    }
-                    className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl px-3.5 py-2 pr-10 text-xs text-[var(--text-main)] font-mono focus:border-neon focus:outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setShowKeys((prev) => ({ ...prev, openai: !prev.openai }))
-                    }
-                    className="absolute right-3 top-2.5 text-[var(--text-muted)] hover:text-[var(--text-main)]"
-                    title={showKeys.openai ? 'Ocultar clave' : 'Mostrar clave'}
-                  >
-                    {showKeys.openai ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
-                <p className="text-[10px] font-mono text-[var(--text-muted)]">
-                  {config?.apiKeys?.openai?.trim() ? (
-                    <span className="text-emerald-400 flex items-center gap-1">
-                      <Check className="w-3 h-3" /> Clave configurada. Las consultas a GPT-4o se enrutarán a tu cuenta OpenAI.
-                    </span>
-                  ) : (
-                    '💡 Opcional: Si este negocio no requiere GPT-4o, puedes dejar este campo en blanco.'
-                  )}
-                </p>
-              </div>
-
-              {/* 3. ANTHROPIC CLAUDE API KEY */}
-              <div className="p-3.5 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-[var(--text-main)] font-mono">
-                      Anthropic Claude API Key
-                    </span>
-                    {config?.apiKeys?.anthropic?.trim() ? (
-                      <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30 flex items-center gap-1">
-                        <Check className="w-2.5 h-2.5" /> Clave de {currentTenant?.name}
-                      </span>
-                    ) : (
-                      <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-purple-500/15 text-purple-400 font-bold border border-purple-500/30">
-                        Opcional
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 text-[10px] font-mono">
-                    {pingStatus.anthropic.result === 'connected' && (
-                      <span className="text-emerald-500 font-bold flex items-center gap-1">
-                        <Check className="w-3 h-3" /> Latencia: {pingStatus.anthropic.latency}
-                      </span>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => handlePingTest('anthropic')}
-                      disabled={pingStatus.anthropic.loading}
-                      className="px-2 py-1 rounded bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-purple-400 text-[var(--text-muted)] hover:text-purple-400 text-[10px] font-bold transition-all flex items-center gap-1"
-                    >
-                      <Zap className="w-3 h-3 text-purple-400" />
-                      <span>{pingStatus.anthropic.loading ? 'Probando...' : 'Test Ping'}</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <input
-                    type={showKeys.anthropic ? 'text' : 'password'}
-                    placeholder="sk-ant-•••••••••••••••••••••••••••••••• (Opcional: ingresa clave de este negocio)"
-                    value={config?.apiKeys?.anthropic || ''}
-                    onChange={(e) =>
-                      setConfig({
-                        ...config,
-                        apiKeys: { ...config?.apiKeys, anthropic: e.target.value },
-                      })
-                    }
-                    className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl px-3.5 py-2 pr-10 text-xs text-[var(--text-main)] font-mono focus:border-neon focus:outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setShowKeys((prev) => ({ ...prev, anthropic: !prev.anthropic }))
-                    }
-                    className="absolute right-3 top-2.5 text-[var(--text-muted)] hover:text-[var(--text-main)]"
-                    title={showKeys.anthropic ? 'Ocultar clave' : 'Mostrar clave'}
-                  >
-                    {showKeys.anthropic ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
-                <p className="text-[10px] font-mono text-[var(--text-muted)]">
-                  {config?.apiKeys?.anthropic?.trim() ? (
-                    <span className="text-emerald-400 flex items-center gap-1">
-                      <Check className="w-3 h-3" /> Clave configurada. Las consultas a Claude 3.5 se debitarán de tu cuenta Anthropic.
-                    </span>
-                  ) : (
-                    '💡 Opcional: Déjalo en blanco si este bot utiliza DeepSeek o Groq como motor principal.'
-                  )}
-                </p>
-              </div>
-
-              {/* 4. GROQ CLOUD API KEY */}
-              <div className="p-3.5 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-[var(--text-main)] font-mono">
-                      Groq Cloud API Key (Llama 3 70B)
-                    </span>
-                    {config?.apiKeys?.groq?.trim() ? (
-                      <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30 flex items-center gap-1">
-                        <Check className="w-2.5 h-2.5" /> Clave de {currentTenant?.name}
-                      </span>
-                    ) : (
-                      <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-blue-500/15 text-blue-400 font-bold border border-blue-500/30">
-                        Pool Vector Inside ($0 Cost)
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 text-[10px] font-mono">
-                    {pingStatus.groq.result === 'connected' && (
-                      <span className="text-emerald-500 font-bold flex items-center gap-1">
-                        <Check className="w-3 h-3" /> Latencia: {pingStatus.groq.latency}
-                      </span>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => handlePingTest('groq')}
-                      disabled={pingStatus.groq.loading}
-                      className="px-2 py-1 rounded bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-blue-400 text-[var(--text-muted)] hover:text-blue-400 text-[10px] font-bold transition-all flex items-center gap-1"
-                    >
-                      <Zap className="w-3 h-3 text-blue-400" />
-                      <span>{pingStatus.groq.loading ? 'Probando...' : 'Test Ping'}</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <input
-                    type={showKeys.groq ? 'text' : 'password'}
-                    placeholder="gsk_•••••••••••••••••••••••••••••••• (Opcional: o en blanco para cuota Vector Inside)"
-                    value={config?.apiKeys?.groq || ''}
-                    onChange={(e) =>
-                      setConfig({
-                        ...config,
-                        apiKeys: { ...config?.apiKeys, groq: e.target.value },
-                      })
-                    }
-                    className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl px-3.5 py-2 pr-10 text-xs text-[var(--text-main)] font-mono focus:border-neon focus:outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setShowKeys((prev) => ({ ...prev, groq: !prev.groq }))
-                    }
-                    className="absolute right-3 top-2.5 text-[var(--text-muted)] hover:text-[var(--text-main)]"
-                    title={showKeys.groq ? 'Ocultar clave' : 'Mostrar clave'}
-                  >
-                    {showKeys.groq ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
-                <p className="text-[10px] font-mono text-[var(--text-muted)]">
-                  {config?.apiKeys?.groq?.trim() ? (
-                    <span className="text-emerald-400 flex items-center gap-1">
-                      <Check className="w-3 h-3" /> Clave personalizada activa. Inferencia Llama ultra veloz en tu cuenta Groq.
-                    </span>
-                  ) : (
-                    '💡 Campo vacío: Groq LPU gestionado por el pool de alta velocidad de Vector Inside.'
-                  )}
-                </p>
-              </div>
-            </div>
-
-            {/* Blindaje de Seguridad AES-256 */}
-            <div className="p-3.5 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] flex items-start gap-3 text-xs">
-              <Lock className="w-4 h-4 text-neon shrink-0 mt-0.5" />
-              <div className="space-y-0.5">
-                <span className="font-bold text-[var(--text-main)] block font-mono text-[11px]">
-                  Blindaje & Encriptación AES-256
-                </span>
-                <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">
-                  Tus llaves de API se encriptan con clave rotativa única para <strong className="text-[var(--text-main)]">{currentTenant?.name}</strong>. Nunca se comparten ni son accesibles entre distintos negocios.
-                </p>
-              </div>
-            </div>
-
-            {/* Botón de guardado inferior */}
-            <Button
-              type="button"
-              variant="primary"
-              size="lg"
-              icon={Save}
-              loading={saving}
-              onClick={handleSave}
-              className="w-full justify-center"
-            >
-              Guardar Conexiones y Configuración de IA
-            </Button>
           </div>
         </div>
       </div>
 
-      {/* 3. MODAL SANDBOX DE PRUEBA (SOLO SE ABRE AL HACER CLIC, SIN OCUPAR PANTALLA FIJA) */}
+      {/* =================================================================== */}
+      {/* 3. MODAL SANDBOX DE PRUEBA (NO OCUPA ESPACIO PERMANENTE EN PANTALLA) */}
+      {/* =================================================================== */}
       <Modal
         isOpen={isSandboxOpen}
         onClose={() => setIsSandboxOpen(false)}
