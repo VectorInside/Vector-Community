@@ -16,6 +16,7 @@ import {
   Moon,
   Bell,
   Sparkles,
+  GraduationCap,
   Menu,
   ArrowRight,
   KeyRound,
@@ -411,6 +412,18 @@ export const Header = () => {
             <Search className="w-4 h-4" />
           </button>
 
+
+          {/* Tutor Contextual Inteligente / Centro de Guías */}
+          <button
+            type="button"
+            id="tour-tutor-trigger"
+            onClick={() => window.dispatchEvent(new CustomEvent('vector_open_tutor_hub'))}
+            title="Centro de Guías & Tutor IA (Aprende cómo usar este módulo o dar de alta un negocio)"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[var(--bg-base)] border border-neon/30 text-neon hover:bg-neon/10 hover:border-neon transition-all font-mono text-xs font-bold shadow-sm group"
+          >
+            <GraduationCap className="w-4 h-4 text-neon group-hover:scale-110 transition-transform" />
+            <span className="hidden sm:inline">Tutor IA</span>
+          </button>
 
           {/* Cross-Tenant Notification Bell with Popover */}
           <div className="relative" ref={notifRef}>

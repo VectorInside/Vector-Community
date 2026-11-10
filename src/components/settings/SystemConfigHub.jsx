@@ -15,6 +15,7 @@ import {
   ArrowLeft,
   Sparkles,
   Share2,
+  GraduationCap,
 } from 'lucide-react';
 
 export const SystemConfigHub = ({ initialTab = 'rag', initialMode = 'list' }) => {
@@ -41,6 +42,17 @@ export const SystemConfigHub = ({ initialTab = 'rag', initialMode = 'list' }) =>
       setActiveTab(initialTab);
     }
   }, [initialTab]);
+
+  // Listener para control programático desde el Tutor Contextual
+  useEffect(() => {
+    const handleConfigControl = (e) => {
+      const { tab, mode } = e.detail || {};
+      if (tab) setActiveTab(tab);
+      if (mode) setAdminMode(mode);
+    };
+    window.addEventListener('vector_config_set_tab', handleConfigControl);
+    return () => window.removeEventListener('vector_config_set_tab', handleConfigControl);
+  }, []);
 
   return (
     <div className="w-full p-4 sm:p-6 lg:p-8 block animate-fade-in space-y-6">
@@ -69,6 +81,16 @@ export const SystemConfigHub = ({ initialTab = 'rag', initialMode = 'list' }) =>
           <div className="flex items-center gap-3">
             <button
               type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('vector_start_tour', { detail: { tourId: 'wizard_6_steps' } }))}
+              title="Iniciar tour guiado completo de los 6 pasos para dar de alta un negocio"
+              className="text-xs bg-neon/15 hover:bg-neon/25 text-neon border border-neon/40 px-3.5 py-2.5 rounded-xl font-mono font-bold transition-all flex items-center gap-2 active:scale-95 shadow-sm"
+            >
+              <GraduationCap className="w-4 h-4 text-neon" />
+              <span>Guía de Alta (6 Pasos)</span>
+            </button>
+            <button
+              id="tour-btn-exit-wizard"
+              type="button"
               onClick={() => setAdminMode('list')}
               className="text-xs bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] border border-[var(--border-color)] hover:border-neon px-4 py-2.5 rounded-xl font-mono font-bold transition-all flex items-center gap-2 active:scale-95 shadow-sm"
             >
@@ -78,7 +100,7 @@ export const SystemConfigHub = ({ initialTab = 'rag', initialMode = 'list' }) =>
           </div>
         </header>
       ) : (
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border-color)] pb-4 gap-4">
+        <header id="tour-config-header" className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border-color)] pb-4 gap-4">
           <div>
             <div className="flex items-center gap-2">
               <span className="p-2 rounded-xl bg-neon/15 text-neon border border-neon/30">
@@ -116,6 +138,17 @@ export const SystemConfigHub = ({ initialTab = 'rag', initialMode = 'list' }) =>
 
                 <button
                   type="button"
+                  onClick={() => window.dispatchEvent(new CustomEvent('vector_start_tour', { detail: { tourId: 'system_config_tabs' } }))}
+                  title="Tour interactivo por las 4 subpestañas de configuración"
+                  className="text-xs bg-neon/15 hover:bg-neon/25 text-neon border border-neon/40 font-mono font-bold px-3 py-2 rounded-xl flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+                >
+                  <GraduationCap className="w-3.5 h-3.5 text-neon" />
+                  <span>Tour Submódulos</span>
+                </button>
+
+                <button
+                  id="tour-btn-new-business"
+                  type="button"
                   onClick={() => {
                     setActiveTab('rag');
                     setAdminMode('wizard');
@@ -143,8 +176,9 @@ export const SystemConfigHub = ({ initialTab = 'rag', initialMode = 'list' }) =>
 
       {/* Tabs Navigation (Visible when not in full-screen onboarding wizard) */}
       {adminMode !== 'wizard' && (
-        <div className="flex items-center gap-2 border-b border-[var(--border-color)] pb-2 overflow-x-auto font-mono text-xs">
+        <div id="tour-config-tabs" className="flex items-center gap-2 border-b border-[var(--border-color)] pb-2 overflow-x-auto font-mono text-xs">
           <button
+            id="tour-tab-rag"
             type="button"
             onClick={() => setActiveTab('rag')}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all shrink-0 ${
@@ -158,6 +192,7 @@ export const SystemConfigHub = ({ initialTab = 'rag', initialMode = 'list' }) =>
           </button>
 
           <button
+            id="tour-tab-subbots"
             type="button"
             onClick={() => setActiveTab('subbots')}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all shrink-0 ${
@@ -171,6 +206,7 @@ export const SystemConfigHub = ({ initialTab = 'rag', initialMode = 'list' }) =>
           </button>
 
           <button
+            id="tour-tab-policies"
             type="button"
             onClick={() => setActiveTab('policies')}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all shrink-0 ${
@@ -184,6 +220,7 @@ export const SystemConfigHub = ({ initialTab = 'rag', initialMode = 'list' }) =>
           </button>
 
           <button
+            id="tour-tab-channels"
             type="button"
             onClick={() => setActiveTab('channels')}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all shrink-0 ${
