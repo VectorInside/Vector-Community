@@ -1995,6 +1995,16 @@ export const RAGWizard = ({
       setWizardData((prev) => ({
         ...prev,
         businessName: result.businessName || prev.businessName || `Centro de Excelencia (${vert.name.split(',')[0]})`,
+        legalNameTaxId: result.legalNameTaxId || prev.legalNameTaxId || '',
+        primaryContact: result.primaryContact || prev.primaryContact || '',
+        ownerPhone: result.ownerPhone || prev.ownerPhone || '',
+        websiteUrl: result.websiteUrl || prev.websiteUrl || '',
+        brandColor: result.brandColor || prev.brandColor || '#E7F900',
+        brandSecondaryColor: result.brandSecondaryColor || prev.brandSecondaryColor || '#000000',
+        microLandingCustomSlug: (result.businessName || prev.businessName || '')
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)/g, ''),
         // Pilar 2: Brandbook & Tono
         brandTone: result.brandTone || adaptive?.pilar2?.placeholder?.replace(/^ej\.\s*/, '') || 'Profesional, Empático y Orientado a Resultados',
         brandbookDoc: (result.brandbookDoc && typeof result.brandbookDoc === 'object') ? result.brandbookDoc : (fileObj ? { name: `Brandbook_${fileObj.name}`, size: Math.round(fileObj.size * 0.42), type: 'text/markdown' } : { name: `Brandbook_${vert.id}.md`, size: 45000, type: 'text/markdown' }),

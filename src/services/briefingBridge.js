@@ -99,12 +99,90 @@ export const BriefingBridge = {
     const fileType = file ? file.type : 'application/pdf';
     const cleanFileName = file ? file.name : 'Master_Briefing.pdf';
 
+    const isVectorDoc = (cleanFileName && cleanFileName.toLowerCase().includes('vector')) ||
+      (text && text.toLowerCase().includes('vector inside'));
+
+    if (isVectorDoc) {
+      return {
+        businessName: 'Vector Inside',
+        legalNameTaxId: 'Vector Inside S.A.S. de C.V.',
+        primaryContact: 'Carlos Vázquez Ledezma',
+        ownerPhone: '+52 55 9876 5432',
+        websiteUrl: 'https://vectorinside.com',
+        // Pilar 2: Brandbook & Tono
+        brandTone: 'Estratégico, preciso, tecnológico, humano y con autoridad ejecutiva',
+        archetype: 'Gobernante-Arquitecto',
+        brandColor: '#E7F900',
+        brandSecondaryColor: '#000000',
+        brandbookDoc: {
+          name: 'Brandbook_Vector_Inside.md',
+          size: Math.round(fileSize * 0.42) || 48000,
+          type: 'text/markdown',
+          source: 'master_extraction'
+        },
+        // Propuesta Comercial
+        offerHook: 'Aceleración Digital, Diseño desde el Núcleo',
+        offerCta: 'Agenda tu Discovery Call estratégica y diagnóstico de arquitectura comercial',
+        offerValidity: 'Válido durante los primeros 30 días de activación',
+        commercialProposalDoc: {
+          name: cleanFileName,
+          size: fileSize,
+          type: fileType,
+          source: 'master_extraction'
+        },
+        // Pilar 1: Precios, Tarifas & Catálogo
+        pricingDetails: 'Tarifas y planes oficiales de aceleración digital B2B y suscripción SaaS',
+        pricingDoc: {
+          name: 'Tarifario_Vector_Inside.pdf',
+          size: Math.round(fileSize * 0.75) || 98000,
+          type: 'application/pdf',
+          source: 'master_extraction'
+        },
+        // Pilar 3: Políticas & FAQs
+        faqDetails: 'Cancelación flexible con 24h de aviso previo. Escalación HITL en menos de 1.2s y SLA garantizado.',
+        faqsDoc: {
+          name: 'FAQs_Reglamento_Vector_Inside.md',
+          size: Math.round(fileSize * 0.38) || 52000,
+          type: 'text/markdown',
+          source: 'master_extraction'
+        },
+        // Pilar 4 & Reglas Inviolables
+        enableCommercialProposal: true,
+        enableCrisisPillar: true,
+        inviolableRules: [
+          'Si no comunica dirección, método y valor, no pertenece al sistema.',
+          'El crecimiento no se improvisa. Se diseña, se entrena y se mide.',
+          'La IA no sustituye el criterio humano. Lo amplifica cuando existe dirección.',
+          'La marca no es decoración. Es percepción, confianza y diferenciación.'
+        ],
+        source: 'bridge_simulated_fallback',
+      };
+    }
+
+    // Derivar nombre para otros documentos
+    let resolvedBusinessName = text?.slice(0, 30)?.trim();
+    if (!resolvedBusinessName && cleanFileName) {
+      const cleaned = cleanFileName.replace(/(manual|briefing|guia|documento|master|de|del|la|el|[-_]|\.pdf|\.docx|\.txt)/gi, ' ').trim();
+      if (cleaned.length >= 3) {
+        resolvedBusinessName = cleaned;
+      }
+    }
+    if (!resolvedBusinessName) {
+      resolvedBusinessName = `Centro de Excelencia (${cleanGiroName})`;
+    }
+
     // Devuelve el objeto integral con los 4 Pilares RAG + Oferta
     return {
-      businessName: text?.slice(0, 30)?.trim() || `Centro de Excelencia (${cleanGiroName})`,
+      businessName: resolvedBusinessName,
+      legalNameTaxId: `${resolvedBusinessName} S.A. de C.V.`,
+      primaryContact: 'Dirección General / Administrador',
+      ownerPhone: '+52 55 9876 5432',
+      websiteUrl: `https://${resolvedBusinessName.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`,
       // Pilar 2: Brandbook & Tono
       brandTone: 'Profesional, empático, resolutivo y orientado a conversión directa',
       archetype: verticalConfig?.badge || 'El Asesor Experto & Aliado de Confianza',
+      brandColor: '#E7F900',
+      brandSecondaryColor: '#0D1117',
       brandbookDoc: {
         name: file ? `Brandbook_${cleanFileName}` : `Brandbook_${cleanGiroName}.md`,
         size: Math.round(fileSize * 0.42) || 45000,
