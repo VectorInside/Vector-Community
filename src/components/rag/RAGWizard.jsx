@@ -1495,8 +1495,8 @@ export const RAGWizard = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [verticalViewMode, setVerticalViewMode] = useState('compact'); // 'compact' | 'detailed'
 
-  // Control de interfaz enfocada Paso 1: Hero Card colapsada (10/10) vs Catálogo abierto de 17 giros
-  const [isGiroSelectorOpen, setIsGiroSelectorOpen] = useState(false);
+  // Control de interfaz enfocada Paso 1: Inicia con catálogo abierto (true) y sin giro forzado
+  const [isGiroSelectorOpen, setIsGiroSelectorOpen] = useState(true);
   const [justCalibratedGiro, setJustCalibratedGiro] = useState(false);
 
   useEffect(() => {
@@ -1533,7 +1533,7 @@ export const RAGWizard = ({
   const [wizardData, setWizardData] = useState({
     businessName: '',
     legalNameTaxId: '',
-    vertical: 'gym_fitness',
+    vertical: null, // Inicia sin selección para que el usuario elija su propio giro
     verticalTipo: 'service_appointments',
     businessGoal: 'appointments',
     primaryContact: '',
@@ -2264,6 +2264,11 @@ export const RAGWizard = ({
                 <button
                   type="button"
                   onClick={() => {
+                    setWizardData((prev) => ({
+                      ...prev,
+                      vertical: null,
+                    }));
+                    setIsGiroSelectorOpen(true);
                     setAdminViewMode('wizard');
                     setCurrentStep(1);
                   }}
@@ -3078,8 +3083,8 @@ export const RAGWizard = ({
           {currentStep === 1 && (
             <div className="space-y-6 animate-fade-in">
 
-              {/* CASO A: VISTA ENFOQUE HERO CARD (10/10) - Cuando el catálogo está colapsado */}
-              {!isGiroSelectorOpen && (
+              {/* CASO A: VISTA ENFOQUE HERO CARD (10/10) - Cuando un giro ya fue seleccionado y el catálogo está colapsado */}
+              {!isGiroSelectorOpen && wizardData.vertical && (
                 <div className="space-y-3 animate-in fade-in duration-300">
                   {/* Micro-banner reactivo de Calibración IA en Vivo (10/10) */}
                   {justCalibratedGiro && (
@@ -3179,7 +3184,7 @@ export const RAGWizard = ({
               )}
 
               {/* CASO B: MODO EXPLORACIÓN (CATÁLOGO ABIERTO CON LAS 17 OPCIONES) */}
-              {isGiroSelectorOpen && (
+              {(isGiroSelectorOpen || !wizardData.vertical) && (
                 <div className="space-y-4 animate-in fade-in duration-200">
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                     <div>
@@ -3202,18 +3207,20 @@ export const RAGWizard = ({
                       </p>
                     </div>
 
-                    {/* Botón Salida Rápida: Mantener Giro Actual sin cambios (Heurística de Nielsen #3) */}
-                    <div className="flex items-center gap-2 self-stretch lg:self-auto">
-                      <button
-                        type="button"
-                        onClick={() => setIsGiroSelectorOpen(false)}
-                        className="px-3.5 py-2 rounded-xl bg-[var(--bg-panel)] hover:bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon text-xs font-mono font-bold text-[var(--text-main)] hover:text-neon flex items-center gap-1.5 transition-all shadow-sm"
-                        title="Cerrar catálogo y mantener giro seleccionado"
-                      >
-                        <X className="w-3.5 h-3.5 text-neon" />
-                        <span>Mantener {currentVerticalObj.name}</span>
-                      </button>
-                    </div>
+                    {/* Botón Salida Rápida: Visible únicamente si ya hay un giro previamente seleccionado */}
+                    {wizardData.vertical && (
+                      <div className="flex items-center gap-2 self-stretch lg:self-auto">
+                        <button
+                          type="button"
+                          onClick={() => setIsGiroSelectorOpen(false)}
+                          className="px-3.5 py-2 rounded-xl bg-[var(--bg-panel)] hover:bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon text-xs font-mono font-bold text-[var(--text-main)] hover:text-neon flex items-center gap-1.5 transition-all shadow-sm"
+                          title="Cerrar catálogo y mantener giro seleccionado"
+                        >
+                          <X className="w-3.5 h-3.5 text-neon" />
+                          <span>Mantener {currentVerticalObj.name}</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                 {/* Controls: Search Bar + View Toggle */}
@@ -3532,8 +3539,20 @@ export const RAGWizard = ({
               <div className="flex justify-end pt-4 border-t border-[var(--border-color)]">
                 <button
                   type="button"
-                  onClick={() => setCurrentStep(2)}
-                  className="bg-neon text-black font-mono font-bold text-xs px-6 py-3 rounded-xl hover:bg-[var(--neon-hover)] transition-all flex items-center gap-2 shadow-neon"
+                  onClick={() => {
+                    if (!wizardData.vertical) {
+                      triggerModal(
+                        'Selecciona un Giro Comercial',
+                        'Para continuar al Paso 2, por favor selecciona el sector comercial de tu negocio en la lista. Así la IA calibrará el arquetipo, metas y reglas de forma precisa.',
+                        null,
+                        'Seleccionar Giro Ahora'
+                      );
+                      setIsGiroSelectorOpen(true);
+                      return;
+                    }
+                    setCurrentStep(2);
+                  }}
+                  className="bg-neon text-black font-mono font-bold text-xs px-6 py-3 rounded-xl hover:bg-[var(--neon-hover)] transition-all flex items-center gap-2 shadow-neon active:scale-95"
                 >
                   <span>Siguiente: Entidad del Negocio & Web</span>
                   <ArrowRight className="w-4 h-4" />
