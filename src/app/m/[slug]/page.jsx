@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import { getPublicTenantLandingData } from '@/utils/publicLandingsCatalog';
 import { performanceService } from '@/services/performanceService';
 import { leadService } from '@/services/leadService';
+import { tenantService } from '@/services/tenantService';
 import {
   Phone,
   Calendar,
@@ -64,12 +65,37 @@ export default function MicroLandingPage() {
   });
 
   useEffect(() => {
-    const checkTenantState = () => {
+    let isMounted = true;
+
+    const applyResolvedTenant = (found) => {
+      if (!found || !isMounted) return;
+      const nextTenant = {
+        id: found.id || slug,
+        name: found.name || 'Negocio',
+        shortName: found.shortName || found.name,
+        phone: found.phone || '+525512345678',
+        microLandingSlug: found.microLandingSlug || slug,
+        microLandingEnabled: found.microLandingEnabled !== false,
+        metaPixelId: found.metaPixelId || '',
+        ga4MeasurementId: found.ga4MeasurementId || '',
+      };
+      setActiveTenantData(nextTenant);
+      setCustomData((prev) => ({
+        ...prev,
+        name: prev.name === 'Negocio' || !prev.name ? nextTenant.name : prev.name,
+        phone: nextTenant.phone || prev.phone,
+        metaPixelId: prev.metaPixelId || nextTenant.metaPixelId || '',
+        ga4MeasurementId: prev.ga4MeasurementId || nextTenant.ga4MeasurementId || '',
+      }));
+    };
+
+    const checkTenantState = async () => {
+      let localFound = null;
       try {
         const savedTenants = localStorage.getItem('vector_tenants_data');
         if (savedTenants) {
           const parsed = JSON.parse(savedTenants);
-          const found =
+          localFound =
             parsed[slug] ||
             Object.values(parsed).find(
               (t) =>
@@ -77,25 +103,36 @@ export default function MicroLandingPage() {
                 t.microLandingSlug === slug ||
                 (t.name && t.name.toLowerCase().includes(slug))
             );
-          if (found) {
-            setActiveTenantData({
-              id: found.id || slug,
-              name: found.name || 'Negocio',
-              shortName: found.shortName || found.name,
-              phone: found.phone || '+525512345678',
-              microLandingSlug: found.microLandingSlug || slug,
-              microLandingEnabled: found.microLandingEnabled !== false,
-              metaPixelId: found.metaPixelId || '',
-              ga4MeasurementId: found.ga4MeasurementId || '',
-            });
+          if (localFound) {
+            applyResolvedTenant(localFound);
           }
         }
       } catch (e) {}
+
+      // Consultar backend real para visitantes públicos externos (Meta Ads / Google)
+      try {
+        let remoteTenant = await tenantService.getTenantById(slug);
+        if (!remoteTenant) {
+          const allTenants = await tenantService.getTenants();
+          remoteTenant = (allTenants || []).find(
+            (t) =>
+              t.id === slug ||
+              t.microLandingSlug === slug ||
+              (t.name && t.name.toLowerCase().replace(/[^a-z0-9]/g, '-') === slug)
+          );
+        }
+        if (remoteTenant) {
+          applyResolvedTenant(remoteTenant);
+        }
+      } catch (err) {}
     };
 
     checkTenantState();
     window.addEventListener('storage', checkTenantState);
-    return () => window.removeEventListener('storage', checkTenantState);
+    return () => {
+      isMounted = false;
+      window.removeEventListener('storage', checkTenantState);
+    };
   }, [slug]);
 
   const baseTenant = activeTenantData;

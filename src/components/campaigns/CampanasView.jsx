@@ -74,12 +74,14 @@ export const CampanasView = () => {
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [aiSuccessToast, setAiSuccessToast] = useState(false);
 
+  const tenantMonthlyBudget = Number(activeTenant?.monthlyAdBudget) > 0 ? Number(activeTenant.monthlyAdBudget) : 15000;
+
   const [newCampaignForm, setNewCampaignForm] = useState({
     name: '',
     offer: '',
     objective: 'Citas & Conversaciones Calificadas',
     channel: 'Meta Ads (Instagram & FB)',
-    budget: 15000,
+    budget: tenantMonthlyBudget,
     audience: '',
     hypothesis: '',
   });
@@ -149,7 +151,7 @@ export const CampanasView = () => {
         objective: 'Citas & Conversaciones Calificadas',
         audience: `Público objetivo interesado en ${activeTenant?.giro || 'servicios especializados'}`,
         channel: 'Meta Ads (Instagram & FB)',
-        budget: 15000,
+        budget: tenantMonthlyBudget,
         spend: 0,
         leadsCount: 0,
         piecesCount: 3,
@@ -213,7 +215,7 @@ export const CampanasView = () => {
       offer: '',
       objective: 'Citas & Conversaciones Calificadas',
       channel: 'Meta Ads (Instagram & FB)',
-      budget: 15000,
+      budget: tenantMonthlyBudget,
       audience: '',
       hypothesis: '',
     });
@@ -237,7 +239,7 @@ export const CampanasView = () => {
         : 'Valoración inicial sin costo para nuevos prospectos vía WhatsApp.',
       objective: 'Citas & Conversaciones Calificadas',
       channel: 'Meta Ads (Instagram & FB)',
-      budget: 12000,
+      budget: tenantMonthlyBudget,
       audience: `Clientes potenciales de ${activeTenant?.giro || 'nuestro giro comercial'} en zona de cobertura`,
       hypothesis: 'Una oferta clara con atención inmediata en WhatsApp reduce el costo por prospecto calificado.',
     });

@@ -1659,9 +1659,11 @@ export const RAGWizard = ({
       web_tracking: {
         has_website: wizardData.hasWebsite,
         website_url: wizardData.hasWebsite ? wizardData.websiteUrl || 'https://negocio.com' : null,
-        ga4_measurement_id: wizardData.hasWebsite ? wizardData.ga4MeasurementId || 'G-ABC123XYZ' : null,
-        meta_pixel_id: wizardData.metaPixelId || '123456789012345',
+        ga4_measurement_id: wizardData.ga4MeasurementId || null,
+        meta_pixel_id: wizardData.metaPixelId || null,
         meta_capi_token: wizardData.metaCapiToken || 'EAAX_CAPI_TOKEN_SECURE',
+        monthly_ad_budget_mxn: Number(wizardData.monthlyAdBudget || 0),
+        cost_per_qualified_lead_mxn: Math.max(350, Number(wizardData.costPerQualifiedLead || 350)),
         auto_generated_micro_landing: `https://app.vectorinside.com/m/${(wizardData.microLandingCustomSlug || wizardData.businessName || 'demo').toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
         micro_landing_slug: (wizardData.microLandingCustomSlug || wizardData.businessName || 'demo').toLowerCase().replace(/[^a-z0-9]/g, '-'),
         micro_landing_enabled: wizardData.microLandingBillingPlan !== 'disabled',
@@ -2188,8 +2190,11 @@ export const RAGWizard = ({
       connectedSocialNetworks: ['WHATSAPP', 'INSTAGRAM', 'FACEBOOK'],
       hasWebsite: wizardData.hasWebsite,
       websiteUrl: wizardData.hasWebsite ? wizardData.websiteUrl : null,
-      ga4MeasurementId: wizardData.hasWebsite ? wizardData.ga4MeasurementId : null,
-      metaPixelId: wizardData.metaPixelId,
+      ga4MeasurementId: wizardData.ga4MeasurementId || null,
+      metaPixelId: wizardData.metaPixelId || null,
+      leadPriceMXN: Math.max(350, Number(wizardData.costPerQualifiedLead || 350)),
+      costPerQualifiedLead: Math.max(350, Number(wizardData.costPerQualifiedLead || 350)),
+      monthlyAdBudget: Number(wizardData.monthlyAdBudget || 0),
       microLandingEnabled: wizardData.microLandingBillingPlan !== 'disabled',
       microLandingStatus:
         wizardData.microLandingBillingPlan === 'disabled'
@@ -2200,7 +2205,8 @@ export const RAGWizard = ({
       microLandingTrialDaysLeft: wizardData.microLandingBillingPlan === 'trial_90d' ? 90 : 0,
       microLandingSlug: tenantSlug,
       microLandingUrl: `https://app.vectorinside.com/m/${tenantSlug}`,
-      cacMax: `${wizardData.costPerQualifiedLead || 200} MXN`,
+      cacMax: `${Math.max(350, Number(wizardData.costPerQualifiedLead || 350))} MXN`,
+      cac: Math.max(350, Number(wizardData.costPerQualifiedLead || 350)),
       ifv: `${healthScore}%`,
       capiStatus: 'Sincronizado',
       phone: wizardData.ownerPhone,
@@ -3995,35 +4001,158 @@ export const RAGWizard = ({
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
-                      <div>
-                        <label className="block text-xs font-mono font-bold text-[var(--text-main)] mb-1">
-                          Costo por Lead Calificado (MXN)
-                        </label>
-                        <div className="p-3 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex items-center justify-between text-xs font-mono">
-                          <span className="text-[var(--text-main)] font-bold">$350.00 MXN / Lead Calificado</span>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <label className="block text-xs font-mono font-bold text-[var(--text-main)]">
+                            Costo por Lead Calificado (MXN)
+                          </label>
                           <span className="text-[10px] px-2 py-0.5 rounded bg-neon/15 text-neon font-black">
-                            4/4 Criterios AND
+                            Mínimo $350 MXN · 4/4 AND
                           </span>
                         </div>
-                        <span className="text-[10px] text-[var(--text-muted)] mt-1 block">
-                          Solo se factura cuando el lead cumple con todos los filtros de calificación comercial.
+
+                        <div className="relative flex items-center">
+                          <span className="absolute left-3.5 text-neon font-black text-sm pointer-events-none">
+                            $
+                          </span>
+                          <input
+                            type="number"
+                            min={350}
+                            step={50}
+                            placeholder="350"
+                            value={wizardData.costPerQualifiedLead ?? 350}
+                            onChange={(e) => {
+                              const rawVal = e.target.value;
+                              setWizardData({
+                                ...wizardData,
+                                costPerQualifiedLead: rawVal === '' ? '' : Number(rawVal),
+                              });
+                            }}
+                            onBlur={() => {
+                              const numVal = Number(wizardData.costPerQualifiedLead);
+                              if (!Number.isFinite(numVal) || numVal < 350) {
+                                setWizardData((prev) => ({ ...prev, costPerQualifiedLead: 350 }));
+                              }
+                            }}
+                            className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] focus:border-neon text-xs rounded-xl pl-8 pr-36 py-3 text-[var(--text-main)] font-bold outline-none font-mono transition-colors"
+                          />
+                          <span className="absolute right-3 text-[10px] text-[var(--text-muted)] font-mono pointer-events-none">
+                            MXN / Lead Calificado
+                          </span>
+                        </div>
+
+                        {/* Botones de Ajuste Rápido (>= $350 MXN) */}
+                        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                          <span className="text-[10px] text-[var(--text-muted)] mr-1">Tarifas sugeridas:</span>
+                          {[350, 450, 600, 800, 1200].map((presetPrice) => {
+                            const isSelected = Number(wizardData.costPerQualifiedLead || 350) === presetPrice;
+                            return (
+                              <button
+                                key={presetPrice}
+                                type="button"
+                                onClick={() =>
+                                  setWizardData({ ...wizardData, costPerQualifiedLead: presetPrice })
+                                }
+                                className={`px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold border transition-all ${
+                                  isSelected
+                                    ? 'bg-neon text-black border-neon shadow-neon-sm'
+                                    : 'bg-[var(--bg-panel)] text-[var(--text-muted)] border-[var(--border-color)] hover:border-neon/50 hover:text-[var(--text-main)]'
+                                }`}
+                              >
+                                ${presetPrice}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {wizardData.costPerQualifiedLead !== '' && Number(wizardData.costPerQualifiedLead) < 350 && (
+                          <span className="text-[10px] text-amber-400 font-bold block">
+                            ⚠️ El costo por lead calificado debe ser igual o mayor a $350.00 MXN (se ajustará a $350 MXN).
+                          </span>
+                        )}
+                        <span className="text-[10px] text-[var(--text-muted)] block">
+                          Solo se factura al negocio cuando el prospecto cumple los 4/4 criterios AND y agenda cita.
                         </span>
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-mono font-bold text-[var(--text-main)] mb-1">
-                          Presupuesto Publicitario Mensual Estimado (Meta Ads)
-                        </label>
-                        <input
-                          type="number"
-                          placeholder="1500"
-                          value={wizardData.monthlyAdBudget || ""}
-                          onChange={(e) => setWizardData({ ...wizardData, monthlyAdBudget: Number(e.target.value) })}
-                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs rounded-xl p-3 text-[var(--text-main)] focus:border-neon outline-none font-mono"
-                        />
-                        <span className="text-[10px] text-[var(--text-muted)] mt-1 block">
-                          Inversión mínima sugerida para optimizar el algoritmo de Meta CAPI.
-                        </span>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <label className="block text-xs font-mono font-bold text-[var(--text-main)]">
+                            Presupuesto Publicitario Mensual Estimado (Meta Ads)
+                          </label>
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-500/15 text-cyan-400 font-bold">
+                            Pauta Directa Meta
+                          </span>
+                        </div>
+
+                        <div className="relative flex items-center">
+                          <span className="absolute left-3.5 text-emerald-400 font-black text-sm pointer-events-none">
+                            $
+                          </span>
+                          <input
+                            type="number"
+                            min={0}
+                            step={500}
+                            placeholder="6000"
+                            value={wizardData.monthlyAdBudget || ''}
+                            onChange={(e) =>
+                              setWizardData({
+                                ...wizardData,
+                                monthlyAdBudget: e.target.value === '' ? '' : Number(e.target.value),
+                              })
+                            }
+                            className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] focus:border-neon text-xs rounded-xl pl-8 pr-24 py-3 text-[var(--text-main)] font-bold outline-none font-mono transition-colors"
+                          />
+                          <span className="absolute right-3 text-[10px] text-[var(--text-muted)] font-mono pointer-events-none">
+                            MXN / Mes
+                          </span>
+                        </div>
+
+                        {/* Presupuestos rápidos sugeridos */}
+                        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                          <span className="text-[10px] text-[var(--text-muted)] mr-1">Escalas Meta:</span>
+                          {[3000, 6000, 15000, 30000].map((presetBudget) => {
+                            const isSelected = Number(wizardData.monthlyAdBudget || 0) === presetBudget;
+                            return (
+                              <button
+                                key={presetBudget}
+                                type="button"
+                                onClick={() =>
+                                  setWizardData({ ...wizardData, monthlyAdBudget: presetBudget })
+                                }
+                                className={`px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold border transition-all ${
+                                  isSelected
+                                    ? 'bg-emerald-500 text-black border-emerald-400'
+                                    : 'bg-[var(--bg-panel)] text-[var(--text-muted)] border-[var(--border-color)] hover:border-emerald-400/50 hover:text-[var(--text-main)]'
+                                }`}
+                              >
+                                ${presetBudget.toLocaleString('es-MX')}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {Number(wizardData.monthlyAdBudget) > 0 ? (
+                          <div className="p-2.5 rounded-xl bg-[var(--bg-panel)] border border-emerald-500/30 flex flex-wrap items-center justify-between gap-2 text-[10px] font-mono">
+                            <span className="text-[var(--text-muted)]">
+                              Pauta diaria:{' '}
+                              <strong className="text-emerald-400">
+                                ${Math.round(Number(wizardData.monthlyAdBudget) / 30).toLocaleString('es-MX')} MXN/día
+                              </strong>
+                            </span>
+                            <span className="text-[var(--text-muted)]">
+                              Tráfico est. CAPI:{' '}
+                              <strong className="text-neon">
+                                ~{Math.max(1, Math.round(Number(wizardData.monthlyAdBudget) / 45))}–
+                                {Math.max(2, Math.round(Number(wizardData.monthlyAdBudget) / 25))} chats/mes
+                              </strong>
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-[var(--text-muted)] block">
+                            Inversión mensual en anuncios de Facebook/Instagram para alimentar el embudo y calcular el ROAS/MER real.
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -4040,7 +4169,14 @@ export const RAGWizard = ({
                     <button
                       id="tour-wizard-step3-next"
                       type="button"
-                      onClick={() => setCurrentStep(4)}
+                      onClick={() => {
+                        const validLeadPrice = Math.max(350, Number(wizardData.costPerQualifiedLead) || 350);
+                        setWizardData((prev) => ({
+                          ...prev,
+                          costPerQualifiedLead: validLeadPrice,
+                        }));
+                        setCurrentStep(4);
+                      }}
                       className="bg-neon text-black font-mono font-bold text-xs px-6 py-3 rounded-xl hover:bg-[var(--neon-hover)] transition-all flex items-center gap-2 shadow-neon"
                     >
                       <span>Siguiente: Agenda & Horarios</span>

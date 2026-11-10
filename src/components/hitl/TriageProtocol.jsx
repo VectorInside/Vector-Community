@@ -367,6 +367,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
       financialClarified: true,
       consentOrBooked: true,
     };
+    const currentLeadPrice = Math.max(350, Number(activeTenant?.leadPriceMXN || 350));
     if (targetLead?.id) {
       leadService.updateLeadCriteria(targetLead.id, allGuards).catch(() => { });
     }
@@ -377,7 +378,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
         leadState: LEAD_STATUS_ENUM.BILLABLE_LEAD,
         status: 'Calificado (Listo para Venta)',
         statusType: 'success',
-        billingAmount: 350.0,
+        billingAmount: currentLeadPrice,
         billingStatus: 'PENDING_INVOICE',
         criteriaAudit: allGuards,
         capiEventId: prev[leadKey].capiEventId || `lead_${Date.now()}_sha256`,
@@ -395,7 +396,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
     }));
     triggerModal(
       'Cita Confirmada & Atribuida en Google Calendar',
-      `La cita con <strong>${targetLead.name}</strong> ha sido agendada con éxito en Google Calendar. Se emitió el evento a Meta CAPI y se registró la partida en <code>billing_ledger</code> ($350 MXN).`
+      `La cita con <strong>${targetLead.name}</strong> ha sido agendada con éxito en Google Calendar. Se emitió el evento a Meta CAPI y se registró la partida en <code>billing_ledger</code> ($${currentLeadPrice} MXN).`
     );
   };
 
@@ -1932,7 +1933,9 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
                 </div>
                 <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
                   <span className="text-zinc-500 block">Costo por Prospecto:</span>
-                  <span className="text-neon font-black">$350.00 MXN</span>
+                  <span className="text-neon font-black">
+                    ${Math.max(350, Number(selectedCapiLead.billingAmount || activeTenant?.leadPriceMXN || 350)).toFixed(2)} MXN
+                  </span>
                 </div>
                 <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
                   <span className="text-zinc-500 block">Estado de Facturación:</span>
@@ -1964,7 +1967,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
                           },
                           datos_comerciales: {
                             moneda: 'MXN',
-                            costo_prospecto: 350.0,
+                            costo_prospecto: Math.max(350, Number(selectedCapiLead.billingAmount || activeTenant?.leadPriceMXN || 350)),
                             calidad_verificada: '100% Criterios Cumplidos',
                           },
                         },
@@ -2005,7 +2008,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
                     <div>
                       <span className="text-[10px] text-zinc-500 block uppercase font-mono">Importe a Facturar</span>
                       <span className="text-neon font-black font-mono text-sm">
-                        $350.00 MXN
+                        ${Math.max(350, Number(selectedCapiLead.billingAmount || activeTenant?.leadPriceMXN || 350)).toFixed(2)} MXN
                       </span>
                     </div>
                   </div>

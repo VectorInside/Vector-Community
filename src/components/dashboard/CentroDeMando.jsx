@@ -1063,22 +1063,24 @@ export const CentroDeMando = () => {
                     <span className="absolute left-3 top-2 text-neon font-bold">$</span>
                     <input
                       type="number"
+                      min={350}
+                      step={50}
                       value={drawerTenant.leadPriceMXN || 350}
                       onChange={(e) =>
                         updateTenantPolicy(drawerTenant.id, {
-                          leadPriceMXN: Number(e.target.value),
+                          leadPriceMXN: Math.max(350, Number(e.target.value) || 350),
                         })
                       }
                       className="w-full bg-[var(--bg-base)] border border-[var(--border-color)] focus:border-neon rounded-xl pl-7 pr-3 py-1.5 text-xs text-[var(--text-main)] font-mono font-bold outline-none"
                     />
                   </div>
-                  <span className="text-[10px] text-[var(--text-muted)]">MXN / lead</span>
+                  <span className="text-[10px] text-[var(--text-muted)]">MXN / lead (Mín $350)</span>
                 </div>
 
                 {/* Preset Fast Buttons */}
                 <div className="flex items-center gap-2 pt-1 text-[10px]">
                   <span className="text-[var(--text-muted)]">Ajuste rápido:</span>
-                  {[200, 350, 500].map((price) => (
+                  {[350, 450, 600, 800].map((price) => (
                     <button
                       key={price}
                       type="button"
@@ -1092,6 +1094,31 @@ export const CentroDeMando = () => {
                       ${price}
                     </button>
                   ))}
+                </div>
+
+                {/* Presupuesto Publicitario Mensual (Meta Ads) */}
+                <div className="pt-3 border-t border-[var(--border-color)] space-y-1.5">
+                  <span className="text-[10px] text-[var(--text-muted)] uppercase font-bold block">
+                    Presupuesto Mensual Meta Ads ($ MXN)
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 relative">
+                      <span className="absolute left-3 top-2 text-emerald-400 font-bold">$</span>
+                      <input
+                        type="number"
+                        min={0}
+                        step={500}
+                        value={drawerTenant.monthlyAdBudget || 0}
+                        onChange={(e) =>
+                          updateTenantPolicy(drawerTenant.id, {
+                            monthlyAdBudget: Math.max(0, Number(e.target.value) || 0),
+                          })
+                        }
+                        className="w-full bg-[var(--bg-base)] border border-[var(--border-color)] focus:border-emerald-400 rounded-xl pl-7 pr-3 py-1.5 text-xs text-[var(--text-main)] font-mono font-bold outline-none"
+                      />
+                    </div>
+                    <span className="text-[10px] text-[var(--text-muted)]">MXN / mes</span>
+                  </div>
                 </div>
               </div>
 

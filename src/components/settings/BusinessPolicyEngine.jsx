@@ -294,12 +294,14 @@ export const BusinessPolicyEngine = () => {
                       {isAdmin ? (
                         <input
                           type="number"
-                          min="50"
-                          step="10"
+                          min="350"
+                          step="50"
                           value={leadPrice}
                           onChange={(e) =>
                             updateTenantPolicy &&
-                            updateTenantPolicy(tenantId, { leadPriceMXN: Number(e.target.value) })
+                            updateTenantPolicy(tenantId, {
+                              leadPriceMXN: Math.max(350, Number(e.target.value) || 350),
+                            })
                           }
                           className="w-24 bg-[var(--bg-card)] border border-neon rounded-lg px-2.5 py-1 text-right font-bold text-sm text-[var(--text-main)] outline-none font-mono"
                         />
@@ -725,10 +727,14 @@ export const BusinessPolicyEngine = () => {
                           <span className="text-neon font-bold">$</span>
                           <input
                             type="number"
+                            min={350}
+                            step={50}
                             value={tPrice}
                             onChange={(e) =>
                               updateTenantPolicy &&
-                              updateTenantPolicy(t.id, { leadPriceMXN: Number(e.target.value) })
+                              updateTenantPolicy(t.id, {
+                                leadPriceMXN: Math.max(350, Number(e.target.value) || 350),
+                              })
                             }
                             className="w-16 bg-[var(--bg-card)] border border-[var(--border-color)] focus:border-neon rounded px-1.5 py-0.5 text-right font-bold text-[var(--text-main)] outline-none"
                           />

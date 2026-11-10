@@ -64,7 +64,14 @@ export const normalizeTenantFromApi = (rawTenant) => {
   return {
     ...preset,
     ...rawTenant,
-    leadPriceMXN: rawTenant.leadPriceMXN != null ? Number(rawTenant.leadPriceMXN) : (preset.leadPriceMXN || 350),
+    leadPriceMXN: Math.max(
+      350,
+      rawTenant.leadPriceMXN != null ? Number(rawTenant.leadPriceMXN) : (preset.leadPriceMXN || 350)
+    ),
+    monthlyAdBudget:
+      rawTenant.monthlyAdBudget != null
+        ? Number(rawTenant.monthlyAdBudget)
+        : (preset.monthlyAdBudget || 0),
     connectedSocialNetworks: parsedNetworks,
     calendarConfig: parsedCalendarConfig,
     buyerPersona: rawTenant.buyerPersona || preset.buyerPersona,
@@ -74,6 +81,7 @@ export const normalizeTenantFromApi = (rawTenant) => {
 
 export const serializeTenantToApi = (tenant) => {
   if (!tenant) return {};
+  const rawLeadPrice = Number(tenant.leadPriceMXN ?? tenant.costPerQualifiedLead ?? 350);
   return {
     id: tenant.id,
     name: tenant.name,
@@ -85,7 +93,8 @@ export const serializeTenantToApi = (tenant) => {
     brandPurpose: tenant.brandPurpose || '',
     phone: tenant.phone || '',
     avatar: tenant.avatar || '🏢',
-    leadPriceMXN: Number(tenant.leadPriceMXN || 350),
+    leadPriceMXN: Math.max(350, Number.isFinite(rawLeadPrice) ? rawLeadPrice : 350),
+    monthlyAdBudget: Number(tenant.monthlyAdBudget || 0),
     websiteUrl: tenant.websiteUrl || '',
     ga4MeasurementId: tenant.ga4MeasurementId || '',
     metaPixelId: tenant.metaPixelId || '',
