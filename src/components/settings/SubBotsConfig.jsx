@@ -141,6 +141,7 @@ const PROVIDER_CONFIGS = {
 
 export const SubBotsConfig = () => {
   const {
+    isAdmin,
     tenantsData,
     activeTenantKey,
     activeTenant: authActiveTenant,
