@@ -236,6 +236,7 @@ export const SecurityGovernanceView = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [expandedLogId, setExpandedLogId] = useState(null);
   const [copiedHashId, setCopiedHashId] = useState(null);
+  const [isDistributionCollapsed, setIsDistributionCollapsed] = useState(false);
 
   const showToast = useCallback((message, type = 'success') => {
     setToastBanner({ message, type });
@@ -598,64 +599,86 @@ export const SecurityGovernanceView = () => {
                   Distribución en Vivo por Rol en PostgreSQL (4 Roles Canónicos)
                 </h2>
               </div>
-              <span className="text-[11px] font-mono text-[var(--text-muted)]">
-                Haz clic en cualquier rol para inspeccionar su alcance en el simulador
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-mono text-[var(--text-muted)] hidden sm:inline">
+                  Haz clic en cualquier rol para inspeccionar su alcance en el simulador
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsDistributionCollapsed((prev) => !prev)}
+                  className="px-2.5 py-1 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon text-[10px] font-mono text-[var(--text-main)] flex items-center gap-1 transition-all cursor-pointer"
+                  title={isDistributionCollapsed ? 'Expandir tarjetas de distribución' : 'Contraer tarjetas de distribución'}
+                >
+                  {isDistributionCollapsed ? (
+                    <>
+                      <span>Expandir Tarjetas</span>
+                      <ChevronDown className="w-3.5 h-3.5 text-neon" />
+                    </>
+                  ) : (
+                    <>
+                      <span>Contraer</span>
+                      <ChevronUp className="w-3.5 h-3.5 text-neon" />
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-mono">
-              {roleDistribution.map((roleItem) => {
-                const isSelected = selectedRoleSimulator === roleItem.key;
-                return (
-                  <button
-                    key={roleItem.key}
-                    type="button"
-                    onClick={() => setSelectedRoleSimulator(roleItem.key)}
-                    className={`text-left p-4 rounded-2xl border transition-all cursor-pointer space-y-3 ${
-                      isSelected
-                        ? 'bg-[var(--bg-card)] border-neon shadow-[0_0_20px_rgba(231,249,0,0.08)]'
-                        : 'bg-[var(--bg-panel)] border-[var(--border-color)] hover:border-zinc-700'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <span
-                          className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded border ${roleItem.accent}`}
-                        >
-                          <span className={`w-1.5 h-1.5 rounded-full ${roleItem.dotColor}`} />
-                          {roleItem.key}
+            {!isDistributionCollapsed && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-mono animate-fade-in">
+                {roleDistribution.map((roleItem) => {
+                  const isSelected = selectedRoleSimulator === roleItem.key;
+                  return (
+                    <button
+                      key={roleItem.key}
+                      type="button"
+                      onClick={() => setSelectedRoleSimulator(roleItem.key)}
+                      className={`text-left p-4 rounded-2xl border transition-all cursor-pointer space-y-3 ${
+                        isSelected
+                          ? 'bg-[var(--bg-card)] border-neon shadow-[0_0_20px_rgba(231,249,0,0.08)]'
+                          : 'bg-[var(--bg-panel)] border-[var(--border-color)] hover:border-zinc-700'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <span
+                            className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded border ${roleItem.accent}`}
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full ${roleItem.dotColor}`} />
+                            {roleItem.key}
+                          </span>
+                          <h3 className="text-sm font-bold text-[var(--text-main)] font-sans mt-1.5">
+                            {roleItem.label}
+                          </h3>
+                        </div>
+                        <span className="text-2xl font-heading font-black text-[var(--text-main)]">
+                          {roleItem.total}
                         </span>
-                        <h3 className="text-sm font-bold text-[var(--text-main)] font-sans mt-1.5">
-                          {roleItem.label}
-                        </h3>
                       </div>
-                      <span className="text-2xl font-heading font-black text-[var(--text-main)]">
-                        {roleItem.total}
-                      </span>
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[var(--border-color)] text-[11px]">
-                      <div className="p-2 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)]">
-                        <span className="text-[10px] text-[var(--text-muted)] block">Activos:</span>
-                        <strong className="text-emerald-400 text-xs">{roleItem.activeCount}</strong>
+                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[var(--border-color)] text-[11px]">
+                        <div className="p-2 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)]">
+                          <span className="text-[10px] text-[var(--text-muted)] block">Activos:</span>
+                          <strong className="text-emerald-400 text-xs">{roleItem.activeCount}</strong>
+                        </div>
+                        <div className="p-2 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)]">
+                          <span className="text-[10px] text-[var(--text-muted)] block">
+                            Inv. Pendiente:
+                          </span>
+                          <strong
+                            className={`text-xs ${
+                              roleItem.pendingCount > 0 ? 'text-amber-400' : 'text-[var(--text-muted)]'
+                            }`}
+                          >
+                            {roleItem.pendingCount}
+                          </strong>
+                        </div>
                       </div>
-                      <div className="p-2 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)]">
-                        <span className="text-[10px] text-[var(--text-muted)] block">
-                          Inv. Pendiente:
-                        </span>
-                        <strong
-                          className={`text-xs ${
-                            roleItem.pendingCount > 0 ? 'text-amber-400' : 'text-[var(--text-muted)]'
-                          }`}
-                        >
-                          {roleItem.pendingCount}
-                        </strong>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* 2. Simulador Interactivo de Alcance por Rol */}
@@ -677,23 +700,25 @@ export const SecurityGovernanceView = () => {
                 </p>
               </div>
 
-              {/* Selector rápido de Rol */}
-              <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] font-mono text-xs shrink-0">
-                {ROLE_DEFINITIONS.map((r) => (
-                  <button
-                    key={r.key}
-                    type="button"
-                    onClick={() => setSelectedRoleSimulator(r.key)}
-                    className={`px-2.5 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
-                      selectedRoleSimulator === r.key
-                        ? 'bg-neon text-black shadow-sm'
-                        : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
-                    }`}
-                  >
-                    {r.label}
-                  </button>
-                ))}
-              </div>
+              {/* Acceso directo cuando las tarjetas superiores estén contraídas */}
+              {isDistributionCollapsed && (
+                <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] font-mono text-xs shrink-0 animate-fade-in">
+                  {ROLE_DEFINITIONS.map((r) => (
+                    <button
+                      key={r.key}
+                      type="button"
+                      onClick={() => setSelectedRoleSimulator(r.key)}
+                      className={`px-2.5 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                        selectedRoleSimulator === r.key
+                          ? 'bg-neon text-black shadow-sm'
+                          : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                      }`}
+                    >
+                      {r.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
