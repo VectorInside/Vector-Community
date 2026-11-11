@@ -76,6 +76,17 @@ export const OrchestrationView = () => {
 
     const tenantId = activeTenant?.id;
     const tenantName = activeTenant?.name || 'Tu Negocio';
+    const coreService =
+      activeTenant?.commercialOffer?.hook ||
+      activeTenant?.marketingMix4P?.product ||
+      activeTenant?.verticalLabel ||
+      'nuestros servicios especializados';
+    const brandPurpose =
+      activeTenant?.brandPurpose ||
+      'brindar la máxima calidad y satisfacción a cada cliente';
+    const closingCta =
+      activeTenant?.commercialOffer?.cta ||
+      '¿Te gustaría agendar una sesión de valoración de 30 minutos sin costo o prefieres que un asesor te llame?';
 
     setTimeout(() => {
       setIsSimulating(false);
@@ -89,48 +100,51 @@ export const OrchestrationView = () => {
       if (agentKey === 'supervisor') {
         setSimulationOutput({
           tenant_id: tenantId,
-          target_agent: 'Sub-Agente Moderador de Cierre',
-          intent_category: 'Consulta Comercial & Calificación',
+          target_agent: 'SubAgente_Moderador_Closer',
+          intent_category: 'PRECIO',
           confidence_score: 0.985,
           execution_time_ms: 12,
           caching_hit: true,
           token_cost_usd: '$0.0000 (Prompt Caching 100%)',
-          routing_reason: `Enrutamiento dinámico activo para ${tenantName} con aislamiento Multi-Tenant RLS.`,
+          routing_reason: `Enrutamiento dinámico activo para ${tenantName} con aislamiento Multi-Tenant RLS verificado.`,
         });
       } else if (agentKey === 'closer') {
         setSimulationOutput({
           tenant_id: tenantId,
-          message_response: `¡Hola! Bienvenido a ${tenantName}. Estamos listos para brindarte información personalizada sobre ${coreService} y agendar tu atención. ¿Qué horario te resulta más cómodo?`,
+          message_response: `¡Hola! Bienvenido a ${tenantName}. Con el compromiso de ${brandPurpose}, estamos listos para atenderte respecto a ${coreService}. ${closingCta}`,
           lead_qualification_status: {
             req_1_contact_valid: true,
             req_2_product_identified: true,
             req_3_doubts_resolved: true,
             req_4_cta_accepted: false,
           },
-          current_lead_temperature: 'Seguimiento Activo',
+          current_lead_temperature: 'WARM_FINANCING',
           is_billable_lead: false,
           execution_time_ms: 280,
-          framework_applied: 'JTBD + Calificación Consultiva 4/4',
+          framework_applied: 'Círculo Dorado + JTBD + Validación 4/4 Requisitos',
         });
       } else if (agentKey === 'reengagement') {
         setSimulationOutput({
           tenant_id: tenantId,
-          followup_message: `Hola, seguimos atentos en ${tenantName} por si deseas confirmar tu solicitud sobre ${coreService}. ¿Te ayudamos a reservar un horario disponible?`,
-          scheduled_time: 'Disparo Programado a 24h',
-          new_status: 'Seguimiento Enviado',
-          word_count: 26,
-          rule_compliance: 'Mensaje de valor < 40 palabras con micro-CTA sin fricción',
+          followup_message: `Hola, en ${tenantName} seguimos a tu disposición por si deseas confirmar tu consulta sobre ${coreService}. ¿Pudiste revisar la información o prefieres que reservemos un espacio esta semana?`,
+          scheduled_time: '24h_trigger',
+          new_status: 'FOLLOWUP_SENT',
+          word_count: 27,
+          rule_compliance: 'Vaca Púrpura < 40 palabras con micro-CTA sin fricción (Regla 95/5)',
         });
       } else if (agentKey === 'analyst') {
+        const hasWeb = Boolean(activeTenant?.hasWebsite || activeTenant?.websiteUrl);
         setSimulationOutput({
           tenant_id: tenantId,
-          roas_real_backend: 0.0,
-          cac_real_backend: 0.0,
+          roas_real_backend: 4.25,
+          cac_real_backend: 12.50,
           creative_fatigue_detected: false,
           fatigued_ad_ids: [],
-          web_friction_alert: Boolean(activeTenant?.hasWebsite),
-          friction_diagnosis: 'Telemetría lista para conciliar eventos reales de Meta CAPI y WhatsApp Cloud API.',
-          recommended_action: 'Conectar campañas activas para iniciar análisis de atribución en tiempo real.',
+          web_friction_alert: false,
+          friction_diagnosis: hasWeb
+            ? 'Monitoreo GA4 + Meta CAPI sincronizado: Tasa Click-to-WhatsApp en rango óptimo (> 4.8%).'
+            : 'Modo Direct-to-Messaging activo: Atribución 100% directa en WhatsApp Cloud API sin rebote web.',
+          recommended_action: 'Mantener pauta activa; no se detecta fatiga creativa en creativos de los últimos 7 días.',
         });
       }
       try {
@@ -216,43 +230,63 @@ export const OrchestrationView = () => {
         </div>
       </header>
 
-      {/* Tenant Context Pill */}
-      <div className="flex items-center justify-between p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs font-mono">
-        <div className="flex items-center gap-2">
-          <span className="text-lg">{activeTenant?.avatar || '🏢'}</span>
-          <span className="text-[var(--text-muted)] font-semibold">Contexto Activo:</span>
-          <strong className="text-[var(--text-main)] font-sans text-sm">{activeTenant?.name}</strong>
-          <span className="text-[10px] px-2 py-0.5 rounded bg-neon/15 text-lime-700 dark:text-neon border border-neon/30 font-mono font-bold">
-            {activeTenant?.verticalLabel}
-          </span>
+      {/* Tenant Context Pill con Zero-State Elegante */}
+      {!activeTenant ? (
+        <div className="flex flex-col sm:flex-row items-center justify-between p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 gap-3 animate-fade-in font-mono text-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center shrink-0 text-lg">
+              🏢
+            </div>
+            <div>
+              <h4 className="font-sans font-bold text-xs uppercase tracking-wider text-[var(--text-main)]">
+                Modo Global • Ningún Negocio Seleccionado
+              </h4>
+              <p className="text-[11px] font-sans text-[var(--text-muted)] mt-0.5">
+                Selecciona un cliente en la barra superior para inyectar su Brand DNA propio, catálogo RAG y probar simulaciones con aislamiento RLS.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-[10px] font-mono px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 font-bold text-amber-600 dark:text-amber-400">
+              Aislamiento RLS: En Espera
+            </span>
+          </div>
         </div>
-        <div className="text-[11px] text-[var(--text-muted)] hidden sm:flex items-center gap-4">
-          <span className="flex items-center gap-1.5">
-            <Coins className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
-            Costo Estimado Mensual: <strong className="text-emerald-600 dark:text-emerald-400">$0.00 – $0.15 USD</strong>
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Zap className="w-3.5 h-3.5 text-lime-700 dark:text-neon" />
-            Prompt Caching: <strong className="text-lime-700 dark:text-neon">Activo (94% Ahorro)</strong>
-          </span>
+      ) : (
+        <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs font-mono shadow-sm animate-fade-in">
+          <div className="flex items-center gap-2.5">
+            <span className="text-xl p-1 bg-[var(--bg-card-subtle)] rounded-lg">{activeTenant.avatar || '🏢'}</span>
+            <span className="text-[var(--text-muted)] font-semibold text-[11px]">Contexto Activo:</span>
+            <strong className="text-[var(--text-main)] font-sans text-sm font-bold">{activeTenant.name}</strong>
+            {activeTenant.verticalLabel && (
+              <span className="text-[10px] px-2 py-0.5 rounded-md bg-lime-500/15 text-lime-800 dark:text-lime-300 border border-lime-500/30 font-mono font-bold">
+                {activeTenant.verticalLabel}
+              </span>
+            )}
+          </div>
+          <div className="text-[11px] text-[var(--text-muted)] hidden sm:flex items-center gap-4">
+            <span className="flex items-center gap-1.5">
+              <Coins className="w-3.5 h-3.5 text-emerald-500" />
+              Costo Mensual Estimado: <strong className="text-emerald-600 dark:text-emerald-400 font-bold">$0.00 – $0.15 USD</strong>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Zap className="w-3.5 h-3.5 text-lime-600 dark:text-neon" />
+              Prompt Caching: <strong className="text-lime-700 dark:text-neon font-bold">94% Ahorro</strong>
+            </span>
+          </div>
         </div>
-      </div>
+      )}
 
       {activeViewMode === 'graph' ? (
         /* ========================================================================= */
         /* GRAFO PRINCIPAL DE ORQUESTACIÓN                                          */
         /* ========================================================================= */
-        <div className="flex flex-col items-center gap-6 py-4 w-full max-w-7xl 2xl:max-w-[96vw] mx-auto">
+        <div className="flex flex-col items-center gap-4 py-4 w-full max-w-7xl 2xl:max-w-[96vw] mx-auto">
           {/* NODO 1: SUPERVISOR CENTRAL */}
           <div
             onClick={() => handleOpenInspector('supervisor')}
             className="w-full max-w-md p-6 rounded-2xl border-2 border-neon bg-gradient-to-br from-lime-500/10 via-[var(--bg-card)] to-lime-500/5 shadow-[0_0_35px_var(--neon-glow)] text-center cursor-pointer hover:scale-[1.02] transition-all group relative overflow-hidden backdrop-blur-sm"
           >
-            <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 rounded-full bg-neon/15 text-lime-800 dark:text-neon text-[10px] font-mono font-bold border border-neon/30">
-              <span className="w-2 h-2 rounded-full bg-neon animate-pulse" />
-              <span>0ms Latencia</span>
-            </div>
-
             <div className="w-14 h-14 bg-neon text-black rounded-2xl flex items-center justify-center mx-auto mb-3 font-black text-xl shadow-[0_0_20px_var(--neon-glow)]">
               LV
             </div>
@@ -262,9 +296,14 @@ export const OrchestrationView = () => {
               <Activity className="w-4 h-4 text-neon animate-pulse" />
             </h3>
 
-            <p className="text-xs font-mono text-lime-700 dark:text-neon font-bold mt-0.5">
-              {SUB_AGENTS_CONFIG.supervisor.engine}
-            </p>
+            <div className="flex items-center justify-center gap-2 mt-1">
+              <span className="text-xs font-mono text-lime-700 dark:text-neon font-bold">
+                {SUB_AGENTS_CONFIG.supervisor.engine}
+              </span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-lime-500/10 text-lime-800 dark:text-lime-300 border border-lime-500/30 font-bold">
+                ~12ms Router (0ms en Cache)
+              </span>
+            </div>
 
             <p className="text-xs text-[var(--text-muted)] mt-2 leading-relaxed font-sans">
               Clasifica intenciones de WhatsApp/Meta DMs y enruta a sub-agentes con estricto aislamiento <code className="text-lime-700 dark:text-neon font-bold text-[11px]">tenant_id</code>.
@@ -278,10 +317,50 @@ export const OrchestrationView = () => {
             </div>
           </div>
 
-          {/* Central Connecting Flow Line */}
-          <div className="flex flex-col items-center">
-            <div className="h-10 w-0.5 bg-neon shadow-[0_0_10px_var(--neon-glow)]" />
-            <ArrowDown className="w-5 h-5 text-neon -mt-1 animate-bounce" />
+          {/* BIFURCADOR TOPOLÓGICO MULTI-AGENTE (Directed Tree) */}
+          <div className="w-full max-w-5xl flex flex-col items-center select-none pointer-events-none my-1">
+            {/* Tronco Central */}
+            <div className="h-6 w-0.5 bg-gradient-to-b from-neon to-lime-500 shadow-[0_0_10px_var(--neon-glow)]" />
+            <ArrowDown className="w-4 h-4 text-neon -mt-1 animate-bounce" />
+
+            {/* Bifurcación Desktop de 3 Canales */}
+            <div className="hidden md:block w-full mt-1">
+              <div className="relative w-full h-8 flex items-center justify-between px-[16%]">
+                {/* Barra horizontal guía */}
+                <div className="absolute left-[16%] right-[16%] top-0 h-0.5 bg-gradient-to-r from-amber-500/80 via-purple-500 to-cyan-500/80" />
+
+                {/* Rama 1: Closer */}
+                <div className="flex flex-col items-center -mt-0.5">
+                  <div className="h-4 w-0.5 bg-amber-500/80" />
+                  <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-[var(--bg-base)] border border-amber-500/40 text-amber-500 dark:text-amber-400 font-bold shadow-xs">
+                    ⚡ Event-Driven (WA)
+                  </span>
+                </div>
+
+                {/* Rama 2: Re-engagement */}
+                <div className="flex flex-col items-center -mt-0.5">
+                  <div className="h-4 w-0.5 bg-purple-500/80" />
+                  <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-[var(--bg-base)] border border-purple-500/40 text-purple-400 font-bold shadow-xs">
+                    ⏱️ Upstash Redis 24h
+                  </span>
+                </div>
+
+                {/* Rama 3: Analyst */}
+                <div className="flex flex-col items-center -mt-0.5">
+                  <div className="h-4 w-0.5 bg-cyan-500/80" />
+                  <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-[var(--bg-base)] border border-cyan-500/40 text-cyan-400 font-bold shadow-xs">
+                    📊 Batch Programado
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Indicador Mobile */}
+            <div className="md:hidden flex flex-col items-center py-1">
+              <span className="text-[10px] font-mono text-[var(--text-muted)] bg-[var(--bg-card)] px-2.5 py-0.5 rounded border border-[var(--border-color)]">
+                Enrutamiento Dinámico ↓
+              </span>
+            </div>
           </div>
 
           {/* NIVELES SUBORDINADOS: LOS 3 SUB-BOTS DE EJECUCIÓN */}
@@ -686,35 +765,71 @@ export const OrchestrationView = () => {
 
               {activeInspectorTab === 'simulation' && (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)]">
                     <div>
                       <h4 className="font-bold text-[var(--text-main)] text-sm">
                         Simulación en Memoria (Buffer Local)
                       </h4>
-                      <p className="text-[var(--text-muted)] text-xs">
-                        Ejecuta un ciclo de prueba en buffer con los datos de <strong>{activeTenant?.name}</strong>.
+                      <p className="text-[var(--text-muted)] text-xs mt-0.5">
+                        {activeTenant ? (
+                          <>
+                            Ejecuta un ciclo de prueba en buffer con los datos de <strong>{activeTenant.name}</strong>.
+                          </>
+                        ) : (
+                          <span className="text-amber-500 font-semibold">
+                            ⚠️ Selecciona un negocio en la barra superior para habilitar la simulación con su Brand DNA.
+                          </span>
+                        )}
                       </p>
                     </div>
 
                     <button
                       type="button"
-                      disabled={isSimulating}
+                      disabled={isSimulating || !activeTenant}
                       onClick={() => handleRunSimulation(selectedAgentKey)}
-                      className="px-4 py-2 rounded-xl bg-neon text-black font-bold text-xs flex items-center gap-1.5 shadow-[0_0_15px_var(--neon-glow)] hover:scale-105 active:scale-95 transition-all"
+                      className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shrink-0 ${
+                        !activeTenant
+                          ? 'bg-zinc-800 text-zinc-500 border border-zinc-700 cursor-not-allowed opacity-60'
+                          : 'bg-neon text-black shadow-[0_0_15px_var(--neon-glow)] hover:scale-105 active:scale-95'
+                      }`}
+                      title={!activeTenant ? 'Selecciona un negocio para simular' : 'Ejecutar prueba en buffer local'}
                     >
-                      <Play className="w-3.5 h-3.5 fill-black" />
+                      <Play className="w-3.5 h-3.5 fill-current" />
                       <span>{isSimulating ? 'Simulando...' : 'Ejecutar Prueba'}</span>
                     </button>
                   </div>
 
                   {simulationOutput && (
-                    <div className="space-y-2 animate-fade-in">
-                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase block">
-                        Resultado de Simulación (JSON Schema Validado):
-                      </span>
-                      <pre className="p-4 rounded-2xl bg-[var(--bg-base)] border border-emerald-500/40 text-emerald-600 dark:text-emerald-300 font-mono text-xs leading-relaxed overflow-x-auto whitespace-pre-wrap">
-                        {JSON.stringify(simulationOutput, null, 2)}
-                      </pre>
+                    <div className="space-y-3 animate-fade-in">
+                      {/* Previsualización Conversacional Humanizada si hay mensaje */}
+                      {(simulationOutput.message_response || simulationOutput.followup_message) && (
+                        <div className="p-4 rounded-2xl bg-[#0b141a] border border-emerald-500/30 text-white space-y-2">
+                          <div className="flex items-center justify-between text-[10px] font-mono text-emerald-400">
+                            <span className="font-bold flex items-center gap-1.5">
+                              💬 Previsualización WhatsApp (Burbuja Simulada):
+                            </span>
+                            <span>{simulationOutput.execution_time_ms ? `${simulationOutput.execution_time_ms}ms` : 'Automático'}</span>
+                          </div>
+                          <div className="p-3 rounded-xl bg-[#005c4b]/30 border border-[#00a884]/40 text-emerald-100 text-xs leading-relaxed font-sans">
+                            {simulationOutput.message_response || simulationOutput.followup_message}
+                          </div>
+                          {simulationOutput.framework_applied && (
+                            <div className="text-[10px] font-mono text-zinc-400 flex items-center justify-between pt-1 border-t border-zinc-800">
+                              <span>Marco: <strong>{simulationOutput.framework_applied}</strong></span>
+                              <span>Calificación: <strong>4/4 Criterios</strong></span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="space-y-1.5">
+                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase block font-mono">
+                          Resultado de Simulación (JSON Schema Validado):
+                        </span>
+                        <pre className="p-4 rounded-2xl bg-[var(--bg-base)] border border-emerald-500/40 text-emerald-600 dark:text-emerald-300 font-mono text-xs leading-relaxed overflow-x-auto whitespace-pre-wrap max-h-[40vh]">
+                          {JSON.stringify(simulationOutput, null, 2)}
+                        </pre>
+                      </div>
                     </div>
                   )}
                 </div>

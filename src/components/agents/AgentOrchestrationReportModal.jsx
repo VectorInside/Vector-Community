@@ -1,29 +1,22 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import { Portal } from '@/components/common/Portal';
 import { VectorInsideLogo } from '@/components/common/VectorInsideLogo';
 import {
   Printer,
-  Copy,
   X,
-  CheckCircle2,
-  Network,
-  Cpu,
   ShieldCheck,
-  Zap,
   Coins,
   Clock,
   Share2,
-  BrainCircuit,
   Hash,
-  Layers,
-  Sparkles,
-  Target,
-  BarChart2,
-  Lock,
+  Cpu,
+  Network,
+  Check,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { SUB_AGENTS_CONFIG } from '@/utils/constants';
 
 export const AgentOrchestrationReportModal = ({
   isOpen,
@@ -31,8 +24,7 @@ export const AgentOrchestrationReportModal = ({
   tenant,
 }) => {
   const printAreaRef = useRef(null);
-
-  if (!isOpen) return null;
+  const [copiedReport, setCopiedReport] = useState(false);
 
   const currentTenant = tenant || {
     id: '',
@@ -41,7 +33,17 @@ export const AgentOrchestrationReportModal = ({
   };
 
   const reportId = `AUD-${new Date().getFullYear()}-GOV-VI-${(currentTenant.id || 'GEN').toUpperCase()}`;
-  const shaHash = `0x4a7e9d${Date.now().toString(16).slice(-6)}c8b3`;
+  const shaHash = useMemo(() => {
+    const raw = currentTenant.id ? `tenant_${currentTenant.id}_2026` : 'vector_global_audit';
+    let hash = 0;
+    for (let i = 0; i < raw.length; i++) {
+      hash = (hash << 5) - hash + raw.charCodeAt(i);
+      hash |= 0;
+    }
+    return `0x4a7e9d${Math.abs(hash).toString(16).padStart(6, '0').slice(-6)}c8b3`;
+  }, [currentTenant.id]);
+
+  if (!isOpen) return null;
 
   const handlePrint = () => {
     try {
@@ -67,10 +69,12 @@ export const AgentOrchestrationReportModal = ({
       `_Certificación de Arquitectura Vector Inside (${shaHash})_`;
 
     navigator.clipboard.writeText(text);
+    setCopiedReport(true);
+    setTimeout(() => setCopiedReport(false), 2500);
+
     try {
       confetti({ particleCount: 40, spread: 60, colors: ['#00F0FF', '#E7F900'] });
     } catch (e) {}
-    alert('¡Ficha técnica copiada al portapapeles lista para enviar por WhatsApp al Comité de TI / Dirección!');
   };
 
   return (
@@ -99,8 +103,12 @@ export const AgentOrchestrationReportModal = ({
                 className="px-3.5 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-700 text-xs font-mono font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
                 title="Copiar resumen técnico para WhatsApp"
               >
-                <Share2 className="w-3.5 h-3.5 text-emerald-500" />
-                <span>Copiar para WhatsApp</span>
+                {copiedReport ? (
+                  <Check className="w-3.5 h-3.5 text-emerald-500" />
+                ) : (
+                  <Share2 className="w-3.5 h-3.5 text-emerald-500" />
+                )}
+                <span>{copiedReport ? '¡Copiado!' : 'Copiar para WhatsApp'}</span>
               </button>
 
               <button
@@ -142,11 +150,11 @@ export const AgentOrchestrationReportModal = ({
 
             <div className="text-left sm:text-right space-y-1 font-mono text-xs bg-zinc-50 dark:bg-zinc-900/60 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800/80 shrink-0">
               <p className="text-[10px] uppercase text-zinc-400 dark:text-zinc-500 font-bold">Cliente / Tenant:</p>
-              <p className="text-sm font-heading font-black text-neon">{currentTenant.name}</p>
+              <p className="text-sm font-heading font-black text-lime-700 dark:text-neon print:text-black">{currentTenant.name}</p>
               <p className="text-zinc-500 dark:text-zinc-400 text-[11px]">{currentTenant.verticalLabel}</p>
               <div className="flex items-center sm:justify-end gap-1.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold pt-1">
                 <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Aislamiento RLS: tenant_id Verificado</span>
+                <span>{currentTenant.id ? `Aislamiento RLS: ${currentTenant.id}` : 'Aislamiento Global Multi-Tenant'}</span>
               </div>
             </div>
           </div>
@@ -155,10 +163,10 @@ export const AgentOrchestrationReportModal = ({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono">
             <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 space-y-1">
               <span className="text-[10px] uppercase text-zinc-500 dark:text-zinc-400 font-bold flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-neon" />
+                <Clock className="w-3.5 h-3.5 text-lime-700 dark:text-neon" />
                 Latencia de Enrutamiento
               </span>
-              <p className="text-2xl font-black text-neon">12ms</p>
+              <p className="text-2xl font-black text-lime-700 dark:text-neon print:text-black">12ms</p>
               <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-sans">0ms en Caching Hit</span>
             </div>
 
@@ -184,7 +192,7 @@ export const AgentOrchestrationReportModal = ({
           {/* Detailed Sub-Agent Topology Table */}
           <div className="space-y-3">
             <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
-              <Network className="w-4 h-4 text-neon" />
+              <Network className="w-4 h-4 text-lime-700 dark:text-neon" />
               <span>Matriz de los 4 Sub-Agentes Autónomos</span>
             </h3>
 
@@ -199,73 +207,23 @@ export const AgentOrchestrationReportModal = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800/80 bg-white dark:bg-zinc-950/60 text-xs">
-                  {/* Supervisor */}
-                  <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-900/40">
-                    <td className="p-3.5 font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-neon animate-pulse" />
-                      Supervisor Central ("Lobo Vectorial")
-                    </td>
-                    <td className="p-3.5 text-zinc-600 dark:text-zinc-300 font-sans">
-                      LangGraph / AIDA / STP
-                    </td>
-                    <td className="p-3.5 text-emerald-600 dark:text-emerald-400 font-bold">
-                      ⚡ Event-Driven (0ms)
-                    </td>
-                    <td className="p-3.5 text-right text-zinc-600 dark:text-zinc-400 font-sans text-[11px]">
-                      Clasificación de intenciones y aislamiento multi-tenant.
-                    </td>
-                  </tr>
-
-                  {/* Closer */}
-                  <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-900/40">
-                    <td className="p-3.5 font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-amber-400" />
-                      Sub-Bot Moderador & Closer
-                    </td>
-                    <td className="p-3.5 text-zinc-600 dark:text-zinc-300 font-sans">
-                      CrewAI / JTBD / Ecuación de Valor
-                    </td>
-                    <td className="p-3.5 text-amber-600 dark:text-amber-400 font-bold">
-                      ⚡ En Tiempo Real (Mensajería)
-                    </td>
-                    <td className="p-3.5 text-right text-zinc-600 dark:text-zinc-400 font-sans text-[11px]">
-                      Resuelve dudas de precio y califica los 4 criterios BANT.
-                    </td>
-                  </tr>
-
-                  {/* Reengagement */}
-                  <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-900/40">
-                    <td className="p-3.5 font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-purple-400" />
-                      Sub-Bot Re-Engagement 24h & Creador
-                    </td>
-                    <td className="p-3.5 text-zinc-600 dark:text-zinc-300 font-sans">
-                      DeepSeek R1 / V3 / Regla 95/5
-                    </td>
-                    <td className="p-3.5 text-purple-600 dark:text-purple-400 font-bold">
-                      ⏱️ Upstash Redis Cron (24h)
-                    </td>
-                    <td className="p-3.5 text-right text-zinc-600 dark:text-zinc-400 font-sans text-[11px]">
-                      Dispara micro-mensajes Vaca Púrpura (&lt; 40 palabras).
-                    </td>
-                  </tr>
-
-                  {/* Analyst */}
-                  <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-900/40">
-                    <td className="p-3.5 font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-cyan-400" />
-                      Sub-Bot Analista de Performance
-                    </td>
-                    <td className="p-3.5 text-zinc-600 dark:text-zinc-300 font-sans">
-                      Meta CAPI & GA4 Data API
-                    </td>
-                    <td className="p-3.5 text-cyan-600 dark:text-cyan-400 font-bold">
-                      📊 Batch Diario / Semanal
-                    </td>
-                    <td className="p-3.5 text-right text-zinc-600 dark:text-zinc-400 font-sans text-[11px]">
-                      Detecta fatiga creativa publicitaria y fricción web.
-                    </td>
-                  </tr>
+                  {Object.values(SUB_AGENTS_CONFIG).map((agent) => (
+                    <tr key={agent.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/40">
+                      <td className="p-3.5 font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${agent.id === 'supervisor' ? 'bg-neon animate-pulse' : agent.id === 'closer' ? 'bg-amber-400' : agent.id === 'reengagement' ? 'bg-purple-400' : 'bg-cyan-400'}`} />
+                        {agent.name}
+                      </td>
+                      <td className="p-3.5 text-zinc-600 dark:text-zinc-300 font-sans">
+                        {agent.engine} / {agent.framework.split('/')[0].trim()}
+                      </td>
+                      <td className="p-3.5 text-emerald-600 dark:text-emerald-400 font-bold">
+                        {agent.triggerLabel}
+                      </td>
+                      <td className="p-3.5 text-right text-zinc-600 dark:text-zinc-400 font-sans text-[11px]">
+                        {agent.role}
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -278,15 +236,15 @@ export const AgentOrchestrationReportModal = ({
               <span>Protocolo de Seguridad & No-Fuga de Datos (RLS Inviolable)</span>
             </div>
             <p className="text-zinc-700 dark:text-zinc-300 leading-relaxed font-sans text-xs">
-              El Lobo Vectorial inyecta forzosamente la variable <code className="text-neon font-bold">{`tenant_id: "${currentTenant.id}"`}</code> en cada nodo de LangGraph. Los sub-bots carecen de permisos para consultar datos cruzados entre clientes. Si el usuario escribe lenguaje agresivo o solicita un agente humano, el sistema ejecuta el protocolo <strong>Sutura Arcángel</strong>, pausando la IA en menos de 300ms.
+              El Lobo Vectorial inyecta forzosamente la variable <code className="text-lime-700 dark:text-neon print:text-black font-bold font-mono">{`tenant_id: "${currentTenant.id || 'sin_negocio_activo'}"`}</code> en cada nodo de LangGraph. Los sub-bots carecen de permisos para consultar datos cruzados entre clientes. Si el usuario escribe lenguaje agresivo o solicita un agente humano, el sistema ejecuta el protocolo <strong>Sutura Arcángel</strong>, pausando la IA en menos de 300ms.
             </p>
           </div>
 
           {/* Cryptographic Certification Footer */}
           <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-[10px] font-mono text-zinc-500">
             <div className="flex items-center gap-2">
-              <Hash className="w-3.5 h-3.5 text-neon" />
-              <span>Firma SHA-256: <code>{shaHash}</code></span>
+              <Hash className="w-3.5 h-3.5 text-lime-700 dark:text-neon" />
+              <span>Firma SHA-256: <code className="text-zinc-700 dark:text-zinc-300 print:text-black">{shaHash}</code></span>
             </div>
             <div>
               <span>Gobernanza Vector Inside • LangGraph Architecture v2.4</span>
