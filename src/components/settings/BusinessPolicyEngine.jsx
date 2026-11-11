@@ -258,10 +258,30 @@ export const BusinessPolicyEngine = () => {
           </p>
         </div>
 
-        {/* Toggle de Modo de Vista & Botón Guardar */}
-        <div className="flex flex-wrap items-center gap-3">
+        {/* Toggle de Modo de Vista & Botón Guardar - Anclados a la derecha para eliminar Layout Shift */}
+        <div className="flex flex-wrap items-center justify-end gap-3 shrink-0">
+          {viewMode === 'active_business' && (
+            <button
+              type="button"
+              onClick={handleSavePolicies}
+              className="text-xs font-mono font-bold bg-neon text-black px-4 py-2.5 rounded-xl hover:bg-[var(--neon-hover)] transition-all flex items-center gap-2 shadow-[0_0_12px_var(--neon-glow)] active:scale-95 animate-fadeIn shrink-0"
+            >
+              {savedSuccess ? (
+                <>
+                  <Check className="w-4 h-4 text-black stroke-[3]" />
+                  <span>Parámetros Guardados</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  <span>Guardar Parámetros</span>
+                </>
+              )}
+            </button>
+          )}
+
           {isAdmin ? (
-            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] text-xs font-mono">
+            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] text-xs font-mono shrink-0">
               <button
                 type="button"
                 onClick={() => setViewMode('active_business')}
@@ -290,33 +310,13 @@ export const BusinessPolicyEngine = () => {
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] font-mono text-xs">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] font-mono text-xs shrink-0">
               <span>{currentTenant?.avatar || '🏢'}</span>
               <strong className="text-[var(--text-main)]">{currentTenant?.shortName || currentTenant?.name}</strong>
               <span className="text-[10px] px-2 py-0.5 rounded bg-neon/10 text-neon font-bold uppercase">
                 {currentTenant?.giro}
               </span>
             </div>
-          )}
-
-          {viewMode === 'active_business' && (
-            <button
-              type="button"
-              onClick={handleSavePolicies}
-              className="text-xs font-mono font-bold bg-neon text-black px-4 py-2.5 rounded-xl hover:bg-[var(--neon-hover)] transition-all flex items-center gap-2 shadow-[0_0_12px_var(--neon-glow)] active:scale-95"
-            >
-              {savedSuccess ? (
-                <>
-                  <Check className="w-4 h-4 text-black stroke-[3]" />
-                  <span>Parámetros Guardados</span>
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4" />
-                  <span>Guardar Parámetros</span>
-                </>
-              )}
-            </button>
           )}
         </div>
       </div>
