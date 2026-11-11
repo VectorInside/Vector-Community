@@ -69,23 +69,6 @@ const ROLE_DEFINITIONS = [
     ],
   },
   {
-    key: 'OPERATOR',
-    label: 'Operador',
-    badge: 'Atención HITL & Agenda',
-    accent: 'text-amber-400 border-amber-500/30 bg-amber-500/10',
-    dotColor: 'bg-amber-400',
-    description:
-      'Especialista de atención humana (Human-in-the-Loop) y seguimiento de citas. Interviene conversaciones alertas sin modificar configuraciones financieras ni llaves.',
-    modules: [
-      { name: 'Centro de Mando & KPIs Financieros', access: 'READ', label: 'Solo Lectura (Métricas Operativas)' },
-      { name: 'Inbox Omnicanal & Takeover HITL', access: 'ASSIGNED', label: 'Operación Asignada (Rescate de Citas & SLA)' },
-      { name: 'Arquitectura RAG & Campañas Meta Ads', access: 'READ', label: 'Solo Lectura de Catálogo Oficial' },
-      { name: 'Motor de IA, Prompts & Bóveda AES-256', access: 'BLOCKED', label: 'Bloqueado por Seguridad' },
-      { name: 'Reglas de Negocio & Split 70/30', access: 'BLOCKED', label: 'Bloqueado por Seguridad' },
-      { name: 'Gobernanza IAM, Roles & Auditoría WORM', access: 'BLOCKED', label: 'Bloqueado por Seguridad' },
-    ],
-  },
-  {
     key: 'CLIENT_OWNER',
     label: 'Dueño de Negocio (Cliente)',
     badge: 'Aislamiento Multi-Tenant 1:1',
@@ -108,42 +91,36 @@ const PERMISSION_MATRIX = [
   {
     module: 'Centro de Mando & Métricas Generales',
     owner: 'Solo su negocio (RLS 1:1)',
-    operator: 'Métricas operativas asignadas',
     admin: 'Negocios asignados',
     superAdmin: 'Todos los negocios (Global)',
   },
   {
     module: 'Conversaciones WhatsApp & Takeover HITL',
-    owner: 'Supervisión de su negocio',
-    operator: 'Atención HITL & Rescate SLA',
+    owner: 'Supervisión & Atención de su negocio',
     admin: 'Control activo (Intervención en vivo)',
     superAdmin: 'Control activo & Auditoría total',
   },
   {
     module: 'Campañas Meta Ads & RAG Wizard',
     owner: 'Lectura de reportes & KPIs',
-    operator: 'Consulta de catálogo RAG',
     admin: 'Edición & Carga de Conocimiento',
     superAdmin: 'Edición total, Creación & Borrado',
   },
   {
     module: 'Configuración de Bot IA & API Keys (AES-256)',
-    owner: 'Lectura de estado IA',
-    operator: 'Sin acceso',
+    owner: 'Lectura de estado IA (Llaves protegidas)',
     admin: 'Ajuste de Prompts & Base RAG',
     superAdmin: 'Configuración de LLMs, Llaves & Modelos',
   },
   {
     module: 'Políticas de Leads & Desglose Financiero',
-    owner: 'Solo su tarifa por lead',
-    operator: 'Sin acceso financiero',
+    owner: 'Solo su tarifa acordada por lead',
     admin: 'Métricas de negocios asignados',
     superAdmin: 'Margen de agencia & Split 70/30 global',
   },
   {
     module: 'Gestión de Accesos IAM & Bitácora WORM',
-    owner: 'Sin acceso (Aislado)',
-    operator: 'Sin acceso',
+    owner: 'Sin acceso (Aislado por RLS)',
     admin: 'Consulta de equipo asignado',
     superAdmin: 'Invitar, revocar y exportar auditoría',
   },
@@ -590,13 +567,13 @@ export const SecurityGovernanceView = () => {
       {/* =================================================================== */}
       {activeSubTab === 'matrix' && (
         <div className="space-y-6 animate-fade-in">
-          {/* 1. Tarjetas de Distribución en Vivo por Rol (4 Roles Canónicos) */}
+          {/* 1. Tarjetas de Distribución en Vivo por Rol (3 Roles Canónicos) */}
           <div className="space-y-2.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Users className="w-4 h-4 text-neon" />
                 <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-[var(--text-main)]">
-                  Distribución en Vivo por Rol en PostgreSQL (4 Roles Canónicos)
+                  Distribución en Vivo por Rol en PostgreSQL (3 Roles Canónicos)
                 </h2>
               </div>
               <div className="flex items-center gap-2">
@@ -625,7 +602,7 @@ export const SecurityGovernanceView = () => {
             </div>
 
             {!isDistributionCollapsed && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-mono animate-fade-in">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono animate-fade-in">
                 {roleDistribution.map((roleItem) => {
                   const isSelected = selectedRoleSimulator === roleItem.key;
                   return (
@@ -635,7 +612,7 @@ export const SecurityGovernanceView = () => {
                       onClick={() => setSelectedRoleSimulator(roleItem.key)}
                       className={`text-left p-4 rounded-2xl border transition-all cursor-pointer space-y-3 ${
                         isSelected
-                          ? 'bg-[var(--bg-card)] border-neon shadow-[0_0_20px_rgba(231,249,0,0.08)]'
+                          ? 'bg-[var(--bg-card)] border-neon shadow-[0_0_20px_rgba(231,249,0,0.08)] ring-1 ring-neon/40'
                           : 'bg-[var(--bg-panel)] border-[var(--border-color)] hover:border-zinc-700'
                       }`}
                     >
@@ -862,7 +839,6 @@ export const SecurityGovernanceView = () => {
                   <tr className="border-b border-[var(--border-color)] bg-[var(--bg-base)] text-[var(--text-muted)] text-[10px] uppercase tracking-wider">
                     <th className="py-3 px-4 sm:px-6 font-bold">Módulo / Capacidad</th>
                     <th className="py-3 px-4 font-bold text-emerald-400">Dueño Negocio (Cliente)</th>
-                    <th className="py-3 px-4 font-bold text-amber-400">Operador (HITL)</th>
                     <th className="py-3 px-4 font-bold text-cyan-400">Admin Agencia</th>
                     <th className="py-3 px-4 font-bold text-neon">Super Admin (Global)</th>
                   </tr>
@@ -876,11 +852,6 @@ export const SecurityGovernanceView = () => {
                       <td className="py-3.5 px-4 text-[var(--text-muted)]">
                         <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[11px]">
                           {row.owner}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-[var(--text-muted)]">
-                        <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 text-[11px]">
-                          {row.operator}
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-[var(--text-muted)]">
