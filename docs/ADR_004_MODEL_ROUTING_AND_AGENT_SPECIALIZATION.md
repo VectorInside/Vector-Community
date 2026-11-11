@@ -191,10 +191,39 @@ Para asegurar que los costos operativos no crezcan con el volumen:
 
 ---
 
-## 4. Implementación Técnica en Configuración
+## 4. Arquitectura de Configuración Contextual Inline de API Keys (`SubBotsConfig.jsx`) & Cifrado AES-256-GCM
 
-Las credenciales y asignaciones se organizan en dos niveles:
+Para eliminar la fricción cognitiva de gestionar bóvedas de credenciales separadas de la asignación de agentes, el módulo [`SubBotsConfig.jsx`](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/src/components/SubBotsConfig.jsx) implementa el patrón de **Configuración Contextual Inline de API Keys por Motor Seleccionado**:
 
-1. **Global IDE / Developer Assistant:** Conectado mediante [`mcp_config.json`](file:///c:/Users/EdgarGs/.gemini/config/mcp_config.json) con `"DOTENV_CONFIG_QUIET": "true"`.
-2. **App Core (`Vector-Community`):** Variables de entorno `.env.local` con `DEEPSEEK_API_KEY`, orquestadas dinámicamente según el identificador de tenant (`tenant_id`).
+### 4.1. Catálogo Oficial de 5 Motores Seleccionables en UI
+
+Cada uno de los 4 Sub-Agentes (*Moderador & Closer*, *Creador & Re-Engagement 24h*, *Analista de Performance*, *Supervisor Lobo Vectorial*) puede conmutar dinámicamente entre los **5 motores oficiales** del catálogo `AI_MODELS`:
+
+| ID de Motor (`model.id`) | Nombre en UI | Proveedor (`provider`) | Tier Funcional | Variable de Entorno / Identificador de Clave (`envName`) |
+| :--- | :--- | :--- | :--- | :--- |
+| `deepseek-v3` | **DeepSeek V3 (Ultrarrápido)** | DeepSeek | Tier 1 — Operativo (<800ms) | `DEEPSEEK_API_KEY` |
+| `deepseek-r1` | **DeepSeek R1 (Razonamiento CoT)** | DeepSeek | Tier 2 — Cognitivo & Auditoría | `DEEPSEEK_API_KEY` |
+| `gpt-4o` | **OpenAI GPT-4o** | OpenAI | Tier 1/2 — Multimodal & Function Calling | `OPENAI_API_KEY` |
+| `claude-3-5-sonnet` | **Claude 3.5 Sonnet** | Anthropic | Tier 2 — Redacción Empática & Brandbook | `ANTHROPIC_API_KEY` |
+| `groq-llama-3` | **Groq Llama 3.3 70B** | Groq LPU | Tier 1 — Inferencia Sub-Segundo (~300 tok/s) | `GROQ_API_KEY` |
+
+### 4.2. Patrón Progressive Disclosure Inline (Pool Oficial vs. BYOK)
+
+En lugar de mostrar 5 campos de API Keys estáticos al mismo tiempo, cada tarjeta de Sub-Agente despliega un panel contextual compacto únicamente para el motor activo seleccionado en su `<select>`:
+
+1. **Indicador de Estado en Tiempo Real:**
+   - **Modo Pool Oficial (`!hasCustomKey`):** Muestra el badge verde `Pool Oficial Vector Inside` y el mensaje *"Operando con el Pool Oficial de Vector Inside sin costo de configuración adicional"*.
+   - **Modo BYOK (`hasCustomKey`):** Muestra el badge esmeralda `● Clave Propia` indicando que ese proveedor opera con la llave dedicada del tenant.
+2. **Acciones Contextuales en 1 Clic:**
+   - **Botón `Configurar API Key propia (BYOK)` / `Editar Key`:** Abre el cajón inline colapsable para el motor activo sin abandonar la tarjeta del Sub-Bot.
+   - **Botón `Test Ping`:** Ejecuta una prueba de latencia y validez contra el endpoint del proveedor activo y reporta la respuesta en milisegundos (e.g. `140ms — DEEPSEEK_API_KEY verificada correctamente`).
+   - **Input Enmascarado + Toggle Mostrar/Ocultar:** Permite capturar la clave (`sk-...`, `sk-ant-...`, `gsk_...`) con protección visual tipo password.
+   - **Botón `Volver al Pool Oficial (Limpiar clave)`:** Elimina la clave personalizada del proveedor activo y revierte automáticamente al Pool Oficial de Vector Inside sin interrumpir el servicio.
+
+### 4.3. Persistencia Multi-Tenant & Cifrado Autenticado AES-256-GCM
+
+- **En Frontend (`SubBotsConfig.jsx`):** Las claves BYOK nunca se exponen en texto plano en logs ni URLs; se mantienen en el estado aislado por proveedor (`providerKeys[providerId]`) y se envían sobre TLS 1.3 en el payload de configuración del tenant.
+- **En Backend Core (Spring Boot / PostgreSQL RLS):** Antes de persistir cualquier clave BYOK en la tabla `tenant_ai_credentials`, el servicio de seguridad la cifra utilizando **AES-256-GCM** (*Galois/Counter Mode*) con un vector de inicialización (IV) único de 96 bits por registro y una clave maestra de envoltura (*Envelope Key*) derivada por `tenant_id`.
+- **En el Global IDE / Developer Assistant:** Conectado mediante [`mcp_config.json`](file:///c:/Users/EdgarGs/.gemini/config/mcp_config.json) con `"DOTENV_CONFIG_QUIET": "true"` y variables de entorno `.env.local` para el Pool Oficial por defecto.
+
 

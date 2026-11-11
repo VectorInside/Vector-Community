@@ -1,10 +1,10 @@
 # 🏛️ ADR-008: Máquina de Estados Pay-Per-Qualified-Lead, Tablero Kanban de Triage & Atribución Meta CAPI
 
-- **Estado:** ACEPTADO (v3.0 - Pay-Per-Qualified-Lead & Sutura Arcángel Master Standard)
-- **Fecha:** 2026-10-10
+- **Estado:** ACEPTADO (v4.2 - Pay-Per-Qualified-Lead $\ge \$350.00\text{ MXN}$ Floor & Dynamic 4-Criteria Simulator Standard)
+- **Fecha:** 2026-11-11
 - **Autor:** Principal Enterprise Solutions Architect & Chief Commercial Officer — Vector Inside
-- **Módulos Afectados:** `/triage` (TriageProtocol), `/metrics` (SoberaniaFinanciera), `/planner` (ContentPlanner), `/calendar` (MasterAgenda), Backend Core (Spring Boot), Supabase RLS, Redis Queue.
-- **Documentos Relacionados:** [ADR-001: Arquitectura Maestra](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_001_MASTER_ARCHITECTURE_AND_BUSINESS_RULES.md), [ADR-003: Meta Graph Intelligence & HITL](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_003_META_GRAPH_INTELLIGENCE_AND_HITL_TRIAGE.md), [ADR-007: Modelo Comercial Vector Deal](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_007_OFFICIAL_COMMERCIAL_PRICING_AND_BILLING_RULES.md)
+- **Módulos Afectados:** `/triage` (TriageProtocol), `/metrics` (SoberaniaFinanciera), `/planner` (ContentPlanner), `/calendar` (MasterAgenda), `/connections` (BusinessPolicyEngine), Backend Core (Spring Boot), Supabase RLS, Redis Queue.
+- **Documentos Relacionados:** [ADR-001: Arquitectura Maestra](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_001_MASTER_ARCHITECTURE_AND_BUSINESS_RULES.md), [ADR-003: Meta Graph Intelligence & HITL](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_003_META_GRAPH_INTELLIGENCE_AND_HITL_TRIAGE.md), [ADR-007: Modelo Comercial Vector Deal](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_007_OFFICIAL_COMMERCIAL_PRICING_AND_BILLING_RULES.md), [ADR-013: Gobernanza Zero-State, Tutor IA & IAM](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_013_ZERO_STATE_GOVERNANCE_CONTEXTUAL_AI_TUTOR_AND_IAM_INVITATION_ARCHITECTURE.md)
 
 ---
 
@@ -12,7 +12,7 @@
 
 Bajo la doctrina de **Vector Inside**, la infraestructura de **Vector Community OS** opera como un activo de tracción operativa y sustitución/potenciación analítica frente al Community Manager tradicional. El sistema implementa una arquitectura de *"Puerta Trasera"* supervisada por el **Lobo Vectorial** (Supervisor IA), garantizando la **Sutura Arcángel** para que la fuerza comercial intervenga únicamente en momentos críticos con precisión quirúrgica.
 
-Para alinear el cobro con la rentabilidad real del cliente (eliminando cobros por interacciones vacías o leads fríos), la plataforma se rige por el modelo **Pay-Per-Qualified-Lead ($350 MXN)**.
+Para alinear el cobro con la rentabilidad real del cliente (eliminando cobros por interacciones vacías o leads fríos), la plataforma se rige por el modelo **Pay-Per-Qualified-Lead con Piso Mínimo de $\$350.00\text{ MXN}$** (`leadPriceMXN >= 350.00`), permitiendo tarifas superiores personalizadas por giro comercial (`$450`, `$600`, `$800`, `$1,200 MXN`).
 
 ---
 
@@ -40,8 +40,17 @@ $$\text{MUTATION\_ALLOWED} \iff (\text{Criterio 1}) \land (\text{Criterio 2}) \l
 
 1. **Criterio 1 (Identidad y Contacto Validados):** Nombre completo AND Email estructurado AND WhatsApp verificado (formato E.164).
 2. **Criterio 2 (Interés Específico en Catálogo):** Identificación unívoca del producto o servicio dentro de la matriz del tenant.
-3. **Criterio 3 (Aclaración Financiera Completa):** Confirmación de que todas las dudas sobre precios, envíos, métodos de pago o planes a meses sin intereses (MSI) fueron resueltas por la IA.
+3. **Criterio 3 (Aclaración Financiera / Slot en Agenda):** Confirmación de que todas las dudas sobre precios, envíos, métodos de pago o bloqueo de horario en Google Calendar fueron resueltas por la IA.
 4. **Criterio 4 (Aceptación Explícita o Cita Confirmada):** Autorización inambigua de contacto por ejecutivo o cita formal reservada en Google Calendar.
+
+#### Simulador Interactivo de 4 Criterios Dinámico por Giro (`BusinessPolicyEngine.jsx`)
+En el submódulo **3. Reglas de Negocio & Precios** (`BusinessPolicyEngine.jsx`), el **Auditor de Calidad Antifraude** adapta dinámicamente las etiquetas y descripciones de los Criterios 2, 3 y 4 según la vertical del `currentTenant` (`getDynamicCriteriaLabels(currentTenant)`):
+- **Salud / Clínicas (`health`):** *Tratamiento Específico Identificado* y *Cita Registrada en Agenda*.
+- **Hospitalidad / Restaurantes (`hospitality`):** *Menú / Evento Seleccionado* y *Mesa / Turno Reservado*.
+- **B2B / Consultoría (`b2b`):** *Alcance o Solución B2B Definida* y *Discovery Call Agendada (BANT)*.
+- **Bienes Raíces / Automotriz (`realestate`):** *Propiedad / Unidad de Interés* y *Visita o Prueba de Manejo Agendada*.
+- **Educación (`education`):** *Programa / Licenciatura de Interés* y *Sesión de Admisiones Agendada*.
+- **Creadores (`creators`):** *Brief de Campaña / Patrocinio* y *Pitch Comercial Agendado*.
 
 ---
 

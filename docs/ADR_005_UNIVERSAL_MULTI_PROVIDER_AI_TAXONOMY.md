@@ -37,51 +37,39 @@ graph TD
 
     subgraph Proveedor Seleccionado por Tenant
         subgraph DeepSeek Default
-            D1[DeepSeek V3]
-            D2[DeepSeek R1]
+            D1[DeepSeek V3: deepseek-v3]
+            D2[DeepSeek R1: deepseek-r1]
         end
         subgraph OpenAI
-            O1[GPT-4o mini]
-            O2[o3-mini / o1]
+            O1[OpenAI GPT-4o: gpt-4o]
         end
         subgraph Anthropic
-            A1[Claude 3.5 Haiku]
-            A2[Claude 3.5 Sonnet]
+            A2[Claude 3.5 Sonnet: claude-3-5-sonnet]
         end
-        subgraph Google Cloud
-            G1[Gemini 2.0 Flash]
-            G2[Gemini 2.0 Thinking / 1.5 Pro]
-        end
-        subgraph Open Source / Groq
-            Q1[Llama 3.3 70B]
-            Q2[Qwen 2.5 72B / DeepSeek R1 Groq]
+        subgraph Groq LPU
+            Q1[Groq Llama 3.3 70B: groq-llama-3]
         end
     end
 
     E --> R
     R -->|Tier 1: Operativo| D1
     R -->|Tier 2: Cognitivo| D2
-    R -->|Tier 1: Operativo| O1
-    R -->|Tier 2: Cognitivo| O2
-    R -->|Tier 1: Operativo| A1
-    R -->|Tier 2: Cognitivo| A2
-    R -->|Tier 1: Operativo| G1
-    R -->|Tier 2: Cognitivo| G2
-    R -->|Tier 1: Operativo| Q1
-    R -->|Tier 2: Cognitivo| Q2
+    R -->|Tier 1/2: Multimodal & Tools| O1
+    R -->|Tier 2: Redacción & Brandbook| A2
+    R -->|Tier 1: Sub-Segundo LPU| Q1
 ```
 
 ---
 
-### 2.2. Matriz Universal de Equivalencia por Proveedor
+### 2.2. Matriz Universal de Equivalencia por Proveedor (Catálogo Activo en `SubBotsConfig.jsx`)
 
-| Proveedor | Tier 1: Motor Operativo Frontal (<800ms) | Tier 2: Motor Cognitivo & RAG (Razonamiento / Cero Alucinación) | Perfil Idóneo & Fortalezas del Proveedor | Costo Estimado (Tier 1 / Tier 2) |
-| :--- | :--- | :--- | :--- | :--- |
-| **DeepSeek** *(Predeterminado)* | **DeepSeek V3** (`deepseek-chat`) | **DeepSeek R1** (`deepseek-reasoner`) | **Mejor costo/beneficio global.** Ideal para máxima rentabilidad de la agencia sin sacrificar potencia lógica. | $0.14 / $0.28 (V3)<br>$0.55 / $2.19 (R1) |
-| **OpenAI** | **GPT-4o mini** | **o3-mini** (o `o1-preview`) | **Estándar corporativo.** Para marcas con acuerdos Azure OpenAI o preferencia por ecosistema ChatGPT. | $0.15 / $0.60 (4o-mini)<br>$1.10 / $4.40 (o3-mini) |
-| **Anthropic** | **Claude 3.5 Haiku** | **Claude 3.5 Sonnet** | **Líder en tono humano y redacción de marca.** Máxima empatía conversacional y adherencia a Brandbooks complejos. | $0.80 / $4.00 (Haiku)<br>$3.00 / $15.00 (Sonnet) |
-| **Google Cloud** | **Gemini 2.0 Flash** | **Gemini 2.0 Flash Thinking** / **1.5 Pro** | **Ventana de contexto colosal.** Capaz de digerir bibliotecas enteras de hasta 1M-2M tokens en el Asistente RAG. | $0.10 / $0.40 (Flash)<br>$1.25 / $5.00 (1.5 Pro) |
-| **Groq / Open Source** | **Llama 3.3 70B Versatile** | **Qwen 2.5 72B** / **DeepSeek R1 (LPU)** | **Velocidad extrema en hardware LPU** (300+ tok/s). Soberanía total de datos para clientes con requerimientos on-premise. | $0.59 / $0.79 (Groq Llama)<br>$2.00 / $2.00 (R1 Groq) |
+| Proveedor | ID en UI (`SubBotsConfig.jsx`) | Motor Oficial Activo | Tier & Rol Principal en Vector Community OS | Variable de Credencial (`envName`) | Costo Estimado (1M tokens) |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **DeepSeek** *(Predeterminado)* | `deepseek-v3` | **DeepSeek V3 (Ultrarrápido)** | **Tier 1 (Operativo Frontal <800ms):** Chat en vivo WhatsApp/IG, comentarios públicos y copys. | `DEEPSEEK_API_KEY` | $0.14 input / $0.28 output |
+| **DeepSeek** *(Predeterminado)* | `deepseek-r1` | **DeepSeek R1 (Razonamiento CoT)** | **Tier 2 (Cognitivo & RAG):** Extracción semántica del Master Briefing, Reglas Inviolables y auditoría financiera. | `DEEPSEEK_API_KEY` | $0.55 input / $2.19 output |
+| **OpenAI** | `gpt-4o` | **OpenAI GPT-4o** | **Tier 1/2 (Corporativo Multimodal):** Ecosistema empresarial con llamadas a herramientas de alta precisión. | `OPENAI_API_KEY` | $2.50 input / $10.00 output |
+| **Anthropic** | `claude-3-5-sonnet` | **Claude 3.5 Sonnet** | **Tier 2 (Empatía & Brandbook):** Redacción creativa de alta conversión, matices de marca y moderación delicada. | `ANTHROPIC_API_KEY` | $3.00 input / $15.00 output |
+| **Groq LPU** | `groq-llama-3` | **Groq Llama 3.3 70B** | **Tier 1 (Inferencia Sub-Segundo):** Seguimientos 24h en lote y respuestas instantáneas a ~300 tokens/s. | `GROQ_API_KEY` | $0.59 input / $0.79 output |
 
 ---
 
@@ -104,9 +92,21 @@ graph TD
 ### 2.4. Protocolo de Respaldo y Auto-Conmutación (Failover Policy)
 
 Si el proveedor activo del tenant devuelve error HTTP `429 (Rate Limit Exceeded)` o `5xx (Service Unavailable)` por más de 2 peticiones consecutivas:
-1. El sistema conmuta automáticamente al proveedor secundario configurado (por defecto: DeepSeek V3/R1).
+1. El sistema conmuta automáticamente al proveedor secundario configurado (por defecto: DeepSeek V3/R1 en el Pool Oficial).
 2. Se registra un log de advertencia en la mesa de control de la agencia (`/triage`).
 3. La conversación con el cliente final nunca se interrumpe ni sufre silencios.
+
+---
+
+### 2.5. Gobernanza BYOK en UI: Configuración Contextual Inline, Cifrado AES-256-GCM y Pool Oficial
+
+La experiencia de configuración BYOK en [`SubBotsConfig.jsx`](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/src/components/SubBotsConfig.jsx) sigue tres principios de seguridad y usabilidad:
+
+1. **Divulgación Progresiva Contextual (Zero-Clutter UI):** No existe una tabla masiva de llaves huérfanas. Al seleccionar cualquiera de los 5 motores (`deepseek-v3`, `deepseek-r1`, `gpt-4o`, `claude-3-5-sonnet`, `groq-llama-3`) en la tarjeta de un Sub-Agente, la interfaz adapta dinámicamente su barra de estado inferior para mostrar únicamente la credencial asociada a ese motor (`DEEPSEEK_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` o `GROQ_API_KEY`).
+2. **Conmutación Instantánea entre Pool Oficial y Clave Propia:**
+   - Si el campo de API Key está vacío, el agente opera automáticamente bajo el **Pool Oficial Vector Inside** sin fricción para la agencia.
+   - Si el tenant ingresa una API Key propia, el badge cambia a `● Clave Propia`, habilitando el botón **`Test Ping`** para verificar la conectividad en tiempo real y el botón **`Volver al Pool Oficial (Limpiar clave)`** para revocar la llave custom con un clic.
+3. **Almacenamiento Cifrado con AES-256-GCM:** Toda API Key suministrada por un cliente bajo el esquema BYOK se transmite exclusivamente vía HTTPS/TLS 1.3 y se almacena en PostgreSQL cifrada en reposo con **AES-256-GCM** (*Authenticated Encryption with Associated Data*), vinculada criptográficamente al `tenant_id` bajo políticas RLS estrictas.
 
 ---
 

@@ -130,7 +130,7 @@ Debes responder ÚNICAMENTE en formato JSON estrictamente válido:
   - Se valida la franja horaria mediante llamada REST directa a `freebusy.query` contra Google Calendar API v3 (sin consumo de tokens LLM).
   - Se inserta el evento formal en la agenda del cliente con Service Account.
   - Se despacha notificación transaccional Gmail con archivo adjunto `cita.ics` y confirmación por WhatsApp Cloud API.
-  - Se muta el estado a `BILLABLE_LEAD` y se emite el evento server-to-server a Meta CAPI con hash SHA-256.
+  - Se muta el estado a `BILLABLE_LEAD`, registrando el cargo comercial con **piso mínimo innegociable de $350.00 MXN** (`costPerQualifiedLead >= 350.00 MXN`, o la tarifa superior pactada para el giro: $450, $600, $800, $1,200 MXN), y se emite el evento server-to-server a **Meta CAPI** con hash SHA-256 cruzando el valor de conversión contra el **Presupuesto Mensual de Meta Ads (`monthlyAdBudget`)** del tenant para el cálculo en tiempo real de ROAS Real, MER y CAC.
 
 ---
 

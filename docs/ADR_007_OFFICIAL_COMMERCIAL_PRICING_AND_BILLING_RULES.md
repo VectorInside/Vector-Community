@@ -27,9 +27,9 @@ Se formaliza el modelo comercial **Vector Deal**, un esquema híbrido de alto va
 
 | Concepto Comercial | Monto Oficial (MXN) | Frecuencia | Cobertura & Alcance |
 | :--- | :--- | :--- | :--- |
-| **1. Implementación & Setup Inicial** | **$20,000 MXN + IVA** | **Pago Único** | Ingestión del Master Briefing en los 4 Pilares RAG, entrenamiento del Lobo Vectorial y sub-bots, conexión de Meta CAPI (Server-to-Server), integración de WhatsApp Cloud API, pruebas de penetración y calibración de Reglas Inviolables. |
+| **1. Implementación & Setup Inicial** | **$20,000 MXN + IVA** | **Pago Único** | Ingestión del Master Briefing en los 4 Pilares RAG, entrenamiento del Lobo Vectorial y sub-bots, conexión de Meta CAPI (Server-to-Server), aprovisionamiento de Micro-Landing Universal (`/m/{tenant_slug}` con 90 días de cortesía), integración de WhatsApp Cloud API y calibración de Reglas Inviolables. |
 | **2. Mensualidad de Servicio & Mantenimiento** | **$5,000 MXN + IVA** | **Mensual Recurrente** | Infraestructura multi-tenant PostgreSQL RLS, monitoreo continuo 24/7, soporte prioritario, actualización de prompts y optimización de latencia en edge. |
-| **3. Lead Calificado (Performance / Éxito)** | **$350 MXN** | **Por Evento Calificado** | Cobro variable por cada prospecto que cumple al 100% la matriz de cualificación del Pilar 1 y es registrado con datos verificados en el CRM / Meta CAPI. |
+| **3. Lead Calificado (Performance / Éxito)** | **Desde $350.00 MXN (Piso Mínimo Innegociable)** | **Por Evento Calificado** | Cobro variable por cada prospecto que cumple al 100% los 4 criterios booleanos (`BILLABLE_LEAD`) y es registrado con datos verificados en el CRM / Meta CAPI. **El monto nunca es menor a $350.00 MXN** (`costPerQualifiedLead >= 350.00 MXN`), contando en UI con escalas rápidas de **$350, $450, $600, $800 y $1,200 MXN** según el ticket promedio del giro comercial. |
 
 ---
 
@@ -39,22 +39,27 @@ Se formaliza el modelo comercial **Vector Deal**, un esquema híbrido de alto va
 > **"La mensualidad de $5,000 MXN + IVA comienza a correr estrictamente cuando concluye el mes de implementación (a partir del Día 31)."**
 
 ```mermaid
-gantt
-    title Cronograma de Facturación Vector Deal
-    dateFormat  YYYY-MM-DD
-    section Mes 1 (Implementación)
-    Setup Técnico, RAG & Meta CAPI ($20,000 MXN) :active, m1, 2026-01-01, 30d
-    section Mes 2 en Adelante (Operación Recurrente)
-    Mensualidad Base ($5,000 MXN / mes)        :m2, after m1, 30d
-    Leads Calificados ($350 MXN c/u)           :m2_leads, after m1, 30d
+flowchart LR
+    subgraph M1["Mes 1: Días 1 a 30 (Implementación)"]
+        S1["Setup Técnico, 4 Pilares RAG,<br/>Micro-Landing & Meta CAPI<br/>($20,000 MXN Pago Único)"]
+        S2["Mensualidad Base: $0 MXN<br/>(Exenta durante Mes 1)"]
+    end
+    subgraph M2["Mes 2 en Adelante: Día 31+ (Operación Recurrente)"]
+        R1["Mensualidad Base<br/>($5,000 MXN + IVA / mes)"]
+        R2["Leads Calificados Auditados<br/>(>= $350.00 MXN c/u vía Meta CAPI)"]
+    end
+    M1 -->|"Día 31: Fin de Implementación"| M2
 ```
 
 - **Mes 1 (Días 1 a 30):** El cliente abona únicamente los **$20,000 MXN** de implementación. Durante este periodo no se factura mensualidad base. Los leads calificados generados durante la fase de prueba/lanzamiento inicial se auditan según el acuerdo particular.
-- **Mes 2 en Adelante (Día 31+):** Se factura la cuota base de **$5,000 MXN mensuales** + el total de leads calificados auditados a **$350 MXN cada uno**.
+- **Mes 2 en Adelante (Día 31+):** Se factura la cuota base de **$5,000 MXN mensuales** + el total de leads calificados auditados con piso mínimo de **$350.00 MXN cada uno** (o la tarifa superior pactada para el giro).
 
 ---
 
-### 2.3. Definición Técnica & Criterios de "Lead Calificado" ($350 MXN)
+### 2.3. Definición Técnica & Criterios de "Lead Calificado" (Piso Mínimo >= $350.00 MXN)
+
+> [!IMPORTANT]
+> **Regla Inviolable de Piso Tarifario (`costPerQualifiedLead >= 350.00 MXN`):** En `RAGWizard.jsx` (Paso 3) y en el motor de facturación, el costo por Lead Calificado tiene un **piso mínimo estricto de $350.00 MXN**. El sistema valida automáticamente `Math.max(350, Number(val))` e incluye selectores rápidos para giros de mayor ticket: **$350 MXN** (*Piso Mín.*), **$450 MXN** (*Salud / Edu*), **$600 MXN** (*Clínicas*), **$800 MXN** (*B2B*) y **$1,200 MXN** (*Inmobiliario / High-Ticket*).
 
 Para evitar disputas comerciales y garantizar la soberanía de datos, un prospecto **solo se considera Lead Calificado** si cumple con los siguientes 4 filtros auditables:
 
@@ -66,13 +71,26 @@ Para evitar disputas comerciales y garantizar la soberanía de datos, un prospec
    - Ha interactuado con el bot y confirmado interés explícito en el servicio/producto.
    - Cumple con los criterios de calificación del **Pilar 1** (e.g. rango de presupuesto, ubicación geográfica dentro del radio de servicio o giro comercial compatible).
 3. **Registro Criptográfico en Meta CAPI:**
-   - El evento `Lead` o `QualifiedLead` fue transmitido vía server-to-server a Meta con hash SHA-256 para atribución publicitaria.
+   - El evento `Lead` o `QualifiedLead` fue transmitido vía server-to-server a Meta con hash SHA-256 para atribución publicitaria, inyectando el valor monetario configurado (`costPerQualifiedLead >= $350.00 MXN`).
 4. **No Duplicidad:**
    - El prospecto no ha sido facturado en los últimos 30 días para el mismo tenant.
 
 ---
 
-### 2.4. Proyección Financiera de Ejemplo para el Cliente
+### 2.4. Integración del Presupuesto Mensual de Meta Ads (`monthlyAdBudget`) con Meta CAPI
+
+En el **Paso 3 del Onboarding (`RAGWizard.jsx`)**, la agencia configura el **Presupuesto Mensual de Meta Ads (`monthlyAdBudget`)** del cliente (con presets de $3,000, $6,000, $10,000, $15,000 y $30,000 MXN/mes) junto con el Costo por Lead Calificado (`costPerQualifiedLead >= $350 MXN`). Ambos parámetros operan acoplados en tiempo real:
+
+1. **Proyección Operativa Instantánea en UI:**
+   - **Pauta Diaria Estimada:** $\text{Pauta Diaria} = \frac{\text{monthlyAdBudget}}{30}$ (en MXN/día).
+   - **Conversaciones de WhatsApp Estimadas / Mes:** Calculadas dinámicamente para dimensionar la carga del Sub-Agente Moderador & Closer y del embudo CAPI.
+2. **Atribución Financiera Server-to-Server (Meta CAPI + ROAS Real / MER):**
+   - Cada vez que un prospecto alcanza el estado `BILLABLE_LEAD`, el backend envía el evento `Lead` a **Meta Conversions API** con el valor `costPerQualifiedLead` ($\ge \$350.00\text{ MXN}$) y los identificadores hasheados en SHA-256.
+   - El **Sub-Agente Analista de Performance** cruza los ingresos reales cerrados en base de datos contra el gasto ejecutado del `monthlyAdBudget` reportado por Meta Graph API para calcular el **ROAS Real**, el **MER (Marketing Efficiency Ratio)** y el **CAC Real**, entrenando al algoritmo de Meta Ads para optimizar pauta hacia compradores reales y no hacia clics curiosos.
+
+---
+
+### 2.5. Proyección Financiera de Ejemplo para el Cliente
 
 | Escenario Mensual (a partir del Mes 2) | Leads Calificados | Costo Variable ($350 c/u) | Mensualidad Base | Total Facturado a la Marca | Cierres Estimados (Conv. 20%) | Ticket Promedio | Ingreso Estimado del Cliente | ROI del Cliente |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -82,7 +100,7 @@ Para evitar disputas comerciales y garantizar la soberanía de datos, un prospec
 
 ---
 
-### 2.5. Sustento Estratégico del Modelo de Negocio (Hormozi & Ehrenberg-Bass)
+### 2.6. Sustento Estratégico del Modelo de Negocio (Hormozi & Ehrenberg-Bass)
 
 El modelo comercial **Vector Deal** se sustenta en dos marcos económicos clave:
 

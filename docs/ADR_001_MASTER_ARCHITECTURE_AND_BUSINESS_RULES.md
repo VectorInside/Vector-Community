@@ -55,12 +55,13 @@ El Community Management tradicional presenta deficiencias críticas: alta depend
 - Los Pilares 1 (Precios), 3 (Crisis/FAQs) y 4 (Histórico) se adaptan dinámicamente según la familia comercial (Gimnasios, Escuelas, Redes de Networking, E-Commerce, Clínicas, B2B, Bienes Raíces, Creadores).
 - Se incorpora el motor de **Auto-Ingestión 1-Click** para analizar briefings maestros sin carga manual.
 
-### 2.6. Estrategia Dual de Adquisición: Negocios CON Web vs. SIN Web (`has_website`)
+### 2.6. Estrategia Dual de Adquisición: Negocios CON Web vs. SIN Web (`has_website`) & Micro-Landing Universal (`/m/{tenant_slug}`)
 
-- **Decisión:** La plataforma incorpora un *Feature Toggle* (`has_website: true / false`) para gobernar la telemetría según la madurez digital del cliente:
+- **Decisión:** La plataforma incorpora un *Feature Toggle* (`has_website: true / false`) para gobernar la telemetría según la madurez digital del cliente, garantizando además que **la Micro-Landing Universal (`app.vectorinside.com/m/{tenant_slug}`) se aprovisiona siempre por defecto (100% de los tenants)** con **90 días de cortesía inicial** como embudo dedicado de alta velocidad para pauta publicitaria:
   - **Negocios CON Web (`has_website = true`):** Integración de Google Analytics 4 (GA4 API - Plan $0 USD), Meta Pixel Web y medición de Bounce Rate contra Tasa de Clic a WhatsApp. Aplica la regla de diagnóstico:
     $$\text{IF } (\text{CPC Anuncio es Bajo}) \land (\text{Tráfico Web es Alto}) \land (\text{Tasa Clic a WhatsApp} < 3\%) \implies \text{Alerta: Fricción en Página Web}$$
-  - **Negocios SIN Web (`has_website = false`):** Enrutamiento directo a mensajería (*Direct-to-Messaging* con pauta Click-to-WhatsApp y Click-to-DM). Los eventos de conversión se transmiten vía **Meta CAPI for Messaging** directamente desde los webhooks del chat sin requerir pixel web. Opcionalmente genera una Micro-Landing ultraligera en `app.vectorinside.com/m/{tenant_slug}`.
+    Incluso con sitio propio, el tenant dispone de su Micro-Landing `/m/{tenant_slug}` pre-activada para campañas específicas de conversión directa sin depender del equipo de TI del cliente.
+  - **Negocios SIN Web (`has_website = false`):** Enrutamiento directo a mensajería (*Direct-to-Messaging* con pauta Click-to-WhatsApp y Click-to-DM) apoyado en la Micro-Landing Universal `/m/{tenant_slug}` aprovisionada por defecto. Los eventos de conversión se transmiten vía **Meta CAPI for Messaging** directamente desde los webhooks del chat sin requerir pixel web externo.
 
 ### 2.7. Contrato de Onboarding Multi-Tenant (`POST /api/v1/tenants/onboard`)
 
@@ -83,6 +84,9 @@ El Community Management tradicional presenta deficiencias críticas: alta depend
     "web_tracking": {
       "has_website": true,
       "website_url": "https://clinicasonrisas.com",
+      "micro_landing_enabled": true,
+      "micro_landing_url": "https://app.vectorinside.com/m/clinica-dental-sonrisas",
+      "micro_landing_courtesy_days": 90,
       "ga4_measurement_id": "G-ABC123XYZ",
       "meta_pixel_id": "123456789012345",
       "meta_capi_token": "EAAX_CAPI..."
@@ -103,9 +107,9 @@ El Community Management tradicional presenta deficiencias críticas: alta depend
       "appointment_duration_minutes": 45
     },
     "financial_performance_rules": {
-      "target_cac_limit": 20.00,
-      "cost_per_qualified_lead": 15.00,
-      "monthly_ad_budget": 1500.00
+      "target_cac_limit_mxn": 400.00,
+      "cost_per_qualified_lead_mxn": 350.00,
+      "monthly_ad_budget_mxn": 6000.00
     },
     "ai_rag_configuration": {
       "brand_voice_tone": "Profesional, empático y orientativo",
@@ -147,10 +151,10 @@ Para garantizar un rendimiento óptimo, minimizar latencias y mantener los costo
    * Ninguna cita agendada o propuesta comercial crítica toca directamente al cliente final sin la aprobación previa en 1 clic de la agencia desde el **Drawer "Dictamen Pre-Cita"** o mensaje interactivo de WhatsApp.
 3. **Protocolo de Interrupción por Crisis (`PAUSED_HUMAN_TAKEOVER`):**
    * Si el score de sentimiento cae o el usuario menciona palabras clave de cancelación/reclamo, la automatización se detiene al instante y el estado pasa a `PAUSED_HUMAN_TAKEOVER` (borde rojo neón en Triage).
-4. **Criterio de Facturación (`BILLABLE_LEAD`):**
-   * El evento de cobro ($350 MXN) y la transmisión a Meta CAPI solo se activan cuando los 4 requisitos booleanos retornan `true` en la base de datos (`identityValidated ∧ catalogIdentified ∧ financialClarified ∧ consentOrBooked`).
-5. **Comportamiento Dinámico `has_website`:**
-   * Si `has_website = false`, los módulos de GA4 y Pixel Web se desactivan visual y lógicamente, redirigiendo el 100% del rastreo a **Meta CAPI for Messaging** y aprovisionando la Micro-Landing autogenerada.
+4. **Criterio de Facturación (`BILLABLE_LEAD`) & Piso Mínimo Innegociable ($350.00 MXN):**
+   * El evento de cobro por Lead Calificado tiene un **piso mínimo innegociable de $350.00 MXN** (`costPerQualifiedLead >= 350.00 MXN`, con escalas comerciales sugeridas en UI de **$350, $450, $600, $800 y $1,200 MXN** según el ticket del giro) y está vinculado al **Presupuesto Mensual de Meta Ads (`monthlyAdBudget`)** configurado por el tenant. La facturación y la transmisión server-to-server a **Meta CAPI** solo se activan cuando los 4 requisitos booleanos retornan `true` en la base de datos (`identityValidated ∧ catalogIdentified ∧ financialClarified ∧ consentOrBooked`).
+5. **Comportamiento Dinámico `has_website` & Micro-Landing Universal por Defecto:**
+   * Si `has_website = false`, los módulos de GA4 y Pixel Web externo se desactivan visual y lógicamente, redirigiendo el 100% del rastreo a **Meta CAPI for Messaging**. En ambos escenarios (`true` o `false`), la **Micro-Landing Universal (`/m/{tenant_slug}`)** se aprovisiona siempre por defecto con 90 días de cortesía como embudo de pauta.
 
 ---
 

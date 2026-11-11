@@ -135,6 +135,9 @@ Para evitar el efecto visual plano, los globos de mensaje de chat y extractos de
 | **Inspector CAPI Modal** | Fondo negro terminal, código neón | Fondo blanco porcelana, visor de código negro | Integridad técnica de auditoría forense. |
 | **Drawer Dictamen Pre-Cita** | `bg-zinc-950/95 border-l border-zinc-800` | `bg-white/98 border-l border-zinc-200 shadow-2xl` | Panel deslizable con 3 viñetas resumen (Lead, Producto, Objeción) y botón CTA `[✅ Aprobar & Sync Google Calendar]`. |
 | **Role Switcher (RBAC)** | Badges neón oscuros con selector de rol | Badges carbón con selector ejecutivo | Alterna entre Admin Agencia (Lobo Vectorial) y Cliente Final (Read-Only: ROAS + Citas + Creativos). |
+| **Botón Header Tutor IA (`#tour-header-tutor-btn`)** | `border-neon/40 bg-neon/10 text-neon hover:bg-neon hover:text-black` | `border-lime-600/40 bg-lime-500/10 text-lime-900 hover:bg-neon hover:text-black` | Lanzador contextual de aprendizaje interactivo por ruta activa (`OnboardingTour.jsx`). |
+| **Switch Segmentado Dual (`BusinessPolicyEngine`)** | `bg-black/40 border-zinc-800` con tab activa `bg-neon text-black` | `bg-zinc-100 border-zinc-200` con tab activa `bg-neon text-black` | Anclado al extremo derecho del header mientras `[Guardar Parámetros]` se ubica a su izquierda para **Cero Layout Shift** al alternar entre `Negocio Activo` y `Gobernanza Global & Matriz`. |
+| **Panel Inline API Key (`SubBotsConfig`)** | `bg-black/50 border-zinc-800/90` | `bg-zinc-50 border-zinc-200` | Acordeón contextual dentro de la tarjeta del motor seleccionado, eliminando bloques inferiores redundantes. |
 
 ---
 

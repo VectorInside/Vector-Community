@@ -51,12 +51,13 @@ graph TD
 
     subgraph Pillar3["⚙️ PILAR 3: ADMINISTRACIÓN (Control de Agencia y Cliente)"]
         M10["10. Perfil de Marca (/profile) - Propuesta de Valor, Voz y Objetivos de Respuesta"]
-        M11["11. Conexiones y Datos (/connections) - Salud CAPI, GA4, Webhooks y Base RAG"]
-        M12["12. Equipo y Control (/team) - Miembros, Roles, Políticas de Cobro y Auditoría"]
+        M11["11. Conexiones y Datos (/connections) - 4 Submódulos: RAG 4 Pilares, Motores IA Inline, Reglas & Precios Dual, Canales Oficiales"]
+        M12["12. Equipo y Control (/team) - Miembros IAM, Invitaciones sin Caducidad, Roles y Auditoría"]
     end
 
     subgraph Pillar4["📖 SOPORTE TRANSVERSAL"]
         M13["13. Guía de Medición (Modal / Drawer) - 13 Fórmulas Oficiales y Glosario"]
+        M14["14. Tutor IA Contextual (/Header -> OnboardingTour) - Recorridos Interactivos por Módulo y Submódulo"]
     end
 ```
 
@@ -72,10 +73,10 @@ Todos los componentes de vistas deben cumplir de forma estricta con los siguient
 | **UX-02** | **Mantener relación entre módulos** | Campaña ➔ Piezas asociadas ➔ Conversaciones ➔ Ficha CRM del prospecto. | No perder el contexto del filtro (campaña, cohorte o canal) al regresar o abrir un modal. |
 | **UX-03** | **Una decisión dominante por contexto** | Botones de alta visibilidad: `[Aprobar Versión]`, `[Dictaminar Pre-Cita]`, `[Registrar Tarea]`. | En cada tarjeta o vista solo existe un botón con color de acción principal (`bg-lime-action text-black`). |
 | **UX-04** | **Explicar la métrica** | Icono informativo `(i)` junto a cada KPI (ROAS, CAC, Contactabilidad, etc.). | Al hacer clic se despliega la fórmula, base matemática, periodo y advertencia de limitación. |
-| **UX-05** | **No simular éxito real ficticio** | Badges transparentes: `«Datos demostrativos»`, `«Respuesta simulada»`, `«Sin conexión activa»`. | Ninguna falla de API externa (Meta/Google) se enmascara con una pantalla de falso éxito. |
-| **UX-06** | **Revelar detalles progresivamente** | Fichas en acordeón y Drawers laterales (`PreCitaDrawer`). | La vista principal permanece despejada; los datos técnicos forenses se abren bajo demanda. |
-| **UX-07** | **Formularios acotados y directos** | Validación en línea con guardado explícito y mensajes de error específicos. | No limpiar campos al fallar; mantener foco en el primer campo que requiere corrección. |
-| **UX-08** | **Separar confirmado / estimado / ausente** | Distinción explícita entre `Venta Ganada` (cerrada), `Pipeline Estimado` y `Dato No Calculable`. | Está **terminantemente prohibido** mostrar `$0` o `0%` cuando la base de datos no tiene información. Se debe renderizar `N/D` con explicación. |
+| **UX-05** | **No simular éxito real ficticio (Zero-State Limpio)** | Cuando `tenantsList.length === 0`, los 4 submódulos de `/connections` (`RAGWizard`, `SubBotsConfig`, `BusinessPolicyEngine`, `ChannelConnectionsManager`) renderizan pantallas de Zero-State limpio sin inyectar tenants ficticios. | Ninguna pantalla administrativa pre-carga datos falsos cuando la agencia aún no registra su primer negocio. |
+| **UX-06** | **Revelar detalles progresivamente** | Fichas en acordeón, panel inline de API Key solo en el motor seleccionado (`SubBotsConfig`) y Drawers laterales (`PreCitaDrawer`). | La vista principal permanece despejada; los datos técnicos o llaves criptográficas se abren en el contexto exacto seleccionado. |
+| **UX-07** | **Formularios acotados y directos** | Validación en línea con guardado explícito, bloqueo de avance en Paso 1 del Wizard mientras exista análisis IA pendiente (`hasPendingAnalysis`) y estabilidad de botones sin Layout Shift. | No limpiar campos al fallar ni permitir avanzar con documentos sin clasificar; mantener anclaje geométrico fijo en conmutadores de vista. |
+| **UX-08** | **Separar confirmado / estimado / ausente** | Distinción explícita entre `Venta Ganada` (cerrada), `Pipeline Estimado` y `Dato No Calculable`. | Está **terminantemente prohibido** mostrar `$0` o `0%` cuando la base de datos no tiene información. Se debe renderizar `N/D` o estado Zero-State con explicación. |
 | **UX-09** | **Color siempre acompañado de texto** | Badges de estado con texto explícito (Verde: Calificado, Ámbar: Revisión, Rojo: Riesgo). | La interfaz debe ser 100% comprensible para personas con daltonismo (WCAG 2.1 AA). |
 | **UX-10** | **Personas antes que automatización (HITL)** | Respuestas de IA editables antes de envío; pre-citas requieren validación humana. | Ninguna acción crítica hacia el cliente final se ejecuta sin el dictamen explícito de la agencia. |
 

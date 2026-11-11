@@ -197,6 +197,7 @@ Para garantizar que ningún negocio contamine a otro con sus indicaciones médic
    - `urban`: Urban Motors & Sneaks Premium (Inspección vehicular, 1/4 tanque mínimo, tratamiento cerámico 9H, `#06B6D4`, 👟).
    - `corp`: Vector Corporate Solutions B2B (Google Meet cifrado, sesión ejecutiva, métricas de conversión, `#3B82F6`, 🏢).
 2. **Persistencia Segregada en Estado & LocalStorage:** `tenantEmailConfigs[activeKey]` almacena las personalizaciones hechas por el usuario para cada negocio de forma aislada, garantizando que los cambios en un restaurante jamás afecten a una clínica dental.
+3. **Protocolo Zero-State Limpio en `/connections` (`RAGWizard.jsx`):** Cuando el ecosistema opera con `0` negocios registrados (`tenantsList.length === 0`) y fuera del modo creación (`!isCreatingNew`), el módulo de configuración RAG y Micro-Landing no pre-carga datos demostrativos; presenta un estado vacío explícito con CTA directo a `[+ Dar de Alta Primer Negocio]`, conforme a [ADR-013](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_013_ZERO_STATE_GOVERNANCE_CONTEXTUAL_AI_TUTOR_AND_IAM_INVITATION_ARCHITECTURE.md).
 
 ---
 

@@ -12,9 +12,9 @@
 
 Para que la automatización de la agencia sea verdaderamente industrial y escalable, las reglas no pueden existir de forma aislada. Deben responder con precisión matemática a tres preguntas simultáneas en cada interacción:
 
-1. **¿Qué tipo de negocio es?** (Giro Comercial de los 8 oficiales).
-2. **¿Qué información se está consultando o modificando?** (Cuál de los 4 Pilares RAG).
-3. **¿Qué nivel de cómputo y modelo debe responder?** (Tier 1 Operativo vs. Tier 2 Cognitivo).
+1. **¿Qué tipo de negocio es?** (Las **8 Familias Comerciales** oficiales que agrupan los **17 Giros Canónicos `V01`–`V17`** definidos en el ADR-002).
+2. **¿Qué información se está consultando o modificando?** (Cuál de los **4 Pilares RAG**).
+3. **¿Qué nivel de cómputo y modelo debe responder?** (Tier 1 Operativo vs. Tier 2 Cognitivo dentro del catálogo de 5 motores activos).
 
 Este documento formaliza el **Acoplamiento Tridimensional Total** del sistema.
 
@@ -23,11 +23,19 @@ Este documento formaliza el **Acoplamiento Tridimensional Total** del sistema.
 ## 2. El Esquema Tridimensional de Acoplamiento
 
 ```mermaid
-cube
-    title "Cubo de Inteligencia Vector Inside"
-    x-axis "8 Giros Comerciales"
-    y-axis "4 Pilares RAG"
-    z-axis "2 Tiers de Modelos (Operativo / Cognitivo)"
+flowchart LR
+    subgraph EjeX["Eje X: Taxonomía de Negocio"]
+        X1["8 Familias Comerciales<br/>(17 Giros Canónicos V01–V17)"]
+    end
+    subgraph EjeY["Eje Y: Conocimiento Documental"]
+        Y1["4 Pilares RAG<br/>(Precios, Brandbook, FAQs/Crisis, Prueba Social)"]
+    end
+    subgraph EjeZ["Eje Z: Enrutamiento de Cómputo IA"]
+        Z1["2 Tiers de Modelos<br/>(Tier 1 Operativo <800ms / Tier 2 Cognitivo CoT)"]
+    end
+    EjeX --> Cubo(("Matriz 3D<br/>Vector Inside"))
+    EjeY --> Cubo
+    EjeZ --> Cubo
 ```
 
 ```mermaid
@@ -56,13 +64,13 @@ graph TD
 
 ---
 
-## 3. Matriz Maestra de Acoplamiento por Giro Comercial
+## 3. Matriz Maestra de Acoplamiento por Familia Comercial (8 Familias / 17 Giros Canónicos `V01`–`V17`)
 
-A continuación se detalla cómo cada uno de los **8 giros comerciales** acopla los **4 Pilares RAG** con los **Tiers de Modelos IA**:
+A continuación se detalla cómo cada una de las **8 familias comerciales** (que agrupan los **17 giros canónicos `V01` a `V17`** del selector de `RAGWizard.jsx`) acopla los **4 Pilares RAG** con los **Tiers de Modelos IA**:
 
 ---
 
-### 🏋️ 1. Fitness & Centros Deportivos (Gimnasios, CrossFit, Estudios de Yoga)
+### 🏋️ 1. Fitness & Salud (`V01` Gimnasios/CrossFit, `V02` Clínicas Médicas/Dentales, `V03` Spas/Estética/Barberías)
 
 - **Modelo de Conversión:** Pase de cortesía de 1 día → Visita física → Membresía recurrente.
 - **Regla Inviolable:** NUNCA inventar promociones que no estén en la base y NUNCA asegurar cupo en clases sin verificar agenda.
@@ -178,17 +186,16 @@ Las siguientes herramientas nativas complementan la ejecución tridimensional de
 
 ---
 
-## 4. Tabla Maestra de Equivalencia de Modelos por Tier
+## 4. Tabla Maestra de Equivalencia de Modelos por Tier (5 Motores Activos en `SubBotsConfig.jsx`)
 
-Cualquiera que sea el proveedor configurado por el cliente, este mapa garantiza la ejecución del tier correspondiente:
+Cualquiera que sea el proveedor configurado por el cliente (operando bajo el **Pool Oficial Vector Inside** o con **API Key propia BYOK cifrada con AES-256-GCM**), este mapa garantiza la ejecución del tier correspondiente con los **5 modelos activos**:
 
-| Proveedor | Tier 1 (Operativo: Consultas, DMs, Comentarios, Copys) | Tier 2 (Cognitivo: RAG Wizard, Crisis, Reglas Inviolables, High-Ticket) |
-| :--- | :--- | :--- |
-| **DeepSeek** *(Default)* | `deepseek-chat` (DeepSeek V3) | `deepseek-reasoner` (DeepSeek R1) |
-| **OpenAI** | `gpt-4o-mini` | `o3-mini` (o `o1`) |
-| **Anthropic** | `claude-3-5-haiku-latest` | `claude-3-5-sonnet-latest` |
-| **Google Cloud** | `gemini-2.0-flash` | `gemini-2.0-flash-thinking-exp` / `gemini-1.5-pro` |
-| **Groq / Open Source** | `llama-3.3-70b-versatile` | `qwen-2.5-72b` / `deepseek-r1-distill-llama-70b` |
+| Proveedor | ID en `SubBotsConfig.jsx` | Tier 1 (Operativo: Consultas, DMs, Comentarios, Copys, Seguimiento 24h) | Tier 2 (Cognitivo: RAG Wizard, Crisis, Reglas Inviolables, High-Ticket) |
+| :--- | :--- | :--- | :--- |
+| **DeepSeek** *(Default)* | `deepseek-v3` / `deepseek-r1` | **DeepSeek V3** (`deepseek-chat`) | **DeepSeek R1** (`deepseek-reasoner`) |
+| **OpenAI** | `gpt-4o` | **OpenAI GPT-4o** (`gpt-4o`) | **OpenAI GPT-4o** (`gpt-4o`) |
+| **Anthropic** | `claude-3-5-sonnet` | *Delegado a Tier 1 Default o Sonnet* | **Claude 3.5 Sonnet** (`claude-3-5-sonnet-latest`) |
+| **Groq LPU** | `groq-llama-3` | **Groq Llama 3.3 70B** (`llama-3.3-70b-versatile`) | *Conmuta a DeepSeek R1 / Claude 3.5 Sonnet para razonamiento denso* |
 
 ---
 

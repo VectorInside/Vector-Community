@@ -1,9 +1,9 @@
 # 📐 Documento de Diseño de Sistema (SDD) — Vector Community
 
 - **Sistema:** Vector Community OS ("La Puerta Trasera")
-- **Versión:** 4.1 (Omnichannel Intelligence, Unified Commercial Growth Suite & Backend Readiness Edition)
+- **Versión:** 4.2 (Zero-State Governance, Contextual AI Tutor, Inline BYOK AES-256 & IAM Invitation Lifecycle Edition)
 - **Organización:** Vector Inside Operations
-- **ADRs Asociados:** [ADR-001](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_001_MASTER_ARCHITECTURE_AND_BUSINESS_RULES.md), [ADR-002](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_002_UNIVERSAL_BUSINESS_TAXONOMY_AND_RAG_PILLARS.md), [ADR-003](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_003_META_GRAPH_INTELLIGENCE_AND_HITL_TRIAGE.md), [ADR-008](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_008_PAY_PER_QUALIFIED_LEAD_STATE_MACHINE_AND_KANBAN_TRIAGE.md), [ADR-009](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_009_DUAL_THEME_DESIGN_SYSTEM_RULES.md), [ADR-010](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_010_MICRO_LANDING_TELEMETRY_AND_DYNAMIC_MASTER_AGENDA.md), [ADR-011](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_011_UX_UI_BRAND_AND_OPERATIONAL_TAXONOMY.md), [ADR-012](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_012_UNIFIED_COMMERCIAL_GROWTH_SUITE_AND_OMNICHANNEL_MATRIX.md)
+- **ADRs Asociados:** [ADR-001](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_001_MASTER_ARCHITECTURE_AND_BUSINESS_RULES.md), [ADR-002](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_002_UNIVERSAL_BUSINESS_TAXONOMY_AND_RAG_PILLARS.md), [ADR-003](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_003_META_GRAPH_INTELLIGENCE_AND_HITL_TRIAGE.md), [ADR-004](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_004_MULTI_AGENT_ORCHESTRATION_AND_DATA_CLEANLINESS.md), [ADR-005](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_005_PRODUCTION_INFRASTRUCTURE_AND_SECURITY.md), [ADR-006](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_006_MASTER_PROMPT_ENGINEERING_AND_COMPETITIVE_MATRICES.md), [ADR-007](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_007_OFFICIAL_COMMERCIAL_PRICING_AND_BILLING_RULES.md), [ADR-008](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_008_PAY_PER_QUALIFIED_LEAD_STATE_MACHINE_AND_KANBAN_TRIAGE.md), [ADR-009](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_009_DUAL_THEME_DESIGN_SYSTEM_RULES.md), [ADR-010](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_010_MICRO_LANDING_TELEMETRY_AND_DYNAMIC_MASTER_AGENDA.md), [ADR-011](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_011_UX_UI_BRAND_AND_OPERATIONAL_TAXONOMY.md), [ADR-012](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_012_UNIFIED_COMMERCIAL_GROWTH_SUITE_AND_OMNICHANNEL_MATRIX.md), [ADR-013](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_013_ZERO_STATE_GOVERNANCE_CONTEXTUAL_AI_TUTOR_AND_IAM_INVITATION_ARCHITECTURE.md)
 
 ---
 
@@ -138,11 +138,46 @@ CREATE TABLE tenants (
     crm_api_key TEXT,
     instagram_handle VARCHAR(100),
     target_cac_limit NUMERIC(10, 2),
-    cost_per_qualified_lead NUMERIC(10, 2) DEFAULT 350.00,
-    monthly_ad_budget NUMERIC(10, 2),
+    lead_price_mxn NUMERIC(12, 2) NOT NULL DEFAULT 350.00, -- Piso mínimo obligatorio >= $350.00 MXN
+    monthly_ad_budget NUMERIC(12, 2) DEFAULT 0.00,         -- Presupuesto mensual de pauta Meta Ads
+    retained_deposit_mxn NUMERIC(12, 2) DEFAULT 15000.00,  -- Fondo de garantía antifraude en custodia
+    sla_hitl_minutes INT DEFAULT 5,                        -- Tiempo máximo SLA de atención humana
+    reengagement_delay_hours INT DEFAULT 24,               -- Ventana de incubación y re-contacto
+    crisis_keywords TEXT,                                  -- JSON array de palabras clave del Centinela de Crisis
+    inviolable_rules TEXT,                                 -- JSON array de reglas inviolables específicas del negocio
+    is_ai_active BOOLEAN DEFAULT true,                     -- Switch maestro de IA activa en WhatsApp
+    active BOOLEAN DEFAULT true,                           -- Soft delete flag
     rag_health_score INT DEFAULT 85,
-    inviolable_rules JSONB DEFAULT '[]'::jsonb,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### 4.1.b. Tablas `users` y `user_tenant_memberships` (IAM, Roles & Invitaciones sin Caducidad)
+
+```sql
+CREATE TABLE users (
+    id VARCHAR(36) PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    full_name VARCHAR(150) NOT NULL,
+    phone VARCHAR(50),
+    system_role VARCHAR(30) NOT NULL, -- 'SUPER_ADMIN', 'ADMIN', 'ANALYST', 'CLIENT'
+    active BOOLEAN NOT NULL DEFAULT true,
+    must_change_password BOOLEAN NOT NULL DEFAULT false,
+    two_factor_enabled BOOLEAN NOT NULL DEFAULT false,
+    permissions_json TEXT,
+    last_login_at TIMESTAMP WITH TIME ZONE, -- NULL mientras la invitación está pendiente de 1er acceso
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE user_tenant_memberships (
+    id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(36) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    tenant_id VARCHAR(36) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    role VARCHAR(50) NOT NULL DEFAULT 'MEMBER',
+    UNIQUE (user_id, tenant_id)
 );
 ```
 
@@ -329,8 +364,8 @@ Para garantizar que el pulido de vistas no elimine ningún cimiento del backend,
 | **8. Resultados** (`/results`) | `GET /api/v1/finance/roas`<br>`GET /api/v1/finance/reconciliation` | `ad_spend_reconciliation`, `billing_ledger`, `transactions` | `job:daily_finance_audit` | Separación matemática estricta: `Venta Ganada` (facturada) vs. `Pipeline Estimado`. Prohibido mostrar $0 si el dato no existe. |
 | **9. Pruebas y Lab** (`/lab`) | `GET /api/v1/lab/experiments`<br>`POST /api/v1/lab/orchestrate` | `experiments`, `agent_eval_metrics`, `creative_fatigue_logs` | `stream:agent_trace` | Detección algorítmica de fatiga creativa: si Hook Rate (3s) < 20% durante 3 días, enciende alerta automática. |
 | **10. Perfil de Marca** (`/profile`) | `GET /api/v1/brand/profile`<br>`PUT /api/v1/brand/profile` | `tenants`, `brand_dna`, `sla_policies`, `buyer_personas`, `marketing_mix_4p` | `cache:purge_tenant_dna` | Política de SLA de respuesta, Buyer Persona (demografía + dolor + disparador) y 4 Ps oficiales inyectados en la IA. |
-| **11. Conexiones y Datos** (`/connections`, `/config`) | `GET /api/v1/integrations/health`<br>`POST /api/v1/channels/credentials`<br>`POST /api/v1/rag/documents` | `integration_tokens`, `channel_credentials`, `rag_documents`, `rag_embeddings` | `queue:embedding_chunking`<br>`worker:channel_latency_check` | Credenciales API oficiales (Meta, Google, WhatsApp, TikTok, LinkedIn, YouTube, X, Telegram), latencia y vectorización `pgvector`. |
-| **12. Equipo y Control** (`/team`) | `GET /api/v1/team/members`<br>`POST /api/v1/team/roles` | `organization_members`, `audit_trail_logs`, `billing_rules` | `stream:audit_events` | Bitácora append-only de auditoría forense para cada cambio de estado, aprobación HITL y regla de precios. |
+| **11. Conexiones y Datos** (`/connections`, `/config`) | `POST /api/v1/tenants`<br>`PUT /api/v1/tenants/{id}`<br>`DELETE /api/v1/tenants/{id}`<br>`GET /api/v1/ai/credentials`<br>`POST /api/v1/ai/credentials`<br>`POST /api/v1/rag/ingest-file`<br>`POST /api/v1/rag/classify` | `tenants`, `tenant_ai_credentials`, `rag_documents`, `rag_chunks` | `queue:embedding_chunking`<br>`worker:deepseek_semantic_parser` | 4 submódulos con protocolo **Zero-State Limpio** (`tenantsList.length === 0`): 1) Wizard RAG 6 pasos con bloqueo en Paso 1 (`hasPendingAnalysis`), 2) Motores IA con API Key inline cifrada AES-256-GCM y reset 1-clic al Pool Oficial, 3) Reglas de Negocio con vista dual sin Layout Shift (`>= $350 MXN`), 4) Canales Oficiales. |
+| **12. Equipo y Control** (`/team`) | `GET /api/v1/iam/users`<br>`POST /api/v1/iam/users`<br>`PUT /api/v1/iam/users/{id}/status`<br>`PUT /api/v1/iam/users/{id}/tenants`<br>`PUT /api/v1/iam/users/{id}/permissions`<br>`DELETE /api/v1/iam/users/{id}`<br>`POST /api/send-invitation` | `users`, `user_tenant_memberships`, `audit_logs` | `smtp:staff_invitation_email` | Gestión IAM con invitaciones y contraseñas provisionales (`Vec#Auth2026!`) **sin fecha de caducidad**, detección automática de `Invitación Pendiente` (`lastLoginAt == null` o `mustChangePassword`) y botón `[Reenviar Invitación]` por Correo/WhatsApp. |
 | **13. Canales Públicos** (`/m/[slug]`, `/landing`) | `GET /api/v1/public/landing/{slug}`<br>`POST /api/v1/public/leads` | `microlandings`, `leads`, `pageview_telemetry` | `worker:capi_pageview_dispatch` | Captación de prospecto con micro-agendamiento directo, telemetría sin cookies y aislamiento de layout. |
 
 ---

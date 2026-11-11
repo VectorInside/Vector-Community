@@ -62,6 +62,7 @@ Se instituye el catálogo maestro `OMNICHANNEL_API_CATALOG` con soporte para 8 e
 | **Telegram Bot API** | Bot API HTTPS | Bot Token (@BotFather) + Channel/Chat ID | Suscriptores, Conversaciones 1 a 1 |
 
 - **Regla de Filtrado Estricto:** `/contactability` y `/connections` solo renderizan las plataformas que el `activeTenant.connectedChannels[key]?.enabled === true`.
+- **Protocolo Zero-State Limpio en `ChannelConnectionsManager.jsx`:** Cuando `tenantsList.length === 0`, el gestor de conexiones omnicanal muestra un estado vacío limpio (Zero-State) con llamada a la acción para registrar el primer negocio de la agencia, sin mostrar llaves ni canales pre-conectados de demostración (ver [ADR-013](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/docs/ADR_013_ZERO_STATE_GOVERNANCE_CONTEXTUAL_AI_TUTOR_AND_IAM_INVITATION_ARCHITECTURE.md)).
 
 ---
 

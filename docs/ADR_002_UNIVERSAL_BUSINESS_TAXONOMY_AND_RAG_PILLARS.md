@@ -21,7 +21,7 @@ Asimismo, los agentes de IA **no deben inventar reglas ni forzar supuestos** (ej
 Se requiere:
 1. Una **Taxonomía Canónica de 17 Giros (`V01` a `V17`)** organizados en 8 familias de conversión.
 2. Un **Protocolo Universal de Reacción:** `Trigger → Intención → Evidencia RAG → Acción de Conversión → Escalación HITL`.
-3. La institucionalización del principio **"Tus Documentos Mandan"**: la IA nunca responde sobre inventarios, aranceles ni políticas sin un `evidence_bundle` verificado del Paso 2.
+3. La institucionalización del principio **"Tus Documentos Mandan"**: la IA nunca responde sobre inventarios, aranceles ni políticas sin un `evidence_bundle` verificado (extraído en el **Paso 1: Acelerador IA de Master Briefing** y consolidado en el **Paso 5: 4 Pilares de Conocimiento RAG**).
 
 ---
 
@@ -91,9 +91,9 @@ Cada giro declara su comportamiento operativo para que el agente sepa exactament
 
 ---
 
-### 2.4. Principio Operativo "Tus Documentos Mandan" (RAG Extraction en Paso 2)
+### 2.4. Principio Operativo "Tus Documentos Mandan" (Extracción Semántica en Paso 1 y Consolidación en Paso 5)
 
-El modelo de lenguaje (LLM) **jamás opera en base a su conocimiento preentrenado**. En el Paso 2 de onboarding, los documentos cargados (.pdf, .docx, .md) se ingieren y descomponen semánticamente en `knowledge_objects` estructurados:
+El modelo de lenguaje (LLM) **jamás opera en base a su conocimiento preentrenado**. En el **Paso 1** del Wizard de Onboarding (*Acelerador IA de Master Briefing*) y en el **Paso 5** (*4 Pilares de Conocimiento RAG*), los documentos cargados (`.pdf`, `.docx`, `.md`, `.txt`) se ingieren y descomponen semánticamente en `knowledge_objects` estructurados:
 
 #### Jerarquía de Autoridad Documental:
 1. **Regulación / Ley Aplicable** (LFPDPPP, NOMs sanitarias, directrices Meta).
@@ -131,6 +131,43 @@ Para garantizar la mejor experiencia de usuario en el frontend (`RAGWizard.jsx`)
 
 ---
 
+### 2.7. Arquitectura del Wizard de Alta de 6 Pasos, Bloqueo Estricto en Paso 1 y Sanitización Semántica
+
+El proceso de alta y entrenamiento de un nuevo negocio en [`RAGWizard.jsx`](file:///c:/Users/EdgarGs/Documents/ProyectoWork/VectorInside/VectorComunity/Vector-Community/src/components/RAGWizard.jsx) está estructurado en **6 pasos secuenciales auditados**:
+
+| Paso | Nombre Oficial en UI (`RAGWizard.jsx`) | Alcance Funcional & Contratos que Alimenta |
+| :---: | :--- | :--- |
+| **Paso 1** | **Giro & Acelerador IA** | Selección de Giro Canónico (`V01`–`V17`), carga/pegado del *Master Briefing* (`.pdf`, `.docx`, `.txt`, `.md`) y ejecución obligatoria del motor de extracción semántica con IA para autocompletar los pasos 2 a 5. |
+| **Paso 2** | **Entidad & Web** | Datos fiscales/comerciales del tenant, toggle `hasWebsite` (`CON SITIO WEB` vs `SIN SITIO WEB`), aprovisionamiento por defecto de la **Micro-Landing Universal (`/m/{tenant_slug}`)** con 90 días de cortesía y stack de canales activos. |
+| **Paso 3** | **Marketing, Tracking & Modelo Comercial** | Credenciales de WhatsApp Cloud API, Meta Pixel, Meta CAPI Access Token, GA4 Measurement ID, **Presupuesto Mensual de Meta Ads (`monthlyAdBudget`)** y tarifa de **Costo por Lead Calificado (`costPerQualifiedLead >= $350.00 MXN`)** con presets de $350, $450, $600, $800 y $1,200 MXN. |
+| **Paso 4** | **Agenda & Horarios** | Integración con Google Calendar API v3 (`googleCalendarId`, JSON de Service Account), correo transaccional Gmail API (`gmailSenderAddress`), horarios de atención L-V / Sábados y duración de cita en minutos. |
+| **Paso 5** | **4 Pilares de Conocimiento RAG** | Consolidación y edición granular de los 4 Pilares: **Pilar 1** (Ofertas & Precios), **Pilar 2** (Identidad, Brandbook & Reglas Inviolables — *Obligatorio*), **Pilar 3** (FAQs & Manejo de Crisis) y **Pilar 4** (Casos de Éxito & Prueba Social), más cálculo en vivo del *RAG Health Score*. |
+| **Paso 6** | **Gobernanza & Despliegue RLS** | Resumen ejecutivo de los 6 bloques del contrato de onboarding, verificación del *RAG Health Score* ($\ge 75\%$) y disparo transaccional a `POST /api/v1/tenants/onboard` con aislamiento PostgreSQL RLS. |
+
+#### 🔒 Bloqueo Estricto de Avance en Paso 1 (`hasPendingAnalysis`)
+
+Para evitar que el operador cargue un documento o pegue texto en el Acelerador IA y avance al Paso 2 sin haber ejecutado la extracción semántica (lo que dejaría los pasos 2 a 5 vacíos o desincronizados), `RAGWizard.jsx` implementa la guarda reactiva `hasPendingAnalysis`:
+
+```javascript
+const hasPendingAnalysis =
+  wizardStep === 1 &&
+  (Boolean(uploadedBriefFile) || briefingText.trim().length > 20) &&
+  !briefingAnalyzed;
+```
+
+- **Efecto en UI:** Mientras `hasPendingAnalysis === true`, el botón **`Siguiente Paso`** permanece bloqueado (`disabled={isAnalyzingBrief || hasPendingAnalysis}`) y despliega el aviso visual ámbar: *"⚠️ Tienes un documento o texto cargado sin procesar. Haz clic en 'Analizar con IA y Autocompletar Pasos 2-5' arriba antes de avanzar al Paso 2."*
+- **Invalidación Reactiva:** Si el usuario sube un nuevo archivo o edita el texto después de un análisis previo, `briefingAnalyzed` se restablece inmediatamente a `false`, exigiendo un nuevo análisis antes de avanzar.
+
+#### 🧹 Sanitización Semántica Anti-Placeholders (`sanitizeField`)
+
+Cuando el motor LLM analiza un *Master Briefing* que omite ciertos datos (como el teléfono del dueño o el sitio web), algunos modelos tienden a devolver cadenas genéricas de relleno. Para impedir que basura semántica sobrescriba o contamine el formulario del tenant, la función `sanitizeField(val, type)` filtra cada campo antes de inyectarlo en el estado de React:
+
+1. **Lista Negra de Placeholders (`PLACEHOLDER_PATTERNS`):** Descarta cualquier valor cuyo texto normalizado coincida o inicie con `"no especificado"`, `"no disponible"`, `"no proporcionado"`, `"sin especificar"`, `"pendiente"`, `"por definir"`, `"n/a"`, `"na"`, `"none"`, `"null"`, `"undefined"`, `"s/n"`, `"desconocido"`, `"no aplica"`, `"no cuenta con"`, `"no tiene"`, `"ejemplo"`, `"tu negocio"`, `"nombre del negocio"` o `"centro de excelencia"`.
+2. **Validación de Teléfonos (`type === 'phone'`):** Extrae únicamente dígitos (`val.replace(/\D/g, '')`) y rechaza cualquier cadena con **menos de 10 dígitos reales**, evitando que textos como `"Tel: Pendiente"` poblen `ownerPhone`.
+3. **Validación de URLs (`type === 'url'`):** Exige la presencia de un punto de dominio (`.`) y ausencia de espacios antes de poblar `websiteUrl` y activar `hasWebsite = true`.
+
+---
+
 ## 3. Consecuencias & Beneficios
 
 ### Positivas
@@ -139,4 +176,4 @@ Para garantizar la mejor experiencia de usuario en el frontend (`RAGWizard.jsx`)
 - **Trazabilidad de Auditoría:** Cada decisión del agente queda vinculada a un `trace_id` con el documento y fragmento que respaldó su respuesta.
 
 ### Mitigaciones
-- Las sugerencias proactivas mostradas en el asistente son solo guías base de seguridad; la IA adopta como verdad definitiva los archivos que el cliente sube en el Paso 2.
+- Las sugerencias proactivas mostradas en el asistente son solo guías base de seguridad; la IA adopta como verdad definitiva los archivos que el cliente sube y procesa en el Paso 1 y consolida en el Paso 5.
