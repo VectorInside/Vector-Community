@@ -170,6 +170,9 @@ export const OrchestrationView = () => {
       .replaceAll('{user_name}', 'Prospecto en Conversación')
       .replaceAll('{product_interest}', activeTenant?.commercialOffer?.hook || 'Servicio principal del negocio')
       .replaceAll('{last_objection}', 'Consulta de disponibilidad y precios')
+      .replaceAll('{tone_of_voice}', activeTenant?.toneOfVoice || 'Profesional, empático y orientado a conversión')
+      .replaceAll('{emoji_policy}', activeTenant?.emojiPolicy || 'Moderado (1-2 por mensaje según contexto)')
+      .replaceAll('{closing_cta}', activeTenant?.commercialOffer?.cta || '¿Te gustaría agendar una llamada breve de 15 minutos o prefieres que un asesor te contacte?')
       .replaceAll('{rag_retrieved_passages}', activeTenant ? `[ Base de Conocimiento RAG de ${activeTenant.name} ]` : '[ Selecciona un negocio para inyectar fragmentos RAG ]');
   };
 
