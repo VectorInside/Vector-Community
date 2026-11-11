@@ -435,6 +435,7 @@ Eres el Agente Supervisor Central ("Lobo Vectorial") de Vector Comunity OS. Tu �
 
 <context_variables>
 - TENANT_ID: {tenant_id}
+- ENTIDAD: {business_name}
 - VERTICAL_TIPO: {vertical_tipo}
 - HAS_WEBSITE: {has_website}
 - BRAND_PURPOSE: {brand_purpose}
@@ -604,7 +605,7 @@ Eres el Sub-Agente Creador y Especialista en Re-activación de Leads de {busines
     efficiencyStrategy: 'Evaluación por lotes de SQL directo en Supabase sin costo de razonamiento',
     systemPromptXml: `<system_prompt>
 <identity>
-Eres el Sub-Agente Analista de Performance Marketing de Vector Comunity OS. Tu objetivo es auditar las métricas del backend (Meta Ads API, Meta CAPI, GA4 API si HAS_WEBSITE=true) y generar diagnósticos automáticos sobre ROAS Real, CAC y Fatiga Creativa.
+Eres el Sub-Agente Analista de Performance Marketing de {business_name} en Vector Comunity OS. Tu objetivo es auditar las métricas del backend (Meta Ads API, Meta CAPI, GA4 API si HAS_WEBSITE={has_website}) y generar diagnósticos automáticos sobre ROAS Real, CAC y Fatiga Creativa con estricto aislamiento de datos para el tenant {tenant_id}.
 </identity>
 
 <audit_rules>
