@@ -3091,6 +3091,16 @@ export const RAGWizard = ({
                   ? 'El ecosistema se encuentra limpio (Zero-State). Haz clic en "+ Alta Nuevo Negocio" para dar de alta tu primer negocio.'
                   : `No hay coincidencias para "${tenantSearchQuery}". Prueba modificando tu término de búsqueda o limpia los filtros.`}
               </p>
+              {allTenantsList.length === 0 && isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => setAdminViewMode('wizard')}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-neon text-black font-bold text-xs uppercase hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_15px_var(--neon-glow)] active:scale-95 mt-2"
+                >
+                  <Plus className="w-4 h-4 stroke-[3]" />
+                  <span>+ Alta Nuevo Negocio</span>
+                </button>
+              )}
               {allTenantsList.length > 0 && (
                 <button
                   type="button"

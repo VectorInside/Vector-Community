@@ -34,6 +34,7 @@ import {
   Server,
   Layers,
   CheckCheck,
+  Plus,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { cleanConcept } from '@/utils/formatters';
@@ -457,6 +458,40 @@ export const SubBotsConfig = () => {
       ]);
     }, 600);
   };
+
+  if (!currentTenant) {
+    return (
+      <div className="p-12 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] text-center space-y-4 font-mono">
+        <div className="w-14 h-14 mx-auto rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-center text-3xl">
+          🤖
+        </div>
+        <div className="space-y-1">
+          <h3 className="text-base font-bold text-[var(--text-main)]">
+            No hay un negocio seleccionado o registrado
+          </h3>
+          <p className="text-xs text-[var(--text-muted)] max-w-md mx-auto">
+            El ecosistema se encuentra limpio (Zero-State). Para configurar el motor cognitivo de IA (DeepSeek / Groq), slots de citas y API Keys cifradas, da de alta tu primer negocio.
+          </p>
+        </div>
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={() => {
+              window.dispatchEvent(
+                new CustomEvent('vector_config_set_tab', {
+                  detail: { tab: 'rag', mode: 'wizard' },
+                })
+              );
+            }}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-neon text-black font-bold text-xs uppercase hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_15px_var(--neon-glow)] active:scale-95"
+          >
+            <Plus className="w-4 h-4 stroke-[3]" />
+            <span>+ Alta Nuevo Negocio</span>
+          </button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

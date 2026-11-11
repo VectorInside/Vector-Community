@@ -1,4 +1,4 @@
-﻿export const USER_ROLES = {
+export const USER_ROLES = {
   ADMIN: 'admin',
   CLIENT: 'client',
   SUPER_ADMIN_AGENCY: 'admin',
@@ -736,9 +736,9 @@ export const GOVERNANCE_SYSTEM_RULES = [
     adrRef: 'Calidad Comercial',
     description: 'Solo se aprueba un prospecto si cumple: teléfono verificado, servicio identificado, horario seleccionado y confirmación expresa.',
     status: 'COMPLIANT',
-    statusLabel: '125 Leads Validados',
+    statusLabel: '0 Leads Validados',
     statusColor: 'text-neon bg-neon/10 border-neon/30',
-    metric: '100% Criterios Auditados ($150-$400)',
+    metric: '100% Criterios Auditados (Mín $350 MXN)',
     icon: 'DollarSign',
   },
   {
@@ -750,7 +750,7 @@ export const GOVERNANCE_SYSTEM_RULES = [
     status: 'OPTIMAL',
     statusLabel: 'Seguimiento Activo',
     statusColor: 'text-purple-400 bg-purple-500/10 border-purple-500/30',
-    metric: '4 leads en espera de ventana',
+    metric: '0 prospectos en espera de ventana',
     icon: 'Flame',
   },
   {
@@ -759,10 +759,10 @@ export const GOVERNANCE_SYSTEM_RULES = [
     name: 'Detección de Desgaste Publicitario',
     adrRef: 'Rendimiento de Anuncios',
     description: 'Identificación automática de anuncios con baja retención o saturación de audiencia para renovar creativos a tiempo.',
-    status: 'WARNING',
-    statusLabel: '1 Alerta Activa',
-    statusColor: 'text-rose-400 bg-rose-500/10 border-rose-500/30',
-    metric: 'Campaña Tomahawk_V3 (Frec. 3.82)',
+    status: 'HEALTHY',
+    statusLabel: 'Monitoreo Activo',
+    statusColor: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30',
+    metric: 'Campañas en Monitoreo CAPI',
     icon: 'Activity',
   },
 ];

@@ -1,5 +1,5 @@
 import api, { isBackendAvailable, unwrapApiData } from './api';
-import { INITIAL_TENANTS, INITIAL_TENANTS_DATA } from '@/utils/constants';
+import { INITIAL_TENANTS, INITIAL_TENANTS_DATA, BUSINESS_POLICY_THRESHOLDS } from '@/utils/constants';
 import { INITIAL_VERTICAL_CONFIGS } from '@/utils/mockData';
 
 const buildShiftHours = (startStr, endStr, slotDurationMin = 60) => {
@@ -61,6 +61,30 @@ export const normalizeTenantFromApi = (rawTenant) => {
     parsedNetworks = preset.connectedSocialNetworks || ['INSTAGRAM', 'FACEBOOK', 'WHATSAPP'];
   }
 
+  let parsedCrisisKeywords = rawTenant.crisisKeywords;
+  if (typeof parsedCrisisKeywords === 'string') {
+    try {
+      parsedCrisisKeywords = JSON.parse(parsedCrisisKeywords);
+    } catch {
+      parsedCrisisKeywords = BUSINESS_POLICY_THRESHOLDS?.crisisKeywords || ['demanda', 'estafa', 'profeco', 'fraude', 'abogado', 'asqueroso', 'rateros', 'denuncia'];
+    }
+  }
+  if (!Array.isArray(parsedCrisisKeywords)) {
+    parsedCrisisKeywords = preset.crisisKeywords || BUSINESS_POLICY_THRESHOLDS?.crisisKeywords || ['demanda', 'estafa', 'profeco', 'fraude', 'abogado', 'asqueroso', 'rateros', 'denuncia'];
+  }
+
+  let parsedInviolableRules = rawTenant.inviolableRules;
+  if (typeof parsedInviolableRules === 'string') {
+    try {
+      parsedInviolableRules = JSON.parse(parsedInviolableRules);
+    } catch {
+      parsedInviolableRules = [];
+    }
+  }
+  if (!Array.isArray(parsedInviolableRules)) {
+    parsedInviolableRules = Array.isArray(preset.inviolableRules) ? preset.inviolableRules : [];
+  }
+
   return {
     ...preset,
     ...rawTenant,
@@ -72,6 +96,12 @@ export const normalizeTenantFromApi = (rawTenant) => {
       rawTenant.monthlyAdBudget != null
         ? Number(rawTenant.monthlyAdBudget)
         : (preset.monthlyAdBudget || 0),
+    slaHitlMinutes: rawTenant.slaHitlMinutes != null ? Number(rawTenant.slaHitlMinutes) : (preset.slaHitlMinutes || 5),
+    reengagementDelayHours: rawTenant.reengagementDelayHours != null ? Number(rawTenant.reengagementDelayHours) : (preset.reengagementDelayHours || 24),
+    crisisKeywords: parsedCrisisKeywords,
+    inviolableRules: parsedInviolableRules,
+    isAiActive: rawTenant.isAiActive !== undefined ? Boolean(rawTenant.isAiActive) : (preset.isAiActive !== false),
+    retainedDepositMXN: rawTenant.retainedDepositMXN != null ? Number(rawTenant.retainedDepositMXN) : (Number(preset.retainedDepositMXN) || 0),
     connectedSocialNetworks: parsedNetworks,
     calendarConfig: parsedCalendarConfig,
     buyerPersona: rawTenant.buyerPersona || preset.buyerPersona,
@@ -109,6 +139,12 @@ export const serializeTenantToApi = (tenant) => {
       : (tenant.calendarConfig || null),
     buyerPersona: tenant.buyerPersona || null,
     brandDna: tenant.brandDna || null,
+    slaHitlMinutes: Math.max(1, Number(tenant.slaHitlMinutes || 5)),
+    reengagementDelayHours: Math.max(1, Number(tenant.reengagementDelayHours || 24)),
+    crisisKeywords: Array.isArray(tenant.crisisKeywords) ? tenant.crisisKeywords : ['demanda', 'estafa', 'profeco', 'fraude', 'abogado', 'asqueroso', 'rateros', 'denuncia'],
+    inviolableRules: Array.isArray(tenant.inviolableRules) ? tenant.inviolableRules : [],
+    isAiActive: tenant.isAiActive !== false,
+    retainedDepositMXN: Math.max(0, Number(tenant.retainedDepositMXN || 0)),
   };
 };
 
