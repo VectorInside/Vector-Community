@@ -375,20 +375,53 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
-  const updateTenantPolicy = (tenantKey, updates) => {
+  const updateTenantPolicy = async (tenantKey, updates) => {
+    let updatedSnapshot = null;
     setTenantsData((prev) => {
       const target = prev[tenantKey];
       if (!target) return prev;
-      const updated = {
+      updatedSnapshot = {
         ...target,
         ...updates,
       };
-      tenantService.updateTenant(tenantKey, updated).catch(() => {});
       return {
         ...prev,
-        [tenantKey]: updated,
+        [tenantKey]: updatedSnapshot,
       };
     });
+
+    if (updatedSnapshot) {
+      try {
+        const persisted = await tenantService.updateTenant(tenantKey, updatedSnapshot);
+        if (persisted) {
+          setTenantsData((prev) => ({
+            ...prev,
+            [tenantKey]: { ...prev[tenantKey], ...persisted },
+          }));
+        }
+        return { success: true, data: persisted };
+      } catch (err) {
+        console.error('[AuthContext.updateTenantPolicy] Error al persistir en backend:', err);
+        return { success: false, error: err };
+      }
+    }
+    return { success: false };
+  };
+
+  const updateTenantDna = async (tenantKey, brandDna) => {
+    try {
+      const persisted = await tenantService.updateBrandDna(tenantKey, brandDna);
+      if (persisted) {
+        setTenantsData((prev) => ({
+          ...prev,
+          [tenantKey]: { ...prev[tenantKey], ...persisted },
+        }));
+      }
+      return persisted;
+    } catch (err) {
+      console.error('[AuthContext.updateTenantDna] Error al persistir ADN:', err);
+      throw err;
+    }
   };
 
   const toggleTenantMicroLanding = (tenantKey, newStatus, trialDays = 90) => {
@@ -524,6 +557,7 @@ export const AuthProvider = ({ children }) => {
         switchTenantContext,
         toggleTenantAi,
         updateTenantPolicy,
+        updateTenantDna,
         toggleTenantMicroLanding,
         registerTenant,
         deleteTenant,

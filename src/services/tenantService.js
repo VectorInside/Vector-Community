@@ -85,6 +85,10 @@ export const normalizeTenantFromApi = (rawTenant) => {
     parsedInviolableRules = Array.isArray(preset.inviolableRules) ? preset.inviolableRules : [];
   }
 
+  const resolvedSla = rawTenant.slaHitlMinutes != null
+    ? Number(rawTenant.slaHitlMinutes)
+    : (rawTenant.slaTarget != null ? Number(rawTenant.slaTarget) : (preset.slaHitlMinutes || 15));
+
   return {
     ...preset,
     ...rawTenant,
@@ -96,7 +100,15 @@ export const normalizeTenantFromApi = (rawTenant) => {
       rawTenant.monthlyAdBudget != null
         ? Number(rawTenant.monthlyAdBudget)
         : (preset.monthlyAdBudget || 0),
-    slaHitlMinutes: rawTenant.slaHitlMinutes != null ? Number(rawTenant.slaHitlMinutes) : (preset.slaHitlMinutes || 5),
+    slaHitlMinutes: resolvedSla,
+    slaTarget: resolvedSla,
+    toneOfVoice: rawTenant.toneOfVoice || preset.toneOfVoice || preset.defaultTone || '',
+    emojiPolicy: rawTenant.emojiPolicy || preset.emojiPolicy || 'Moderado (según contexto)',
+    brandColors: Array.isArray(rawTenant.brandColors) && rawTenant.brandColors.length > 0
+      ? rawTenant.brandColors
+      : (preset.brandColors || preset.colors || []),
+    commercialOffer: rawTenant.commercialOffer || preset.commercialOffer || null,
+    marketingMix4P: rawTenant.marketingMix4P || preset.marketingMix4P || null,
     reengagementDelayHours: rawTenant.reengagementDelayHours != null ? Number(rawTenant.reengagementDelayHours) : (preset.reengagementDelayHours || 24),
     crisisKeywords: parsedCrisisKeywords,
     inviolableRules: parsedInviolableRules,
@@ -112,6 +124,7 @@ export const normalizeTenantFromApi = (rawTenant) => {
 export const serializeTenantToApi = (tenant) => {
   if (!tenant) return {};
   const rawLeadPrice = Number(tenant.leadPriceMXN ?? tenant.costPerQualifiedLead ?? 350);
+  const resolvedSla = Number(tenant.slaHitlMinutes ?? tenant.slaTarget ?? 15);
   return {
     id: tenant.id,
     name: tenant.name,
@@ -139,7 +152,12 @@ export const serializeTenantToApi = (tenant) => {
       : (tenant.calendarConfig || null),
     buyerPersona: tenant.buyerPersona || null,
     brandDna: tenant.brandDna || null,
-    slaHitlMinutes: Math.max(1, Number(tenant.slaHitlMinutes || 5)),
+    toneOfVoice: tenant.toneOfVoice || '',
+    emojiPolicy: tenant.emojiPolicy || 'Moderado (según contexto)',
+    brandColors: Array.isArray(tenant.brandColors) ? tenant.brandColors : [],
+    commercialOffer: tenant.commercialOffer || null,
+    marketingMix4P: tenant.marketingMix4P || null,
+    slaHitlMinutes: Math.max(1, Number.isFinite(resolvedSla) ? resolvedSla : 15),
     reengagementDelayHours: Math.max(1, Number(tenant.reengagementDelayHours || 24)),
     crisisKeywords: Array.isArray(tenant.crisisKeywords) ? tenant.crisisKeywords : ['demanda', 'estafa', 'profeco', 'fraude', 'abogado', 'asqueroso', 'rateros', 'denuncia'],
     inviolableRules: Array.isArray(tenant.inviolableRules) ? tenant.inviolableRules : [],

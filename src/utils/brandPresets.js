@@ -327,13 +327,31 @@ export const TENANT_BRAND_PRESETS = {
 };
 
 /**
+ * Preset Neutral Canónico para Estado Global o Sin Negocio Seleccionado (V00)
+ */
+export const NEUTRAL_BRAND_PRESET = {
+  canonicalId: 'V00',
+  name: 'Espacio General • Selecciona un Negocio',
+  avatar: '🏢',
+  colors: [
+    { name: 'Lima Vectorial', hex: '#C3F400' },
+    { name: 'Azul Cognitivo', hex: '#80B8FF' },
+    { name: 'Esmeralda Conversión', hex: '#10B981' },
+    { name: 'Carbón Base', hex: '#18181B' },
+    { name: 'Gris Panel', hex: '#27272A' },
+  ],
+  defaultTone: 'Profesional, empático y orientado a conversión directa',
+  defaultPurpose: 'Brindar un servicio de excelencia con atención personalizada y valor medible para nuestros clientes.',
+};
+
+/**
  * Resuelve de forma determinista el preset de marca adecuado para cualquier tenant
  */
 export const resolveBrandPreset = (tenantOrKey) => {
-  if (!tenantOrKey) return TENANT_BRAND_PRESETS.service_appointments;
+  if (!tenantOrKey) return NEUTRAL_BRAND_PRESET;
 
   if (typeof tenantOrKey === 'string') {
-    return TENANT_BRAND_PRESETS[tenantOrKey] || TENANT_BRAND_PRESETS.service_appointments;
+    return TENANT_BRAND_PRESETS[tenantOrKey] || NEUTRAL_BRAND_PRESET;
   }
 
   const tenant = tenantOrKey;
@@ -378,7 +396,7 @@ export const resolveBrandPreset = (tenantOrKey) => {
     }
   }
 
-  return TENANT_BRAND_PRESETS.service_appointments;
+  return NEUTRAL_BRAND_PRESET;
 };
 
 /**
