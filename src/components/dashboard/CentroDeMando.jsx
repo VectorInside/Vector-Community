@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Portal } from '@/components/common/Portal';
@@ -178,82 +179,81 @@ export const CentroDeMando = () => {
   return (
     <div className="p-4 sm:p-6 lg:p-8 block animate-fade-in space-y-6">
       {/* ===================================================================== */}
-      {/* 1. BARRA DE SALUDO Y CONTEXTO EJECUTIVO COMPACTA (~50px)              */}
+      {/* 1. HERO BANNER EJECUTIVO CON EL EMBLEMÁTICO LOBO VECTORIAL              */}
       {/* ===================================================================== */}
-      <section className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 px-4 py-2.5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] shadow-sm min-h-[52px]">
-        {isClient ? (
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">{activeTenant?.avatar || '⚡'}</span>
-              <h1 className="text-sm font-heading font-black uppercase tracking-tight text-[var(--text-main)]">
-                Bienvenido, <span className="text-neon">{currentUser?.name || activeTenant?.name || 'Cliente'}</span>
-              </h1>
-            </div>
-            <span className="text-[var(--text-faint)] hidden sm:inline">|</span>
-            <span suppressHydrationWarning className="text-xs text-[var(--text-muted)] font-mono capitalize">
+      <section className="relative overflow-hidden rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-6 sm:p-7 shadow-sm">
+        <div className="relative z-10 max-w-2xl space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[10px] font-mono uppercase tracking-widest text-neon font-black bg-neon/10 px-2.5 py-1 rounded-full border border-neon/30">
+              {isClient ? 'OPERACIÓN · DIRECCIÓN CLARA' : 'CENTRO DE MANDO · LOBO VECTORIAL'}
+            </span>
+            <span suppressHydrationWarning className="text-xs font-mono text-[var(--text-muted)] capitalize">
               {formattedDate}
             </span>
-            <span className="text-[var(--text-faint)] hidden md:inline">|</span>
-            <div className="flex items-center gap-2 text-xs font-mono">
-              <span className="text-[var(--text-main)] font-bold">{activeTenant?.name}</span>
-              <span className="text-[var(--text-muted)]">({activeTenant?.giro})</span>
-              <span className={`w-2 h-2 rounded-full ${activeTenant?.isAiActive ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
-              <span className="text-[var(--text-muted)]">
-                {activeTenant?.isAiActive ? 'IA Asistente Operativa' : 'IA en Pausa'}
-              </span>
-            </div>
           </div>
-        ) : (
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-neon animate-pulse" />
-              <h1 className="text-sm font-heading font-black uppercase tracking-tight text-[var(--text-main)]">
-                Bienvenido, <span className="text-neon">{currentUser?.name || 'Edgar Lobo'}</span>
-              </h1>
-            </div>
-            <span className="text-[var(--text-faint)] hidden sm:inline">|</span>
-            <span suppressHydrationWarning className="text-xs text-[var(--text-muted)] font-mono capitalize">
-              {formattedDate}
-            </span>
-            <span className="text-[var(--text-faint)] hidden md:inline">|</span>
-            <span className="text-xs font-mono text-[var(--text-muted)]">
-              <strong className="text-[var(--text-main)] font-bold">{tenantsList.length}</strong> Negocios en Ecosistema ·{' '}
-              <strong className="text-emerald-500 font-bold">{activeAiCount}</strong> con IA Activa
-            </span>
-          </div>
-        )}
 
-        <div className="flex items-center gap-2 self-end md:self-auto shrink-0">
-          {isClient ? (
-            <>
+          <h1 className="text-2xl sm:text-3xl font-heading font-black text-[var(--text-main)] leading-tight tracking-tight">
+            {isClient ? (
+              <>
+                Bienvenido, <span className="text-neon">{currentUser?.name || activeTenant?.name || 'Cliente'}</span>
+              </>
+            ) : (
+              <>
+                Bienvenido, <span className="text-neon">{currentUser?.name || 'Edgar Lobo'}</span>
+              </>
+            )}
+          </h1>
+
+          <p className="text-xs sm:text-sm text-[var(--text-muted)] font-sans leading-relaxed">
+            {isClient
+              ? `Supervisión de captación en tiempo real, agenda y contenido para ${activeTenant?.name || 'tu negocio'}.`
+              : tenantsList.length === 0
+              ? 'Tu ecosistema está listo. Da de alta tu primer negocio para activar la supervisión de captación, gobernanza y pauta publicitaria.'
+              : `Supervisas ${tenantsList.length} negocios en el ecosistema (${activeAiCount} con IA activa). ${attentionTenants.length > 0 ? `${attentionTenants.length} requieren tu atención hoy.` : 'Todos los motores operan en rango óptimo.'}`}
+          </p>
+
+          <div className="pt-1">
+            {isClient ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => router.push('/inbox')}
+                  className="px-4 py-2 rounded-xl bg-neon text-black font-mono font-bold text-xs uppercase flex items-center gap-1.5 hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_15px_var(--neon-glow)] active:scale-95"
+                >
+                  <MessageSquare className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <span>Atender Bandeja</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewTenant(activeTenant)}
+                  className="px-3.5 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon text-[var(--text-main)] font-mono text-xs font-bold transition-all flex items-center gap-1.5"
+                >
+                  <Smartphone className="w-3.5 h-3.5" />
+                  <span>Micro-Landing</span>
+                </button>
+              </div>
+            ) : (
               <button
                 type="button"
-                onClick={() => setPreviewTenant(activeTenant)}
-                className="text-xs bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon text-[var(--text-main)] hover:text-neon font-mono font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all shadow-sm"
+                onClick={() => router.push('/config?tab=rag&mode=wizard')}
+                className="px-4 py-2 rounded-xl bg-neon text-black font-mono font-bold text-xs uppercase inline-flex items-center gap-2 hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_15px_var(--neon-glow)] active:scale-95"
               >
-                <Smartphone className="w-3.5 h-3.5" />
-                <span>Micro-Landing</span>
+                <Plus className="w-4 h-4 stroke-[3]" />
+                <span>{tenantsList.length === 0 ? 'Dar de Alta Primer Negocio' : 'Alta Nuevo Negocio'}</span>
               </button>
-              <button
-                type="button"
-                onClick={() => router.push('/inbox')}
-                className="text-xs bg-neon text-black font-mono font-black uppercase px-3.5 py-1.5 rounded-xl flex items-center gap-1.5 hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_15px_var(--neon-glow)] active:scale-95"
-              >
-                <MessageSquare className="w-3.5 h-3.5 stroke-[2.5]" />
-                <span>Bandeja</span>
-              </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              onClick={() => router.push('/config?tab=rag&mode=wizard')}
-              className="text-xs bg-neon text-black font-mono font-black uppercase px-3.5 py-1.5 rounded-xl flex items-center gap-1.5 hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_15px_var(--neon-glow)] active:scale-95"
-            >
-              <Plus className="w-3.5 h-3.5 stroke-[3]" />
-              <span>Alta Nuevo Negocio</span>
-            </button>
-          )}
+            )}
+          </div>
         </div>
+
+        {/* Lobo Vectorial Emblemático */}
+        <Image
+          src="/assets/vector-wolf.png"
+          alt="Lobo Vectorial"
+          width={220}
+          height={220}
+          priority
+          className="absolute right-[-15px] sm:right-2 lg:right-6 bottom-[-15px] w-40 sm:w-52 lg:w-56 h-auto object-contain opacity-30 lg:opacity-50 pointer-events-none select-none filter drop-shadow-[0_0_25px_rgba(195,244,0,0.25)]"
+        />
       </section>
 
       {/* ===================================================================== */}
@@ -552,24 +552,23 @@ export const CentroDeMando = () => {
 
             {tenantsList.length === 0 ? (
               /* Zero state motivador cuando no hay negocios en la cartera */
-              <div className="p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left shadow-sm">
-                <div className="space-y-1">
-                  <p className="text-sm font-semibold text-[var(--text-main)] flex items-center justify-center sm:justify-start gap-2">
-                    <span>🚀</span>
-                    <span>Bienvenido a Vector Community OS.</span>
-                  </p>
-                  <p className="text-xs text-[var(--text-muted)] font-sans max-w-xl">
-                    Da de alta tu primer negocio para activar la supervisión inteligente de captación y pauta.
-                  </p>
+              <div className="p-4 sm:p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex items-center justify-between gap-3 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-neon/10 text-neon flex items-center justify-center text-sm font-bold shrink-0">
+                    <Activity className="w-4 h-4 text-neon" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wide">
+                      Supervisión en Espera
+                    </h4>
+                    <p className="text-[11px] text-[var(--text-muted)] font-mono">
+                      0 alertas activas · El radar comenzará a monitorear en cuanto registres tu primer negocio.
+                    </p>
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => router.push('/config?tab=rag&mode=wizard')}
-                  className="px-4 py-2.5 rounded-xl bg-neon text-black font-sans font-bold text-xs uppercase flex items-center gap-2 hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_15px_var(--neon-glow)] active:scale-95 shrink-0"
-                >
-                  <Plus className="w-4 h-4 stroke-[3]" />
-                  <span>Dar de Alta Primer Negocio</span>
-                </button>
+                <span className="hidden sm:inline-block text-[10px] font-mono font-bold px-2.5 py-1 rounded-full bg-[var(--bg-card)] text-[var(--text-muted)] border border-[var(--border-color)]">
+                  RADAR LISTO
+                </span>
               </div>
             ) : attentionTenants.length === 0 ? (
               /* Banner de Paz Operativa */
