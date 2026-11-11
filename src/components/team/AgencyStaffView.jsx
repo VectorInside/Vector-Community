@@ -707,8 +707,17 @@ export const AgencyStaffView = () => {
           filteredStaff.map((member) => {
             const roleInfo = ROLE_DEFINITIONS[member.role] || ROLE_DEFINITIONS.SUPER_ADMIN;
             const isSuspended = member.status === 'SUSPENDED';
-            const isPending = member.status === 'PENDING_INVITE' ||
-              (typeof member.lastLogin === 'string' && member.lastLogin.toLowerCase().includes('invitación enviada'));
+            const isCurrentUser = member.id === currentUser?.id ||
+              (currentUser?.id === 'usr-admin-01' && member.email?.toLowerCase() === currentUser?.email?.toLowerCase());
+
+            // Colaborador pendiente de primer acceso / activación si no es el usuario en sesión y aún no ha ingresado
+            const isPending = !isCurrentUser && (
+              member.status === 'PENDING_INVITE' ||
+              Boolean(member.mustChangePassword) ||
+              member.lastLogin === 'Sin actividad registrada' ||
+              !member.lastLogin ||
+              (typeof member.lastLogin === 'string' && member.lastLogin.toLowerCase().includes('invitación'))
+            );
 
             return (
               <div
@@ -862,10 +871,10 @@ export const AgencyStaffView = () => {
                           });
                         }}
                         className="px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 hover:border-amber-400 text-amber-400 hover:text-white transition-all flex items-center gap-1.5 min-h-[44px]"
-                        title="Reenviar invitación o consultar ficha provisional (Pendiente de ingreso)"
+                        title="Reenviar correo de invitación o enviar credenciales provisionales por WhatsApp"
                       >
                         <Mail className="w-3.5 h-3.5 text-amber-400" />
-                        <span className="font-bold">Reenviar Ficha</span>
+                        <span className="font-bold">Reenviar Invitación</span>
                       </button>
                     )}
 
