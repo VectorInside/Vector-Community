@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { Portal } from '@/components/common/Portal';
 import { formatPhoneDisplay, getEmailDomainTypoSuggestion } from '@/utils/formatters';
+import { auditService } from '@/services/auditService';
 
 export const StaffInvitationModal = ({
   isOpen,
@@ -64,6 +65,18 @@ export const StaffInvitationModal = ({
     const phoneToUse = clean.length === 10 ? `52${clean}` : clean;
     const url = `https://wa.me/${phoneToUse}?text=${encodeURIComponent(whatsappMessage)}`;
     window.open(url, '_blank');
+
+    auditService.recordEvent({
+      eventCategory: 'IAM_RBAC',
+      action: 'Envío / Reenvío de Invitación Oficial',
+      targetResource: `${name} (${email})`,
+      status: 'SUCCESS',
+      metadata: {
+        channel: 'WhatsApp',
+        role: role || roleLabel,
+        email,
+      },
+    });
   };
 
   const handleDispatchEmail = async (overrideRecipient = null) => {
@@ -102,6 +115,18 @@ export const StaffInvitationModal = ({
           success: true,
           message: `¡Correo despachado con éxito a ${targetEmail}!`,
           messageId: data.messageId,
+        });
+        auditService.recordEvent({
+          eventCategory: 'IAM_RBAC',
+          action: 'Envío / Reenvío de Invitación Oficial',
+          targetResource: `${name} (${targetEmail})`,
+          status: 'SUCCESS',
+          metadata: {
+            channel: 'SMTP',
+            role: role || roleLabel,
+            email: targetEmail,
+            messageId: data.messageId || null,
+          },
         });
       } else {
         setSendResult({

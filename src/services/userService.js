@@ -72,7 +72,7 @@ export const userService = {
   },
 
   /**
-   * Obtiene la lista de colaboradores de la agencia (SUPER_ADMIN, ADMIN) desde PostgreSQL 17
+   * Obtiene la lista de colaboradores de la agencia (SUPER_ADMIN, ADMIN, OPERATOR) desde PostgreSQL 17
    */
   async getAgencyStaff() {
     const response = await api.get('/users/staff');
@@ -86,6 +86,10 @@ export const userService = {
     return [];
   },
 
+  async getStaff() {
+    return this.getAgencyStaff();
+  },
+
   /**
    * Obtiene la lista de cuentas de dueños de negocio (1:1 Tenant Owner) desde PostgreSQL 17
    */
@@ -93,6 +97,10 @@ export const userService = {
     const response = await api.get('/users/owners');
     const data = unwrapApiData(response);
     return Array.isArray(data) ? data : [];
+  },
+
+  async getOwners() {
+    return this.getTenantOwners();
   },
 
   /**

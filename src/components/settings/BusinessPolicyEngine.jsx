@@ -31,6 +31,7 @@ import {
 import confetti from 'canvas-confetti';
 import { GOVERNANCE_SYSTEM_RULES, BUSINESS_POLICY_THRESHOLDS } from '@/utils/constants';
 import { BUSINESS_VERTICALS_CONFIG } from '@/components/rag/RAGWizard';
+import { auditService } from '@/services/auditService';
 
 const formatNumber = (num) => {
   if (num === null || num === undefined || isNaN(num)) return '0';
@@ -222,6 +223,21 @@ export const BusinessPolicyEngine = () => {
         inviolableRules: inviolableRules,
       });
     }
+
+    auditService.recordEvent({
+      eventCategory: 'TENANT_POLICY',
+      action: 'Actualización de Reglas de Negocio y Precio Pay-Per-Lead',
+      targetResource: currentTenant?.name || 'Gobernanza Global',
+      tenantId: currentTenant?.id || tenantId,
+      status: 'SUCCESS',
+      metadata: {
+        leadPriceMXN: effectiveLeadPrice,
+        slaHitlMinutes: Number(slaHitlMinutes) || 5,
+        reengagementDelayHours: Number(reengagementHours) || 24,
+        isAiActive: Boolean(currentTenant && currentTenant.isAiActive !== false),
+        rulesCount: inviolableRules.length,
+      },
+    });
 
     setSavedSuccess(true);
     try {
