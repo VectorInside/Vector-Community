@@ -1459,7 +1459,7 @@ export const PerfilMarcaView = () => {
                       </p>
                     )}
                     <span className="text-[9px] font-mono text-[var(--text-muted)] mt-1 block">
-                      Ingresa 10 dígitos locales. A este número se transfieren emergencias médicas, quejas de clientes o prospectos que solicitan hablar con un humano.
+                      Ingresa 10 dígitos locales. A este número se transfieren solicitudes prioritarias, quejas de clientes o prospectos que solicitan hablar con un humano (HITL).
                     </span>
                   </div>
 
