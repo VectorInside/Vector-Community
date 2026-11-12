@@ -395,10 +395,14 @@ export const PerfilMarcaView = () => {
           setBuyerBuyingTrigger(json.buyerPersona.buyingTrigger || '');
         }
         if (json.marketingMix4P) {
-          setMixProduct(json.marketingMix4P.product || '');
-          setMixPrice(json.marketingMix4P.price || '');
-          setMixPlace(json.marketingMix4P.place || '');
-          setMixPromotion(json.marketingMix4P.promotion || '');
+          const cleanPrefix = (str) =>
+            (str || '')
+              .replace(/^[1-4]\.\s*(PRODUCTO|PRECIO|PLAZA|PROMOCI[OÓ]N)?\s*[:\-–—]?\s*/i, '')
+              .trim();
+          setMixProduct(cleanPrefix(json.marketingMix4P.product));
+          setMixPrice(cleanPrefix(json.marketingMix4P.price));
+          setMixPlace(cleanPrefix(json.marketingMix4P.place));
+          setMixPromotion(cleanPrefix(json.marketingMix4P.promotion));
         }
         setIsDirty(true);
         try {
@@ -1808,7 +1812,7 @@ export const PerfilMarcaView = () => {
         {/* BARRA FLOTANTE DE GUARDADO CUANDO HAY CAMBIOS (Nielsen Heurística 1) */}
         {/* =================================================================== */}
         {isDirty && (
-          <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-8 z-50 p-4 rounded-2xl bg-[var(--bg-panel)]/95 backdrop-blur-md border-2 border-neon shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex items-center justify-between gap-4 animate-fade-in max-w-lg">
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 p-3.5 sm:p-4 rounded-2xl bg-[var(--bg-panel)]/95 backdrop-blur-md border-2 border-neon shadow-[0_10px_35px_rgba(0,0,0,0.6)] flex items-center justify-between gap-4 animate-fade-in w-[92vw] max-w-lg">
             <div className="flex items-center gap-2.5">
               <AlertCircle className="w-5 h-5 text-neon shrink-0 animate-pulse" />
               <div>
