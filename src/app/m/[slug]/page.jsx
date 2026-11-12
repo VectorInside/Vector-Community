@@ -25,6 +25,12 @@ import {
   Navigation,
   Zap,
   Award,
+  Youtube,
+  Video,
+  Instagram,
+  Linkedin,
+  Facebook,
+  Globe,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { normalizePhone10, formatPhoneDisplay } from '@/utils/formatters';
@@ -761,6 +767,47 @@ export default function MicroLandingPage() {
             <span>{customData.hoursWeekend || baseTheme.hoursWeekend}</span>
           </div>
         </div>
+
+        {/* REDES SOCIALES OFICIALES DE LA MARCA */}
+        {(() => {
+          const links = customData.socialLinks || baseTenant.socialLinks || {};
+          const activeLinks = [
+            links.youtube && { name: 'YouTube', url: links.youtube, icon: Youtube, color: 'text-rose-500 hover:border-rose-500/50' },
+            links.tiktok && { name: 'TikTok', url: links.tiktok, icon: Video, color: 'text-cyan-400 hover:border-cyan-400/50' },
+            links.instagram && { name: 'Instagram', url: links.instagram, icon: Instagram, color: 'text-pink-400 hover:border-pink-400/50' },
+            links.linkedin && { name: 'LinkedIn', url: links.linkedin, icon: Linkedin, color: 'text-blue-400 hover:border-blue-400/50' },
+            links.facebook && { name: 'Facebook', url: links.facebook, icon: Facebook, color: 'text-blue-600 hover:border-blue-600/50' },
+            links.website && { name: 'Web', url: links.website, icon: Globe, color: 'text-[#D4FF00] hover:border-[#D4FF00]/50' },
+          ].filter(Boolean);
+
+          if (activeLinks.length === 0) return null;
+
+          return (
+            <div className="pt-2 pb-1 text-center space-y-2">
+              <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block">
+                Canales & Redes Oficiales
+              </span>
+              <div className="flex items-center justify-center gap-2 flex-wrap">
+                {activeLinks.map((item) => {
+                  const Icon = item.icon;
+                  const finalUrl = item.url.startsWith('http') ? item.url : `https://${item.url}`;
+                  return (
+                    <a
+                      key={item.name}
+                      href={finalUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 text-xs font-mono transition-all hover:bg-white/10 ${item.color}`}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      <span>{item.name}</span>
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* OFFICIAL BRANDING FOOTER: Vector Inside */}
         <footer className="pt-3 pb-2 text-center space-y-1.5 border-t border-white/10">

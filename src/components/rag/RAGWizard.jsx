@@ -78,6 +78,9 @@ import {
   ExternalLink,
   MessageSquare,
   Linkedin,
+  Youtube,
+  Instagram,
+  Facebook,
   Share2,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -1564,6 +1567,14 @@ export const RAGWizard = ({
     whatsappPhoneId: '',
     wabaId: '',
     instagramAccountId: '',
+    socialLinks: {
+      youtube: '',
+      tiktok: '',
+      linkedin: '',
+      instagram: '',
+      facebook: '',
+      x: '',
+    },
 
     // Micro-Landing Universal como Servicio
     microLandingBillingPlan: 'trial_90d', // 'trial_90d' (3 Meses Gratis) | 'active_monthly' ($29 USD/mes) | 'disabled' (Inactiva)
@@ -2211,7 +2222,21 @@ export const RAGWizard = ({
       slaTarget: wizardData.hitlEscalationLatency?.includes('<') ? 5 : 15,
       brandColors: preset.colors,
       avatar: vert.avatar || preset.avatar || '🏢',
-      connectedSocialNetworks: ['WHATSAPP', 'INSTAGRAM', 'FACEBOOK'],
+      connectedSocialNetworks: [
+        'WHATSAPP',
+        ...Object.keys(wizardData.socialLinks || {})
+          .filter((k) => wizardData.socialLinks[k]?.trim())
+          .map((k) => k.toUpperCase()),
+      ],
+      socialLinks: {
+        youtube: wizardData.socialLinks?.youtube || '',
+        tiktok: wizardData.socialLinks?.tiktok || '',
+        linkedin: wizardData.socialLinks?.linkedin || '',
+        instagram: wizardData.socialLinks?.instagram || '',
+        facebook: wizardData.socialLinks?.facebook || '',
+        x: wizardData.socialLinks?.x || '',
+        website: wizardData.hasWebsite ? wizardData.websiteUrl : '',
+      },
       hasWebsite: wizardData.hasWebsite,
       websiteUrl: wizardData.hasWebsite ? wizardData.websiteUrl : null,
       ga4MeasurementId: wizardData.ga4MeasurementId || null,
@@ -4046,7 +4071,149 @@ export const RAGWizard = ({
                     </div>
                   </div>
 
-                                    <div className="flex justify-end pt-4 border-t border-[var(--border-color)]">
+                  {/* Presencia Digital & Redes Sociales Oficiales */}
+                  <div className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-3 font-sans">
+                    <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <Share2 className="w-4 h-4 text-neon" />
+                        <div>
+                          <h4 className="font-heading font-black text-xs text-[var(--text-main)] uppercase tracking-wide">
+                            Redes Sociales & Presencia Digital Oficial (Opcional)
+                          </h4>
+                          <p className="text-[10px] text-[var(--text-muted)] font-mono">
+                            La IA usará estos enlaces para responder a prospectos y se mostrarán en la Micro-Landing.
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-[9px] font-mono text-neon font-bold bg-neon/10 px-2 py-0.5 rounded border border-neon/20">
+                        Community Manager IA (HITL)
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs font-mono">
+                      {/* YouTube */}
+                      <div className="space-y-1">
+                        <label className="text-[10px] text-[var(--text-muted)] flex items-center gap-1.5 font-bold">
+                          <Youtube className="w-3.5 h-3.5 text-rose-500" />
+                          <span>YouTube (@canal o URL)</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="https://youtube.com/@minegocio"
+                          value={wizardData.socialLinks?.youtube || ''}
+                          onChange={(e) =>
+                            setWizardData({
+                              ...wizardData,
+                              socialLinks: { ...(wizardData.socialLinks || {}), youtube: e.target.value },
+                            })
+                          }
+                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2 text-xs text-[var(--text-main)] focus:border-neon outline-none"
+                        />
+                      </div>
+
+                      {/* TikTok */}
+                      <div className="space-y-1">
+                        <label className="text-[10px] text-[var(--text-muted)] flex items-center gap-1.5 font-bold">
+                          <Video className="w-3.5 h-3.5 text-cyan-400" />
+                          <span>TikTok (@cuenta o URL)</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="https://tiktok.com/@minegocio"
+                          value={wizardData.socialLinks?.tiktok || ''}
+                          onChange={(e) =>
+                            setWizardData({
+                              ...wizardData,
+                              socialLinks: { ...(wizardData.socialLinks || {}), tiktok: e.target.value },
+                            })
+                          }
+                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2 text-xs text-[var(--text-main)] focus:border-neon outline-none"
+                        />
+                      </div>
+
+                      {/* LinkedIn */}
+                      <div className="space-y-1">
+                        <label className="text-[10px] text-[var(--text-muted)] flex items-center gap-1.5 font-bold">
+                          <Linkedin className="w-3.5 h-3.5 text-blue-400" />
+                          <span>LinkedIn (/company/...)</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="https://linkedin.com/company/minegocio"
+                          value={wizardData.socialLinks?.linkedin || ''}
+                          onChange={(e) =>
+                            setWizardData({
+                              ...wizardData,
+                              socialLinks: { ...(wizardData.socialLinks || {}), linkedin: e.target.value },
+                            })
+                          }
+                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2 text-xs text-[var(--text-main)] focus:border-neon outline-none"
+                        />
+                      </div>
+
+                      {/* Instagram */}
+                      <div className="space-y-1">
+                        <label className="text-[10px] text-[var(--text-muted)] flex items-center gap-1.5 font-bold">
+                          <Instagram className="w-3.5 h-3.5 text-pink-500" />
+                          <span>Instagram (@perfil o URL)</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="https://instagram.com/minegocio"
+                          value={wizardData.socialLinks?.instagram || ''}
+                          onChange={(e) =>
+                            setWizardData({
+                              ...wizardData,
+                              socialLinks: { ...(wizardData.socialLinks || {}), instagram: e.target.value },
+                            })
+                          }
+                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2 text-xs text-[var(--text-main)] focus:border-neon outline-none"
+                        />
+                      </div>
+
+                      {/* Facebook */}
+                      <div className="space-y-1">
+                        <label className="text-[10px] text-[var(--text-muted)] flex items-center gap-1.5 font-bold">
+                          <Facebook className="w-3.5 h-3.5 text-blue-600" />
+                          <span>Facebook (Página Oficial)</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="https://facebook.com/minegocio"
+                          value={wizardData.socialLinks?.facebook || ''}
+                          onChange={(e) =>
+                            setWizardData({
+                              ...wizardData,
+                              socialLinks: { ...(wizardData.socialLinks || {}), facebook: e.target.value },
+                            })
+                          }
+                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2 text-xs text-[var(--text-main)] focus:border-neon outline-none"
+                        />
+                      </div>
+
+                      {/* X (Twitter) */}
+                      <div className="space-y-1">
+                        <label className="text-[10px] text-[var(--text-muted)] flex items-center gap-1.5 font-bold">
+                          <Share2 className="w-3.5 h-3.5 text-neon" />
+                          <span>X / Twitter (@handle)</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="https://x.com/minegocio"
+                          value={wizardData.socialLinks?.x || ''}
+                          onChange={(e) =>
+                            setWizardData({
+                              ...wizardData,
+                              socialLinks: { ...(wizardData.socialLinks || {}), x: e.target.value },
+                            })
+                          }
+                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2 text-xs text-[var(--text-main)] focus:border-neon outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-4 border-t border-[var(--border-color)]">
                     <button
                       id="tour-wizard-step2-next"
                       type="button"

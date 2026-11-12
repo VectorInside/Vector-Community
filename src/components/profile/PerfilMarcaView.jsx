@@ -31,6 +31,8 @@ import {
   Facebook,
   Video,
   Linkedin,
+  Youtube,
+  ExternalLink,
   FileText,
   AlertCircle,
   AlertTriangle,
@@ -95,6 +97,17 @@ export const PerfilMarcaView = () => {
   const [mixPrice, setMixPrice] = useState('');
   const [mixPlace, setMixPlace] = useState('');
   const [mixPromotion, setMixPromotion] = useState('');
+
+  // Redes Sociales Oficiales (YouTube, TikTok, LinkedIn, Instagram, Facebook, etc.)
+  const [socialLinks, setSocialLinks] = useState({
+    youtube: '',
+    tiktok: '',
+    linkedin: '',
+    instagram: '',
+    facebook: '',
+    x: '',
+    website: '',
+  });
 
   // Categoría activa de selector de avatar
   const [selectedAvatarCategory, setSelectedAvatarCategory] = useState(0);
@@ -170,6 +183,17 @@ export const PerfilMarcaView = () => {
       setMixPlace(activeTenant.marketingMix4P?.place || '');
       setMixPromotion(activeTenant.marketingMix4P?.promotion || '');
 
+      const tenantSocial = activeTenant.socialLinks || {};
+      setSocialLinks({
+        youtube: tenantSocial.youtube || '',
+        tiktok: tenantSocial.tiktok || '',
+        linkedin: tenantSocial.linkedin || '',
+        instagram: tenantSocial.instagram || '',
+        facebook: tenantSocial.facebook || '',
+        x: tenantSocial.x || '',
+        website: tenantSocial.website || activeTenant.websiteUrl || '',
+      });
+
       setIsDirty(false);
       setPhoneError(null);
     } else {
@@ -196,6 +220,15 @@ export const PerfilMarcaView = () => {
       setMixPrice('');
       setMixPlace('');
       setMixPromotion('');
+      setSocialLinks({
+        youtube: '',
+        tiktok: '',
+        linkedin: '',
+        instagram: '',
+        facebook: '',
+        x: '',
+        website: '',
+      });
       setIsDirty(false);
       setPhoneError(null);
     }
@@ -252,6 +285,15 @@ export const PerfilMarcaView = () => {
             place: mixPlace,
             promotion: mixPromotion,
           },
+          socialLinks: {
+            youtube: socialLinks.youtube || '',
+            tiktok: socialLinks.tiktok || '',
+            linkedin: socialLinks.linkedin || '',
+            instagram: socialLinks.instagram || '',
+            facebook: socialLinks.facebook || '',
+            x: socialLinks.x || '',
+            website: socialLinks.website || activeTenant?.websiteUrl || '',
+          },
         });
 
         setIsDirty(false);
@@ -289,6 +331,7 @@ export const PerfilMarcaView = () => {
     mixPrice,
     mixPlace,
     mixPromotion,
+    socialLinks,
   ]);
 
   // Manejador de atajo de teclado Ctrl+S / Cmd+S para guardar
@@ -1387,54 +1430,277 @@ export const PerfilMarcaView = () => {
               </div>
             </div>
 
-            {/* SECCIÓN 7: CANALES OFICIALES CONECTADOS */}
-            <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-3 shadow-sm">
-              <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
+            {/* SECCIÓN 7: PRESENCIA DIGITAL, REDES SOCIALES & CANALES OFICIALES */}
+            <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-5 shadow-sm font-sans">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[var(--border-color)] pb-3 gap-2">
                 <div className="flex items-center gap-2">
                   <Share2 className="w-4 h-4 text-neon" />
-                  <h3 className="font-heading font-black text-sm text-[var(--text-main)] uppercase tracking-wide">
-                    7. Canales Oficiales del Negocio
-                  </h3>
+                  <div>
+                    <h3 className="font-heading font-black text-sm text-[var(--text-main)] uppercase tracking-wide">
+                      7. Presencia Digital & Redes Sociales Oficiales
+                    </h3>
+                    <span className="text-[10px] text-[var(--text-muted)] font-mono">
+                      URLs y perfiles inyectados en la Micro-Landing, el Content Planner y el Motor de IA (ADR-001)
+                    </span>
+                  </div>
                 </div>
-                <span className="text-[10px] font-mono text-[var(--text-muted)]">
-                  Atribución directa Meta & Web
-                </span>
+                <a
+                  href="/connections?tab=channels"
+                  className="px-3 py-1 rounded-xl bg-[var(--bg-card)] hover:bg-neon/15 text-[var(--text-muted)] hover:text-neon border border-[var(--border-color)] hover:border-neon/40 text-[10px] font-mono font-bold transition-all flex items-center gap-1.5 self-start sm:self-auto"
+                >
+                  <Sliders className="w-3 h-3 text-neon" />
+                  <span>Configurar Tokens de APIs & Webhooks</span>
+                  <ExternalLink className="w-2.5 h-2.5" />
+                </a>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
-                <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-2.5">
-                  <MessageSquare className="w-4 h-4 text-emerald-500" />
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-[var(--text-main)] truncate">WhatsApp Cloud</p>
-                    <span className="text-[9px] font-mono text-emerald-500 font-bold">Activo</span>
+              {/* Grid de Redes Sociales Públicas para el Community Manager IA */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 text-xs">
+                {/* YouTube */}
+                <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1.5 group focus-within:border-rose-500/60 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <label className="font-mono text-[10px] uppercase font-bold text-[var(--text-muted)] flex items-center gap-1.5">
+                      <Youtube className="w-3.5 h-3.5 text-rose-500" />
+                      <span>YouTube (Canal Oficial)</span>
+                    </label>
+                    {socialLinks.youtube && (
+                      <a
+                        href={socialLinks.youtube.startsWith('http') ? socialLinks.youtube : `https://${socialLinks.youtube}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[9px] font-mono text-rose-400 hover:underline flex items-center gap-0.5"
+                      >
+                        <span>Ver</span>
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    )}
                   </div>
+                  <input
+                    type="text"
+                    value={socialLinks.youtube}
+                    onChange={(e) => {
+                      setSocialLinks({ ...socialLinks, youtube: e.target.value });
+                      setIsDirty(true);
+                    }}
+                    placeholder="https://youtube.com/@minegocio"
+                    className="w-full p-2 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-rose-500 outline-none font-mono text-xs"
+                  />
+                  <span className="text-[9px] font-mono text-[var(--text-muted)] block">
+                    La IA ofrecerá este canal cuando soliciten videos o tutoriales.
+                  </span>
                 </div>
 
-                <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-2.5">
-                  <Instagram className="w-4 h-4 text-pink-500" />
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-[var(--text-main)] truncate">Instagram DM</p>
-                    <span className="text-[9px] font-mono text-emerald-500 font-bold">Sincronizado</span>
+                {/* TikTok */}
+                <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1.5 group focus-within:border-cyan-400/60 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <label className="font-mono text-[10px] uppercase font-bold text-[var(--text-muted)] flex items-center gap-1.5">
+                      <Video className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>TikTok (Cuenta Oficial)</span>
+                    </label>
+                    {socialLinks.tiktok && (
+                      <a
+                        href={socialLinks.tiktok.startsWith('http') ? socialLinks.tiktok : `https://${socialLinks.tiktok}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[9px] font-mono text-cyan-400 hover:underline flex items-center gap-0.5"
+                      >
+                        <span>Ver</span>
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    )}
                   </div>
+                  <input
+                    type="text"
+                    value={socialLinks.tiktok}
+                    onChange={(e) => {
+                      setSocialLinks({ ...socialLinks, tiktok: e.target.value });
+                      setIsDirty(true);
+                    }}
+                    placeholder="https://tiktok.com/@minegocio"
+                    className="w-full p-2 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-cyan-400 outline-none font-mono text-xs"
+                  />
+                  <span className="text-[9px] font-mono text-[var(--text-muted)] block">
+                    Conectado con ideas de Reels en el Content Planner.
+                  </span>
                 </div>
 
-                <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-2.5">
-                  <Facebook className="w-4 h-4 text-blue-500" />
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-[var(--text-main)] truncate">Facebook Page</p>
-                    <span className="text-[9px] font-mono text-emerald-500 font-bold">Conectado</span>
+                {/* LinkedIn */}
+                <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1.5 group focus-within:border-blue-400/60 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <label className="font-mono text-[10px] uppercase font-bold text-[var(--text-muted)] flex items-center gap-1.5">
+                      <Linkedin className="w-3.5 h-3.5 text-blue-400" />
+                      <span>LinkedIn (Empresa / Perfil)</span>
+                    </label>
+                    {socialLinks.linkedin && (
+                      <a
+                        href={socialLinks.linkedin.startsWith('http') ? socialLinks.linkedin : `https://${socialLinks.linkedin}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[9px] font-mono text-blue-400 hover:underline flex items-center gap-0.5"
+                      >
+                        <span>Ver</span>
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    )}
                   </div>
+                  <input
+                    type="text"
+                    value={socialLinks.linkedin}
+                    onChange={(e) => {
+                      setSocialLinks({ ...socialLinks, linkedin: e.target.value });
+                      setIsDirty(true);
+                    }}
+                    placeholder="https://linkedin.com/company/minegocio"
+                    className="w-full p-2 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-blue-400 outline-none font-mono text-xs"
+                  />
+                  <span className="text-[9px] font-mono text-[var(--text-muted)] block">
+                    Autoridad corporativa e interacciones B2B.
+                  </span>
                 </div>
 
-                <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-2.5">
-                  <Globe className="w-4 h-4 text-cyan-400" />
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-[var(--text-main)] truncate">
-                      {activeTenant?.hasWebsite ? 'Sitio Web' : 'Micro-Landing'}
-                    </p>
-                    <span className="text-[9px] font-mono text-cyan-400 font-bold">
-                      {activeTenant?.hasWebsite ? 'GA4 Activo' : 'Alojada en Vector'}
-                    </span>
+                {/* Instagram */}
+                <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1.5 group focus-within:border-pink-500/60 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <label className="font-mono text-[10px] uppercase font-bold text-[var(--text-muted)] flex items-center gap-1.5">
+                      <Instagram className="w-3.5 h-3.5 text-pink-500" />
+                      <span>Instagram (Perfil Oficial)</span>
+                    </label>
+                    {socialLinks.instagram && (
+                      <a
+                        href={socialLinks.instagram.startsWith('http') ? socialLinks.instagram : `https://${socialLinks.instagram}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[9px] font-mono text-pink-400 hover:underline flex items-center gap-0.5"
+                      >
+                        <span>Ver</span>
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    )}
+                  </div>
+                  <input
+                    type="text"
+                    value={socialLinks.instagram}
+                    onChange={(e) => {
+                      setSocialLinks({ ...socialLinks, instagram: e.target.value });
+                      setIsDirty(true);
+                    }}
+                    placeholder="https://instagram.com/minegocio"
+                    className="w-full p-2 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-pink-500 outline-none font-mono text-xs"
+                  />
+                  <span className="text-[9px] font-mono text-[var(--text-muted)] block">
+                    Publicado en Micro-Landing y derivación directa a DMs.
+                  </span>
+                </div>
+
+                {/* Facebook */}
+                <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1.5 group focus-within:border-blue-600/60 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <label className="font-mono text-[10px] uppercase font-bold text-[var(--text-muted)] flex items-center gap-1.5">
+                      <Facebook className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Facebook (Página Oficial)</span>
+                    </label>
+                    {socialLinks.facebook && (
+                      <a
+                        href={socialLinks.facebook.startsWith('http') ? socialLinks.facebook : `https://${socialLinks.facebook}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[9px] font-mono text-blue-500 hover:underline flex items-center gap-0.5"
+                      >
+                        <span>Ver</span>
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    )}
+                  </div>
+                  <input
+                    type="text"
+                    value={socialLinks.facebook}
+                    onChange={(e) => {
+                      setSocialLinks({ ...socialLinks, facebook: e.target.value });
+                      setIsDirty(true);
+                    }}
+                    placeholder="https://facebook.com/minegocio"
+                    className="w-full p-2 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-blue-600 outline-none font-mono text-xs"
+                  />
+                  <span className="text-[9px] font-mono text-[var(--text-muted)] block">
+                    Vinculado con campañas de Meta Ads y comunidad.
+                  </span>
+                </div>
+
+                {/* Sitio Web Principal */}
+                <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1.5 group focus-within:border-neon/60 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <label className="font-mono text-[10px] uppercase font-bold text-[var(--text-muted)] flex items-center gap-1.5">
+                      <Globe className="w-3.5 h-3.5 text-neon" />
+                      <span>Sitio Web / Portal</span>
+                    </label>
+                    {(socialLinks.website || activeTenant?.websiteUrl) && (
+                      <a
+                        href={(socialLinks.website || activeTenant?.websiteUrl).startsWith('http') ? (socialLinks.website || activeTenant?.websiteUrl) : `https://${socialLinks.website || activeTenant?.websiteUrl}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[9px] font-mono text-neon hover:underline flex items-center gap-0.5"
+                      >
+                        <span>Ver</span>
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    )}
+                  </div>
+                  <input
+                    type="text"
+                    value={socialLinks.website}
+                    onChange={(e) => {
+                      setSocialLinks({ ...socialLinks, website: e.target.value });
+                      setIsDirty(true);
+                    }}
+                    placeholder="https://minegocio.com"
+                    className="w-full p-2 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none font-mono text-xs"
+                  />
+                  <span className="text-[9px] font-mono text-[var(--text-muted)] block">
+                    URL principal de referencia para el modelo dual de tráfico.
+                  </span>
+                </div>
+              </div>
+
+              {/* Estado de Conductos de Mensajería Activos */}
+              <div className="pt-2 border-t border-[var(--border-color)] space-y-2">
+                <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase font-bold block">
+                  Conductos de Mensajería & Tráfico Automatizado:
+                </span>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-2">
+                    <MessageSquare className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                    <div className="min-w-0">
+                      <span className="text-[11px] font-bold text-[var(--text-main)] block truncate">WhatsApp Cloud</span>
+                      <span className="text-[8px] font-mono text-emerald-500 font-bold">Activo (Event-Driven)</span>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-2">
+                    <Instagram className="w-3.5 h-3.5 text-pink-500 shrink-0" />
+                    <div className="min-w-0">
+                      <span className="text-[11px] font-bold text-[var(--text-main)] block truncate">Instagram DM</span>
+                      <span className="text-[8px] font-mono text-emerald-500 font-bold">Sincronizado</span>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-2">
+                    <Facebook className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                    <div className="min-w-0">
+                      <span className="text-[11px] font-bold text-[var(--text-main)] block truncate">Facebook Page</span>
+                      <span className="text-[8px] font-mono text-emerald-500 font-bold">Conectado</span>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-2">
+                    <Globe className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                    <div className="min-w-0">
+                      <span className="text-[11px] font-bold text-[var(--text-main)] block truncate">
+                        {activeTenant?.hasWebsite ? 'Sitio Web' : 'Micro-Landing'}
+                      </span>
+                      <span className="text-[8px] font-mono text-cyan-400 font-bold">
+                        {activeTenant?.hasWebsite ? 'GA4 Activo' : 'Alojada en Vector'}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>

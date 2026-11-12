@@ -115,6 +115,17 @@ export const normalizeTenantFromApi = (rawTenant) => {
     isAiActive: rawTenant.isAiActive !== undefined ? Boolean(rawTenant.isAiActive) : (preset.isAiActive !== false),
     retainedDepositMXN: rawTenant.retainedDepositMXN != null ? Number(rawTenant.retainedDepositMXN) : (Number(preset.retainedDepositMXN) || 0),
     connectedSocialNetworks: parsedNetworks,
+    socialLinks: (rawTenant.socialLinks && typeof rawTenant.socialLinks === 'object')
+      ? rawTenant.socialLinks
+      : (preset.socialLinks || {
+          instagram: '',
+          facebook: '',
+          youtube: '',
+          tiktok: '',
+          linkedin: '',
+          x: '',
+          website: rawTenant.websiteUrl || '',
+        }),
     calendarConfig: parsedCalendarConfig,
     buyerPersona: rawTenant.buyerPersona || preset.buyerPersona,
     brandDna: rawTenant.brandDna || preset.brandDna,
@@ -147,6 +158,9 @@ export const serializeTenantToApi = (tenant) => {
     connectedSocialNetworks: Array.isArray(tenant.connectedSocialNetworks)
       ? tenant.connectedSocialNetworks.join(',')
       : (tenant.connectedSocialNetworks || 'INSTAGRAM,FACEBOOK,WHATSAPP'),
+    socialLinks: (tenant.socialLinks && typeof tenant.socialLinks === 'object')
+      ? tenant.socialLinks
+      : {},
     calendarConfig: typeof tenant.calendarConfig === 'object'
       ? JSON.stringify(tenant.calendarConfig)
       : (tenant.calendarConfig || null),
