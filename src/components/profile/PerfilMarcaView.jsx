@@ -138,18 +138,14 @@ export const PerfilMarcaView = () => {
   // Sincronizar estado cuando cambie el negocio activo (activeTenant o activeTenantKey)
   useEffect(() => {
     if (activeTenant) {
-      setBrandPurpose(
-        activeTenant.brandPurpose ||
-          currentPreset.defaultPurpose ||
-          'Brindar un servicio de excelencia con atención personalizada y valor medible para nuestros clientes.'
-      );
-      setToneOfVoice(activeTenant.toneOfVoice || currentPreset.defaultTone);
+      setBrandPurpose(activeTenant.brandPurpose || '');
+      setToneOfVoice(activeTenant.toneOfVoice || '');
       setEmojiPolicy(activeTenant.emojiPolicy || 'Moderado (según contexto)');
       setSlaTarget(activeTenant.slaTarget || activeTenant.slaHitlMinutes || 15);
       setBrandColors(
         activeTenant.brandColors && activeTenant.brandColors.length > 0
           ? activeTenant.brandColors
-          : currentPreset.colors
+          : (currentPreset.colors || [])
       );
       setCustomAvatar(activeTenant.avatar || currentPreset.avatar || '🏢');
       setOwnerPhone(activeTenant.phone || '');
@@ -161,12 +157,7 @@ export const PerfilMarcaView = () => {
 
       // Reglas inviolables
       setInviolableRules(
-        Array.isArray(activeTenant.inviolableRules) && activeTenant.inviolableRules.length > 0
-          ? activeTenant.inviolableRules
-          : [
-              'No inventar promociones o precios fuera de la matriz oficial.',
-              'Derivar reclamos de cobro a un ejecutivo humano en menos de 15 minutos.',
-            ]
+        Array.isArray(activeTenant.inviolableRules) ? activeTenant.inviolableRules : []
       );
 
       // Buyer Persona & Marketing Mix (4 Ps)
@@ -197,13 +188,13 @@ export const PerfilMarcaView = () => {
       setIsDirty(false);
       setPhoneError(null);
     } else {
-      // Estado neutral global por defecto (Sin dejar paletas vacías ni textos sesgados)
-      setBrandPurpose(currentPreset.defaultPurpose || 'Brindar un servicio de excelencia con atención personalizada y valor medible para nuestros clientes.');
-      setToneOfVoice(currentPreset.defaultTone || 'Profesional, empático y orientado a conversión');
+      // Estado neutral limpio: campos vacíos con placeholders de guía para evitar datos fantasma
+      setBrandPurpose('');
+      setToneOfVoice('');
       setEmojiPolicy('Moderado (según contexto)');
       setSlaTarget(15);
-      setBrandColors(currentPreset.colors || []);
-      setCustomAvatar(currentPreset.avatar || '🏢');
+      setBrandColors([]);
+      setCustomAvatar('🏢');
       setOwnerPhone('');
       setOfferHook('');
       setOfferCta('');
@@ -817,6 +808,7 @@ export const PerfilMarcaView = () => {
                   <textarea
                     rows={3}
                     required
+                    disabled={!activeTenant}
                     value={brandPurpose}
                     onChange={(e) => {
                       setBrandPurpose(e.target.value);
@@ -825,9 +817,9 @@ export const PerfilMarcaView = () => {
                     placeholder={
                       currentPreset?.defaultPurpose
                         ? `ej. ${currentPreset.defaultPurpose}`
-                        : 'ej. Democratizar el acceso a servicios de excelencia con valor medible y atención de primer nivel...'
+                        : 'ej. Brindar un servicio de excelencia con atención personalizada y valor medible para nuestros clientes...'
                     }
-                    className="w-full p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none leading-relaxed font-sans transition-colors placeholder:text-[var(--text-muted)] text-xs"
+                    className="w-full p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none leading-relaxed font-sans transition-colors placeholder:text-[var(--text-muted)] text-xs disabled:opacity-60 disabled:cursor-not-allowed"
                   />
                   <p className="text-[10px] text-[var(--text-muted)] mt-1 font-mono">
                     Este propósito orienta a la IA para responder con la propuesta de valor real y filosofía de tu negocio en cada mensaje.
@@ -846,11 +838,12 @@ export const PerfilMarcaView = () => {
                       <button
                         key={tpl.id}
                         type="button"
+                        disabled={!activeTenant}
                         onClick={() => {
                           setToneOfVoice(tpl.tone);
                           setIsDirty(true);
                         }}
-                        className={`px-2.5 py-1 rounded-lg text-[10px] font-mono transition-all border ${
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-mono transition-all border disabled:opacity-40 disabled:cursor-not-allowed ${
                           toneOfVoice === tpl.tone
                             ? 'bg-neon/15 border-neon text-neon font-bold shadow-sm'
                             : 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-muted)] hover:border-neon/40 hover:text-[var(--text-main)]'
@@ -864,6 +857,7 @@ export const PerfilMarcaView = () => {
                   <input
                     type="text"
                     required
+                    disabled={!activeTenant}
                     value={toneOfVoice}
                     onChange={(e) => {
                       setToneOfVoice(e.target.value);
@@ -872,9 +866,9 @@ export const PerfilMarcaView = () => {
                     placeholder={
                       currentPreset?.defaultTone
                         ? `ej. ${currentPreset.defaultTone}`
-                        : 'ej. Profesional, empático, ágil y orientado a resolver necesidades'
+                        : 'ej. Profesional, empático y orientado a conversión directa'
                     }
-                    className="w-full p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none font-sans text-xs transition-colors"
+                    className="w-full p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none font-sans text-xs transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                   />
                   <p className="text-[10px] text-[var(--text-muted)] font-mono">
                     Define el estilo psicológico con el que los agentes responderán las objeciones y consultas de tus clientes potenciales.
@@ -935,7 +929,7 @@ export const PerfilMarcaView = () => {
                     Pilar 1: Financiero
                   </span>
                   <p className="text-[11px] text-[var(--text-main)] font-semibold">
-                    CAC Máx: {activeTenant?.cacMax || '$200 MXN'}
+                    CAC Máx: {activeTenant?.cacMax ? `$${activeTenant.cacMax} MXN` : (activeTenant ? '$350 MXN' : 'Sin definir')}
                   </p>
                   <span className="text-[9px] font-mono text-[var(--text-muted)] block">
                     Aislamiento RLS en PostgreSQL
@@ -947,7 +941,7 @@ export const PerfilMarcaView = () => {
                     Pilar 2: Identidad & Reglas
                   </span>
                   <p className="text-[11px] text-[var(--text-main)] font-semibold truncate">
-                    {toneOfVoice.split(',')[0]}
+                    {toneOfVoice ? toneOfVoice.split(',')[0] : (activeTenant ? 'Por configurar' : 'Sin configurar')}
                   </p>
                   <span className="text-[9px] font-mono text-[var(--text-muted)] block">
                     Guardrails activados
