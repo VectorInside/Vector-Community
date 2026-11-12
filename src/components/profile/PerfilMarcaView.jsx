@@ -380,6 +380,8 @@ export const PerfilMarcaView = () => {
           offerValidity: offerValidity || activeTenant?.commercialOffer?.validity || '',
           inviolableRules: inviolableRules || [],
           verticalId: activeTenant?.vertical || 'b2b',
+          socialLinks: socialLinks || activeTenant?.socialLinks || {},
+          connectedSocialNetworks: activeTenant?.connectedSocialNetworks || ['WHATSAPP', 'INSTAGRAM', 'FACEBOOK'],
         }),
       });
 

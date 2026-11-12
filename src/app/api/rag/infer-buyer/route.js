@@ -26,7 +26,11 @@ function resolveDeepSeekApiKey() {
 /**
  * Respaldo Heurístico Inteligente calibrado por industria
  */
-function getHeuristicBuyerAndMix(businessName = '', giro = '', brandPurpose = '', verticalId = 'b2b') {
+function getHeuristicBuyerAndMix(businessName = '', giro = '', brandPurpose = '', verticalId = 'b2b', channels = []) {
+  const channelText = channels && channels.length > 0
+    ? channels.join(', ')
+    : 'WhatsApp Business, Instagram Direct, Facebook Messenger, LinkedIn';
+
   const isVector =
     businessName.toLowerCase().includes('vector') ||
     brandPurpose.toLowerCase().includes('vector') ||
@@ -39,14 +43,14 @@ function getHeuristicBuyerAndMix(businessName = '', giro = '', brandPurpose = ''
         ageRange: '30 a 55 años',
         maritalStatus: 'Líderes de negocio en etapa de escalamiento y profesionalización',
         location: 'México, LATAM y mercado hispanohablante global (Nivel Ejecutivo C-Level)',
-        digitalHabits: 'LinkedIn, WhatsApp Business, X (Twitter), newsletters de innovación y podcasts de negocios',
+        digitalHabits: `Consumo activo en ${channelText} y X (Twitter); newsletters especializadas de negocios, webinars y herramientas SaaS de analítica.`,
         mainPainPoint: 'Falta de estructura de adquisición, fuga de prospectos calificados por lentitud de respuesta humana y dependencia de procesos manuales no escalables.',
         buyingTrigger: 'Automatizar la cualificación y agendamiento 24/7 con IA sin sacrificar autoridad ejecutiva ni el prestigio de la marca.',
       },
       marketingMix4P: {
         product: 'Arquitectura de Inteligencia Artificial Comercial, Agentes Autónomos de Respuesta Inmediata y Orquestación Multicanal B2B.',
         price: 'Modelos de Retainer Mensual Estratégico desde $18,000 MXN/mes o Implementación Llave en Mano por hitos de entrega.',
-        place: 'Canal Digital Directo, WhatsApp Cloud API, Plataforma Web Oficial y Soporte Ejecutivo HITL 24/7.',
+        place: `Canales de atención directa y captación omnicanal vía ${channelText} y reuniones estratégicas online. Entrega de servicios en remoto con tecnología propia (SaaS) y soporte personalizado 24/7.`,
         promotion: 'Sesión de Diagnóstico Comercial de 45 min (Discovery Call sin costo) y Demostración en Vivo de Aceleración con SLA Garantizado.',
       },
     };
@@ -126,13 +130,31 @@ export async function POST(request) {
       offerValidity = '',
       inviolableRules = [],
       verticalId = 'b2b',
+      socialLinks = {},
+      connectedSocialNetworks = [],
     } = body;
+
+    // Normalizar canales y redes sociales activas dadas de alta
+    const rawChannels = new Set([
+      'whatsapp',
+      ...(Array.isArray(connectedSocialNetworks) ? connectedSocialNetworks : []).map((s) => String(s).toLowerCase()),
+      ...Object.keys(socialLinks || {}).filter((k) => socialLinks[k]?.trim()).map((k) => k.toLowerCase()),
+    ]);
+
+    const activeChannels = [];
+    if (rawChannels.has('whatsapp') || rawChannels.has('whatsapp business') || true) activeChannels.push('WhatsApp Business');
+    if (rawChannels.has('instagram')) activeChannels.push('Instagram Direct');
+    if (rawChannels.has('facebook')) activeChannels.push('Facebook Messenger');
+    if (rawChannels.has('linkedin')) activeChannels.push('LinkedIn');
+    if (rawChannels.has('youtube')) activeChannels.push('YouTube');
+    if (rawChannels.has('tiktok')) activeChannels.push('TikTok');
+    if (rawChannels.has('x') || rawChannels.has('twitter')) activeChannels.push('X (Twitter)');
 
     const apiKey = resolveDeepSeekApiKey();
 
     if (!apiKey) {
       // Retornar fallback heurístico robusto si no hay API key disponible
-      const fallback = getHeuristicBuyerAndMix(businessName, giro, brandPurpose, verticalId);
+      const fallback = getHeuristicBuyerAndMix(businessName, giro, brandPurpose, verticalId, activeChannels);
       return NextResponse.json({
         success: true,
         source: 'heuristic_fallback',
@@ -151,15 +173,15 @@ export async function POST(request) {
       '    "ageRange": "Rango de edad aproximado (ej. 30 a 55 años)",\n' +
       '    "maritalStatus": "Entorno profesional o demográfico clave",\n' +
       '    "location": "Mercado geográfico o cobertura prioritaria",\n' +
-      '    "digitalHabits": "Canales y hábitos digitales de consumo de contenido (ej. LinkedIn, WhatsApp Business, X)",\n' +
+      '    "digitalHabits": "Canales y hábitos digitales de consumo de contenido (ej. LinkedIn, Instagram, Facebook, WhatsApp Business, X)",\n' +
       '    "mainPainPoint": "Dolor principal o problema crítico que resuelve el negocio (Struggling Moment)",\n' +
       '    "buyingTrigger": "Disparador o momento catalizador de compra (Gancho irresistible)"\n' +
       '  },\n' +
       '  "marketingMix4P": {\n' +
-      '    "product": "1. PRODUCTO: Propuesta de valor, alcance de servicios y diferenciación",\n' +
-      '    "price": "2. PRECIO: Modelos de aranceles, retainers, rangos o financiamiento",\n' +
-      '    "place": "3. PLAZA: Canales de atención, entrega, distribución y tecnología",\n' +
-      '    "promotion": "4. PROMOCIÓN: Estrategia de gancho, ofertas de entrada y llamadas a la acción"\n' +
+      '    "product": "Propuesta de valor, alcance de servicios y diferenciación",\n' +
+      '    "price": "Modelos de aranceles, retainers, rangos o financiamiento",\n' +
+      '    "place": "Canales de atención, entrega, distribución y tecnología (incluyendo obligatoriamente los canales y redes dados de alta)",\n' +
+      '    "promotion": "Estrategia de gancho, ofertas de entrada y llamadas a la acción"\n' +
       '  }\n' +
       '}';
 
@@ -174,6 +196,10 @@ DATOS DE LA MARCA:
 - Vigencia / Urgencia: "${offerValidity}"
 - Principios / Reglas Inviolables: ${JSON.stringify(inviolableRules)}
 - Vertical ID: "${verticalId}"
+- Canales y Redes Oficiales Dadas de Alta: ${activeChannels.join(', ')}
+
+INSTRUCCIÓN MANDATORIA:
+Debes incluir e integrar explícitamente los canales dados de alta (${activeChannels.join(', ')}) tanto en "digitalHabits" (hábitos de consumo de contenido) como en "place" (canales de atención, entrega y captación omnicanal). No omitas Instagram ni Facebook si están dados de alta.
 
 Por favor genera el Buyer Persona y las 4 Ps adaptados al 100% a este perfil de negocio.`;
 
@@ -243,3 +269,4 @@ Por favor genera el Buyer Persona y las 4 Ps adaptados al 100% a este perfil de 
     });
   }
 }
+
