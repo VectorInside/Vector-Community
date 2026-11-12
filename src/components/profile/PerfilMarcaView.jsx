@@ -46,7 +46,9 @@ import {
   Zap,
   Layers,
   ShieldAlert,
+  Loader2,
 } from 'lucide-react';
+import confetti from 'canvas-confetti';
 
 export const PerfilMarcaView = () => {
   const {
@@ -97,6 +99,7 @@ export const PerfilMarcaView = () => {
   const [mixPrice, setMixPrice] = useState('');
   const [mixPlace, setMixPlace] = useState('');
   const [mixPromotion, setMixPromotion] = useState('');
+  const [isInferringBuyer, setIsInferringBuyer] = useState(false);
 
   // Redes Sociales Oficiales (YouTube, TikTok, LinkedIn, Instagram, Facebook, etc.)
   const [socialLinks, setSocialLinks] = useState({
@@ -358,6 +361,59 @@ export const PerfilMarcaView = () => {
       setCopiedHex(hex);
       setTimeout(() => setCopiedHex(null), 2000);
     } catch (e) {}
+  };
+
+  // Inferencia y auto-completado de Buyer Persona & 4 Ps con IA DeepSeek
+  const handleAiAutoInferBuyerAndMix = async () => {
+    setIsInferringBuyer(true);
+    try {
+      const res = await fetch('/api/rag/infer-buyer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessName: activeTenant?.name || 'Vector Inside',
+          giro: activeTenant?.giro || activeTenant?.verticalLabel || 'Agencias de Marketing, Software SaaS & Consultoría B2B',
+          brandPurpose: brandPurpose || activeTenant?.brandPurpose || '',
+          toneOfVoice: toneOfVoice || activeTenant?.toneOfVoice || '',
+          offerHook: offerHook || activeTenant?.commercialOffer?.hook || '',
+          offerCta: offerCta || activeTenant?.commercialOffer?.cta || '',
+          offerValidity: offerValidity || activeTenant?.commercialOffer?.validity || '',
+          inviolableRules: inviolableRules || [],
+          verticalId: activeTenant?.vertical || 'b2b',
+        }),
+      });
+
+      const json = await res.json();
+      if (json?.success) {
+        if (json.buyerPersona) {
+          setBuyerName(json.buyerPersona.name || '');
+          setBuyerAgeRange(json.buyerPersona.ageRange || '');
+          setBuyerMaritalStatus(json.buyerPersona.maritalStatus || '');
+          setBuyerLocation(json.buyerPersona.location || '');
+          setBuyerHabits(json.buyerPersona.digitalHabits || '');
+          setBuyerPainPoint(json.buyerPersona.mainPainPoint || '');
+          setBuyerBuyingTrigger(json.buyerPersona.buyingTrigger || '');
+        }
+        if (json.marketingMix4P) {
+          setMixProduct(json.marketingMix4P.product || '');
+          setMixPrice(json.marketingMix4P.price || '');
+          setMixPlace(json.marketingMix4P.place || '');
+          setMixPromotion(json.marketingMix4P.promotion || '');
+        }
+        setIsDirty(true);
+        try {
+          confetti({
+            particleCount: 50,
+            spread: 60,
+            colors: ['#E7F900', '#06B6D4', '#FFFFFF'],
+          });
+        } catch (e) {}
+      }
+    } catch (err) {
+      console.error('[PerfilMarcaView.handleAiAutoInferBuyerAndMix] Error:', err);
+    } finally {
+      setIsInferringBuyer(false);
+    }
   };
 
   // Restablecer paleta o valores predeterminados de la vertical
@@ -1127,7 +1183,7 @@ export const PerfilMarcaView = () => {
         {/* SECCIÓN 5: DELIMITACIÓN DEL BUYER PERSONA & MARKETING MIX (4 Ps)    */}
         {/* =================================================================== */}
         <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-6 shadow-sm font-sans">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[var(--border-color)] pb-3 gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[var(--border-color)] pb-3 gap-3">
             <div className="flex items-center gap-2">
               <Target className="w-5 h-5 text-neon" />
               <div>
@@ -1139,10 +1195,51 @@ export const PerfilMarcaView = () => {
                 </span>
               </div>
             </div>
-            <span className="px-2.5 py-0.5 rounded-full bg-neon/10 text-neon font-mono text-[10px] font-bold border border-neon/20 self-start sm:self-auto">
-              Auditoría BANT & AIDA
-            </span>
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={handleAiAutoInferBuyerAndMix}
+                disabled={isInferringBuyer}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neon/15 hover:bg-neon/25 text-neon font-mono text-[11px] font-bold border border-neon/40 shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+                title="Extrae o autocompleta los 11 campos usando IA DeepSeek a partir de la identidad de la marca"
+              >
+                {isInferringBuyer ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Analizando con IA...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Auto-Extraer con IA</span>
+                  </>
+                )}
+              </button>
+              <span className="px-2.5 py-0.5 rounded-full bg-neon/10 text-neon font-mono text-[10px] font-bold border border-neon/20">
+                Auditoría BANT & AIDA
+              </span>
+            </div>
           </div>
+
+          {/* Banner de Ayuda Rápida si el bloque está vacío */}
+          {(!buyerName || !buyerPainPoint || !mixProduct) && (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-neon/5 border border-neon/20">
+              <div className="flex items-start sm:items-center gap-2.5 text-xs text-[var(--text-muted)]">
+                <Sparkles className="w-4 h-4 text-neon flex-shrink-0 mt-0.5 sm:mt-0" />
+                <span>
+                  El Bloque 5 está sin poblar. Haz clic en <strong className="text-neon font-bold">Auto-Extraer con IA</strong> para delimitar el Buyer Persona y las 4 Ps de Marketing en 1 clic.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleAiAutoInferBuyerAndMix}
+                disabled={isInferringBuyer}
+                className="px-3 py-1 rounded-lg bg-neon text-black font-bold text-[10px] uppercase tracking-wider hover:opacity-90 flex-shrink-0 transition-opacity self-start sm:self-auto cursor-pointer"
+              >
+                Auto-Extraer Ahora
+              </button>
+            </div>
+          )}
 
           {/* Formulario del Buyer Persona */}
           <div className="space-y-4">

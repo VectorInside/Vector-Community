@@ -1611,6 +1611,10 @@ export const RAGWizard = ({
     offerCta: '',
     offerValidity: '',
 
+    // Delimitación de Buyer Persona & 4 Ps
+    buyerPersona: null,
+    marketingMix4P: null,
+
     // Inviolable Rules (Reglas Inviolables) - Iniciamos 100% limpio
     inviolableRules: [],
     newRuleInput: '',
@@ -2070,6 +2074,9 @@ export const RAGWizard = ({
           enableCommercialProposal: true,
           enableCrisisPillar: true,
           inviolableRules: result.inviolableRules?.length > 0 ? result.inviolableRules : (resolvedVertObj.defaultRules || prev.inviolableRules),
+          // Bloque 5: Buyer Persona & Marketing Mix 4 Ps
+          buyerPersona: (result.buyerPersona && typeof result.buyerPersona === 'object') ? result.buyerPersona : prev.buyerPersona,
+          marketingMix4P: (result.marketingMix4P && typeof result.marketingMix4P === 'object') ? result.marketingMix4P : prev.marketingMix4P,
         };
       });
 
@@ -2250,6 +2257,8 @@ export const RAGWizard = ({
         proposalDocName: wizardData.commercialProposalDoc?.name || null,
       },
       inviolableRules: wizardData.inviolableRules || [],
+      buyerPersona: wizardData.buyerPersona || null,
+      marketingMix4P: wizardData.marketingMix4P || null,
       pillars: {
         pillar1: {
           enabled: wizardData.enablePricingPillar,

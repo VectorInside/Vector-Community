@@ -169,7 +169,22 @@ Devuelve ÚNICAMENTE este JSON con los valores reales (si un campo de contacto o
     "Regla inviolable o principio rector 2 del documento",
     "Regla inviolable o principio rector 3 del documento",
     "Regla inviolable o principio rector 4 del documento"
-  ]
+  ],
+  "buyerPersona": {
+    "name": "Nombre o arquetipo del cliente ideal (ej. Fundadores B2B, CEOs de SaaS y Directores Comerciales)",
+    "ageRange": "Rango de edad aproximado (ej. 30 a 55 años)",
+    "maritalStatus": "Entorno profesional o demográfico clave",
+    "location": "Mercado geográfico o cobertura prioritaria",
+    "digitalHabits": "Canales y hábitos digitales de consumo de contenido (ej. LinkedIn, WhatsApp Business, X)",
+    "mainPainPoint": "Dolor principal o problema crítico que resuelve el negocio (Struggling Moment)",
+    "buyingTrigger": "Disparador o momento catalizador de compra (Gancho irresistible)"
+  },
+  "marketingMix4P": {
+    "product": "Propuesta de valor del producto/servicio, entregables y alcance",
+    "price": "Estructura de precios, aranceles, retainers o esquemas de inversión",
+    "place": "Canales de distribución, entrega, locaciones o atención",
+    "promotion": "Estrategia de captación, gancho de entrada, promociones o llamada a valoración"
+  }
 }`;
 
     const llmRes = await fetch('https://api.deepseek.com/chat/completions', {
