@@ -1580,18 +1580,19 @@ export const RAGWizard = ({
     microLandingBillingPlan: 'trial_90d', // 'trial_90d' (3 Meses Gratis) | 'active_monthly' ($29 USD/mes) | 'disabled' (Inactiva)
     microLandingCustomSlug: '',
 
-    // Google Calendar & Performance
+    // Google Calendar & Performance (Iniciamos 100% limpio en turnos)
     googleCalendarId: '',
-    appointmentDuration: 45,
-    calendarScheduleType: 'split', // 'split' (2 turnos) | 'single' (corrido) | 'hospitality' (mesas) | 'calls' (b2b)
-    shiftMorningStart: '09:00',
-    shiftMorningEnd: '14:00',
-    shiftAfternoonStart: '15:00',
-    shiftAfternoonEnd: '19:00',
-    breakStart: '14:00',
-    breakEnd: '15:00',
+    appointmentDuration: 30,
+    calendarScheduleType: 'single', // 'single' (corrido) | 'split' (2 turnos) | 'hospitality' (mesas) | 'calls' (b2b)
+    shifts: [], // Limpio por defecto: el usuario agrega turnos manualmente
+    shiftMorningStart: '',
+    shiftMorningEnd: '',
+    shiftAfternoonStart: '',
+    shiftAfternoonEnd: '',
+    breakStart: '',
+    breakEnd: '',
     breakLabel: 'Receso / Cambio de Turno',
-    activeDays: ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'],
+    activeDays: ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'],
     concurrencyLimit: 1,
     costPerQualifiedLead: 350.0,
     monthlyAdBudget: '',
@@ -1695,14 +1696,15 @@ export const RAGWizard = ({
           days: wizardData.activeDays || ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'],
           schedule_type: wizardData.calendarScheduleType || 'split',
           concurrency_limit: wizardData.concurrencyLimit || 1,
-          shifts: (wizardData.shifts && wizardData.shifts.length > 0)
+          shifts: (Array.isArray(wizardData.shifts) && wizardData.shifts.length > 0)
             ? wizardData.shifts
-            : [
-                { name: 'Turno 1 / Matutino', start: wizardData.shiftMorningStart || '08:00', end: wizardData.shiftMorningEnd || '13:30' },
-                ...(wizardData.shiftAfternoonStart ? [{ name: 'Turno 2 / Vespertino', start: wizardData.shiftAfternoonStart, end: wizardData.shiftAfternoonEnd || '18:00' }] : []),
-              ],
-          shift_1: `${wizardData.shiftMorningStart || '08:00'} - ${wizardData.shiftMorningEnd || '13:30'}`,
-          shift_2: wizardData.shiftAfternoonStart ? `${wizardData.shiftAfternoonStart} - ${wizardData.shiftAfternoonEnd || '18:00'}` : null,
+            : [],
+          shift_1: (Array.isArray(wizardData.shifts) && wizardData.shifts[0])
+            ? `${wizardData.shifts[0].start} - ${wizardData.shifts[0].end}`
+            : (wizardData.shiftMorningStart ? `${wizardData.shiftMorningStart} - ${wizardData.shiftMorningEnd}` : 'Horario a convenir / 24/7'),
+          shift_2: (Array.isArray(wizardData.shifts) && wizardData.shifts[1])
+            ? `${wizardData.shifts[1].start} - ${wizardData.shifts[1].end}`
+            : null,
         },
       },
       catalog_or_services: [
@@ -1907,17 +1909,10 @@ export const RAGWizard = ({
     const verticalConfig = BUSINESS_VERTICALS_CONFIG[verticalId] || BUSINESS_VERTICALS_CONFIG.gym_fitness;
     const isSalesFocused = verticalConfig.category === 'retail_ecom' || verticalConfig.category === 'realestate_auto';
     
-    // Configuración sugerida de horarios según el giro comercial
+    // Configuración sugerida de duración de citas y días según giro (los turnos se mantienen limpios)
     let suggestedSchedule = {
-      calendarScheduleType: 'split',
+      calendarScheduleType: 'single',
       appointmentDuration: 45,
-      shiftMorningStart: '09:00',
-      shiftMorningEnd: '14:00',
-      shiftAfternoonStart: '15:00',
-      shiftAfternoonEnd: '19:00',
-      breakStart: '14:00',
-      breakEnd: '15:00',
-      breakLabel: 'Receso de Turno',
       concurrencyLimit: 1,
       activeDays: ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'],
     };
@@ -1926,13 +1921,6 @@ export const RAGWizard = ({
       suggestedSchedule = {
         calendarScheduleType: 'hospitality',
         appointmentDuration: 90,
-        shiftMorningStart: '13:00',
-        shiftMorningEnd: '17:00',
-        shiftAfternoonStart: '19:30',
-        shiftAfternoonEnd: '23:30',
-        breakStart: '17:00',
-        breakEnd: '19:30',
-        breakLabel: 'Mise en place / Salón',
         concurrencyLimit: 8,
         activeDays: ['martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'],
       };
@@ -1940,13 +1928,6 @@ export const RAGWizard = ({
       suggestedSchedule = {
         calendarScheduleType: 'calls',
         appointmentDuration: 45,
-        shiftMorningStart: '15:00',
-        shiftMorningEnd: '18:00',
-        shiftAfternoonStart: '15:00',
-        shiftAfternoonEnd: '18:00',
-        breakStart: '18:00',
-        breakEnd: '19:00',
-        breakLabel: 'Revisión de Contratos & Media Kit',
         concurrencyLimit: 1,
         activeDays: ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'],
       };
@@ -1954,13 +1935,6 @@ export const RAGWizard = ({
       suggestedSchedule = {
         calendarScheduleType: 'calls',
         appointmentDuration: 30,
-        shiftMorningStart: '10:00',
-        shiftMorningEnd: '13:30',
-        shiftAfternoonStart: '15:00',
-        shiftAfternoonEnd: '18:00',
-        breakStart: '13:30',
-        breakEnd: '15:00',
-        breakLabel: 'Almuerzo Ejecutivo & Pipeline',
         concurrencyLimit: 1,
         activeDays: ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'],
       };
@@ -1968,13 +1942,6 @@ export const RAGWizard = ({
       suggestedSchedule = {
         calendarScheduleType: 'single',
         appointmentDuration: 60,
-        shiftMorningStart: '06:00',
-        shiftMorningEnd: '22:00',
-        shiftAfternoonStart: '14:00',
-        shiftAfternoonEnd: '22:00',
-        breakStart: '14:00',
-        breakEnd: '14:00',
-        breakLabel: 'Horario Corrido',
         concurrencyLimit: 15,
         activeDays: ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'],
       };
@@ -4571,17 +4538,9 @@ export const RAGWizard = ({
                               </strong>{' '}
                               ({(wizardData.activeDays || []).map((d) => d.slice(0, 3).toUpperCase()).join(', ') || 'L-S'}) ·{' '}
                               <strong className="text-neon">
-                                {((wizardData.shifts && wizardData.shifts.length > 0)
-                                  ? wizardData.shifts
-                                  : [
-                                      { name: 'T1', start: wizardData.shiftMorningStart || '08:00', end: wizardData.shiftMorningEnd || '13:30' },
-                                      ...(wizardData.shiftAfternoonStart
-                                        ? [{ name: 'T2', start: wizardData.shiftAfternoonStart, end: wizardData.shiftAfternoonEnd || '18:00' }]
-                                        : []),
-                                    ]
-                                )
-                                  .map((s) => `${s.start} a ${s.end}`)
-                                  .join(' · ') || '08:00 a 18:00'}
+                                {Array.isArray(wizardData.shifts) && wizardData.shifts.length > 0
+                                  ? wizardData.shifts.map((s) => `${s.start} a ${s.end}`).join(' · ')
+                                  : 'Sin franjas de citas fijas (Agenda abierta / 24/7)'}
                               </strong>{' '}
                               · Citas de <span className="text-emerald-400 font-bold">{wizardData.appointmentDuration || 30} min</span> · Capacidad: <span className="text-cyan-400 font-bold">{wizardData.concurrencyLimit || 1}</span>
                             </p>
@@ -4694,27 +4653,20 @@ export const RAGWizard = ({
                           <button
                             type="button"
                             onClick={() => {
-                              const currentShifts = (wizardData.shifts && wizardData.shifts.length > 0)
-                                ? wizardData.shifts
-                                : [
-                                    { id: '1', name: 'Turno 1 / Matutino', start: wizardData.shiftMorningStart || '08:00', end: wizardData.shiftMorningEnd || '13:30' },
-                                    ...(wizardData.shiftAfternoonStart
-                                      ? [{ id: '2', name: 'Turno 2 / Vespertino', start: wizardData.shiftAfternoonStart, end: wizardData.shiftAfternoonEnd || '18:00' }]
-                                      : []),
-                                  ];
+                              const currentShifts = Array.isArray(wizardData.shifts) ? wizardData.shifts : [];
                               const nextNum = currentShifts.length + 1;
                               const newShift = {
                                 id: String(Date.now()),
-                                name: `Turno ${nextNum}`,
-                                start: '18:30',
-                                end: '22:00',
+                                name: nextNum === 1 ? 'Turno 1 / Corrido' : `Turno ${nextNum}`,
+                                start: nextNum === 1 ? '09:00' : '15:00',
+                                end: nextNum === 1 ? '18:00' : '20:00',
                               };
                               const updated = [...currentShifts, newShift];
                               setWizardData({
                                 ...wizardData,
                                 shifts: updated,
-                                shiftMorningStart: updated[0]?.start || '08:00',
-                                shiftMorningEnd: updated[0]?.end || '14:00',
+                                shiftMorningStart: updated[0]?.start || '',
+                                shiftMorningEnd: updated[0]?.end || '',
                                 shiftAfternoonStart: updated[1]?.start || '',
                                 shiftAfternoonEnd: updated[1]?.end || '',
                               });
@@ -4726,63 +4678,76 @@ export const RAGWizard = ({
                           </button>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {((wizardData.shifts && wizardData.shifts.length > 0)
-                            ? wizardData.shifts
-                            : [
-                                { id: '1', name: 'Turno 1 / Matutino', start: wizardData.shiftMorningStart || '08:00', end: wizardData.shiftMorningEnd || '13:30' },
-                                ...(wizardData.shiftAfternoonStart
-                                  ? [{ id: '2', name: 'Turno 2 / Vespertino', start: wizardData.shiftAfternoonStart, end: wizardData.shiftAfternoonEnd || '18:00' }]
-                                  : []),
-                              ]
-                          ).map((shift, idx) => (
-                            <div
-                              key={shift.id || idx}
-                              className="p-3.5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2 relative group"
+                        {(!Array.isArray(wizardData.shifts) || wizardData.shifts.length === 0) ? (
+                          <div className="p-4 rounded-xl border border-dashed border-[var(--border-color)] bg-[var(--bg-panel)] flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left animate-fade-in">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-lg bg-neon/10 border border-neon/20 flex items-center justify-center text-neon shrink-0">
+                                <Clock className="w-4 h-4" />
+                              </div>
+                              <div>
+                                <span className="text-[11px] font-bold text-[var(--text-main)] block">
+                                  Sin franjas de turnos configuradas
+                                </span>
+                                <span className="text-[10px] text-[var(--text-muted)] block">
+                                  El bot responderá y resolverá dudas 24/7 en WhatsApp y Web. Pulsa "+ Agregar Turno" para habilitar reservas en Google Calendar.
+                                </span>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newShift = {
+                                  id: String(Date.now()),
+                                  name: 'Turno 1 / Corrido',
+                                  start: '09:00',
+                                  end: '18:00',
+                                };
+                                setWizardData({
+                                  ...wizardData,
+                                  shifts: [newShift],
+                                  shiftMorningStart: '09:00',
+                                  shiftMorningEnd: '18:00',
+                                });
+                              }}
+                              className="px-3 py-1.5 rounded-lg bg-neon text-black font-bold text-[10px] uppercase font-mono hover:bg-[var(--neon-hover)] transition-all shrink-0 flex items-center gap-1 shadow-sm"
                             >
-                              <div className="flex items-center justify-between gap-2">
-                                <input
-                                  type="text"
-                                  value={shift.name}
-                                  onChange={(e) => {
-                                    const currentShifts = (wizardData.shifts && wizardData.shifts.length > 0)
-                                      ? wizardData.shifts
-                                      : [
-                                          { id: '1', name: 'Turno 1 / Matutino', start: wizardData.shiftMorningStart || '08:00', end: wizardData.shiftMorningEnd || '13:30' },
-                                          ...(wizardData.shiftAfternoonStart
-                                            ? [{ id: '2', name: 'Turno 2 / Vespertino', start: wizardData.shiftAfternoonStart, end: wizardData.shiftAfternoonEnd || '18:00' }]
-                                            : []),
-                                        ];
-                                    const updated = currentShifts.map((s, i) =>
-                                      i === idx ? { ...s, name: e.target.value } : s
-                                    );
-                                    setWizardData({
-                                      ...wizardData,
-                                      shifts: updated,
-                                    });
-                                  }}
-                                  placeholder={`Turno ${idx + 1}`}
-                                  className="bg-transparent border-b border-transparent hover:border-[var(--border-color)] focus:border-neon text-[11px] font-bold text-amber-400 outline-none w-full"
-                                />
-
-                                {((wizardData.shifts && wizardData.shifts.length > 0) ? wizardData.shifts.length : 2) > 1 && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const currentShifts = (wizardData.shifts && wizardData.shifts.length > 0)
-                                        ? wizardData.shifts
-                                        : [
-                                            { id: '1', name: 'Turno 1 / Matutino', start: wizardData.shiftMorningStart || '08:00', end: wizardData.shiftMorningEnd || '13:30' },
-                                            ...(wizardData.shiftAfternoonStart
-                                              ? [{ id: '2', name: 'Turno 2 / Vespertino', start: wizardData.shiftAfternoonStart, end: wizardData.shiftAfternoonEnd || '18:00' }]
-                                              : []),
-                                          ];
-                                      const updated = currentShifts.filter((_, i) => i !== idx);
+                              <Plus className="w-3 h-3" />
+                              <span>+ Agregar Primer Turno</span>
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {wizardData.shifts.map((shift, idx) => (
+                              <div
+                                key={shift.id || idx}
+                                className="p-3.5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2 relative group animate-fade-in"
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <input
+                                    type="text"
+                                    value={shift.name}
+                                    onChange={(e) => {
+                                      const updated = wizardData.shifts.map((s, i) =>
+                                        i === idx ? { ...s, name: e.target.value } : s
+                                      );
                                       setWizardData({
                                         ...wizardData,
                                         shifts: updated,
-                                        shiftMorningStart: updated[0]?.start || '08:00',
-                                        shiftMorningEnd: updated[0]?.end || '14:00',
+                                      });
+                                    }}
+                                    placeholder={`Turno ${idx + 1}`}
+                                    className="bg-transparent border-b border-transparent hover:border-[var(--border-color)] focus:border-neon text-[11px] font-bold text-amber-400 outline-none w-full"
+                                  />
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const updated = wizardData.shifts.filter((_, i) => i !== idx);
+                                      setWizardData({
+                                        ...wizardData,
+                                        shifts: updated,
+                                        shiftMorningStart: updated[0]?.start || '',
+                                        shiftMorningEnd: updated[0]?.end || '',
                                         shiftAfternoonStart: updated[1]?.start || '',
                                         shiftAfternoonEnd: updated[1]?.end || '',
                                       });
@@ -4792,89 +4757,73 @@ export const RAGWizard = ({
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
                                   </button>
-                                )}
-                              </div>
-
-                              <div className="grid grid-cols-2 gap-2">
-                                <div>
-                                  <span className="text-[9px] text-[var(--text-muted)] block mb-0.5">Inicio</span>
-                                  <input
-                                    type="time"
-                                    value={shift.start || '09:00'}
-                                    onClick={(e) => {
-                                      try {
-                                        if (typeof e.target.showPicker === 'function') {
-                                          e.target.showPicker();
-                                        }
-                                      } catch (err) {}
-                                    }}
-                                    onChange={(e) => {
-                                      const currentShifts = (wizardData.shifts && wizardData.shifts.length > 0)
-                                        ? wizardData.shifts
-                                        : [
-                                            { id: '1', name: 'Turno 1 / Matutino', start: wizardData.shiftMorningStart || '08:00', end: wizardData.shiftMorningEnd || '13:30' },
-                                            ...(wizardData.shiftAfternoonStart
-                                              ? [{ id: '2', name: 'Turno 2 / Vespertino', start: wizardData.shiftAfternoonStart, end: wizardData.shiftAfternoonEnd || '18:00' }]
-                                              : []),
-                                          ];
-                                      const updated = currentShifts.map((s, i) =>
-                                        i === idx ? { ...s, start: e.target.value } : s
-                                      );
-                                      setWizardData({
-                                        ...wizardData,
-                                        shifts: updated,
-                                        shiftMorningStart: updated[0]?.start || '08:00',
-                                        shiftMorningEnd: updated[0]?.end || '14:00',
-                                        shiftAfternoonStart: updated[1]?.start || '',
-                                        shiftAfternoonEnd: updated[1]?.end || '',
-                                      });
-                                    }}
-                                    style={{ colorScheme: 'dark' }}
-                                    className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded p-2 text-center text-xs text-[var(--text-main)] outline-none focus:border-neon font-mono cursor-pointer hover:border-neon/50 transition-colors"
-                                  />
                                 </div>
 
-                                <div>
-                                  <span className="text-[9px] text-[var(--text-muted)] block mb-0.5">Fin</span>
-                                  <input
-                                    type="time"
-                                    value={shift.end || '14:00'}
-                                    onClick={(e) => {
-                                      try {
-                                        if (typeof e.target.showPicker === 'function') {
-                                          e.target.showPicker();
-                                        }
-                                      } catch (err) {}
-                                    }}
-                                    onChange={(e) => {
-                                      const currentShifts = (wizardData.shifts && wizardData.shifts.length > 0)
-                                        ? wizardData.shifts
-                                        : [
-                                            { id: '1', name: 'Turno 1 / Matutino', start: wizardData.shiftMorningStart || '08:00', end: wizardData.shiftMorningEnd || '13:30' },
-                                            ...(wizardData.shiftAfternoonStart
-                                              ? [{ id: '2', name: 'Turno 2 / Vespertino', start: wizardData.shiftAfternoonStart, end: wizardData.shiftAfternoonEnd || '18:00' }]
-                                              : []),
-                                          ];
-                                      const updated = currentShifts.map((s, i) =>
-                                        i === idx ? { ...s, end: e.target.value } : s
-                                      );
-                                      setWizardData({
-                                        ...wizardData,
-                                        shifts: updated,
-                                        shiftMorningStart: updated[0]?.start || '08:00',
-                                        shiftMorningEnd: updated[0]?.end || '14:00',
-                                        shiftAfternoonStart: updated[1]?.start || '',
-                                        shiftAfternoonEnd: updated[1]?.end || '',
-                                      });
-                                    }}
-                                    style={{ colorScheme: 'dark' }}
-                                    className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded p-2 text-center text-xs text-[var(--text-main)] outline-none focus:border-neon font-mono cursor-pointer hover:border-neon/50 transition-colors"
-                                  />
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <span className="text-[9px] text-[var(--text-muted)] block mb-0.5">Inicio</span>
+                                    <input
+                                      type="time"
+                                      value={shift.start || '09:00'}
+                                      onClick={(e) => {
+                                        try {
+                                          if (typeof e.target.showPicker === 'function') {
+                                            e.target.showPicker();
+                                          }
+                                        } catch (err) {}
+                                      }}
+                                      onChange={(e) => {
+                                        const updated = wizardData.shifts.map((s, i) =>
+                                          i === idx ? { ...s, start: e.target.value } : s
+                                        );
+                                        setWizardData({
+                                          ...wizardData,
+                                          shifts: updated,
+                                          shiftMorningStart: updated[0]?.start || '',
+                                          shiftMorningEnd: updated[0]?.end || '',
+                                          shiftAfternoonStart: updated[1]?.start || '',
+                                          shiftAfternoonEnd: updated[1]?.end || '',
+                                        });
+                                      }}
+                                      style={{ colorScheme: 'dark' }}
+                                      className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded p-2 text-center text-xs text-[var(--text-main)] outline-none focus:border-neon font-mono cursor-pointer hover:border-neon/50 transition-colors"
+                                    />
+                                  </div>
+
+                                  <div>
+                                    <span className="text-[9px] text-[var(--text-muted)] block mb-0.5">Fin</span>
+                                    <input
+                                      type="time"
+                                      value={shift.end || '18:00'}
+                                      onClick={(e) => {
+                                        try {
+                                          if (typeof e.target.showPicker === 'function') {
+                                            e.target.showPicker();
+                                          }
+                                        } catch (err) {}
+                                      }}
+                                      onChange={(e) => {
+                                        const updated = wizardData.shifts.map((s, i) =>
+                                          i === idx ? { ...s, end: e.target.value } : s
+                                        );
+                                        setWizardData({
+                                          ...wizardData,
+                                          shifts: updated,
+                                          shiftMorningStart: updated[0]?.start || '',
+                                          shiftMorningEnd: updated[0]?.end || '',
+                                          shiftAfternoonStart: updated[1]?.start || '',
+                                          shiftAfternoonEnd: updated[1]?.end || '',
+                                        });
+                                      }}
+                                      style={{ colorScheme: 'dark' }}
+                                      className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded p-2 text-center text-xs text-[var(--text-main)] outline-none focus:border-neon font-mono cursor-pointer hover:border-neon/50 transition-colors"
+                                    />
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
-                        </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
 
                       {/* 3. Duración de Cada Cita / Slot Libre & Capacidad */}
