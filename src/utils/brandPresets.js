@@ -238,6 +238,22 @@ export const TENANT_BRAND_PRESETS = {
     defaultPurpose: 'Acelerar el crecimiento y rentabilidad de nuestros clientes mediante tecnología de vanguardia y ejecución rigurosa.',
   },
 
+  // Identidad Oficial Master de Vector Inside
+  vector_inside: {
+    canonicalId: 'V13',
+    name: 'Vector Inside // Community OS',
+    avatar: '🐺',
+    colors: [
+      { name: 'Lima Vectorial', hex: '#E7F900' },
+      { name: 'Negro Carbón Núcleo', hex: '#000000' },
+      { name: 'Lima Brillante', hex: '#C3F400' },
+      { name: 'Gris Grafito', hex: '#18181B' },
+      { name: 'Blanco Óptico', hex: '#FFFFFF' },
+    ],
+    defaultTone: 'Estratégico, preciso, tecnológico, humano y con autoridad ejecutiva (Lobo Vectorial)',
+    defaultPurpose: 'Acelerar el crecimiento y rentabilidad de nuestros clientes mediante tecnología de vanguardia y ejecución rigurosa.',
+  },
+
   // -------------------------------------------------------------
   // V14: DESPACHOS LEGALES & CONTABLES
   // -------------------------------------------------------------
@@ -351,10 +367,39 @@ export const resolveBrandPreset = (tenantOrKey) => {
   if (!tenantOrKey) return NEUTRAL_BRAND_PRESET;
 
   if (typeof tenantOrKey === 'string') {
+    if (tenantOrKey.toLowerCase().includes('vector')) return TENANT_BRAND_PRESETS.vector_inside;
     return TENANT_BRAND_PRESETS[tenantOrKey] || NEUTRAL_BRAND_PRESET;
   }
 
   const tenant = tenantOrKey;
+
+  // 0. Si el tenant corresponde a Vector Inside por nombre o ID, usar su preset maestro
+  const tenantName = `${tenant.name || ''} ${tenant.shortName || ''} ${tenant.id || ''}`.toLowerCase();
+  if (tenantName.includes('vector')) {
+    return TENANT_BRAND_PRESETS.vector_inside;
+  }
+
+  // 0.1 Si el tenant tiene colores extraídos por la IA en su documento
+  if (tenant.brandColor && /^#[0-9A-F]{6}$/i.test(tenant.brandColor)) {
+    const primary = tenant.brandColor;
+    const secondary = (tenant.brandSecondaryColor && /^#[0-9A-F]{6}$/i.test(tenant.brandSecondaryColor))
+      ? tenant.brandSecondaryColor
+      : '#0D1117';
+    return {
+      canonicalId: tenant.canonicalId || 'V13',
+      name: tenant.name || 'Identidad Detectada',
+      avatar: tenant.avatar || '⚡',
+      colors: [
+        { name: 'Primario Identidad', hex: primary },
+        { name: 'Secundario Base', hex: secondary },
+        { name: 'Acento Dinámico', hex: primary.toUpperCase() === '#E7F900' ? '#C3F400' : '#06B6D4' },
+        { name: 'Superficie Panel', hex: '#1E293B' },
+        { name: 'Luz / Tipografía', hex: '#FFFFFF' },
+      ],
+      defaultTone: tenant.toneOfVoice || 'Estratégico, formal y orientado a resultados',
+      defaultPurpose: tenant.brandPurpose || 'Acelerar el crecimiento y rentabilidad de nuestros clientes.',
+    };
+  }
 
   // 1. Probar por vertical explícito
   if (tenant.vertical && TENANT_BRAND_PRESETS[tenant.vertical]) {
@@ -445,11 +490,12 @@ export const QUICK_TONE_TEMPLATES = [
  * Selector de Avatares / Emojis por categoría para todos los sectores
  */
 export const BRAND_AVATAR_PRESETS = [
+  { category: 'Lobo Vectorial & Tech', emojis: ['🐺', '⚡', '💼', '🚀', '💻', '🎯'] },
+  { category: 'B2B, Legal & Tech', emojis: ['💼', '⚖️', '💻', '📈', '🤝', '🎓'] },
   { category: 'Salud & Cuidado', emojis: ['🦷', '🩺', '✨', '💆‍♀️', '💊', '🧬'] },
   { category: 'Fitness & Deporte', emojis: ['🏋️‍♂️', '🥊', '🏃‍♀️', '🧘‍♂️', '🏆', '🚴'] },
   { category: 'Gastronomía & Food', emojis: ['🥩', '🍷', '☕', '🍕', '🍣', '🍰'] },
   { category: 'Inmuebles & Retail', emojis: ['🏙️', '🏡', '👟', '🛍️', '📦', '🛒'] },
   { category: 'Auto & Servicios', emojis: ['🏎️', '🚗', '🛠️', '⚡', '📐', '🏭'] },
-  { category: 'B2B, Legal & Tech', emojis: ['💼', '⚖️', '💻', '📈', '🤝', '🎓'] },
   { category: 'Educación & Creadores', emojis: ['🏫', '📚', '🎨', '🎬', '🎙️', '🐾'] },
 ];

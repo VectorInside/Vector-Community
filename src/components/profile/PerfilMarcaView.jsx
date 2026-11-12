@@ -142,12 +142,17 @@ export const PerfilMarcaView = () => {
       setToneOfVoice(activeTenant.toneOfVoice || '');
       setEmojiPolicy(activeTenant.emojiPolicy || 'Moderado (según contexto)');
       setSlaTarget(activeTenant.slaTarget || activeTenant.slaHitlMinutes || 15);
+      const isGenericB2B = activeTenant.brandColors?.length === 5 && activeTenant.brandColors[0]?.hex === '#0F172A';
       setBrandColors(
-        activeTenant.brandColors && activeTenant.brandColors.length > 0
+        activeTenant.brandColors && activeTenant.brandColors.length > 0 && !isGenericB2B
           ? activeTenant.brandColors
           : (currentPreset.colors || [])
       );
-      setCustomAvatar(activeTenant.avatar || currentPreset.avatar || '🏢');
+      setCustomAvatar(
+        (activeTenant.avatar && activeTenant.avatar !== '💼' && activeTenant.avatar !== '🏢')
+          ? activeTenant.avatar
+          : (currentPreset.avatar || '🐺')
+      );
       setOwnerPhone(activeTenant.phone || '');
 
       // Oferta comercial

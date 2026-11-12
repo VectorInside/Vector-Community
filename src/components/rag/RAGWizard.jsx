@@ -2187,8 +2187,18 @@ export const RAGWizard = ({
       brandPurpose: wizardData.brandPurpose || (wizardData.offerHook ? `${wizardData.offerHook}. ${wizardData.offerCta || ''}`.trim() : (vert.conversionGoal || `Excelencia operativa y conversión directa para ${wizardData.businessName}.`)),
       toneOfVoice: wizardData.brandTone || preset.defaultTone || 'Profesional, empático y orientado a conversión',
       slaTarget: wizardData.hitlEscalationLatency?.includes('<') ? 5 : 15,
-      brandColors: preset.colors,
-      avatar: vert.avatar || preset.avatar || '🏢',
+      brandColors: (wizardData.brandColor && /^#[0-9A-F]{6}$/i.test(wizardData.brandColor))
+        ? [
+            { name: 'Color Primario (Detectado)', hex: wizardData.brandColor },
+            { name: 'Base / Contraste (Detectado)', hex: wizardData.brandSecondaryColor || '#000000' },
+            { name: 'Acento Dinámico', hex: wizardData.brandColor.toUpperCase() === '#E7F900' ? '#C3F400' : '#06B6D4' },
+            { name: 'Gris Grafito', hex: '#1E293B' },
+            { name: 'Blanco Óptico', hex: '#FFFFFF' },
+          ]
+        : preset.colors,
+      avatar: (wizardData.businessName && wizardData.businessName.toLowerCase().includes('vector'))
+        ? '🐺'
+        : (wizardData.archetype && wizardData.archetype.toLowerCase().includes('lobo') ? '🐺' : (vert.avatar || preset.avatar || '🏢')),
       connectedSocialNetworks: [
         'WHATSAPP',
         ...Object.keys(wizardData.socialLinks || {})
