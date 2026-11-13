@@ -28,10 +28,17 @@ import {
   CheckCheck,
   RefreshCw,
   Volume2,
+  VolumeX,
   Settings,
   Activity,
   ExternalLink,
   FlaskConical,
+  Trash2,
+  FileText,
+  Image as ImageIcon,
+  FileCheck,
+  X,
+  SlidersHorizontal,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { PreCitaDrawer } from '@/components/hitl/PreCitaDrawer';
@@ -77,6 +84,12 @@ export const ConversacionesInbox = () => {
 
   // Estado del modal de conexión WhatsApp Cloud API
   const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
+  const [isWaBannerDismissed, setIsWaBannerDismissed] = useState(false);
+
+  // Directriz de modo de respuesta del Bot ('text_only' | 'mirror' | 'text_and_audio')
+  const [botAudioMode, setBotAudioMode] = useState(
+    activeTenant?.botAudioMode || 'text_only'
+  );
 
   // Detección verídica del estado de conexión de WhatsApp
   const waConfig = activeTenant?.connectedChannels?.whatsapp;
@@ -102,51 +115,243 @@ export const ConversacionesInbox = () => {
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [playingAudioId, setPlayingAudioId] = useState(null);
 
-  // Inyección de conversación demo para pruebas en vivo de la bandeja
-  const handleInjectDemoThread = () => {
-    const demoThread = {
-      id: `demo-${Date.now()}`,
-      name: 'Carlos Mendoza (Demo WhatsApp)',
-      company: 'Constructora del Norte',
-      channel: 'WhatsApp',
-      phone: '+52 81 8392 4410',
-      need: 'Cotización de consultoría comercial y agenda de cita virtual',
-      campaign: 'Meta Ads Inbound',
-      date: 'Hace un momento',
-      contacted: false,
-      owner: 'Lobo Vectorial (Agencia)',
-      stage: 'Nuevo',
-      slaMinutesRemaining: 15,
-      potentialTicket: 34500,
-      qualification: {
-        contactValid: true,
-        productIdentified: true,
-        doubtsResolved: false,
-        ctaAccepted: false,
-      },
-      messages: [
-        {
-          id: `m-demo-1`,
-          direction: 'in',
-          text: 'Hola, vi su información sobre automatización comercial y agendamiento con IA. ¿Me pueden brindar detalles de costos y disponibilidad para esta semana?',
-          time: '12:45 PM',
-        },
-        {
-          id: `m-demo-2`,
-          direction: 'out',
-          type: 'audio',
-          duration: '0:18',
-          text: 'Hola Carlos, con gusto. Te confirmo de viva voz que tenemos paquetes diseñados para constructoras con integración de CRM y agendamiento automático.',
-          time: '12:46 PM',
-        },
-        {
-          id: `m-demo-3`,
-          direction: 'in',
-          text: 'Excelente audio, me interesa bastante. ¿Tienen espacio el jueves por la tarde para una videollamada de valoración?',
-          time: '12:48 PM',
-        },
-      ],
-    };
+  // Actualizar modo de respuesta y persistir en la directriz del Tenant
+  const handleUpdateBotAudioMode = async (mode) => {
+    setBotAudioMode(mode);
+    if (updateTenantPolicy && activeTenant?.id) {
+      await updateTenantPolicy(activeTenant.id, { botAudioMode: mode });
+    }
+  };
+
+  // Motor de Síntesis de Voz Real (Web Speech API) en Español Latino/Mexicano
+  const playSpeechReal = (text, msgId) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      alert('Tu navegador no cuenta con soporte nativo de síntesis de voz (Web Speech API).');
+      return;
+    }
+
+    if (playingAudioId === msgId) {
+      window.speechSynthesis.cancel();
+      setPlayingAudioId(null);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    const voices = window.speechSynthesis.getVoices();
+    const esVoice =
+      voices.find((v) => v.lang === 'es-MX') ||
+      voices.find((v) => v.lang.startsWith('es-US')) ||
+      voices.find((v) => v.lang.startsWith('es')) ||
+      voices[0];
+
+    if (esVoice) utterance.voice = esVoice;
+    utterance.lang = esVoice ? esVoice.lang : 'es-MX';
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+
+    utterance.onstart = () => setPlayingAudioId(msgId);
+    utterance.onend = () => setPlayingAudioId(null);
+    utterance.onerror = () => setPlayingAudioId(null);
+
+    window.speechSynthesis.speak(utterance);
+  };
+
+  // Limpiar hilo específico
+  const handleRemoveThread = (threadIdToRemove) => {
+    if (playingAudioId) {
+      window.speechSynthesis?.cancel();
+      setPlayingAudioId(null);
+    }
+    setThreads((prev) => {
+      const remaining = prev.filter((t) => t.id !== threadIdToRemove);
+      if (selectedThreadId === threadIdToRemove) {
+        setSelectedThreadId(remaining.length > 0 ? remaining[0].id : null);
+      }
+      return remaining;
+    });
+  };
+
+  // Limpiar TODAS las conversaciones de prueba (volver a producción limpio)
+  const handleClearAllDemos = () => {
+    if (playingAudioId) {
+      window.speechSynthesis?.cancel();
+      setPlayingAudioId(null);
+    }
+    setThreads((prev) => {
+      const realOnly = prev.filter((t) => !t.isDemo && !t.id.startsWith('demo-'));
+      setSelectedThreadId(realOnly.length > 0 ? realOnly[0].id : null);
+      return realOnly;
+    });
+  };
+
+  // Inyección de casos demo controlados (Multimodal o Solo Texto)
+  const handleInjectDemo = (variant = 'standard_text') => {
+    let demoThread;
+    const now = Date.now();
+
+    if (variant === 'image_vision') {
+      demoThread = {
+        id: `demo-${now}`,
+        isDemo: true,
+        name: 'Roberto Cantú (Demo Visión CFE)',
+        company: 'Residencial Cumbres',
+        channel: 'WhatsApp',
+        phone: '+52 81 1209 8834',
+        need: 'Cotización con foto de recibo CFE y evaluación de paneles solares',
+        campaign: 'Meta Ads Solar',
+        date: 'Hace un momento',
+        contacted: false,
+        owner: 'Lobo Vectorial (Agencia)',
+        stage: 'Nuevo',
+        slaMinutesRemaining: 15,
+        potentialTicket: 68000,
+        qualification: { contactValid: true, productIdentified: true, doubtsResolved: false, ctaAccepted: false },
+        messages: [
+          {
+            id: `m-demo-v1`,
+            direction: 'in',
+            type: 'image',
+            imageUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=600&q=80',
+            text: 'Hola, les adjunto mi último recibo de luz para ver si califico para financiamiento de paneles solares.',
+            time: '11:15 AM',
+            aiAnalysis: {
+              type: 'Recibo CFE Tarifa DAC / 01',
+              badge: 'Visión IA analizada con éxito',
+              extracted: 'Consumo bimestral: 840 kWh • Gasto: $3,450 MXN • Ahorro estimado: 88%',
+            },
+          },
+          {
+            id: `m-demo-v2`,
+            direction: 'out',
+            type: 'text',
+            text: '¡Hola Roberto! Gracias por enviar tu recibo. Analizamos tu consumo de 840 kWh en tarifa DAC. Con un sistema de 6 paneles reduces tu factura a menos de $150 MXN al bimestre.',
+            time: '11:16 AM',
+          },
+        ],
+      };
+    } else if (variant === 'pdf_rag') {
+      demoThread = {
+        id: `demo-${now}`,
+        isDemo: true,
+        name: 'Ing. Fernando Treviño (Demo PDF)',
+        company: 'Desarrollos Urbanos SA',
+        channel: 'WhatsApp',
+        phone: '+52 55 4912 3099',
+        need: 'Revisión de especificaciones técnicas en PDF adjunto',
+        campaign: 'Inbound Meta Cloud',
+        date: 'Hace un momento',
+        contacted: false,
+        owner: 'Lobo Vectorial (Agencia)',
+        stage: 'Nuevo',
+        slaMinutesRemaining: 15,
+        potentialTicket: 125000,
+        qualification: { contactValid: true, productIdentified: true, doubtsResolved: true, ctaAccepted: false },
+        messages: [
+          {
+            id: `m-demo-p1`,
+            direction: 'in',
+            type: 'document',
+            fileName: 'Requerimientos_Proyecto_Nave_v3.pdf',
+            fileSize: '2.4 MB',
+            text: 'Buenas tardes, te comparto el PDF con el resumen de especificaciones y metraje para la cotización.',
+            time: '01:20 PM',
+            aiAnalysis: {
+              badge: 'PDF Indexado con éxito · RAG Activo',
+              summary: 'Se procesaron 6 páginas. Superficie: 1,200 m². Presupuesto máximo: $125,000 USD. Fecha de arranque: Junio 2026.',
+            },
+          },
+          {
+            id: `m-demo-p2`,
+            direction: 'out',
+            type: 'text',
+            text: 'Buenas tardes Ing. Fernando. Hemos procesado e indexado el PDF con Apache PDFBox. Nuestro director técnico tiene disponibilidad el jueves a las 4:00 PM para la propuesta económica.',
+            time: '01:21 PM',
+          },
+        ],
+      };
+    } else if (variant === 'audio_whisper') {
+      demoThread = {
+        id: `demo-${now}`,
+        isDemo: true,
+        name: 'Dra. Marcela Garza (Demo Audio)',
+        company: 'Clínica San Jerónimo',
+        channel: 'WhatsApp',
+        phone: '+52 81 8300 9940',
+        need: 'Consulta por nota de voz sobre paquetes y financiamiento',
+        campaign: 'Meta Ads Inbound',
+        date: 'Hace un momento',
+        contacted: false,
+        owner: 'Lobo Vectorial (Agencia)',
+        stage: 'Nuevo',
+        slaMinutesRemaining: 15,
+        potentialTicket: 45000,
+        qualification: { contactValid: true, productIdentified: true, doubtsResolved: false, ctaAccepted: false },
+        messages: [
+          {
+            id: `m-demo-a1`,
+            direction: 'in',
+            type: 'audio',
+            duration: '0:22',
+            text: 'Hola, buenas tardes, me gustaría saber si manejan meses sin intereses para el tratamiento y cuándo tienen disponibilidad en la sucursal.',
+            time: '03:10 PM',
+            aiAnalysis: {
+              badge: 'Transcripción IA Whisper instantánea',
+              intent: 'Consulta de financiamiento MSI y disponibilidad de citas',
+            },
+          },
+          {
+            id: `m-demo-a2`,
+            direction: 'out',
+            type: 'text',
+            text: 'Hola Dra. Marcela, con gusto. Manejamos hasta 12 meses sin intereses con tarjetas participantes. En la sucursal tenemos espacio este viernes a las 11:30 AM o 4:00 PM. ¿Cuál le queda mejor?',
+            time: '03:11 PM',
+          },
+        ],
+      };
+    } else {
+      // Caso estándar recomendado: Solo Texto formal
+      demoThread = {
+        id: `demo-${now}`,
+        isDemo: true,
+        name: 'Carlos Mendoza (Demo Solo Texto)',
+        company: 'Constructora del Norte',
+        channel: 'WhatsApp',
+        phone: '+52 81 8392 4410',
+        need: 'Cotización de consultoría comercial y agenda de cita virtual',
+        campaign: 'Meta Ads Inbound',
+        date: 'Hace un momento',
+        contacted: false,
+        owner: 'Lobo Vectorial (Agencia)',
+        stage: 'Nuevo',
+        slaMinutesRemaining: 15,
+        potentialTicket: 34500,
+        qualification: { contactValid: true, productIdentified: true, doubtsResolved: false, ctaAccepted: false },
+        messages: [
+          {
+            id: `m-demo-1`,
+            direction: 'in',
+            type: 'text',
+            text: 'Hola, vi su información sobre automatización comercial y agendamiento con IA. ¿Me pueden brindar detalles de costos y disponibilidad para esta semana?',
+            time: '12:45 PM',
+          },
+          {
+            id: `m-demo-2`,
+            direction: 'out',
+            type: 'text',
+            text: 'Hola Carlos, con gusto. Tenemos paquetes diseñados para constructoras con integración de CRM y agendamiento automático. ¿Te resulta conveniente una llamada rápida de 15 minutos mañana a las 11:00 AM?',
+            time: '12:46 PM',
+          },
+          {
+            id: `m-demo-3`,
+            direction: 'in',
+            type: 'text',
+            text: 'Excelente, sí me interesa bastante. Mañana a las 11:00 AM me parece perfecto.',
+            time: '12:48 PM',
+          },
+        ],
+      };
+    }
 
     setThreads((prev) => [demoThread, ...prev]);
     setSelectedThreadId(demoThread.id);
@@ -155,6 +360,8 @@ export const ConversacionesInbox = () => {
       confetti({ particleCount: 30, spread: 60, colors: ['#E7F900', '#10B981', '#38BDF8'] });
     } catch (e) {}
   };
+
+  const handleInjectDemoThread = () => handleInjectDemo('standard_text');
 
   // Guardar credenciales reales en AuthContext y localStorage
   const handleSaveWhatsAppCredentials = (credentials) => {
@@ -459,7 +666,35 @@ export const ConversacionesInbox = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          {/* Directriz de Voz del Bot (Paz mental para el usuario) */}
+          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs font-mono">
+            <span className="text-[10px] text-[var(--text-muted)] px-1.5 font-bold flex items-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-lime-400" />
+              Modo Bot:
+            </span>
+            <select
+              value={botAudioMode}
+              onChange={(e) => handleUpdateBotAudioMode(e.target.value)}
+              className="bg-[var(--bg-base)] border border-[var(--border-color)] text-[11px] rounded-lg px-2 py-1 text-[var(--text-main)] font-semibold focus:outline-none focus:border-lime-400 cursor-pointer"
+            >
+              <option value="text_only">🛡️ Solo Texto (Recomendado)</option>
+              <option value="mirror">🔄 Modo Espejo (Audio solo si cliente manda audio)</option>
+              <option value="text_and_audio">🎙️ Texto y Audio</option>
+            </select>
+            <button
+              type="button"
+              onClick={() => {
+                const sampleText = `Hola, te atiende el asistente comercial de ${activeTenant?.name || 'nuestro negocio'}. Con gusto te comparto disponibilidad y resolvemos cualquier duda.`;
+                playSpeechReal(sampleText, 'test-voice');
+              }}
+              className="p-1.5 rounded-lg hover:bg-[var(--bg-panel)] text-[var(--text-muted)] hover:text-lime-400 transition-colors"
+              title="Escuchar muestra real de voz del asistente (Web Speech API)"
+            >
+              <Volume2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
           <button
             type="button"
             onClick={() => setIsGuideOpen(true)}
@@ -487,41 +722,104 @@ export const ConversacionesInbox = () => {
           </div>
         </div>
       ) : !isWhatsAppConfigured ? (
-        <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs animate-fadeIn">
-          <div className="flex items-center gap-2.5">
-            <span className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400 shrink-0">
-              <AlertCircle className="w-4 h-4" />
-            </span>
-            <div>
-              <div className="font-heading font-bold text-amber-300">
-                WhatsApp Cloud API no está conectado en {activeTenant.name}
+        !isWaBannerDismissed ? (
+          <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs animate-fadeIn relative">
+            <div className="flex items-center gap-2.5">
+              <span className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400 shrink-0">
+                <AlertCircle className="w-4 h-4" />
+              </span>
+              <div>
+                <div className="font-heading font-bold text-amber-300">
+                  WhatsApp Cloud API no está conectado en {activeTenant.name}
+                </div>
+                <p className="text-[11px] text-[var(--text-muted)] font-mono">
+                  Configura tus credenciales oficiales de Meta para recibir chats reales en vivo.
+                </p>
               </div>
-              <p className="text-[11px] text-[var(--text-muted)] font-mono">
-                Falta configurar el Phone Number ID y el Token permanente de Meta para recibir chats en vivo.
-              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              {/* Opciones de Prueba Rápida Multimodal */}
+              <div className="flex items-center rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] overflow-hidden text-xs font-mono">
+                <button
+                  type="button"
+                  onClick={() => handleInjectDemo('standard_text')}
+                  className="px-2.5 py-1.5 hover:bg-[var(--bg-panel)] text-[var(--text-main)] font-bold flex items-center gap-1 transition-colors"
+                  title="Simular un lead estándar que conversa únicamente por texto"
+                >
+                  <FlaskConical className="w-3.5 h-3.5 text-lime-400" />
+                  <span>+ Demo Texto</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleInjectDemo('image_vision')}
+                  className="px-2 py-1.5 hover:bg-[var(--bg-panel)] text-emerald-400 border-l border-[var(--border-color)] transition-colors"
+                  title="Simular cliente con foto / recibo CFE (Visión IA)"
+                >
+                  <ImageIcon className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleInjectDemo('pdf_rag')}
+                  className="px-2 py-1.5 hover:bg-[var(--bg-panel)] text-cyan-400 border-l border-[var(--border-color)] transition-colors"
+                  title="Simular cliente con PDF de requerimientos (RAG)"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleInjectDemo('audio_whisper')}
+                  className="px-2 py-1.5 hover:bg-[var(--bg-panel)] text-purple-400 border-l border-[var(--border-color)] transition-colors"
+                  title="Simular cliente enviando nota de voz (Whisper)"
+                >
+                  <Mic className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsWhatsAppModalOpen(true)}
+                className="px-3 py-1.5 rounded-xl bg-amber-400 text-black font-mono text-xs font-bold flex items-center gap-1.5 hover:bg-amber-300 transition-all shadow-sm active:scale-95"
+              >
+                <Settings className="w-3.5 h-3.5" />
+                <span>Conectar WhatsApp Real</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsWaBannerDismissed(true)}
+                className="p-1 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-amber-500/20 transition-colors ml-1"
+                title="Ocultar aviso de conexión"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
           </div>
-
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={handleInjectDemoThread}
-              className="px-3 py-1.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-panel)] text-[var(--text-main)] border border-[var(--border-color)] font-mono text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm"
-              title="Inyectar una conversación de prueba para probar la bandeja y el co-pilot de IA"
-            >
-              <FlaskConical className="w-3.5 h-3.5 text-lime-400" />
-              <span>Simular Chat Demo</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsWhatsAppModalOpen(true)}
-              className="px-3.5 py-1.5 rounded-xl bg-amber-400 text-black font-mono text-xs font-bold flex items-center gap-1.5 hover:bg-amber-300 transition-all shadow-sm active:scale-95"
-            >
-              <Settings className="w-3.5 h-3.5" />
-              <span>Conectar WhatsApp Real</span>
-            </button>
+        ) : (
+          <div className="py-1 px-3 rounded-xl bg-[var(--bg-card)]/40 border border-[var(--border-color)] flex items-center justify-between text-[11px] font-mono text-[var(--text-muted)]">
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+              WhatsApp Cloud API pendiente de configurar
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsWhatsAppModalOpen(true)}
+                className="text-amber-400 hover:underline"
+              >
+                Configurar ahora
+              </button>
+              <span>•</span>
+              <button
+                type="button"
+                onClick={() => setIsWaBannerDismissed(false)}
+                className="hover:text-[var(--text-main)]"
+              >
+                Mostrar aviso completo
+              </button>
+            </div>
           </div>
-        </div>
+        )
       ) : (
         <div className="p-3 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
           <div className="flex items-center gap-2.5">
@@ -547,16 +845,6 @@ export const ConversacionesInbox = () => {
             >
               <Activity className="w-3 h-3 text-emerald-400" />
               <span>Diagnóstico & Credenciales</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleInjectDemoThread}
-              className="px-2.5 py-1 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] text-[10px] font-mono text-[var(--text-muted)] hover:text-lime-400 transition-colors flex items-center gap-1"
-              title="Inyectar otra conversación de prueba"
-            >
-              <FlaskConical className="w-3 h-3 text-lime-400" />
-              <span>+ Demo</span>
             </button>
 
             <span className="font-mono text-[10px] text-lime-400 font-bold bg-lime-400/10 px-2 py-0.5 rounded border border-lime-400/20 shrink-0">
@@ -607,6 +895,19 @@ export const ConversacionesInbox = () => {
                 >
                   Pendientes ({pendingCount})
                 </button>
+
+                {/* Botón de Purga Total de Demos */}
+                {threads.some((t) => t.isDemo || t.id.startsWith('demo-')) && (
+                  <button
+                    type="button"
+                    onClick={handleClearAllDemos}
+                    className="px-2 py-0.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-[10px] font-mono flex items-center gap-1 transition-all ml-1"
+                    title="Eliminar todas las conversaciones demo simuladas"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    <span>Limpiar Demos</span>
+                  </button>
+                )}
               </div>
 
               <select
@@ -637,7 +938,7 @@ export const ConversacionesInbox = () => {
                   <p className="text-[11px] text-[var(--text-muted)] font-sans max-w-xs mx-auto leading-relaxed">
                     {!activeTenant
                       ? 'Elige un negocio activo para gestionar sus chats.'
-                      : 'Aún no se reciben mensajes en este número o el webhook está en espera.'}
+                      : 'Bandeja en tiempo real preparada. Los mensajes reales de WhatsApp aparecerán aquí automáticamente.'}
                   </p>
                 </div>
 
@@ -645,20 +946,20 @@ export const ConversacionesInbox = () => {
                   <div className="pt-2 flex flex-col gap-2 max-w-xs mx-auto">
                     <button
                       type="button"
-                      onClick={handleInjectDemoThread}
-                      className="w-full py-2.5 px-3 rounded-xl bg-lime-400 text-black font-bold font-mono text-xs flex items-center justify-center gap-2 hover:bg-lime-300 transition-all shadow-sm active:scale-95"
+                      onClick={() => setIsWhatsAppModalOpen(true)}
+                      className="w-full py-2.5 px-3 rounded-xl bg-amber-400 text-black font-bold font-mono text-xs flex items-center justify-center gap-2 hover:bg-amber-300 transition-all shadow-sm active:scale-95"
                     >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>Inyectar Conversación Demo</span>
+                      <Settings className="w-3.5 h-3.5" />
+                      <span>{isWhatsAppConfigured ? 'Ver Credenciales de WhatsApp' : 'Conectar WhatsApp Oficial'}</span>
                     </button>
 
                     <button
                       type="button"
-                      onClick={() => setIsWhatsAppModalOpen(true)}
+                      onClick={() => handleInjectDemo('standard_text')}
                       className="w-full py-2 px-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-lime-400 text-[var(--text-muted)] hover:text-lime-400 font-mono text-[11px] transition-colors flex items-center justify-center gap-1.5"
                     >
-                      <Settings className="w-3.5 h-3.5" />
-                      <span>{isWhatsAppConfigured ? 'Ver Credenciales de WhatsApp' : 'Conectar WhatsApp Oficial'}</span>
+                      <FlaskConical className="w-3.5 h-3.5" />
+                      <span>Simular Lead de Prueba (Solo Texto)</span>
                     </button>
                   </div>
                 )}
@@ -748,6 +1049,17 @@ export const ConversacionesInbox = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  {activeThread && (activeThread.isDemo || activeThread.id.startsWith('demo-')) && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveThread(activeThread.id)}
+                      className="px-2.5 py-1 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-[11px] font-mono flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+                      title="Eliminar esta conversación simulada y volver a la vista limpia"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Limpiar Demo</span>
+                    </button>
+                  )}
                   {!activeThread.contacted && activeThread.slaMinutesRemaining !== null && (
                     <span
                       className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold ${
@@ -785,16 +1097,17 @@ export const ConversacionesInbox = () => {
                           : 'bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)]'
                       }`}
                     >
-                      {/* Audio Voice Note Player Simulation */}
+                      {/* Audio Voice Note Player con Web Speech API */}
                       {msg.type === 'audio' ? (
                         <div className="space-y-2">
                           <div className="flex items-center gap-3">
                             <button
                               type="button"
-                              onClick={() => setPlayingAudioId(playingAudioId === msg.id ? null : msg.id)}
+                              onClick={() => playSpeechReal(msg.text, msg.id)}
                               className={`p-2 rounded-full ${
                                 msg.direction === 'out' ? 'bg-black text-lime-400' : 'bg-lime-400 text-black'
                               }`}
+                              title={playingAudioId === msg.id ? "Pausar audio" : "Escuchar síntesis de voz en español"}
                             >
                               {playingAudioId === msg.id ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
                             </button>
@@ -813,11 +1126,58 @@ export const ConversacionesInbox = () => {
                                 />
                               ))}
                             </div>
-                            <span className="text-[10px] font-mono font-bold shrink-0">{msg.duration}</span>
+                            <span className="text-[10px] font-mono font-bold shrink-0">{msg.duration || '0:18'}</span>
                           </div>
+
+                          {/* Badge de Transcripción Whisper si es inbound */}
+                          {msg.direction === 'in' && (
+                            <div className="text-[9px] font-mono font-bold text-purple-300 bg-purple-500/15 border border-purple-500/30 px-2 py-0.5 rounded flex items-center gap-1 w-fit">
+                              <Mic className="w-2.5 h-2.5" />
+                              <span>Transcripción IA Whisper instantánea</span>
+                            </div>
+                          )}
+
                           <p className="text-[11px] italic opacity-90 border-t border-black/10 pt-1 font-mono">
                             {msg.text}
                           </p>
+                        </div>
+                      ) : msg.type === 'image' ? (
+                        <div className="space-y-2">
+                          {msg.imageUrl && (
+                            <div className="rounded-xl overflow-hidden border border-[var(--border-color)] max-h-48 relative">
+                              <img src={msg.imageUrl} alt="Documento enviado" className="w-full object-cover" />
+                            </div>
+                          )}
+                          {msg.aiAnalysis && (
+                            <div className="p-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-[10px] font-mono text-emerald-300 space-y-1">
+                              <div className="flex items-center gap-1 font-bold">
+                                <ImageIcon className="w-3 h-3" />
+                                <span>{msg.aiAnalysis.badge}</span>
+                              </div>
+                              <p className="text-zinc-200">{msg.aiAnalysis.extracted}</p>
+                            </div>
+                          )}
+                          <p className="text-xs">{msg.text}</p>
+                        </div>
+                      ) : msg.type === 'document' ? (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2.5 p-2 rounded-xl bg-black/20 border border-[var(--border-color)]">
+                            <FileText className="w-6 h-6 text-red-400 shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <div className="font-bold text-xs truncate text-[var(--text-main)]">{msg.fileName || 'documento.pdf'}</div>
+                              <div className="text-[10px] text-[var(--text-muted)] font-mono">{msg.fileSize || 'PDF'}</div>
+                            </div>
+                          </div>
+                          {msg.aiAnalysis && (
+                            <div className="p-2 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-[10px] font-mono text-cyan-300 space-y-1">
+                              <div className="flex items-center gap-1 font-bold">
+                                <FileCheck className="w-3 h-3" />
+                                <span>{msg.aiAnalysis.badge}</span>
+                              </div>
+                              <p className="text-zinc-200">{msg.aiAnalysis.summary}</p>
+                            </div>
+                          )}
+                          <p className="text-xs">{msg.text}</p>
                         </div>
                       ) : (
                         msg.text
@@ -1031,6 +1391,23 @@ export const ConversacionesInbox = () => {
       <PreCitaDrawer
         isOpen={isPreCitaDrawerOpen}
         onClose={() => setIsPreCitaDrawerOpen(false)}
+        lead={{
+          id: activeThread?.id || 'lead-001',
+          name: activeThread?.name || 'Prospecto',
+          phone: activeThread?.phone || '',
+          email: activeThread?.email || 'contacto@prospecto.com',
+          notes: activeThread?.need || 'Servicio Profesional',
+          estimatedValue: activeThread?.potentialTicket || 28000,
+          channel: activeThread?.channel || 'WhatsApp',
+          status: activeThread?.stage || 'LEAD_COLD_24H',
+          customerNeeds: {
+            potentialTicket: activeThread?.potentialTicket || 28000,
+            intent: activeThread?.need || 'Servicio Profesional',
+            objection: 'Requiere confirmación de horario y financiamiento',
+            suggestedAction: 'Cita de valoración y confirmación inmediata',
+          },
+          messages: activeThread?.messages || [],
+        }}
         alert={{
           id: activeThread?.id || 'alert-001',
           client_name: activeThread?.name || 'Prospecto',
@@ -1041,7 +1418,7 @@ export const ConversacionesInbox = () => {
             objection: 'Requiere confirmación de horario y financiamiento',
             suggestedAction: 'Cita de valoración y confirmación inmediata',
           },
-          transcript_snippet: activeThread?.messages.map((m) => `${m.direction === 'in' ? 'Cliente' : 'Agente'}: ${m.text}`) || [],
+          transcript_snippet: activeThread?.messages ? activeThread.messages.map((m) => `${m.direction === 'in' ? 'Cliente' : 'Agente'}: ${m.text}`) : [],
         }}
       />
 
