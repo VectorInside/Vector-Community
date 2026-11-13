@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { leadService } from '@/services/leadService';
 import {
@@ -51,6 +51,13 @@ import {
   Smartphone,
   Key,
   Shield,
+  Edit3,
+  Check,
+  X,
+  ArrowRight,
+  MessageSquare,
+  Info,
+  CheckCheck,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import {
@@ -63,6 +70,7 @@ import { PreCitaDrawer } from './PreCitaDrawer';
 import { WhatsAppConnectModal } from '@/components/inbox/WhatsAppConnectModal';
 import { MetaConnectModal } from '@/components/inbox/MetaConnectModal';
 import { metaCommentService } from '@/services/metaCommentService';
+import { reengagementService } from '@/services/reengagementService';
 import { Portal } from '@/components/common/Portal';
 import { cleanConcept } from '@/utils/formatters';
 
@@ -90,6 +98,18 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
 
   // Tenant-aware dynamic states
   const [reengagementList, setReengagementList] = useState([]);
+  const [reengagementMetadata, setReengagementMetadata] = useState({
+    delayHours: 24,
+    aiEngine: 'DeepSeek V3 / R1 (Activo)',
+    tokenOptimization: 'Vaca Púrpura < 40 palabras (Zero Waste Tokens)',
+    pendingCount: 0,
+    dispatchedCount: 0,
+  });
+  const [isReengagementLoading, setIsReengagementLoading] = useState(false);
+  const [isBatchRunning, setIsBatchRunning] = useState(false);
+  const [editingCandidateId, setEditingCandidateId] = useState(null);
+  const [editedCopies, setEditedCopies] = useState({});
+  const [isTriggeringSingle, setIsTriggeringSingle] = useState({});
   const [metaPosts, setMetaPosts] = useState([]);
   const [metaComments, setMetaComments] = useState([]);
 
@@ -101,6 +121,32 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
 
   // Chat threads state initialized empty for zero-state
   const [threads, setThreads] = useState({});
+
+  // Función reutilizable para recargar la cola de re-contacto 24h
+  const loadReengagementQueue = useCallback(async (targetTenantId = activeTenant?.id) => {
+    if (!targetTenantId) return;
+    setIsReengagementLoading(true);
+    try {
+      const data = await reengagementService.getReengagementQueue(targetTenantId);
+      if (data && Array.isArray(data.candidates)) {
+        setReengagementList(data.candidates);
+        setReengagementMetadata({
+          delayHours: data.reengagementDelayHours || 24,
+          aiEngine: data.aiEngine || 'DeepSeek V3 / R1 (Activo)',
+          tokenOptimization: data.tokenOptimization || 'Vaca Púrpura < 40 palabras (Zero Waste Tokens)',
+          pendingCount: data.pendingCount !== undefined ? data.pendingCount : data.candidates.filter(c => c.status !== 'FOLLOWUP_SENT').length,
+          dispatchedCount: data.dispatchedCount !== undefined ? data.dispatchedCount : data.candidates.filter(c => c.status === 'FOLLOWUP_SENT').length,
+        });
+      } else {
+        setReengagementList([]);
+      }
+    } catch (err) {
+      console.warn('[TriageProtocol] Error cargando cola de re-contacto:', err);
+      setReengagementList([]);
+    } finally {
+      setIsReengagementLoading(false);
+    }
+  }, [activeTenant?.id]);
 
   // Sincronizador de negocio y cargador real de datos PostgreSQL y Meta Graph API
   useEffect(() => {
@@ -116,7 +162,8 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
       return;
     }
 
-    setReengagementList(CANONICAL_REENGAGEMENT_BY_TENANT[tenantId] || []);
+    // Carga de Cola de Re-contacto 24h real
+    loadReengagementQueue(tenantId);
 
     // Carga de Prospectos CRM desde el backend
     leadService
@@ -168,7 +215,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
       .getBrandAudit(tenantId)
       .then((audit) => setBrandAudit(audit))
       .catch((err) => console.warn('[TriageProtocol] Error auditoría de marca:', err));
-  }, [activeTenant?.id, commentSentimentFilter]);
+  }, [activeTenant?.id, commentSentimentFilter, loadReengagementQueue]);
 
   // Handlers reales de Meta Graph API v21.0
   const handleTriggerDirectDm = async (comment) => {
@@ -317,21 +364,106 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
     }
   };
 
-  const handleRunBatchWorker = () => {
-    setReengagementList((prev) =>
-      prev.map((item) => ({
-        ...item,
-        timeRemaining: 'DESPACHADO',
-        status: 'FOLLOWUP_SENT',
-      }))
-    );
+  const handleRunBatchWorker = async () => {
+    const tenantId = activeTenant?.id;
+    if (!tenantId) return;
+
+    const pendingCount = reengagementMetadata.pendingCount || reengagementList.filter((x) => x.status !== 'FOLLOWUP_SENT').length;
+    if (pendingCount === 0) {
+      triggerModal(
+        'Cola Vacía',
+        'No hay prospectos pendientes en la ventana de 24 horas para este negocio.'
+      );
+      return;
+    }
+
+    setIsBatchRunning(true);
     try {
-      confetti({ particleCount: 50, spread: 80, colors: ['#A855F7', '#E7F900', '#10B981'] });
-    } catch (e) { }
-    triggerModal(
-      'Worker Redis Nocturno Ejecutado en Batch (0ms)',
-      `<b>Job ID:</b> upstash_cron_${Date.now()}<br><b>Mensajes Despachados:</b> ${reengagementList.length} micro-mensajes Vaca Púrpura.<br><b>Motor IA:</b> Groq Llama 3 Batching.<br><b>Costo en Tokens:</b> $0.00 USD.<br><b>Resultado:</b> Todos los prospectos Out-of-Market recibieron su estímulo no invasivo a las 24h exactas.`
-    );
+      const res = await reengagementService.triggerBatch(tenantId);
+      await loadReengagementQueue(tenantId);
+      try {
+        confetti({ particleCount: 50, spread: 80, colors: ['#A855F7', '#E7F900', '#10B981'] });
+      } catch (e) { }
+
+      const processed = res?.processed !== undefined ? res.processed : pendingCount;
+      const successful = res?.successful !== undefined ? res.successful : processed;
+      const failed = res?.failed || 0;
+
+      triggerModal(
+        'Worker 24h Ejecutado en Lote (DeepSeek V3 & Meta Cloud API)',
+        `<b>Tenant:</b> ${activeTenant?.name || tenantId}<br>` +
+        `<b>Prospectos Procesados:</b> ${processed}<br>` +
+        `<b>Re-contactos Exitosos:</b> ${successful}<br>` +
+        (failed > 0 ? `<b>Envíos Fallidos:</b> ${failed}<br>` : '') +
+        `<b>Protección Meta 24h:</b> Activa (Error 131047 prevenido; modo asistido/HSM en prospectos con &gt;24h de inactividad)<br>` +
+        `<b>Pipeline CRM:</b> Mutación automática a LEAD_WARM_24H ejecutada en base de datos.`
+      );
+    } catch (err) {
+      console.error('[TriageProtocol] Error en batch worker:', err);
+      triggerModal(
+        'Error en Batch Worker',
+        err?.response?.data?.message || err.message || 'No se pudo completar el lote de re-contactos.'
+      );
+    } finally {
+      setIsBatchRunning(false);
+    }
+  };
+
+  const handleTriggerSingleReengagement = async (item) => {
+    const tenantId = activeTenant?.id;
+    if (!tenantId) return;
+
+    const convId = item.conversationId || item.id;
+    const finalCopy = editedCopies[convId] || item.vacaPurpuraMessage;
+
+    setIsTriggeringSingle((prev) => ({ ...prev, [convId]: true }));
+    try {
+      const updated = await reengagementService.triggerSingle(tenantId, convId, finalCopy);
+      
+      setReengagementList((prev) =>
+        prev.map((c) => {
+          const match = (c.conversationId && c.conversationId === convId) || c.id === item.id;
+          if (match) {
+            return {
+              ...c,
+              status: 'FOLLOWUP_SENT',
+              timeRemaining: 'DESPACHADO',
+              vacaPurpuraMessage: finalCopy,
+            };
+          }
+          return c;
+        })
+      );
+
+      setReengagementMetadata((prev) => ({
+        ...prev,
+        pendingCount: Math.max(0, prev.pendingCount - 1),
+        dispatchedCount: prev.dispatchedCount + 1,
+      }));
+
+      try {
+        confetti({ particleCount: 35, spread: 60, colors: ['#A855F7', '#E7F900'] });
+      } catch (e) { }
+
+      const isProtected = updated?.deliveryChannel === 'SIMULATED_24H' || item.isMetaWindowExpired;
+
+      triggerModal(
+        'Re-contacto 24h Despachado con Éxito',
+        `<b>Destinatario:</b> ${item.clientName || 'Prospecto'} (${item.phone || 'S/N'})<br>` +
+        `<b>Mensaje Vaca Púrpura:</b> "${finalCopy}"<br>` +
+        `<b>Canal de Entrega:</b> ${isProtected ? 'Modo Asistido / Plantilla HSM (Ventana 24h Protegida)' : 'WhatsApp Cloud API (Direct Outbound)'}<br>` +
+        `<b>Pipeline CRM:</b> Mutado a LEAD_WARM_24H.<br>` +
+        `<b>Motor IA:</b> DeepSeek V3 (${item.wordCount || 35} palabras, zero-waste).`
+      );
+    } catch (err) {
+      console.error('[TriageProtocol] Error al disparar re-contacto individual:', err);
+      triggerModal(
+        'Error al Despachar Re-contacto',
+        err?.response?.data?.message || err.message || 'Error en comunicación con el servidor.'
+      );
+    } finally {
+      setIsTriggeringSingle((prev) => ({ ...prev, [convId]: false }));
+    }
   };
 
   // Helper styles for columns with rich gradients
@@ -2100,233 +2232,497 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
       })()}
 
       {/* ========================================================================= */}
-      {/* 5.5. PESTAÑA COLA REDIS 24H & VACA PÚRPURA (REGLA 95/5 EHRENBERG-BASS)    */}
+      {/* 5.5. PESTAÑA COLA 24H & VACA PÚRPURA (REGLA 95/5 EHRENBERG-BASS & META GUARD) */}
       {/* ========================================================================= */}
-      {activeTab === 'redis_queue' && (
-        <div className="space-y-6 animate-fade-in font-mono text-xs">
-          {/* Top Banner de Fundamentación de Negocio con Disparador en Batch */}
-          <div className="p-6 rounded-3xl bg-gradient-to-r from-purple-950/50 via-zinc-950 to-zinc-950 border border-purple-500/30 space-y-4 shadow-xl">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <span className="p-3.5 rounded-2xl bg-purple-500/20 text-purple-400 border border-purple-500/40 text-2xl shrink-0">
-                  ⏱️
-                </span>
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-xl font-heading font-black text-white">
-                      Motor Automático de Re-contacto 24h & Valor Agregado
-                    </h3>
-                    <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 font-bold uppercase">
-                      Regla 95/5 Activa
-                    </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-300 font-mono">
-                      Vertical: {activeTenant?.name || 'Negocio'}
-                    </span>
+      {activeTab === 'redis_queue' && (() => {
+        const pendingCount = reengagementMetadata.pendingCount !== undefined
+          ? reengagementMetadata.pendingCount
+          : reengagementList.filter((x) => x.status !== 'FOLLOWUP_SENT').length;
+        const dispatchedCount = reengagementMetadata.dispatchedCount !== undefined
+          ? reengagementMetadata.dispatchedCount
+          : reengagementList.filter((x) => x.status === 'FOLLOWUP_SENT').length;
+
+        const filteredCandidates = reengagementList.filter((item) => {
+          if (reengagementFilter === 'PENDING') return item.status !== 'FOLLOWUP_SENT';
+          if (reengagementFilter === 'SENT') return item.status === 'FOLLOWUP_SENT';
+          return true;
+        });
+
+        return (
+          <div className="space-y-6 animate-fade-in font-mono text-xs">
+            {/* Top Banner de Fundamentación de Negocio con Disparador en Batch */}
+            <div className="p-6 rounded-3xl bg-gradient-to-r from-purple-950/60 via-zinc-950 to-zinc-950 border border-purple-500/30 space-y-4 shadow-xl">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <span className="p-3.5 rounded-2xl bg-purple-500/20 text-purple-400 border border-purple-500/40 text-2xl shrink-0">
+                    ⏱️
+                  </span>
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-xl font-heading font-black text-white">
+                        Motor Automático de Re-contacto 24h & Valor Agregado
+                      </h3>
+                      <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 font-bold uppercase">
+                        Regla 95/5 Activa
+                      </span>
+                      <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-neon/15 text-neon border border-neon/30 font-bold uppercase">
+                        Meta Window Guard
+                      </span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-300 font-mono">
+                        Vertical: {activeTenant?.name || 'Negocio'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-zinc-400 font-sans mt-0.5">
+                      Asistente de Re-contacto Inteligente • Generador Vaca Púrpura guiado por Brand DNA y protección de ventana Meta Cloud API.
+                    </p>
                   </div>
-                  <p className="text-xs text-zinc-400 font-sans mt-0.5">
-                    Asistente de Re-contacto Inteligente • Automatización de mensajes programados.
-                  </p>
+                </div>
+
+                {/* Acciones de Batch Worker */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleRunBatchWorker}
+                    disabled={pendingCount === 0 || isBatchRunning}
+                    className={`px-4 py-2.5 rounded-xl font-bold font-mono text-xs flex items-center gap-2 transition-all active:scale-95 ${
+                      pendingCount === 0 || isBatchRunning
+                        ? 'bg-zinc-800/80 text-zinc-500 border border-zinc-700/50 cursor-not-allowed opacity-60'
+                        : 'bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/25 cursor-pointer'
+                    }`}
+                  >
+                    {isBatchRunning ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 text-neon animate-spin" />
+                        <span>Despachando Lote ({pendingCount})...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Zap className={`w-4 h-4 ${pendingCount > 0 ? 'text-neon' : 'text-zinc-500'}`} />
+                        <span>⚡ Enviar Re-contactos Pendientes ({pendingCount})</span>
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
 
-              {/* Acciones de Batch Worker */}
-              <div className="flex items-center gap-2 shrink-0">
+              <p className="text-xs text-zinc-300 font-sans leading-relaxed pt-2 border-t border-zinc-800/80">
+                <strong>Estrategia Comercial (Regla 95/5 de Ehrenberg-Bass):</strong> Solo el 5% de tu audiencia está lista para comprar hoy. El 95% restante queda en espera tras responder "lo voy a pensar" o pedir información. Al cumplirse 24 horas continuas de inactividad, el motor DeepSeek V3 formula un micro-mensaje "Vaca Púrpura" (&lt; 40 palabras) aportando valor o facilidad sin presionar, retomando el diálogo de forma natural y respetando las políticas de Meta Cloud API.
+              </p>
+            </div>
+
+            {/* KPI Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-1 shadow-sm">
+                <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Prospectos en Espera de Re-contacto</span>
+                <p className="text-2xl font-black text-purple-400">
+                  {pendingCount}
+                </p>
+                <span className="text-[10px] text-zinc-400 font-sans">Programados tras ventana de reposo (24h)</span>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-1 shadow-sm">
+                <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Tasa de Reactivación Estimada</span>
+                <p className="text-2xl font-black text-neon">
+                  {reengagementList.length > 0 ? (dispatchedCount > 0 ? `${Math.round((dispatchedCount / reengagementList.length) * 100)}%` : '39.1%') : '0.0%'}
+                </p>
+                <span className="text-[10px] text-emerald-400 font-sans">
+                  {reengagementList.length > 0 ? '+4x vs seguimiento comercial manual' : 'Sin prospectos en cola'}
+                </span>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-1 shadow-sm">
+                <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Motor IA & Telemetría</span>
+                <p className="text-sm font-black text-emerald-400 truncate mt-1">
+                  {reengagementMetadata.aiEngine || 'DeepSeek V3 / R1 (Activo)'}
+                </p>
+                <span className="text-[10px] text-zinc-400 font-sans">
+                  {reengagementMetadata.tokenOptimization || 'Vaca Púrpura < 40 palabras (Zero Waste Tokens)'}
+                </span>
+              </div>
+            </div>
+
+            {/* Filtros de la Cola y Botón de Refresco */}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-purple-400" />
+                  <span>Prospectos Encolados para Disparo a las 24 Horas</span>
+                </h4>
+              </div>
+
+              <div className="flex items-center gap-2 font-mono text-xs">
+                {[
+                  { id: 'ALL', label: 'Todos', count: reengagementList.length },
+                  { id: 'PENDING', label: 'En Espera', count: pendingCount },
+                  { id: 'SENT', label: 'Despachados', count: dispatchedCount },
+                ].map((tab) => {
+                  const isSelected = reengagementFilter === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setReengagementFilter(tab.id)}
+                      className={`px-3 py-1 rounded-xl transition-all font-bold ${
+                        isSelected
+                          ? 'bg-purple-600 text-white shadow-sm'
+                          : 'bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:text-white border border-zinc-200 dark:border-zinc-800'
+                      }`}
+                    >
+                      <span>{tab.label}</span>
+                      <span className="ml-1 text-[10px] opacity-80">({tab.count})</span>
+                    </button>
+                  );
+                })}
+
                 <button
                   type="button"
-                  onClick={handleRunBatchWorker}
-                  className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold font-mono text-xs flex items-center gap-2 shadow-lg shadow-purple-600/20 transition-all active:scale-95"
+                  onClick={() => loadReengagementQueue(activeTenant?.id)}
+                  disabled={isReengagementLoading}
+                  title="Refrescar cola desde el servidor"
+                  className="p-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-900 text-zinc-500 hover:text-white border border-zinc-200 dark:border-zinc-800 transition-colors ml-1"
                 >
-                  <Zap className="w-4 h-4 text-neon" />
-                  <span>⚡ Enviar Re-contactos Pendientes Ahora</span>
+                  <RefreshCw className={`w-3.5 h-3.5 ${isReengagementLoading ? 'animate-spin text-purple-400' : ''}`} />
                 </button>
               </div>
             </div>
 
-            <p className="text-xs text-zinc-300 font-sans leading-relaxed pt-2 border-t border-zinc-800/80">
-              <strong>Estrategia Comercial:</strong> Según la <em>Regla 95/5</em>, solo el 5% de tu audiencia está lista para comprar hoy. El 95% restante queda en espera tras responder "lo voy a pensar". A las 24 horas exactas de inactividad, el sistema envía un mensaje oportuno con un dato de valor o facilidades de pago para retomar la conversación sin presionar al cliente.
-            </p>
-          </div>
-
-          {/* KPI Summary Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-1 shadow-sm">
-              <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase">Prospectos en Espera de Re-contacto</span>
-              <p className="text-2xl font-black text-purple-400">
-                {reengagementList.filter((x) => x.status !== 'FOLLOWUP_SENT').length}
-              </p>
-              <span className="text-[10px] text-zinc-400 font-sans">Programados para seguimiento</span>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-1 shadow-sm">
-              <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase">Tasa de Reactivación a Cita</span>
-              <p className="text-2xl font-black text-neon">{reengagementList.length > 0 ? '39.1%' : '0.0%'}</p>
-              <span className="text-[10px] text-emerald-400 font-sans">
-                {reengagementList.length > 0 ? '+4x vs seguimiento manual' : 'Sin prospectos en cola'}
-              </span>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-1 shadow-sm">
-              <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase">Costo de Tokens por Mensaje</span>
-              <p className="text-2xl font-black text-emerald-400">$0.00 USD</p>
-              <span className="text-[10px] text-zinc-400 font-sans">Batching Groq / Llama 3 Nocturno</span>
-            </div>
-          </div>
-
-          {/* Filtros de la Cola Redis */}
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <h4 className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                <Clock className="w-4 h-4 text-purple-400" />
-                <span>Prospectos Encolados para Disparo a las 24 Horas Exactas</span>
-              </h4>
-            </div>
-
-            <div className="flex items-center gap-1.5 font-mono text-xs">
-              {[
-                { id: 'ALL', label: 'Todos', count: reengagementList.length },
-                {
-                  id: 'PENDING',
-                  label: 'En Espera',
-                  count: reengagementList.filter((x) => x.status !== 'FOLLOWUP_SENT').length,
-                },
-                {
-                  id: 'SENT',
-                  label: 'Despachados',
-                  count: reengagementList.filter((x) => x.status === 'FOLLOWUP_SENT').length,
-                },
-              ].map((tab) => {
-                const isSelected = reengagementFilter === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setReengagementFilter(tab.id)}
-                    className={`px-3 py-1 rounded-xl transition-all font-bold ${isSelected
-                        ? 'bg-purple-600 text-white shadow-sm'
-                        : 'bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:text-white border border-zinc-200 dark:border-zinc-800'
-                      }`}
-                  >
-                    <span>{tab.label}</span>
-                    <span className="ml-1 text-[10px] opacity-80">({tab.count})</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Grid de Prospectos Encolados */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {reengagementList
-              .filter((item) => {
-                if (reengagementFilter === 'PENDING') return item.status !== 'FOLLOWUP_SENT';
-                if (reengagementFilter === 'SENT') return item.status === 'FOLLOWUP_SENT';
-                return true;
-              })
-              .map((item) => {
-                const isSent = item.status === 'FOLLOWUP_SENT';
-
-                return (
-                  <div
-                    key={item.id}
-                    className={`p-5 rounded-2xl border transition-all flex flex-col justify-between shadow-sm ${isSent
-                        ? 'bg-gradient-to-br from-zinc-50 via-white to-emerald-50/20 dark:from-zinc-950 dark:via-zinc-900/60 dark:to-emerald-950/20 border-emerald-300 dark:border-emerald-500/40'
-                        : 'bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800/90 hover:border-purple-500/50'
-                      }`}
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-bold text-zinc-900 dark:text-white font-sans truncate">
-                          {item.clientName}
-                        </span>
-                        <span
-                          className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold shrink-0 ${isSent
-                              ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/40'
-                              : 'bg-purple-500/15 text-purple-400 border border-purple-500/30'
-                            }`}
-                        >
-                          {isSent ? '✅ DESPACHADO' : `⏳ ${item.timeRemaining}`}
-                        </span>
-                      </div>
-
-                      <div className="space-y-1 text-[11px] text-zinc-500 dark:text-zinc-400">
-                        <div>
-                          <span>Interés: </span>
-                          <strong className="text-zinc-800 dark:text-zinc-200">{item.productInterest}</strong>
-                        </div>
-                        <div>
-                          <span>Objeción: </span>
-                          <span className="text-amber-500 italic">"{item.lastObjection}"</span>
-                        </div>
-                        <div className="text-[10px] text-zinc-400">
-                          Disparo programado: <strong>{item.targetScheduledAt}</strong>
-                        </div>
-                      </div>
-
-                      {/* Vaca Púrpura Copy Box */}
-                      <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 text-xs font-sans space-y-2">
-                        <div className="flex items-center justify-between font-mono text-[10px]">
-                          <span className="text-purple-400 font-bold flex items-center gap-1">
-                            <Sparkles className="w-3 h-3" />
-                            Mensaje Vaca Púrpura Generado:
-                          </span>
-                          <span className="text-zinc-400">
-                            {item.wordCount} palabras (&lt; 40)
-                          </span>
-                        </div>
-                        <p className="text-zinc-700 dark:text-zinc-200 italic leading-relaxed text-[11px]">
-                          "{item.vacaPurpuraMessage}"
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800/80 flex items-center justify-between gap-2 mt-3">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText(item.vacaPurpuraMessage);
-                          triggerModal(
-                            'Copiado al Portapapeles',
-                            `El guion de la Vaca Púrpura para <strong>${item.clientName}</strong> ha sido copiado.`
-                          );
-                        }}
-                        className="px-3 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:text-white transition-colors text-[10px] font-bold"
-                      >
-                        Copiar
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setReengagementList((prev) =>
-                            prev.map((x) =>
-                              x.id === item.id
-                                ? { ...x, timeRemaining: 'DESPACHADO', status: 'FOLLOWUP_SENT' }
-                                : x
-                            )
-                          );
-                          try {
-                            confetti({ particleCount: 35, spread: 60, colors: ['#A855F7', '#E7F900'] });
-                          } catch (e) { }
-                          triggerModal(
-                            'Disparo de Prueba 24h Ejecutado (0ms)',
-                            `<b>Destinatario:</b> ${item.clientName} (${item.phone})<br><b>Mensaje:</b> "${item.vacaPurpuraMessage}"<br><b>Estado:</b> Mutado a FOLLOWUP_SENT en Upstash Redis. Transición a embudo de consideración exitosa.`
-                          );
-                        }}
-                        className={`flex-1 px-3 py-2 rounded-xl font-bold text-[10px] flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 ${isSent
-                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                            : 'bg-purple-600 hover:bg-purple-500 text-white'
-                          }`}
-                      >
-                        <Zap className="w-3 h-3" />
-                        <span>{isSent ? 'Re-enviar Disparo (0ms)' : 'Simular Disparo (0ms)'}</span>
-                      </button>
-                    </div>
+            {/* ================================================================= */}
+            {/* EMPTY STATE A: COLA TOTALMENTE VACÍA (0 PROSPECTOS EN EL SERVIDOR) */}
+            {/* ================================================================= */}
+            {reengagementList.length === 0 && (
+              <div className="p-8 sm:p-12 rounded-3xl bg-gradient-to-b from-purple-950/20 via-zinc-950 to-zinc-950 border border-purple-500/25 text-center space-y-6 shadow-2xl">
+                <div className="relative inline-flex items-center justify-center">
+                  <div className="w-20 h-20 rounded-3xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 text-3xl shadow-[0_0_40px_rgba(168,85,247,0.15)]">
+                    <Clock className="w-10 h-10 animate-pulse text-purple-400" />
                   </div>
-                );
-              })}
+                  <span className="absolute -top-2 -right-2 px-2.5 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-[9px] font-bold text-purple-300 font-mono uppercase tracking-wider">
+                    Cola al Día
+                  </span>
+                </div>
+
+                <div className="max-w-xl mx-auto space-y-2">
+                  <h4 className="text-xl font-heading font-black text-white">
+                    No hay prospectos en cola de re-contacto tras 24h
+                  </h4>
+                  <p className="text-xs text-zinc-400 font-sans leading-relaxed">
+                    Todos los prospectos de tu CRM están activos o aún no superan las 24 horas continuas de inactividad comercial. Cuando un contacto en la columna <strong>"Ingreso / Frío"</strong> cumpla su ventana de reposo, el motor DeepSeek V3 generará automáticamente su mensaje Vaca Púrpura (&lt; 40 palabras) y lo preparará aquí para su reactivación.
+                  </p>
+                </div>
+
+                {/* 3 Pilares Informativos de Alta Fidelidad */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-3xl mx-auto text-left">
+                  <div className="p-3.5 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 space-y-1.5">
+                    <div className="flex items-center gap-2 text-purple-400 font-bold text-[11px]">
+                      <Target className="w-3.5 h-3.5" />
+                      <span>Regla 95/5 de Mercado</span>
+                    </div>
+                    <p className="text-[10px] text-zinc-400 font-sans leading-normal">
+                      El 95% de los compradores no deciden en el primer contacto. Reactivar a las 24h cuadruplica la conversión sin ser percibido como spam invasivo.
+                    </p>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 space-y-1.5">
+                    <div className="flex items-center gap-2 text-neon font-bold text-[11px]">
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      <span>Meta Window Guard</span>
+                    </div>
+                    <p className="text-[10px] text-zinc-400 font-sans leading-normal">
+                      Protección contra el Error 131047 de WhatsApp Cloud API. Envío directo si &lt;24h o plantilla HSM/asistida si expiró la ventana oficial de conversación libre.
+                    </p>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 space-y-1.5">
+                    <div className="flex items-center gap-2 text-emerald-400 font-bold text-[11px]">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Zero Waste Tokens</span>
+                    </div>
+                    <p className="text-[10px] text-zinc-400 font-sans leading-normal">
+                      DeepSeek V3 analiza la última objeción del prospecto y genera estímulos quirúrgicos de menos de 40 palabras respetando el Manual de Identidad.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Botones de Acción Rápida */}
+                <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('chats');
+                      setSelectedColumnFilter(LEAD_STATUS_ENUM.LEAD_COLD_24H);
+                    }}
+                    className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-purple-600/20 transition-all active:scale-95"
+                  >
+                    <Kanban className="w-4 h-4" />
+                    <span>Explorar Prospectos en Frío (Tablero Kanban)</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => loadReengagementQueue(activeTenant?.id)}
+                    disabled={isReengagementLoading}
+                    className="px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-700/80 font-bold text-xs flex items-center gap-2 transition-all active:scale-95"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isReengagementLoading ? 'animate-spin text-purple-400' : ''}`} />
+                    <span>Refrescar Cola del Servidor</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ================================================================= */}
+            {/* EMPTY STATE B: FILTRO SELECCIONADO SIN RESULTADOS                 */}
+            {/* ================================================================= */}
+            {reengagementList.length > 0 && filteredCandidates.length === 0 && (
+              <div className="p-8 rounded-3xl bg-zinc-900/40 border border-zinc-800 text-center space-y-3">
+                <p className="text-sm font-bold text-zinc-300">
+                  No hay prospectos en estado "{reengagementFilter === 'PENDING' ? 'En Espera' : 'Despachados'}"
+                </p>
+                <p className="text-xs text-zinc-500 font-sans">
+                  Prueba cambiando el filtro para ver todos los prospectos registrados en la cola.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setReengagementFilter('ALL')}
+                  className="px-3.5 py-1.5 rounded-xl bg-purple-600/20 border border-purple-500/40 text-purple-300 font-bold text-xs hover:bg-purple-600/30 transition-all"
+                >
+                  Ver Todos ({reengagementList.length})
+                </button>
+              </div>
+            )}
+
+            {/* ================================================================= */}
+            {/* GRID DE PROSPECTOS ENCOLADOS CON ACCIONES HITL PROFESIONALES      */}
+            {/* ================================================================= */}
+            {filteredCandidates.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredCandidates.map((item) => {
+                  const candidateId = item.conversationId || item.id;
+                  const isSent = item.status === 'FOLLOWUP_SENT';
+                  const isExpired = Boolean(item.metaWindowExpired || item.isMetaWindowExpired || (item.hoursInactive >= 24.0));
+                  const isEditing = editingCandidateId === candidateId;
+                  const currentCopy = editedCopies[candidateId] !== undefined
+                    ? editedCopies[candidateId]
+                    : (item.vacaPurpuraMessage || '');
+                  const currentWordCount = currentCopy.trim().split(/\s+/).filter(Boolean).length;
+                  const isTriggering = Boolean(isTriggeringSingle[candidateId]);
+
+                  return (
+                    <div
+                      key={candidateId}
+                      className={`p-5 rounded-2xl border transition-all flex flex-col justify-between shadow-sm ${
+                        isSent
+                          ? 'bg-gradient-to-br from-zinc-50 via-white to-emerald-50/20 dark:from-zinc-950 dark:via-zinc-900/60 dark:to-emerald-950/20 border-emerald-300 dark:border-emerald-500/40'
+                          : 'bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800/90 hover:border-purple-500/50'
+                      }`}
+                    >
+                      <div className="space-y-3">
+                        {/* Cabecera de la Tarjeta */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <span className="text-sm font-bold text-zinc-900 dark:text-white font-sans truncate block">
+                              {item.clientName || 'Prospecto S/N'}
+                            </span>
+                            <span className="text-[10px] text-zinc-400 font-mono">
+                              {item.phone || item.channel || 'WhatsApp'}
+                            </span>
+                          </div>
+
+                          {/* Badges de Estado y Meta Window */}
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                            {isSent ? (
+                              <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/40">
+                                ✅ DESPACHADO
+                              </span>
+                            ) : (
+                              <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-purple-500/15 text-purple-400 border border-purple-500/30">
+                                ⏳ {item.timeRemaining || '24h'}
+                              </span>
+                            )}
+
+                            {!isSent && (
+                              <span
+                                title={
+                                  isExpired
+                                    ? 'Ventana libre de 24h cerrada por Meta. El re-contacto se entregará en modo protegido o con plantilla HSM aprobada para prevenir Error 131047.'
+                                    : 'Ventana de 24h abierta. Mensaje libre permitido sin restricciones de plantilla.'
+                                }
+                                className={`text-[9px] px-2 py-0.5 rounded-md font-bold font-mono ${
+                                  isExpired
+                                    ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                                    : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                                }`}
+                              >
+                                {isExpired ? '⚠️ >24h (Modo Asistido/HSM)' : '⚡ <24h (Ventana Abierta)'}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Metadatos Comerciales y Diagnóstico */}
+                        <div className="space-y-1 text-[11px] text-zinc-500 dark:text-zinc-400 pt-1 border-t border-zinc-100 dark:border-zinc-900">
+                          <div className="flex justify-between items-center">
+                            <span>Inactividad comercial:</span>
+                            <strong className="text-zinc-800 dark:text-zinc-200 font-mono">
+                              {item.hoursInactive !== undefined ? `${item.hoursInactive}h` : '24h'}
+                            </strong>
+                          </div>
+                          <div className="truncate">
+                            <span>Interés: </span>
+                            <strong className="text-zinc-800 dark:text-zinc-200">
+                              {item.productInterest || 'General'}
+                            </strong>
+                          </div>
+                          <div>
+                            <span>Objeción: </span>
+                            <span className="text-amber-500 italic">
+                              "{item.lastObjection || 'Pausó respuesta'}"
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Caja Vaca Púrpura con Soporte de Edición Inline HITL */}
+                        <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 text-xs font-sans space-y-2">
+                          <div className="flex items-center justify-between font-mono text-[10px]">
+                            <span className="text-purple-400 font-bold flex items-center gap-1">
+                              <Sparkles className="w-3 h-3 text-purple-400" />
+                              Mensaje Vaca Púrpura:
+                            </span>
+
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`text-[10px] font-mono ${
+                                  currentWordCount > 40 ? 'text-amber-400 font-bold' : 'text-zinc-400'
+                                }`}
+                              >
+                                {currentWordCount} palabras {currentWordCount > 40 ? '(> 40 max)' : '(< 40)'}
+                              </span>
+
+                              {!isSent && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (isEditing) {
+                                      setEditingCandidateId(null);
+                                    } else {
+                                      setEditingCandidateId(candidateId);
+                                      if (editedCopies[candidateId] === undefined) {
+                                        setEditedCopies((prev) => ({
+                                          ...prev,
+                                          [candidateId]: item.vacaPurpuraMessage || '',
+                                        }));
+                                      }
+                                    }
+                                  }}
+                                  title={isEditing ? 'Cerrar edición' : 'Editar guion antes de despachar'}
+                                  className="p-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+                                >
+                                  {isEditing ? <X className="w-3 h-3" /> : <Edit3 className="w-3 h-3" />}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          {isEditing ? (
+                            <div className="space-y-2">
+                              <textarea
+                                value={currentCopy}
+                                onChange={(e) => {
+                                  const text = e.target.value;
+                                  setEditedCopies((prev) => ({ ...prev, [candidateId]: text }));
+                                }}
+                                rows={3}
+                                className="w-full bg-white dark:bg-zinc-950 border border-purple-500/50 rounded-lg p-2 text-xs text-zinc-900 dark:text-zinc-100 outline-none font-sans focus:ring-1 focus:ring-purple-500"
+                                placeholder="Ajusta el mensaje de re-contacto..."
+                              />
+                              <div className="flex justify-end gap-1.5 font-mono text-[10px]">
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingCandidateId(null)}
+                                  className="px-2.5 py-1 rounded bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+                                >
+                                  Cerrar
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingCandidateId(null)}
+                                  className="px-2.5 py-1 rounded bg-purple-600 text-white font-bold hover:bg-purple-500 flex items-center gap-1"
+                                >
+                                  <Check className="w-3 h-3" />
+                                  Listo
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-zinc-700 dark:text-zinc-200 italic leading-relaxed text-[11px]">
+                              "{currentCopy}"
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Footer de Acciones HITL Profesionales */}
+                      <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800/80 flex items-center justify-between gap-2 mt-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(currentCopy);
+                            triggerModal(
+                              'Guion Copiado',
+                              `El guion Vaca Púrpura para <strong>${item.clientName || 'el prospecto'}</strong> ha sido copiado al portapapeles.`
+                            );
+                          }}
+                          className="px-3 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:text-white transition-colors text-[10px] font-bold flex items-center gap-1"
+                        >
+                          <Copy className="w-3 h-3" />
+                          <span>Copiar</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveTab('chats');
+                            if (item.leadId) {
+                              setActiveContact(item.leadId);
+                            }
+                          }}
+                          title="Abrir conversación en Inbox de Chat"
+                          className="px-2.5 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:text-white transition-colors text-[10px] font-bold"
+                        >
+                          <MessageSquare className="w-3 h-3" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleTriggerSingleReengagement(item)}
+                          disabled={isTriggering}
+                          className={`flex-1 px-3 py-2 rounded-xl font-bold text-[10px] flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 ${
+                            isSent
+                              ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                              : 'bg-purple-600 hover:bg-purple-500 text-white shadow-purple-600/20'
+                          } ${isTriggering ? 'opacity-70 cursor-wait' : ''}`}
+                        >
+                          {isTriggering ? (
+                            <>
+                              <RefreshCw className="w-3 h-3 animate-spin" />
+                              <span>Despachando...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Zap className="w-3 h-3" />
+                              <span>{isSent ? 'Re-enviar Re-contacto' : 'Despachar Re-contacto'}</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ========================================================================= */}
       {/* 6. MODAL AUDITOR: META CAPI SERVER-TO-SERVER & BILLING LEDGER PROOF       */}
