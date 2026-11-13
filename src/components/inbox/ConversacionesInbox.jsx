@@ -32,7 +32,6 @@ import {
   Settings,
   Activity,
   ExternalLink,
-  FlaskConical,
   Trash2,
   FileText,
   Image as ImageIcon,
@@ -40,7 +39,6 @@ import {
   X,
   SlidersHorizontal,
 } from 'lucide-react';
-import confetti from 'canvas-confetti';
 import { PreCitaDrawer } from '@/components/hitl/PreCitaDrawer';
 import { formatNumber } from '@/utils/formatters';
 import { MeasurementGuideModal } from '@/components/common/MeasurementGuideModal';
@@ -172,197 +170,6 @@ export const ConversacionesInbox = () => {
     });
   };
 
-  // Limpiar TODAS las conversaciones de prueba (volver a producción limpio)
-  const handleClearAllDemos = () => {
-    if (playingAudioId) {
-      window.speechSynthesis?.cancel();
-      setPlayingAudioId(null);
-    }
-    setThreads((prev) => {
-      const realOnly = prev.filter((t) => !t.isDemo && !t.id.startsWith('demo-'));
-      setSelectedThreadId(realOnly.length > 0 ? realOnly[0].id : null);
-      return realOnly;
-    });
-  };
-
-  // Inyección de casos demo controlados (Multimodal o Solo Texto)
-  const handleInjectDemo = (variant = 'standard_text') => {
-    let demoThread;
-    const now = Date.now();
-
-    if (variant === 'image_vision') {
-      demoThread = {
-        id: `demo-${now}`,
-        isDemo: true,
-        name: 'Roberto Cantú (Demo Visión CFE)',
-        company: 'Residencial Cumbres',
-        channel: 'WhatsApp',
-        phone: '+52 81 1209 8834',
-        need: 'Cotización con foto de recibo CFE y evaluación de paneles solares',
-        campaign: 'Meta Ads Solar',
-        date: 'Hace un momento',
-        contacted: false,
-        owner: 'Lobo Vectorial (Agencia)',
-        stage: 'Nuevo',
-        slaMinutesRemaining: 15,
-        potentialTicket: 68000,
-        qualification: { contactValid: true, productIdentified: true, doubtsResolved: false, ctaAccepted: false },
-        messages: [
-          {
-            id: `m-demo-v1`,
-            direction: 'in',
-            type: 'image',
-            imageUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=600&q=80',
-            text: 'Hola, les adjunto mi último recibo de luz para ver si califico para financiamiento de paneles solares.',
-            time: '11:15 AM',
-            aiAnalysis: {
-              type: 'Recibo CFE Tarifa DAC / 01',
-              badge: 'Visión IA analizada con éxito',
-              extracted: 'Consumo bimestral: 840 kWh • Gasto: $3,450 MXN • Ahorro estimado: 88%',
-            },
-          },
-          {
-            id: `m-demo-v2`,
-            direction: 'out',
-            type: 'text',
-            text: '¡Hola Roberto! Gracias por enviar tu recibo. Analizamos tu consumo de 840 kWh en tarifa DAC. Con un sistema de 6 paneles reduces tu factura a menos de $150 MXN al bimestre.',
-            time: '11:16 AM',
-          },
-        ],
-      };
-    } else if (variant === 'pdf_rag') {
-      demoThread = {
-        id: `demo-${now}`,
-        isDemo: true,
-        name: 'Ing. Fernando Treviño (Demo PDF)',
-        company: 'Desarrollos Urbanos SA',
-        channel: 'WhatsApp',
-        phone: '+52 55 4912 3099',
-        need: 'Revisión de especificaciones técnicas en PDF adjunto',
-        campaign: 'Inbound Meta Cloud',
-        date: 'Hace un momento',
-        contacted: false,
-        owner: 'Lobo Vectorial (Agencia)',
-        stage: 'Nuevo',
-        slaMinutesRemaining: 15,
-        potentialTicket: 125000,
-        qualification: { contactValid: true, productIdentified: true, doubtsResolved: true, ctaAccepted: false },
-        messages: [
-          {
-            id: `m-demo-p1`,
-            direction: 'in',
-            type: 'document',
-            fileName: 'Requerimientos_Proyecto_Nave_v3.pdf',
-            fileSize: '2.4 MB',
-            text: 'Buenas tardes, te comparto el PDF con el resumen de especificaciones y metraje para la cotización.',
-            time: '01:20 PM',
-            aiAnalysis: {
-              badge: 'PDF Indexado con éxito · RAG Activo',
-              summary: 'Se procesaron 6 páginas. Superficie: 1,200 m². Presupuesto máximo: $125,000 USD. Fecha de arranque: Junio 2026.',
-            },
-          },
-          {
-            id: `m-demo-p2`,
-            direction: 'out',
-            type: 'text',
-            text: 'Buenas tardes Ing. Fernando. Hemos procesado e indexado el PDF con Apache PDFBox. Nuestro director técnico tiene disponibilidad el jueves a las 4:00 PM para la propuesta económica.',
-            time: '01:21 PM',
-          },
-        ],
-      };
-    } else if (variant === 'audio_whisper') {
-      demoThread = {
-        id: `demo-${now}`,
-        isDemo: true,
-        name: 'Dra. Marcela Garza (Demo Audio)',
-        company: 'Clínica San Jerónimo',
-        channel: 'WhatsApp',
-        phone: '+52 81 8300 9940',
-        need: 'Consulta por nota de voz sobre paquetes y financiamiento',
-        campaign: 'Meta Ads Inbound',
-        date: 'Hace un momento',
-        contacted: false,
-        owner: 'Lobo Vectorial (Agencia)',
-        stage: 'Nuevo',
-        slaMinutesRemaining: 15,
-        potentialTicket: 45000,
-        qualification: { contactValid: true, productIdentified: true, doubtsResolved: false, ctaAccepted: false },
-        messages: [
-          {
-            id: `m-demo-a1`,
-            direction: 'in',
-            type: 'audio',
-            duration: '0:22',
-            text: 'Hola, buenas tardes, me gustaría saber si manejan meses sin intereses para el tratamiento y cuándo tienen disponibilidad en la sucursal.',
-            time: '03:10 PM',
-            aiAnalysis: {
-              badge: 'Transcripción IA Whisper instantánea',
-              intent: 'Consulta de financiamiento MSI y disponibilidad de citas',
-            },
-          },
-          {
-            id: `m-demo-a2`,
-            direction: 'out',
-            type: 'text',
-            text: 'Hola Dra. Marcela, con gusto. Manejamos hasta 12 meses sin intereses con tarjetas participantes. En la sucursal tenemos espacio este viernes a las 11:30 AM o 4:00 PM. ¿Cuál le queda mejor?',
-            time: '03:11 PM',
-          },
-        ],
-      };
-    } else {
-      // Caso estándar recomendado: Solo Texto formal
-      demoThread = {
-        id: `demo-${now}`,
-        isDemo: true,
-        name: 'Carlos Mendoza (Demo Solo Texto)',
-        company: 'Constructora del Norte',
-        channel: 'WhatsApp',
-        phone: '+52 81 8392 4410',
-        need: 'Cotización de consultoría comercial y agenda de cita virtual',
-        campaign: 'Meta Ads Inbound',
-        date: 'Hace un momento',
-        contacted: false,
-        owner: 'Lobo Vectorial (Agencia)',
-        stage: 'Nuevo',
-        slaMinutesRemaining: 15,
-        potentialTicket: 34500,
-        qualification: { contactValid: true, productIdentified: true, doubtsResolved: false, ctaAccepted: false },
-        messages: [
-          {
-            id: `m-demo-1`,
-            direction: 'in',
-            type: 'text',
-            text: 'Hola, vi su información sobre automatización comercial y agendamiento con IA. ¿Me pueden brindar detalles de costos y disponibilidad para esta semana?',
-            time: '12:45 PM',
-          },
-          {
-            id: `m-demo-2`,
-            direction: 'out',
-            type: 'text',
-            text: 'Hola Carlos, con gusto. Tenemos paquetes diseñados para constructoras con integración de CRM y agendamiento automático. ¿Te resulta conveniente una llamada rápida de 15 minutos mañana a las 11:00 AM?',
-            time: '12:46 PM',
-          },
-          {
-            id: `m-demo-3`,
-            direction: 'in',
-            type: 'text',
-            text: 'Excelente, sí me interesa bastante. Mañana a las 11:00 AM me parece perfecto.',
-            time: '12:48 PM',
-          },
-        ],
-      };
-    }
-
-    setThreads((prev) => [demoThread, ...prev]);
-    setSelectedThreadId(demoThread.id);
-
-    try {
-      confetti({ particleCount: 30, spread: 60, colors: ['#E7F900', '#10B981', '#38BDF8'] });
-    } catch (e) {}
-  };
-
-  const handleInjectDemoThread = () => handleInjectDemo('standard_text');
-
   // Guardar credenciales reales en AuthContext y localStorage
   const handleSaveWhatsAppCredentials = (credentials) => {
     if (updateTenantPolicy && activeTenant?.id) {
@@ -486,7 +293,9 @@ export const ConversacionesInbox = () => {
                   ],
           }));
 
-        const unifiedThreads = [...convThreads, ...mappedLeads];
+        const unifiedThreads = [...convThreads, ...mappedLeads].filter(
+          (t) => !t.isDemo && !t.id?.startsWith('demo-')
+        );
         setThreads(unifiedThreads);
         if (unifiedThreads.length > 0) {
           setSelectedThreadId((prev) => (prev && unifiedThreads.some((t) => t.id === prev) ? prev : unifiedThreads[0].id));
@@ -590,36 +399,6 @@ export const ConversacionesInbox = () => {
       return t;
     });
     persistThreads(updated);
-  };
-
-  // Simulate Audio Voice Note Send
-  const handleSimulateVoiceNote = () => {
-    if (!activeThread) return;
-    const audioMsg = {
-      id: `m-${Date.now()}`,
-      direction: 'out',
-      type: 'audio',
-      duration: '0:18',
-      text: `Hola ${activeThread.name}, te envío este audio para responderte de viva voz sobre ${activeThread.need} y confirmar los horarios disponibles de esta semana.`,
-      time: 'Ahora',
-    };
-
-    const updated = threads.map((t) => {
-      if (t.id === activeThread.id) {
-        return {
-          ...t,
-          contacted: true,
-          slaMinutesRemaining: null,
-          messages: [...t.messages, audioMsg],
-        };
-      }
-      return t;
-    });
-
-    persistThreads(updated);
-    try {
-      confetti({ particleCount: 30, spread: 50, colors: ['#E7F900', '#10B981'] });
-    } catch (e) {}
   };
 
   const pendingCount = threads.filter((t) => !t.contacted).length;
@@ -738,48 +517,11 @@ export const ConversacionesInbox = () => {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 shrink-0">
-              {/* Opciones de Prueba Rápida Multimodal */}
-              <div className="flex items-center rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] overflow-hidden text-xs font-mono">
-                <button
-                  type="button"
-                  onClick={() => handleInjectDemo('standard_text')}
-                  className="px-2.5 py-1.5 hover:bg-[var(--bg-panel)] text-[var(--text-main)] font-bold flex items-center gap-1 transition-colors"
-                  title="Simular un lead estándar que conversa únicamente por texto"
-                >
-                  <FlaskConical className="w-3.5 h-3.5 text-lime-400" />
-                  <span>+ Demo Texto</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleInjectDemo('image_vision')}
-                  className="px-2 py-1.5 hover:bg-[var(--bg-panel)] text-emerald-400 border-l border-[var(--border-color)] transition-colors"
-                  title="Simular cliente con foto / recibo CFE (Visión IA)"
-                >
-                  <ImageIcon className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleInjectDemo('pdf_rag')}
-                  className="px-2 py-1.5 hover:bg-[var(--bg-panel)] text-cyan-400 border-l border-[var(--border-color)] transition-colors"
-                  title="Simular cliente con PDF de requerimientos (RAG)"
-                >
-                  <FileText className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleInjectDemo('audio_whisper')}
-                  className="px-2 py-1.5 hover:bg-[var(--bg-panel)] text-purple-400 border-l border-[var(--border-color)] transition-colors"
-                  title="Simular cliente enviando nota de voz (Whisper)"
-                >
-                  <Mic className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
+            <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
                 onClick={() => setIsWhatsAppModalOpen(true)}
-                className="px-3 py-1.5 rounded-xl bg-amber-400 text-black font-mono text-xs font-bold flex items-center gap-1.5 hover:bg-amber-300 transition-all shadow-sm active:scale-95"
+                className="px-3.5 py-1.5 rounded-xl bg-amber-400 text-black font-mono text-xs font-bold flex items-center gap-1.5 hover:bg-amber-300 transition-all shadow-sm active:scale-95"
               >
                 <Settings className="w-3.5 h-3.5" />
                 <span>Conectar WhatsApp Real</span>
@@ -952,15 +694,6 @@ export const ConversacionesInbox = () => {
                       <Settings className="w-3.5 h-3.5" />
                       <span>{isWhatsAppConfigured ? 'Ver Credenciales de WhatsApp' : 'Conectar WhatsApp Oficial'}</span>
                     </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleInjectDemo('standard_text')}
-                      className="w-full py-2 px-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-lime-400 text-[var(--text-muted)] hover:text-lime-400 font-mono text-[11px] transition-colors flex items-center justify-center gap-1.5"
-                    >
-                      <FlaskConical className="w-3.5 h-3.5" />
-                      <span>Simular Lead de Prueba (Solo Texto)</span>
-                    </button>
                   </div>
                 )}
               </div>
@@ -1049,17 +782,6 @@ export const ConversacionesInbox = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {activeThread && (activeThread.isDemo || activeThread.id.startsWith('demo-')) && (
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveThread(activeThread.id)}
-                      className="px-2.5 py-1 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-[11px] font-mono flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
-                      title="Eliminar esta conversación simulada y volver a la vista limpia"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      <span>Limpiar Demo</span>
-                    </button>
-                  )}
                   {!activeThread.contacted && activeThread.slaMinutesRemaining !== null && (
                     <span
                       className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold ${
@@ -1225,15 +947,6 @@ export const ConversacionesInbox = () => {
                   }}
                   className="flex-1 p-2.5 text-xs bg-[var(--bg-base)] border border-[var(--border-color)] rounded-xl text-[var(--text-main)] placeholder-[var(--text-muted)] focus:outline-none focus:border-lime-400 resize-none font-sans"
                 />
-
-                <button
-                  type="button"
-                  onClick={handleSimulateVoiceNote}
-                  title="Simular envío de nota de voz con transcripción"
-                  className="p-3 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-lime-400 border border-[var(--border-color)] transition-colors shrink-0"
-                >
-                  <Mic className="w-4 h-4" />
-                </button>
 
                 <button
                   type="button"
@@ -1435,7 +1148,6 @@ export const ConversacionesInbox = () => {
         onClose={() => setIsWhatsAppModalOpen(false)}
         activeTenant={activeTenant}
         onSaveCredentials={handleSaveWhatsAppCredentials}
-        onInjectDemo={handleInjectDemoThread}
       />
     </div>
   );

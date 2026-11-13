@@ -29,7 +29,6 @@ export const WhatsAppConnectModal = ({
   onClose,
   activeTenant,
   onSaveCredentials,
-  onInjectDemo,
 }) => {
   const [phoneNumberId, setPhoneNumberId] = useState('');
   const [wabaId, setWabaId] = useState('');
@@ -387,19 +386,7 @@ export const WhatsAppConnectModal = ({
         )}
 
         {/* Footer con Acciones */}
-        <div className="pt-4 border-t border-[var(--border-color)] flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
-          <button
-            type="button"
-            onClick={() => {
-              if (onInjectDemo) onInjectDemo();
-              onClose();
-            }}
-            className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-lime-400 border border-lime-400/30 text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Inyectar Chat Demo para Pruebas</span>
-          </button>
-
+        <div className="pt-4 border-t border-[var(--border-color)] flex flex-col sm:flex-row items-center justify-end gap-3 shrink-0">
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <button
               type="button"
