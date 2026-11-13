@@ -57,6 +57,9 @@ export const AuthProvider = ({ children }) => {
           });
         }
         setTenantsData(fresh);
+        try {
+          useTenantStore.getState().setTenants(Object.values(fresh));
+        } catch (e) {}
 
         const keys = Object.keys(fresh);
         if (keys.length > 0) {
@@ -478,6 +481,9 @@ export const AuthProvider = ({ children }) => {
           localStorage.setItem('vector_tenants_data', JSON.stringify(parsed));
         } catch (e) {}
       }
+      try {
+        useTenantStore.getState().setTenants(Object.values(next));
+      } catch (e) {}
       return next;
     });
     tenantService.createTenant(newTenant).catch(() => {});

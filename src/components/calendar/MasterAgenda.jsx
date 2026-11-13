@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import { useTenant } from '@/hooks/useTenant';
 import { calendarService } from '@/services/calendarService';
 import { tenantService } from '@/services/tenantService';
@@ -185,22 +186,69 @@ function buildWeekDaysForDate(isoDateStr) {
   });
 }
 
-// Configuración limpia en Zero-State (sin turnos precargados en memoria/buffer)
+// Configuración limpia con horario comercial por defecto (Lunes a Viernes 09:00 - 18:00, 60m por cita)
 const DEFAULT_FALLBACK_CONFIG = {
   type: 'shifts_split',
   slotDurationMin: 60,
   concurrencyLimit: 1,
   capacityLabel: 'Cita / Cliente',
-  operatingDays: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat'],
-  shifts: [],
+  operatingDays: ['mon', 'tue', 'wed', 'thu', 'fri'],
+  shifts: [
+    { id: 'shift-1', name: 'Horario Comercial', start: '09:00', end: '18:00' },
+  ],
   breakInterval: null,
 };
+
+// Resuelve la configuración de calendario del tenant asegurando turnos y días válidos
+export function resolveCalendarConfig(tenant) {
+  const base = tenant?.calendarConfig || DEFAULT_FALLBACK_CONFIG;
+  const baseShifts = Array.isArray(base.shifts) && base.shifts.length > 0
+    ? base.shifts
+    : [{ id: 'shift-1', name: 'Horario Comercial', start: '09:00', end: '18:00' }];
+  const baseDuration = base.slotDurationMin || tenant?.appointmentDuration || 60;
+  const baseDays = Array.isArray(base.operatingDays) && base.operatingDays.length > 0
+    ? base.operatingDays
+    : ['mon', 'tue', 'wed', 'thu', 'fri'];
+
+  return {
+    ...DEFAULT_FALLBACK_CONFIG,
+    ...base,
+    operatingDays: baseDays,
+    slotDurationMin: baseDuration,
+    shifts: recomputeShiftsHours(baseShifts, baseDuration),
+  };
+}
 
 // Citas precargadas vacías para producción (Zero-State)
 const INITIAL_DEMO_APPOINTMENTS = [];
 
 export const MasterAgenda = () => {
-  const { activeTenantId, activeTenant } = useTenant();
+  const { activeTenant: authActiveTenant, activeTenantKey, tenantsData, updateTenantPolicy } = useAuth();
+  const { activeTenant: zustandActiveTenant, activeTenantId: zustandTenantId } = useTenant();
+
+  // Resolución resiliente del tenant activo (AuthContext -> Zustand -> localStorage)
+  const activeTenant = useMemo(() => {
+    if (authActiveTenant) return authActiveTenant;
+    if (activeTenantKey && tenantsData?.[activeTenantKey]) return tenantsData[activeTenantKey];
+    if (zustandActiveTenant) return zustandActiveTenant;
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('vector_tenants_data');
+        if (raw) {
+          const dict = JSON.parse(raw);
+          const key = activeTenantKey || zustandTenantId || localStorage.getItem('vector_active_tenant_key') || localStorage.getItem('vector_active_tenant_id');
+          if (key && dict[key]) return dict[key];
+          const first = Object.values(dict)[0];
+          if (first) return first;
+        }
+      } catch (e) {}
+    }
+    return null;
+  }, [authActiveTenant, activeTenantKey, tenantsData, zustandActiveTenant, zustandTenantId]);
+
+  const activeTenantId = activeTenant?.id || activeTenantKey || zustandTenantId || null;
+  const activeKey = activeTenantId;
+
   const [appointments, setAppointments] = useState([]);
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState(null);
@@ -225,15 +273,7 @@ export const MasterAgenda = () => {
   const [testEmailSent, setTestEmailSent] = useState(false);
 
   // Leer configuración de calendario extraída por la IA para este tenant específico (o personalizada en vivo)
-  const [calendarConfig, setCalendarConfig] = useState(() => {
-    const base = activeTenant?.calendarConfig || DEFAULT_FALLBACK_CONFIG;
-    return {
-      ...base,
-      shifts: recomputeShiftsHours(base.shifts || [], base.slotDurationMin || 60),
-    };
-  });
-
-  const activeKey = activeTenant?.id || activeTenantId || null;
+  const [calendarConfig, setCalendarConfig] = useState(() => resolveCalendarConfig(activeTenant));
 
   // Almacenar configuraciones por tenant de forma estrictamente aislada
   const [tenantEmailConfigs, setTenantEmailConfigs] = useState(() => {
@@ -272,13 +312,10 @@ export const MasterAgenda = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Sincronizar si cambia el tenant activo y cargar citas desde PostgreSQL Backend
+  // Sincronizar si cambia el tenant activo y cargar citas desde base de datos / cache local
   useEffect(() => {
-    const base = activeTenant?.calendarConfig || DEFAULT_FALLBACK_CONFIG;
-    setCalendarConfig({
-      ...base,
-      shifts: recomputeShiftsHours(base.shifts || [], base.slotDurationMin || 60),
-    });
+    const resolved = resolveCalendarConfig(activeTenant);
+    setCalendarConfig(resolved);
 
     const tenantKey = activeTenant?.id || activeTenantId;
     if (!tenantKey) {
@@ -295,6 +332,22 @@ export const MasterAgenda = () => {
         setAppointments([]);
       });
   }, [activeTenantId, activeTenant]);
+
+  // Escuchar citas creadas en tiempo real por el Asistente IA o formularios
+  useEffect(() => {
+    const handleAptSaved = (e) => {
+      const newApt = e.detail;
+      if (!newApt) return;
+      setAppointments((prev) => {
+        const filtered = prev.filter((a) => a.id !== newApt.id);
+        return [newApt, ...filtered];
+      });
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('vector_appointment_saved', handleAptSaved);
+      return () => window.removeEventListener('vector_appointment_saved', handleAptSaved);
+    }
+  }, []);
 
   const handlePrevMonth = () => {
     setCurrentCalendarMonth((prev) => {
@@ -401,7 +454,29 @@ export const MasterAgenda = () => {
     };
     setCalendarConfig(updatedConfig);
     if (activeKey) {
+      if (typeof updateTenantPolicy === 'function') {
+        updateTenantPolicy(activeKey, {
+          calendarConfig: updatedConfig,
+          appointmentDuration: updatedConfig.slotDurationMin,
+          bufferMinutes: updatedConfig.bufferMin || 0,
+        });
+      }
       tenantService.updateVerticalConfig(activeKey, updatedConfig).catch(() => {});
+      if (typeof window !== 'undefined') {
+        try {
+          const raw = localStorage.getItem(`vector_bot_config_${activeKey}`);
+          const current = raw ? JSON.parse(raw) : {};
+          current.calendar = {
+            ...(current.calendar || {}),
+            slotDurationMin: updatedConfig.slotDurationMin,
+            bufferBetweenAppointmentsMin: updatedConfig.bufferMin || 0,
+            concurrencyLimit: updatedConfig.concurrencyLimit || 1,
+            shifts: finalizedShifts,
+            workingHours: finalizedShifts.map((s) => `${s.name || 'Turno'}: ${s.start} - ${s.end}`).join(' | '),
+          };
+          localStorage.setItem(`vector_bot_config_${activeKey}`, JSON.stringify(current));
+        } catch (e) {}
+      }
     }
     setSavedConfigSuccess(true);
     try {

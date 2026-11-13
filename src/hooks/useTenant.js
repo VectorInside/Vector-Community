@@ -39,7 +39,21 @@ export const useTenantStore = create((set, get) => ({
 
   getActiveTenant: () => {
     const { tenants, activeTenantId } = get();
-    return (tenants || []).find((t) => t.id === activeTenantId) || tenants[0] || null;
+    const found = (tenants || []).find((t) => t.id === activeTenantId);
+    if (found) return found;
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('vector_tenants_data');
+        if (raw) {
+          const dict = JSON.parse(raw);
+          const key = activeTenantId || localStorage.getItem('vector_active_tenant_key') || localStorage.getItem('vector_active_tenant_id');
+          if (key && dict[key]) return dict[key];
+          const first = Object.values(dict)[0];
+          if (first) return first;
+        }
+      } catch (e) {}
+    }
+    return tenants[0] || null;
   },
 
   updateTenantHealth: (tenantId, service, status) => {
@@ -59,9 +73,24 @@ export const useTenant = () => {
   const setActiveTenantId = useTenantStore((state) => state.setActiveTenantId);
   const setTenants = useTenantStore((state) => state.setTenants);
   const updateTenantHealth = useTenantStore((state) => state.updateTenantHealth);
-  const activeTenant = useTenantStore((state) =>
-      (state.tenants || []).find((t) => t.id === state.activeTenantId) || state.tenants[0] || null
-  );
+  const activeTenant = useTenantStore((state) => {
+    const list = state.tenants || [];
+    const found = list.find((t) => t.id === state.activeTenantId);
+    if (found) return found;
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('vector_tenants_data');
+        if (raw) {
+          const dict = JSON.parse(raw);
+          const key = state.activeTenantId || localStorage.getItem('vector_active_tenant_key') || localStorage.getItem('vector_active_tenant_id');
+          if (key && dict[key]) return dict[key];
+          const first = Object.values(dict)[0];
+          if (first) return first;
+        }
+      } catch (e) {}
+    }
+    return list[0] || null;
+  });
 
   return {
     tenants,
