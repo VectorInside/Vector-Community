@@ -180,12 +180,69 @@ export const ConversacionesInbox = () => {
     }
 
     setIsLoading(true);
-    leadService
-      .getLeadsByTenant(tenantId)
-      .then((backendLeads) => {
-        if (Array.isArray(backendLeads) && backendLeads.length > 0) {
-          const mapped = backendLeads.map((lead) => ({
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+
+    Promise.allSettled([
+      leadService.getLeadsByTenant(tenantId),
+      fetch(`${backendUrl}/api/v1/webhooks/whatsapp/conversations/${tenantId}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null),
+    ])
+      .then(([leadsRes, convsRes]) => {
+        const backendLeads = leadsRes.status === 'fulfilled' && Array.isArray(leadsRes.value) ? leadsRes.value : [];
+        const rawConvs = convsRes.status === 'fulfilled' && convsRes.value?.data ? convsRes.value.data : [];
+
+        // Hilos canónicos desde base de datos de mensajería (Meta Cloud API)
+        const convThreads = Array.isArray(rawConvs)
+          ? rawConvs.map((c) => ({
+              id: c.id,
+              leadId: c.leadId,
+              name: c.contactName || 'Contacto WhatsApp',
+              company: 'Inbound WhatsApp Oficial',
+              channel: 'WhatsApp',
+              phone: c.externalSenderId || '',
+              need: c.lastMessageText || 'Conversación WhatsApp Cloud API',
+              campaign: 'Meta Cloud API v21.0',
+              date: c.lastMessageAt ? new Date(c.lastMessageAt).toLocaleDateString() : 'Reciente',
+              contacted: true,
+              owner: 'Lobo Vectorial (Agencia)',
+              stage: c.status === 'ATTENDED' ? 'Atendido' : 'Nuevo',
+              slaMinutesRemaining: 15,
+              potentialTicket: 18500,
+              qualification: {
+                contactValid: true,
+                productIdentified: true,
+                doubtsResolved: false,
+                ctaAccepted: false,
+              },
+              messages:
+                Array.isArray(c.messages) && c.messages.length > 0
+                  ? c.messages.map((m) => ({
+                      id: m.id,
+                      direction: m.direction === 'OUTBOUND' ? 'out' : 'in',
+                      text: m.content,
+                      time: m.sentAt
+                        ? new Date(m.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        : 'Reciente',
+                      type: m.messageType || 'text',
+                    }))
+                  : [
+                      {
+                        id: `m-${c.id}-1`,
+                        direction: 'in',
+                        text: c.lastMessageText || 'Hola, deseo informes.',
+                        time: 'Reciente',
+                      },
+                    ],
+            }))
+          : [];
+
+        // Hilos desde leads de CRM
+        const mappedLeads = backendLeads
+          .filter((lead) => !convThreads.some((ct) => ct.leadId === lead.id || ct.phone === lead.phone))
+          .map((lead) => ({
             id: lead.id,
+            leadId: lead.id,
             name: lead.name,
             company: lead.notes || 'Contacto Directo',
             channel: lead.channel || 'WhatsApp',
@@ -204,26 +261,29 @@ export const ConversacionesInbox = () => {
               doubtsResolved: Boolean(lead.criteriaAudit?.financialClarified),
               ctaAccepted: Boolean(lead.criteriaAudit?.consentOrBooked),
             },
-            messages: Array.isArray(lead.messages) && lead.messages.length > 0
-              ? lead.messages.map((m, idx) => ({
-                  id: m.id || `m-${idx}`,
-                  direction: m.isUser ? 'in' : 'out',
-                  text: m.text,
-                  time: m.time || 'Reciente',
-                }))
-              : [
-                  {
-                    id: `m-${lead.id}-1`,
-                    direction: 'in',
-                    text: lead.notes || 'Hola, deseo informes sobre sus servicios.',
-                    time: 'Reciente',
-                  },
-                ],
+            messages:
+              Array.isArray(lead.messages) && lead.messages.length > 0
+                ? lead.messages.map((m, idx) => ({
+                    id: m.id || `m-${idx}`,
+                    direction: m.isUser ? 'in' : 'out',
+                    text: m.text,
+                    time: m.time || 'Reciente',
+                  }))
+                : [
+                    {
+                      id: `m-${lead.id}-1`,
+                      direction: 'in',
+                      text: lead.notes || 'Hola, deseo informes sobre sus servicios.',
+                      time: 'Reciente',
+                    },
+                  ],
           }));
-          setThreads(mapped);
-          setSelectedThreadId((prev) => (prev && mapped.some((t) => t.id === prev) ? prev : mapped[0]?.id));
+
+        const unifiedThreads = [...convThreads, ...mappedLeads];
+        setThreads(unifiedThreads);
+        if (unifiedThreads.length > 0) {
+          setSelectedThreadId((prev) => (prev && unifiedThreads.some((t) => t.id === prev) ? prev : unifiedThreads[0].id));
         } else {
-          setThreads([]);
           setSelectedThreadId(null);
         }
       })
