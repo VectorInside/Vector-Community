@@ -56,6 +56,7 @@ import {
 } from '@/utils/constants';
 import { REENGAGEMENT_QUEUE_MOCK } from '@/utils/mockData';
 import { PreCitaDrawer } from './PreCitaDrawer';
+import { WhatsAppConnectModal } from '@/components/inbox/WhatsAppConnectModal';
 import { Portal } from '@/components/common/Portal';
 import { cleanConcept } from '@/utils/formatters';
 
@@ -75,6 +76,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
   const [isBotPaused, setIsBotPaused] = useState(false);
   const [selectedCapiLead, setSelectedCapiLead] = useState(null);
   const [drawerLead, setDrawerLead] = useState(null);
+  const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
 
   // Tenant-aware dynamic states
   const [reengagementList, setReengagementList] = useState([]);
@@ -435,6 +437,126 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
     return col.id === selectedColumnFilter;
   });
 
+  // Helper para renderizar Empty State contextual y accionable por columna
+  const renderColumnEmptyState = (col) => {
+    if (col.id === LEAD_STATUS_ENUM.LEAD_COLD_24H) {
+      return (
+        <div className="p-4 rounded-2xl bg-zinc-50/80 dark:bg-zinc-900/40 border border-dashed border-sky-400/30 flex flex-col items-center text-center space-y-2.5 animate-fade-in font-sans">
+          <div className="w-9 h-9 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/25 flex items-center justify-center">
+            <MessageCircle className="w-4 h-4" />
+          </div>
+          <div className="space-y-0.5">
+            <h6 className="text-xs font-bold text-zinc-900 dark:text-white">Canal en Espera</h6>
+            <p className="text-[10.5px] text-zinc-500 dark:text-zinc-400 leading-tight">
+              Los mensajes entrantes de WhatsApp aparecerán aquí automáticamente.
+            </p>
+          </div>
+          <div className="w-full pt-1 space-y-1.5 font-mono text-[10px]">
+            <button
+              type="button"
+              onClick={() => setIsWhatsAppModalOpen(true)}
+              className="w-full py-1.5 px-2 rounded-lg bg-neon/15 hover:bg-neon hover:text-black text-neon border border-neon/40 font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm"
+            >
+              <Zap className="w-3 h-3 shrink-0" />
+              <span>Conectar WhatsApp</span>
+            </button>
+            {activeTenant?.phone && (
+              <button
+                type="button"
+                onClick={() => {
+                  const phoneClean = (activeTenant?.phone || '').replace(/[^0-9]/g, '');
+                  if (phoneClean) {
+                    navigator.clipboard?.writeText(`https://wa.me/${phoneClean}`);
+                    triggerModal('Enlace WhatsApp Copiado', `El enlace comercial <code>https://wa.me/${phoneClean}</code> fue copiado al portapapeles.`);
+                  }
+                }}
+                className="w-full py-1 px-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 font-bold flex items-center justify-center gap-1 transition-colors"
+              >
+                <Copy className="w-3 h-3 text-zinc-400 shrink-0" />
+                <span>Copiar wa.me</span>
+              </button>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    if (col.id === LEAD_STATUS_ENUM.LEAD_WARM_24H) {
+      return (
+        <div className="p-4 rounded-2xl bg-zinc-50/80 dark:bg-zinc-900/40 border border-dashed border-amber-400/30 flex flex-col items-center text-center space-y-2 animate-fade-in font-sans">
+          <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/25 flex items-center justify-center">
+            <Clock className="w-4 h-4" />
+          </div>
+          <div className="space-y-0.5">
+            <h6 className="text-xs font-bold text-zinc-900 dark:text-white">Sin Seguimientos</h6>
+            <p className="text-[10.5px] text-zinc-500 dark:text-zinc-400 leading-tight">
+              Prospectos en espera de re-contacto automático antes del cierre de ventana 24h.
+            </p>
+          </div>
+          <span className="text-[9.5px] font-mono text-amber-500/90 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+            Supervisión Activa
+          </span>
+        </div>
+      );
+    }
+
+    if (col.id === LEAD_STATUS_ENUM.LEAD_HOT_PREQUAL) {
+      return (
+        <div className="p-4 rounded-2xl bg-zinc-50/80 dark:bg-zinc-900/40 border border-dashed border-orange-400/30 flex flex-col items-center text-center space-y-2 animate-fade-in font-sans">
+          <div className="w-9 h-9 rounded-xl bg-orange-500/10 text-orange-400 border border-orange-500/25 flex items-center justify-center">
+            <Flame className="w-4 h-4" />
+          </div>
+          <div className="space-y-0.5">
+            <h6 className="text-xs font-bold text-zinc-900 dark:text-white">Sin Negociación Activa</h6>
+            <p className="text-[10.5px] text-zinc-500 dark:text-zinc-400 leading-tight">
+              Aquí se concentran quienes indagaron catálogo, financiamiento o cotizaciones.
+            </p>
+          </div>
+          <span className="text-[9.5px] font-mono text-orange-500/90 bg-orange-500/10 px-2 py-0.5 rounded-full border border-orange-500/20">
+            Alta Intención
+          </span>
+        </div>
+      );
+    }
+
+    if (col.id === LEAD_STATUS_ENUM.BILLABLE_LEAD) {
+      return (
+        <div className="p-4 rounded-2xl bg-zinc-50/80 dark:bg-zinc-900/40 border border-dashed border-lime-400/40 flex flex-col items-center text-center space-y-2 animate-fade-in font-sans">
+          <div className="w-9 h-9 rounded-xl bg-lime-500/10 text-neon border border-neon/30 flex items-center justify-center">
+            <Sparkles className="w-4 h-4" />
+          </div>
+          <div className="space-y-0.5">
+            <h6 className="text-xs font-bold text-zinc-900 dark:text-white">Listo para Facturar</h6>
+            <p className="text-[10.5px] text-zinc-500 dark:text-zinc-400 leading-tight">
+              Los prospectos avanzan aquí de forma autónoma al cumplir las 4 guardas SDOP.
+            </p>
+          </div>
+          <span className="text-[9.5px] font-mono text-neon bg-neon/10 px-2 py-0.5 rounded-full border border-neon/30 font-bold">
+            4 Guardas SDOP
+          </span>
+        </div>
+      );
+    }
+
+    // HITL INTERVENTION
+    return (
+      <div className="p-4 rounded-2xl bg-zinc-50/80 dark:bg-zinc-900/40 border border-dashed border-emerald-400/40 flex flex-col items-center text-center space-y-2 animate-fade-in font-sans">
+        <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 flex items-center justify-center">
+          <ShieldCheck className="w-4 h-4" />
+        </div>
+        <div className="space-y-0.5">
+          <h6 className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Atención Autónoma</h6>
+          <p className="text-[10.5px] text-zinc-500 dark:text-zinc-400 leading-tight">
+            Cero fricciones o lenguaje agresivo detectado. Los asistentes operan sin alertas críticas.
+          </p>
+        </div>
+        <span className="text-[9.5px] font-mono text-emerald-500/90 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 font-bold">
+          100% Asistido
+        </span>
+      </div>
+    );
+  };
+
   // Helper para renderizar la Tarjeta de Lead (Modo Kanban o Modo Cuadrícula Ejecutiva)
   const renderLeadCard = (leadKey, item, isExecutiveGrid = false) => {
     const critCount = getCriteriaCount(item.criteriaAudit);
@@ -686,16 +808,10 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
           </div>
         </header>
       ) : (
-        /* Barra de Sub-Canales Compacta integrada horizontalmente */
-        <div className="flex items-center justify-between gap-3 pb-1 border-b border-zinc-200 dark:border-zinc-800/60 font-sans text-xs">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-mono">
-              Canal de Prospectos:
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1.5 bg-zinc-100 dark:bg-zinc-950/80 p-1 rounded-xl border border-zinc-200 dark:border-zinc-800">
+        /* Barra Integrada Unificada: Subcanales + Telemetría + Controles en 1 sola fila táctica */
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 p-2.5 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800/80 shadow-sm font-sans text-xs w-full">
+          {/* Sub-Canales Tácticos */}
+          <div className="flex items-center gap-1.5 bg-zinc-100 dark:bg-zinc-900/80 p-1 rounded-xl border border-zinc-200 dark:border-zinc-800 shrink-0">
             <button
               type="button"
               onClick={() => setActiveTab('chats')}
@@ -732,15 +848,99 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
               <span>Recuperación 24h</span>
             </button>
           </div>
+
+          {/* Telemetría Rápida (Solo en Embudo) */}
+          {activeTab === 'chats' && (
+            <div className="flex flex-wrap items-center gap-2 font-mono text-[11px]">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800/80 shadow-sm">
+                <span className="w-2 h-2 rounded-full bg-neon shadow-[0_0_8px_var(--neon-glow)]" />
+                <span className="text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-bold">
+                  Activos: <span className="text-zinc-900 dark:text-white font-black">{Object.keys(threads).length}</span>
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800/80 shadow-sm">
+                <span className="w-2 h-2 rounded-full bg-lime-500" />
+                <span className="text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-bold">
+                  Calificados: <span className="text-neon font-black">{billableCount}</span>
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800/80 shadow-sm">
+                <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+                <span className="text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-bold">
+                  Atención Requerida: <span className="text-rose-600 dark:text-rose-400 font-black">{Object.values(threads).filter((t) => t.leadState === LEAD_STATUS_ENUM.HITL_INTERVENTION).length}</span>
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Controles de Vista y Densidad (Solo en Embudo) */}
+          {activeTab === 'chats' && (
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              {viewMode === 'kanban' && (
+                <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900/80 p-0.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-xs font-sans shadow-inner">
+                  <button
+                    type="button"
+                    onClick={() => setKanbanDensity('compact')}
+                    title="Vista Compacta: 270px por columna, visualiza las 5 fases en 1 pantalla"
+                    className={`px-2.5 py-1 rounded-md font-bold flex items-center gap-1 text-[11px] transition-all ${kanbanDensity === 'compact'
+                        ? 'bg-neon text-black shadow-neon-sm'
+                        : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+                      }`}
+                  >
+                    <Minimize2 className="w-3 h-3" />
+                    <span>Compacto</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setKanbanDensity('standard')}
+                    title="Vista Estándar: Mayor ancho y espaciado"
+                    className={`px-2.5 py-1 rounded-md font-bold flex items-center gap-1 text-[11px] transition-all ${kanbanDensity === 'standard'
+                        ? 'bg-neon text-black shadow-neon-sm'
+                        : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+                      }`}
+                  >
+                    <Maximize2 className="w-3 h-3" />
+                    <span>Estándar</span>
+                  </button>
+                </div>
+              )}
+
+              <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900/80 p-0.5 rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-inner font-sans text-xs">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('kanban')}
+                  className={`px-3 py-1 rounded-md font-bold flex items-center gap-1.5 text-[11px] transition-all ${viewMode === 'kanban'
+                      ? 'bg-neon text-black shadow-neon-sm'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+                    }`}
+                >
+                  <Kanban className="w-3.5 h-3.5" />
+                  <span>Tablero Kanban</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('chat')}
+                  className={`px-3 py-1 rounded-md font-bold flex items-center gap-1.5 text-[11px] transition-all ${viewMode === 'chat'
+                      ? 'bg-neon text-black shadow-neon-sm'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+                    }`}
+                >
+                  <LayoutList className="w-3.5 h-3.5" />
+                  <span>Bandeja Chat</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
       {/* ========================================================================= */}
-      {/* 2. BARRA DE CONTROL DE VISTA Y TELEMETRÍA (COMPACTA & ALINEADA)           */}
+      {/* 2. BARRA DE CONTROL DE VISTA Y TELEMETRÍA (SOLO EN MODO NO EMBEDDED)       */}
       {/* ========================================================================= */}
-      {activeTab === 'chats' && (
-        <div className={`flex flex-col md:flex-row items-center justify-between gap-3 ${embedded ? 'py-2 px-3.5 rounded-xl' : 'p-3 rounded-2xl'
-          } bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800/80 font-mono text-xs shadow-sm w-full`}>
+      {!embedded && activeTab === 'chats' && (
+        <div className="p-3 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800/80 font-mono text-xs shadow-sm w-full flex flex-col md:flex-row items-center justify-between gap-3">
           {/* Indicadores Operativos Rápidos */}
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800/80 shadow-sm">
@@ -767,13 +967,11 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
 
           {/* Selector de Densidad y Modo de Vista */}
           <div className="flex flex-wrap items-center gap-2">
-            {/* Control de Densidad (Solo activo en modo Kanban) */}
             {viewMode === 'kanban' && (
               <div className="flex items-center gap-1 bg-zinc-100 dark:bg-black/70 p-0.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-xs font-sans shadow-inner">
                 <button
                   type="button"
                   onClick={() => setKanbanDensity('compact')}
-                  title="Vista Compacta: Permite ver más columnas y tarjetas a la vez en pantalla"
                   className={`px-2.5 py-1 rounded-md font-bold flex items-center gap-1 text-[11px] transition-all ${kanbanDensity === 'compact'
                       ? 'bg-neon text-black shadow-neon-sm'
                       : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
@@ -785,7 +983,6 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
                 <button
                   type="button"
                   onClick={() => setKanbanDensity('standard')}
-                  title="Vista Estándar: Mayor ancho y espaciado"
                   className={`px-2.5 py-1 rounded-md font-bold flex items-center gap-1 text-[11px] transition-all ${kanbanDensity === 'standard'
                       ? 'bg-neon text-black shadow-neon-sm'
                       : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
@@ -797,7 +994,6 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
               </div>
             )}
 
-            {/* Selector de Modo de Vista */}
             <div className="flex items-center gap-1 bg-zinc-100 dark:bg-black/70 p-0.5 rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-inner font-sans text-xs">
               <button
                 type="button"
@@ -861,7 +1057,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
                     type="button"
                     onClick={() => setSelectedColumnFilter(col.id)}
                     className={`px-3 py-1 rounded-lg transition-all flex items-center gap-1.5 font-bold ${isSelected
-                        ? 'bg-zinc-900 dark:bg-white text-white dark:text-black shadow-sm'
+                        ? 'bg-neon text-black shadow-neon-sm'
                         : 'bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white border border-zinc-200 dark:border-zinc-800'
                       }`}
                   >
@@ -917,9 +1113,8 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
 
                     {/* Cuadrícula Ejecutiva: Se expande en filas y múltiples columnas */}
                     {leadsInCol.length === 0 ? (
-                      <div className="p-12 rounded-2xl bg-zinc-50 dark:bg-zinc-950/40 border border-dashed border-zinc-200 dark:border-zinc-800 text-center font-mono text-xs text-zinc-500 space-y-1">
-                        <span>Sin conversaciones en esta clasificación</span>
-                        <span className="text-[10px] text-zinc-600">Embudo libre</span>
+                      <div className="max-w-md mx-auto py-4">
+                        {renderColumnEmptyState(col)}
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
@@ -992,10 +1187,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
                     {/* Lista de Tarjetas de Leads dentro de la Columna */}
                     <div className={`${isCompact ? 'p-2 space-y-2.5 max-h-[calc(100vh-280px)] min-h-[440px]' : 'p-3 space-y-3 max-h-[calc(100vh-320px)] min-h-[460px]'} flex-1 overflow-y-auto bg-zinc-50/50 dark:bg-transparent`}>
                       {leadsInCol.length === 0 ? (
-                        <div className="h-36 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800 flex flex-col items-center justify-center p-3 text-center font-mono text-xs text-zinc-400 dark:text-zinc-500 space-y-1">
-                          <span>Sin conversaciones</span>
-                          <span className="text-[10px] text-zinc-500 dark:text-zinc-600">Embudo libre</span>
-                        </div>
+                        renderColumnEmptyState(col)
                       ) : (
                         leadsInCol.map(([leadKey, item]) =>
                           renderLeadCard(leadKey, item, false)
@@ -2050,6 +2242,22 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
           }
         }}
       />
+
+      {/* Modal de Conexión de WhatsApp Cloud API */}
+      {isWhatsAppModalOpen && (
+        <WhatsAppConnectModal
+          isOpen={isWhatsAppModalOpen}
+          onClose={() => setIsWhatsAppModalOpen(false)}
+          activeTenant={activeTenant}
+          onSaveCredentials={(creds) => {
+            setIsWhatsAppModalOpen(false);
+            triggerModal(
+              'WhatsApp Cloud API Sincronizado',
+              `Las credenciales oficiales para <b>${activeTenant?.name || 'este negocio'}</b> han sido guardadas y validadas con Meta.`
+            );
+          }}
+        />
+      )}
     </div>
   );
 };

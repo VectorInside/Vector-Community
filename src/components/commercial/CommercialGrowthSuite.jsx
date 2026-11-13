@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { TriageProtocol } from '@/components/hitl/TriageProtocol';
 import { ContentPlanner } from '@/components/planner/ContentPlanner';
@@ -186,21 +187,33 @@ export const CommercialGrowthSuite = ({ initialTab = 'kanban' }) => {
       {/* VISTA 1: PIPELINE KANBAN & PROSPECTOS */}
       {activeSuiteTab === 'kanban' && (
         <div className="space-y-3.5 animate-fade-in">
-          {/* Banner de Re-contacto y Automatización 24h Compacto y Elegante */}
+          {/* Banner de Re-contacto y Automatización Dinámico según Tenant */}
           <div className="py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-500/10 via-[var(--bg-card)] to-emerald-500/10 border border-[var(--border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="p-1.5 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/30 shrink-0">
+              <span className={`p-1.5 rounded-lg shrink-0 ${
+                activeTenant?.isAiActive !== false
+                  ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                  : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+              }`}>
                 <Clock className="w-3.5 h-3.5" />
               </span>
               <p className="text-[11.5px] text-[var(--text-main)] truncate">
-                <strong className="font-semibold text-white">Re-contacto 24h Activo:</strong>{' '}
+                <strong className="font-semibold text-white">
+                  Re-contacto {activeTenant?.reengagementDelayHours || 24}h {activeTenant?.isAiActive !== false ? 'Activo' : 'Pausado'}:
+                </strong>{' '}
                 <span className="text-[var(--text-muted)]">
-                  Seguimiento automático de valor agregado a prospectos tras 24h de inactividad.
+                  {activeTenant?.isAiActive !== false
+                    ? `Seguimiento automático de valor agregado a prospectos tras ${activeTenant?.reengagementDelayHours || 24}h de inactividad.`
+                    : 'Automatización pausada para este negocio. Los prospectos no recibirán seguimiento automático.'}
                 </span>
               </p>
             </div>
-            <span className="px-2.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 font-mono font-bold text-[10px] border border-emerald-500/30 shrink-0 self-start sm:self-auto">
-              Automático Activo
+            <span className={`px-2.5 py-0.5 rounded-md font-mono font-bold text-[10px] border shrink-0 self-start sm:self-auto ${
+              activeTenant?.isAiActive !== false
+                ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+            }`}>
+              {activeTenant?.isAiActive !== false ? 'Automático Activo' : 'Pausado'}
             </span>
           </div>
 
@@ -235,8 +248,8 @@ export const CommercialGrowthSuite = ({ initialTab = 'kanban' }) => {
             </button>
           </div>
 
-          {/* Render del Planificador de Contenido */}
-          <ContentPlanner />
+          {/* Render del Planificador de Contenido en Modo Integrado */}
+          <ContentPlanner embedded={true} />
         </div>
       )}
 
@@ -272,9 +285,18 @@ export const CommercialGrowthSuite = ({ initialTab = 'kanban' }) => {
                 </div>
               </div>
 
-              <span className="px-3 py-1 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs font-mono text-[var(--text-muted)]">
-                Giro: <strong className="text-[var(--text-main)]">{activeTenant?.giro}</strong>
-              </span>
+              <div className="flex flex-wrap items-center gap-2.5">
+                <Link
+                  href="/brand-profile"
+                  className="px-3 py-1.5 rounded-xl bg-neon/15 hover:bg-neon hover:text-black text-neon border border-neon/40 text-xs font-mono font-bold flex items-center gap-1.5 transition-all shadow-sm"
+                >
+                  <span>Ajustar en Perfil de Marca</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+                <span className="px-3 py-1.5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs font-mono text-[var(--text-muted)]">
+                  Giro: <strong className="text-[var(--text-main)]">{activeTenant?.giro}</strong>
+                </span>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">

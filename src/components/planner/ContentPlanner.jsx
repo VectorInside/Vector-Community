@@ -98,7 +98,7 @@ const CANONICAL_POSTS_BY_TENANT = {};
 const CANONICAL_VIRAL_REELS_BY_TENANT = {};
 const CANONICAL_AUDIT_BY_TENANT = {};
 
-export const ContentPlanner = () => {
+export const ContentPlanner = ({ embedded = false } = {}) => {
   const { activeTenant, isAdmin, isClient, triggerModal } = useAuth();
   const tenantKey = activeTenant?.id || null;
   const [activeTab, setActiveTab] = useState('grid'); // 'grid' | 'dna' | 'viral_lab' | 'audit'
@@ -440,41 +440,44 @@ export const ContentPlanner = () => {
   });
 
   return (
-    <div className="p-6 lg:p-8 block animate-fade-in space-y-6">
-      {/* Header */}
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border-color)] pb-4 gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="p-1.5 rounded-lg bg-neon/10 text-neon border border-neon/30">
-              <Calendar className="w-4 h-4" />
-            </span>
-            <span className="text-xs font-mono text-[var(--text-muted)] uppercase tracking-wider">
-              Content Ops & Creative Intelligence
-            </span>
+    <div className={embedded ? "p-0 space-y-4 block animate-fade-in" : "p-6 lg:p-8 block animate-fade-in space-y-6"}>
+      {/* Header (Omitido en modo embedded para evitar doble encabezado) */}
+      {!embedded && (
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border-color)] pb-4 gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="p-1.5 rounded-lg bg-neon/10 text-neon border border-neon/30">
+                <Calendar className="w-4 h-4" />
+              </span>
+              <span className="text-xs font-mono text-[var(--text-muted)] uppercase tracking-wider">
+                Content Ops & Creative Intelligence
+              </span>
+            </div>
+            <h2 className="text-3xl font-black uppercase tracking-tighter text-[var(--text-main)]">
+              Estudio de <span className="text-neon">Contenidos & Crecimiento</span>
+            </h2>
+            <p className="text-xs font-mono text-[var(--text-muted)] mt-1">
+              Parrilla editorial, ADN de negocio, deconstrucción viral de reels y auditoría de perfiles para:{' '}
+              <strong className="text-[var(--text-main)]">{activeTenant?.name}</strong>
+            </p>
           </div>
-          <h2 className="text-3xl font-black uppercase tracking-tighter text-[var(--text-main)]">
-            Estudio de <span className="text-neon">Contenidos & Crecimiento</span>
-          </h2>
-          <p className="text-xs font-mono text-[var(--text-muted)] mt-1">
-            Parrilla editorial, ADN de negocio, deconstrucción viral de reels y auditoría de perfiles para:{' '}
-            <strong className="text-[var(--text-main)]">{activeTenant?.name}</strong>
-          </p>
-        </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={handleGenerateAiPost}
-            className="bg-neon text-black text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_15px_var(--neon-glow)] flex items-center gap-2 active:scale-95"
-          >
-            <Sparkles className="w-4 h-4" />
-            <span>Generar Guion IA (DeepSeek R1)</span>
-          </button>
-        </div>
-      </header>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleGenerateAiPost}
+              className="bg-neon text-black text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_15px_var(--neon-glow)] flex items-center gap-2 active:scale-95"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Generar Guion IA (DeepSeek R1)</span>
+            </button>
+          </div>
+        </header>
+      )}
 
       {/* Navigation Tabs (4 Core Pillars of Content Strategy) */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-[var(--border-color)]">
+      <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1 border-b border-[var(--border-color)]">
+        <div className="flex items-center gap-2 overflow-x-auto">
         <button
           type="button"
           onClick={() => setActiveTab('grid')}
@@ -562,6 +565,18 @@ export const ContentPlanner = () => {
             {profileAudit.score}%
           </span>
         </button>
+        </div>
+
+        {embedded && (
+          <button
+            type="button"
+            onClick={handleGenerateAiPost}
+            className="bg-neon text-black text-xs font-bold px-3.5 py-1.5 rounded-xl hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_12px_var(--neon-glow)] flex items-center gap-1.5 active:scale-95 shrink-0"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Generar Guion IA</span>
+          </button>
+        )}
       </div>
 
       {/* ========================================================================= */}
