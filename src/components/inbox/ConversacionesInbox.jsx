@@ -28,12 +28,17 @@ import {
   CheckCheck,
   RefreshCw,
   Volume2,
+  Settings,
+  Activity,
+  ExternalLink,
+  FlaskConical,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { PreCitaDrawer } from '@/components/hitl/PreCitaDrawer';
 import { formatNumber } from '@/utils/formatters';
 import { MeasurementGuideModal } from '@/components/common/MeasurementGuideModal';
 import { leadService } from '@/services/leadService';
+import { WhatsAppConnectModal } from './WhatsAppConnectModal';
 
 // =========================================================================
 // CANONICAL OMNICHANNEL INBOX BY TENANT (ADR-001, ADR-002, ADR-011)
@@ -67,8 +72,19 @@ const CHANNEL_BADGES = {
 export const ConversacionesInbox = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { activeTenant, triggerModal } = useAuth();
+  const { activeTenant, triggerModal, updateTenantPolicy } = useAuth();
   const tenantKey = activeTenant?.id || null;
+
+  // Estado del modal de conexión WhatsApp Cloud API
+  const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
+
+  // Detección verídica del estado de conexión de WhatsApp
+  const waConfig = activeTenant?.connectedChannels?.whatsapp;
+  const isWhatsAppConfigured = Boolean(
+    waConfig?.enabled && (waConfig?.phoneNumberId || activeTenant?.whatsappNumberId)
+  );
+  const waPhoneNumber = waConfig?.displayPhoneNumber || activeTenant?.phone || '+52 55 1234 5678';
+  const waLastSync = waConfig?.lastSync || 'En espera de primer mensaje';
 
   // Read URL query parameter for direct jump from notification
   const targetThreadId = searchParams.get('threadId');
@@ -85,6 +101,74 @@ export const ConversacionesInbox = () => {
   const [isPreCitaDrawerOpen, setIsPreCitaDrawerOpen] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [playingAudioId, setPlayingAudioId] = useState(null);
+
+  // Inyección de conversación demo para pruebas en vivo de la bandeja
+  const handleInjectDemoThread = () => {
+    const demoThread = {
+      id: `demo-${Date.now()}`,
+      name: 'Carlos Mendoza (Demo WhatsApp)',
+      company: 'Constructora del Norte',
+      channel: 'WhatsApp',
+      phone: '+52 81 8392 4410',
+      need: 'Cotización de consultoría comercial y agenda de cita virtual',
+      campaign: 'Meta Ads Inbound',
+      date: 'Hace un momento',
+      contacted: false,
+      owner: 'Lobo Vectorial (Agencia)',
+      stage: 'Nuevo',
+      slaMinutesRemaining: 15,
+      potentialTicket: 34500,
+      qualification: {
+        contactValid: true,
+        productIdentified: true,
+        doubtsResolved: false,
+        ctaAccepted: false,
+      },
+      messages: [
+        {
+          id: `m-demo-1`,
+          direction: 'in',
+          text: 'Hola, vi su información sobre automatización comercial y agendamiento con IA. ¿Me pueden brindar detalles de costos y disponibilidad para esta semana?',
+          time: '12:45 PM',
+        },
+        {
+          id: `m-demo-2`,
+          direction: 'out',
+          type: 'audio',
+          duration: '0:18',
+          text: 'Hola Carlos, con gusto. Te confirmo de viva voz que tenemos paquetes diseñados para constructoras con integración de CRM y agendamiento automático.',
+          time: '12:46 PM',
+        },
+        {
+          id: `m-demo-3`,
+          direction: 'in',
+          text: 'Excelente audio, me interesa bastante. ¿Tienen espacio el jueves por la tarde para una videollamada de valoración?',
+          time: '12:48 PM',
+        },
+      ],
+    };
+
+    setThreads((prev) => [demoThread, ...prev]);
+    setSelectedThreadId(demoThread.id);
+
+    try {
+      confetti({ particleCount: 30, spread: 60, colors: ['#E7F900', '#10B981', '#38BDF8'] });
+    } catch (e) {}
+  };
+
+  // Guardar credenciales reales en AuthContext y localStorage
+  const handleSaveWhatsAppCredentials = (credentials) => {
+    if (updateTenantPolicy && activeTenant?.id) {
+      const existingChannels = activeTenant?.connectedChannels || {};
+      updateTenantPolicy(activeTenant.id, {
+        connectedChannels: {
+          ...existingChannels,
+          whatsapp: credentials,
+        },
+        whatsappNumberId: credentials.phoneNumberId,
+      });
+    }
+  };
 
   // Synchronize when activeTenant changes
   useEffect(() => {
@@ -334,28 +418,93 @@ export const ConversacionesInbox = () => {
         </div>
       </div>
 
-      {/* Meta Omnichannel Status Banner */}
-      <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-[var(--text-muted)]">
-        <div className="flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full shrink-0 ${activeTenant ? 'bg-lime-400 animate-pulse' : 'bg-zinc-600'}`} />
-          <span className="font-mono text-[11px]">
-            {activeTenant ? (
-              <>
-                <strong>Canales Conectados a Meta Graph API v21.0 ({activeTenant.name}):</strong> WhatsApp Cloud API, Instagram Direct & Facebook Messenger · SLA Objetivo: <strong>15 min</strong>
-              </>
-            ) : (
-              <>
-                <strong>Sin canales activos:</strong> Selecciona un negocio en el selector superior para sincronizar las bandejas de Meta Graph API.
-              </>
-            )}
-          </span>
+      {/* Meta Omnichannel Status Banner - Estado Verídico de Conexión */}
+      {!activeTenant ? (
+        <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-between text-xs text-zinc-400 font-mono">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-zinc-600" />
+            <span>Sin negocio activo seleccionado en el selector superior.</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-[10px] text-lime-400 font-bold bg-lime-400/10 px-2 py-0.5 rounded border border-lime-400/20 shrink-0">
-            {pendingCount} Pendientes de Respuesta
-          </span>
+      ) : !isWhatsAppConfigured ? (
+        <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs animate-fadeIn">
+          <div className="flex items-center gap-2.5">
+            <span className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400 shrink-0">
+              <AlertCircle className="w-4 h-4" />
+            </span>
+            <div>
+              <div className="font-heading font-bold text-amber-300">
+                WhatsApp Cloud API no está conectado en {activeTenant.name}
+              </div>
+              <p className="text-[11px] text-[var(--text-muted)] font-mono">
+                Falta configurar el Phone Number ID y el Token permanente de Meta para recibir chats en vivo.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleInjectDemoThread}
+              className="px-3 py-1.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-panel)] text-[var(--text-main)] border border-[var(--border-color)] font-mono text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm"
+              title="Inyectar una conversación de prueba para probar la bandeja y el co-pilot de IA"
+            >
+              <FlaskConical className="w-3.5 h-3.5 text-lime-400" />
+              <span>Simular Chat Demo</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsWhatsAppModalOpen(true)}
+              className="px-3.5 py-1.5 rounded-xl bg-amber-400 text-black font-mono text-xs font-bold flex items-center gap-1.5 hover:bg-amber-300 transition-all shadow-sm active:scale-95"
+            >
+              <Settings className="w-3.5 h-3.5" />
+              <span>Conectar WhatsApp Real</span>
+            </button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="p-3 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+          <div className="flex items-center gap-2.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+            <div className="font-mono text-[11px] text-[var(--text-main)] flex flex-wrap items-center gap-1.5">
+              <strong className="text-emerald-400">WhatsApp Cloud API v21.0 Conectado:</strong>
+              <span className="text-[var(--text-main)] font-bold">{waPhoneNumber}</span>
+              <span className="text-[var(--text-muted)]">•</span>
+              <span className="text-[10px] text-[var(--text-muted)]">
+                Webhook: <strong className="text-zinc-300">{waLastSync}</strong>
+              </span>
+              <span className="text-[10px] text-zinc-500 font-mono">
+                (SLA Objetivo: 15 min)
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsWhatsAppModalOpen(true)}
+              className="px-2.5 py-1 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] hover:border-lime-400 text-[10px] font-mono text-[var(--text-muted)] hover:text-lime-400 transition-colors flex items-center gap-1.5"
+            >
+              <Activity className="w-3 h-3 text-emerald-400" />
+              <span>Diagnóstico & Credenciales</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleInjectDemoThread}
+              className="px-2.5 py-1 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] text-[10px] font-mono text-[var(--text-muted)] hover:text-lime-400 transition-colors flex items-center gap-1"
+              title="Inyectar otra conversación de prueba"
+            >
+              <FlaskConical className="w-3 h-3 text-lime-400" />
+              <span>+ Demo</span>
+            </button>
+
+            <span className="font-mono text-[10px] text-lime-400 font-bold bg-lime-400/10 px-2 py-0.5 rounded border border-lime-400/20 shrink-0">
+              {pendingCount} Pendientes
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* 3-Column / Split Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 h-[calc(100vh-280px)] min-h-[620px]">
@@ -417,12 +566,42 @@ export const ConversacionesInbox = () => {
           {/* Threads Scrollable List */}
           <div className="flex-1 overflow-y-auto divide-y divide-[var(--border-color)] custom-scrollbar">
             {filteredThreads.length === 0 ? (
-              <div className="p-8 text-center text-xs font-mono text-[var(--text-muted)] space-y-2">
-                <MessageSquare className="w-8 h-8 opacity-30 mx-auto" />
-                <p className="font-bold">{!activeTenant ? 'Selecciona un negocio' : 'Sin conversaciones registradas'}</p>
-                <p className="text-[10px] text-[var(--text-faint)]">
-                  {!activeTenant ? 'Elige un negocio activo para gestionar sus chats.' : 'No hay mensajes entrantes para este negocio.'}
-                </p>
+              <div className="p-6 text-center text-xs font-mono space-y-4 my-auto">
+                <div className="w-12 h-12 rounded-2xl bg-lime-400/10 border border-lime-400/20 text-lime-400 flex items-center justify-center mx-auto text-xl shadow-sm">
+                  💬
+                </div>
+                <div className="space-y-1">
+                  <p className="font-bold text-[var(--text-main)] text-sm">
+                    {!activeTenant ? 'Selecciona un negocio' : 'Sin conversaciones registradas'}
+                  </p>
+                  <p className="text-[11px] text-[var(--text-muted)] font-sans max-w-xs mx-auto leading-relaxed">
+                    {!activeTenant
+                      ? 'Elige un negocio activo para gestionar sus chats.'
+                      : 'Aún no se reciben mensajes en este número o el webhook está en espera.'}
+                  </p>
+                </div>
+
+                {activeTenant && (
+                  <div className="pt-2 flex flex-col gap-2 max-w-xs mx-auto">
+                    <button
+                      type="button"
+                      onClick={handleInjectDemoThread}
+                      className="w-full py-2.5 px-3 rounded-xl bg-lime-400 text-black font-bold font-mono text-xs flex items-center justify-center gap-2 hover:bg-lime-300 transition-all shadow-sm active:scale-95"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Inyectar Conversación Demo</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsWhatsAppModalOpen(true)}
+                      className="w-full py-2 px-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-lime-400 text-[var(--text-muted)] hover:text-lime-400 font-mono text-[11px] transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      <Settings className="w-3.5 h-3.5" />
+                      <span>{isWhatsAppConfigured ? 'Ver Credenciales de WhatsApp' : 'Conectar WhatsApp Oficial'}</span>
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               filteredThreads.map((thread) => {
@@ -811,6 +990,15 @@ export const ConversacionesInbox = () => {
         isOpen={isGuideOpen}
         onClose={() => setIsGuideOpen(false)}
         initialMetricId="tiempo_primera_respuesta"
+      />
+
+      {/* Modal de Conexión & Diagnóstico de WhatsApp Cloud API */}
+      <WhatsAppConnectModal
+        isOpen={isWhatsAppModalOpen}
+        onClose={() => setIsWhatsAppModalOpen(false)}
+        activeTenant={activeTenant}
+        onSaveCredentials={handleSaveWhatsAppCredentials}
+        onInjectDemo={handleInjectDemoThread}
       />
     </div>
   );

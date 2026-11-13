@@ -51,13 +51,20 @@ export const ChannelConnectionsManager = () => {
   });
 
   React.useEffect(() => {
-    setChannelsState(
-      activeTenant?.connectedChannels || {
-        meta: { enabled: false, status: 'disconnected', latencyMs: null },
-        whatsapp: { enabled: false, status: 'disconnected', latencyMs: null },
-        google: { enabled: false, status: 'disconnected', latencyMs: null },
-      }
-    );
+    if (activeTenant?.connectedChannels) {
+      setChannelsState(activeTenant.connectedChannels);
+      const prefill = {};
+      Object.entries(activeTenant.connectedChannels).forEach(([chanId, val]) => {
+        if (val && typeof val === 'object') {
+          Object.entries(val).forEach(([k, v]) => {
+            if (typeof v === 'string') {
+              prefill[`${chanId}_${k}`] = v;
+            }
+          });
+        }
+      });
+      setFormFields((prev) => ({ ...prefill, ...prev }));
+    }
   }, [activeTenant]);
 
   const [formFields, setFormFields] = useState({});
@@ -125,8 +132,21 @@ export const ChannelConnectionsManager = () => {
 
   const handleSaveAll = () => {
     if (updateTenantPolicy && activeTenant?.id) {
+      const consolidated = { ...channelsState };
+      Object.keys(consolidated).forEach((chanId) => {
+        const chanObj = { ...consolidated[chanId] };
+        Object.keys(formFields).forEach((formKey) => {
+          if (formKey.startsWith(`${chanId}_`)) {
+            const rawProp = formKey.replace(`${chanId}_`, '');
+            chanObj[rawProp] = formFields[formKey];
+          }
+        });
+        consolidated[chanId] = chanObj;
+      });
+
       updateTenantPolicy(activeTenant.id, {
-        connectedChannels: channelsState,
+        connectedChannels: consolidated,
+        whatsappNumberId: consolidated?.whatsapp?.phoneNumberId || activeTenant?.whatsappNumberId,
       });
     }
     setIsSaved(true);
