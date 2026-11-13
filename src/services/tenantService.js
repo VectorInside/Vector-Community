@@ -50,6 +50,16 @@ export const normalizeTenantFromApi = (rawTenant) => {
     };
   }
 
+  const botSettingsFromCalendar =
+    parsedCalendarConfig && typeof parsedCalendarConfig === 'object'
+      ? {
+          temperature: parsedCalendarConfig.temperature,
+          systemPrompt: parsedCalendarConfig.systemPrompt,
+          followUpMessage: parsedCalendarConfig.followUpMessage,
+          activeModel: parsedCalendarConfig.activeModel,
+        }
+      : {};
+
   let parsedNetworks = rawTenant.connectedSocialNetworks;
   if (typeof parsedNetworks === 'string') {
     parsedNetworks = parsedNetworks
@@ -127,6 +137,26 @@ export const normalizeTenantFromApi = (rawTenant) => {
           website: rawTenant.websiteUrl || '',
         }),
     calendarConfig: parsedCalendarConfig,
+    temperature:
+      rawTenant.temperature ??
+      botSettingsFromCalendar.temperature ??
+      preset.temperature ??
+      (rawTenant.vertical === 'b2b' ? 0.2 : 0.35),
+    systemPrompt:
+      rawTenant.systemPrompt ||
+      botSettingsFromCalendar.systemPrompt ||
+      preset.systemPrompt ||
+      '',
+    followUpMessage:
+      rawTenant.followUpMessage ||
+      botSettingsFromCalendar.followUpMessage ||
+      preset.followUpMessage ||
+      '',
+    activeModel:
+      rawTenant.activeModel ||
+      botSettingsFromCalendar.activeModel ||
+      preset.activeModel ||
+      'DeepSeek V3 (deepseek-chat - < 800ms)',
     buyerPersona: rawTenant.buyerPersona || preset.buyerPersona,
     brandDna: rawTenant.brandDna || preset.brandDna,
   };
@@ -161,9 +191,23 @@ export const serializeTenantToApi = (tenant) => {
     socialLinks: (tenant.socialLinks && typeof tenant.socialLinks === 'object')
       ? tenant.socialLinks
       : {},
-    calendarConfig: typeof tenant.calendarConfig === 'object'
-      ? JSON.stringify(tenant.calendarConfig)
-      : (tenant.calendarConfig || null),
+    calendarConfig: (() => {
+      let calObj = tenant.calendarConfig;
+      if (typeof calObj === 'string') {
+        try { calObj = JSON.parse(calObj); } catch { calObj = {}; }
+      }
+      if (!calObj || typeof calObj !== 'object') {
+        calObj = {};
+      }
+      const mergedCal = {
+        ...calObj,
+        temperature: tenant.temperature !== undefined ? tenant.temperature : calObj.temperature,
+        systemPrompt: tenant.systemPrompt || calObj.systemPrompt,
+        followUpMessage: tenant.followUpMessage || calObj.followUpMessage,
+        activeModel: tenant.activeModel || calObj.activeModel,
+      };
+      return JSON.stringify(mergedCal);
+    })(),
     buyerPersona: tenant.buyerPersona || null,
     brandDna: tenant.brandDna || null,
     toneOfVoice: tenant.toneOfVoice || '',

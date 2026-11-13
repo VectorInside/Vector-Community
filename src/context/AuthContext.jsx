@@ -42,32 +42,40 @@ export const AuthProvider = ({ children }) => {
     return tenantService
       .getTenants()
       .then((backendTenants) => {
-        if (Array.isArray(backendTenants)) {
-          const fresh = {};
-          backendTenants.forEach((bt) => {
-            if (bt?.id) fresh[bt.id] = bt;
-          });
-          setTenantsData(fresh);
+        let localSnapshot = {};
+        if (typeof window !== 'undefined') {
+          try {
+            const raw = localStorage.getItem('vector_tenants_data');
+            if (raw) localSnapshot = JSON.parse(raw);
+          } catch (e) {}
+        }
 
-          const keys = Object.keys(fresh);
-          if (keys.length > 0) {
-            const currentKey =
-              typeof window !== 'undefined' ? localStorage.getItem('vector_active_tenant_key') : null;
-            const nextKey = currentKey && fresh[currentKey] ? currentKey : keys[0];
-            setActiveTenantKey(nextKey);
-            if (typeof window !== 'undefined') {
-              localStorage.setItem('vector_active_tenant_key', nextKey);
-              localStorage.setItem('vector_active_tenant_id', nextKey);
-            }
-            try {
-              useTenantStore.getState().setActiveTenantId(nextKey);
-            } catch (e) {}
-          } else {
-            setActiveTenantKey(null);
-            if (typeof window !== 'undefined') {
-              localStorage.removeItem('vector_active_tenant_key');
-              localStorage.removeItem('vector_active_tenant_id');
-            }
+        const fresh = { ...localSnapshot };
+        if (Array.isArray(backendTenants)) {
+          backendTenants.forEach((bt) => {
+            if (bt?.id) fresh[bt.id] = { ...(fresh[bt.id] || {}), ...bt };
+          });
+        }
+        setTenantsData(fresh);
+
+        const keys = Object.keys(fresh);
+        if (keys.length > 0) {
+          const currentKey =
+            typeof window !== 'undefined' ? localStorage.getItem('vector_active_tenant_key') : null;
+          const nextKey = currentKey && fresh[currentKey] ? currentKey : keys[0];
+          setActiveTenantKey(nextKey);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('vector_active_tenant_key', nextKey);
+            localStorage.setItem('vector_active_tenant_id', nextKey);
+          }
+          try {
+            useTenantStore.getState().setActiveTenantId(nextKey);
+          } catch (e) {}
+        } else {
+          setActiveTenantKey(null);
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('vector_active_tenant_key');
+            localStorage.removeItem('vector_active_tenant_id');
           }
         }
       })
@@ -384,6 +392,14 @@ export const AuthProvider = ({ children }) => {
         ...target,
         ...updates,
       };
+      if (typeof window !== 'undefined') {
+        try {
+          const raw = localStorage.getItem('vector_tenants_data');
+          const parsed = raw ? JSON.parse(raw) : {};
+          parsed[tenantKey] = updatedSnapshot;
+          localStorage.setItem('vector_tenants_data', JSON.stringify(parsed));
+        } catch (e) {}
+      }
       return {
         ...prev,
         [tenantKey]: updatedSnapshot,
@@ -449,10 +465,21 @@ export const AuthProvider = ({ children }) => {
   };
 
   const registerTenant = (newTenant, makeActive = true) => {
-    setTenantsData((prev) => ({
-      ...prev,
-      [newTenant.id]: newTenant,
-    }));
+    setTenantsData((prev) => {
+      const next = {
+        ...prev,
+        [newTenant.id]: newTenant,
+      };
+      if (typeof window !== 'undefined') {
+        try {
+          const raw = localStorage.getItem('vector_tenants_data');
+          const parsed = raw ? JSON.parse(raw) : {};
+          parsed[newTenant.id] = newTenant;
+          localStorage.setItem('vector_tenants_data', JSON.stringify(parsed));
+        } catch (e) {}
+      }
+      return next;
+    });
     tenantService.createTenant(newTenant).catch(() => {});
     if (makeActive && newTenant?.id) {
       setActiveTenantKey(newTenant.id);

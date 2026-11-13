@@ -279,6 +279,12 @@ export const SubBotsConfig = () => {
   const [config, setConfig] = useState(null);
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [initialConfigJson, setInitialConfigJson] = useState(null);
+
+  const hasUnsavedChanges = useMemo(() => {
+    if (!initialConfigJson || !config) return false;
+    return JSON.stringify(config) !== initialConfigJson;
+  }, [config, initialConfigJson]);
 
   // Visibilidad de API Keys (password/text)
   const [showKeys, setShowKeys] = useState({
@@ -291,14 +297,48 @@ export const SubBotsConfig = () => {
   // Sincronizar copies de asistente y nurturing con el ADN de la marca
   const handleSyncWithBrandDna = () => {
     const adaptive = generateTenantAdaptivePrompts(currentTenant);
+    const targetTemp = isB2B ? 0.2 : 0.35;
+    if (typeof window !== 'undefined' && tenantId) {
+      try {
+        localStorage.setItem(`vector_bot_prompt_${tenantId}`, adaptive.prompt);
+        localStorage.setItem(`vector_bot_followup_${tenantId}`, adaptive.followUp);
+        localStorage.setItem(`vector_bot_temp_${tenantId}`, String(targetTemp));
+        const currentStoredRaw = localStorage.getItem(`vector_bot_config_${tenantId}`);
+        const currentStored = currentStoredRaw ? JSON.parse(currentStoredRaw) : {};
+        localStorage.setItem(`vector_bot_config_${tenantId}`, JSON.stringify({
+          ...currentStored,
+          ...(config || {}),
+          temperature: targetTemp,
+          systemPrompt: adaptive.prompt,
+          followUp: {
+            ...(config?.followUp || {}),
+            messageTemplate: adaptive.followUp,
+          },
+        }));
+      } catch (e) {}
+    }
     setConfig((prev) => ({
       ...prev,
+      temperature: targetTemp,
       systemPrompt: adaptive.prompt,
       followUp: {
-        ...prev.followUp,
+        ...prev?.followUp,
         messageTemplate: adaptive.followUp,
       },
     }));
+    if (updateTenantPolicy && tenantId) {
+      updateTenantPolicy(tenantId, {
+        temperature: targetTemp,
+        systemPrompt: adaptive.prompt,
+        followUpMessage: adaptive.followUp,
+        calendarConfig: {
+          ...currentTenant?.calendarConfig,
+          temperature: targetTemp,
+          systemPrompt: adaptive.prompt,
+          followUpMessage: adaptive.followUp,
+        },
+      });
+    }
     try {
       confetti({
         particleCount: 45,
@@ -332,13 +372,23 @@ export const SubBotsConfig = () => {
           aiService.getConfig(tenantId).catch(() => null),
         ]);
 
+        let localBotConfig = null;
+        if (typeof window !== 'undefined' && tenantId) {
+          try {
+            const raw = localStorage.getItem(`vector_bot_config_${tenantId}`);
+            if (raw) localBotConfig = JSON.parse(raw);
+          } catch (e) {}
+        }
+
         const slotMin =
+          localBotConfig?.calendar?.slotDurationMin ||
           currentTenant?.calendarConfig?.slotDurationMin ||
           currentTenant?.appointmentDuration ||
           storedConfig?.service_appointments?.defaultAppointmentDurationMin ||
           (isB2B ? 60 : currentTenant?.vertical === 'hospitality' ? 90 : 30);
 
         const googleCalId =
+          localBotConfig?.calendar?.googleCalendarId ||
           currentTenant?.calendarConfig?.googleCalendarId ||
           currentTenant?.calendarId ||
           storedConfig?.service_appointments?.googleCalendarId ||
@@ -346,13 +396,15 @@ export const SubBotsConfig = () => {
 
         const shifts = currentTenant?.calendarConfig?.shifts || currentTenant?.shifts;
         const hasCustomShifts = Array.isArray(shifts) && shifts.length > 0;
-        const workingHoursText = hasCustomShifts
-          ? shifts.map((s) => `${s.name || 'Turno'}: ${s.start} - ${s.end}`).join(' | ')
-          : isB2B
-          ? 'Lun-Vie 09:00 - 18:00 (Reuniones Comerciales)'
-          : (storedConfig?.service_appointments?.workingHours && !storedConfig.service_appointments.workingHours.includes('09:00 - 19:00'))
-          ? storedConfig.service_appointments.workingHours
-          : 'Atención Digital 24/7 (Sin turnos restringidos)';
+        const workingHoursText = localBotConfig?.calendar?.workingHours ||
+          currentTenant?.calendarConfig?.workingHours ||
+          (hasCustomShifts
+            ? shifts.map((s) => `${s.name || 'Turno'}: ${s.start} - ${s.end}`).join(' | ')
+            : isB2B
+            ? 'Lun-Vie 09:00 - 18:00 (Reuniones Comerciales)'
+            : (storedConfig?.service_appointments?.workingHours && !storedConfig.service_appointments.workingHours.includes('09:00 - 19:00'))
+            ? storedConfig.service_appointments.workingHours
+            : 'Atención Digital 24/7 (Sin turnos restringidos)');
 
         const adaptivePrompts = generateTenantAdaptivePrompts(currentTenant);
 
@@ -366,31 +418,48 @@ export const SubBotsConfig = () => {
           m.includes('pero no alcanzamos a confirmar tu fecha') ||
           m.includes('Notamos que te interesó nuestra información en');
 
-        const defaultPrompt =
-          currentTenant?.systemPrompt && !isLegacyPrompt(currentTenant.systemPrompt)
+        const cachedTemp = typeof window !== 'undefined' ? localStorage.getItem(`vector_bot_temp_${tenantId}`) : null;
+        const resolvedTemp = cachedTemp !== null && !isNaN(parseFloat(cachedTemp))
+          ? parseFloat(cachedTemp)
+          : (localBotConfig?.temperature ??
+             currentTenant?.calendarConfig?.temperature ??
+             currentTenant?.temperature ??
+             storedConfig?.temperature ??
+             (isB2B ? 0.2 : 0.35));
+
+        const cachedPrompt = typeof window !== 'undefined' ? localStorage.getItem(`vector_bot_prompt_${tenantId}`) : null;
+        const resolvedPrompt = cachedPrompt ||
+          (localBotConfig?.systemPrompt && !isLegacyPrompt(localBotConfig.systemPrompt)
+            ? localBotConfig.systemPrompt
+            : currentTenant?.calendarConfig?.systemPrompt && !isLegacyPrompt(currentTenant.calendarConfig.systemPrompt)
+            ? currentTenant.calendarConfig.systemPrompt
+            : currentTenant?.systemPrompt && !isLegacyPrompt(currentTenant.systemPrompt)
             ? currentTenant.systemPrompt
             : storedConfig?.systemPrompt && !isLegacyPrompt(storedConfig.systemPrompt)
             ? storedConfig.systemPrompt
-            : adaptivePrompts.prompt;
+            : adaptivePrompts.prompt);
 
-        const defaultFollowUpMessage =
-          currentTenant?.followUpMessage && !isLegacyFollowUp(currentTenant.followUpMessage)
+        const cachedFollowUp = typeof window !== 'undefined' ? localStorage.getItem(`vector_bot_followup_${tenantId}`) : null;
+        const resolvedFollowUp = cachedFollowUp ||
+          (localBotConfig?.followUp?.messageTemplate && !isLegacyFollowUp(localBotConfig.followUp.messageTemplate)
+            ? localBotConfig.followUp.messageTemplate
+            : currentTenant?.calendarConfig?.followUpMessage && !isLegacyFollowUp(currentTenant.calendarConfig.followUpMessage)
+            ? currentTenant.calendarConfig.followUpMessage
+            : currentTenant?.followUpMessage && !isLegacyFollowUp(currentTenant.followUpMessage)
             ? currentTenant.followUpMessage
             : storedConfig?.followUp?.messageTemplate && !isLegacyFollowUp(storedConfig.followUp.messageTemplate)
             ? storedConfig.followUp.messageTemplate
-            : adaptivePrompts.followUp;
+            : adaptivePrompts.followUp);
 
-        setConfig({
+        const loadedConfig = {
           isAiActive: currentTenant.isAiActive ?? true,
           activeModel:
+            localBotConfig?.activeModel ||
             currentTenant.activeModel ||
             storedConfig?.activeModel ||
             'DeepSeek V3 (deepseek-chat - < 800ms)',
-          temperature:
-            currentTenant.temperature ??
-            storedConfig?.temperature ??
-            (isB2B ? 0.35 : currentTenant.vertical === 'service_appointments' ? 0.2 : 0.35),
-          systemPrompt: defaultPrompt,
+          temperature: resolvedTemp,
+          systemPrompt: resolvedPrompt,
           useCustomKeys: storedConfig?.useCustomKeys ?? false,
           apiKeys: {
             deepseek:
@@ -407,6 +476,7 @@ export const SubBotsConfig = () => {
             calendarSyncEnabled: true,
             slotDurationMin: slotMin,
             bufferBetweenAppointmentsMin:
+              localBotConfig?.calendar?.bufferBetweenAppointmentsMin ??
               currentTenant?.calendarConfig?.bufferBetweenAppointmentsMin ??
               storedConfig?.service_appointments?.bufferBetweenAppointmentsMin ??
               0,
@@ -416,9 +486,12 @@ export const SubBotsConfig = () => {
           followUp: {
             firstFollowUpHours: storedConfig?.followUp?.firstFollowUpHours || 24,
             secondFollowUpHours: storedConfig?.followUp?.secondFollowUpHours || 48,
-            messageTemplate: defaultFollowUpMessage,
+            messageTemplate: resolvedFollowUp,
           },
-        });
+        };
+
+        setConfig(loadedConfig);
+        setInitialConfigJson(JSON.stringify(loadedConfig));
 
         // Inicializar mensajes del sandbox
         setSandboxMessages([
@@ -546,6 +619,15 @@ export const SubBotsConfig = () => {
         }
       }
 
+      if (typeof window !== 'undefined' && tenantId) {
+        try {
+          localStorage.setItem(`vector_bot_temp_${tenantId}`, String(config.temperature));
+          localStorage.setItem(`vector_bot_prompt_${tenantId}`, config.systemPrompt || '');
+          localStorage.setItem(`vector_bot_followup_${tenantId}`, config.followUp?.messageTemplate || '');
+          localStorage.setItem(`vector_bot_config_${tenantId}`, JSON.stringify(config));
+        } catch (e) {}
+      }
+
       if (updateTenantPolicy) {
         updateTenantPolicy(tenantId, {
           isAiActive: config.isAiActive,
@@ -560,6 +642,10 @@ export const SubBotsConfig = () => {
             slotDurationMin: config.calendar.slotDurationMin,
             bufferBetweenAppointmentsMin: config.calendar.bufferBetweenAppointmentsMin,
             workingHours: config.calendar.workingHours,
+            temperature: config.temperature,
+            systemPrompt: config.systemPrompt,
+            followUpMessage: config.followUp?.messageTemplate,
+            activeModel: config.activeModel,
             shifts: Array.isArray(currentTenant.calendarConfig?.shifts) && currentTenant.calendarConfig.shifts.length > 0
               ? currentTenant.calendarConfig.shifts
               : [{ id: 'shift-1', name: 'Horario Comercial', start: '09:00', end: '18:00' }],
@@ -569,6 +655,7 @@ export const SubBotsConfig = () => {
         });
       }
 
+      setInitialConfigJson(JSON.stringify(config));
       setSavedSuccess(true);
       try {
         confetti({
@@ -586,6 +673,18 @@ export const SubBotsConfig = () => {
       setSaving(false);
     }
   };
+
+  // Soporte para atajo de guardado rápido Ctrl+S / Cmd+S
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        handleSave();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [config, currentTenant, tenantId]);
 
   // Enviar mensaje en Sandbox
   const handleSendSandboxMessage = (e) => {
@@ -781,15 +880,25 @@ export const SubBotsConfig = () => {
                     min="15"
                     step="5"
                     value={config?.calendar?.slotDurationMin || 60}
-                    onChange={(e) =>
-                      setConfig({
-                        ...config,
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value) || 60;
+                      if (typeof window !== 'undefined' && tenantId) {
+                        try {
+                          const raw = localStorage.getItem(`vector_bot_config_${tenantId}`);
+                          const parsed = raw ? JSON.parse(raw) : {};
+                          if (!parsed.calendar) parsed.calendar = {};
+                          parsed.calendar.slotDurationMin = val;
+                          localStorage.setItem(`vector_bot_config_${tenantId}`, JSON.stringify(parsed));
+                        } catch (err) {}
+                      }
+                      setConfig((prev) => ({
+                        ...prev,
                         calendar: {
-                          ...config?.calendar,
-                          slotDurationMin: parseInt(e.target.value) || 60,
+                          ...prev?.calendar,
+                          slotDurationMin: val,
                         },
-                      })
-                    }
+                      }));
+                    }}
                     className="w-full bg-[var(--bg-base)] border border-[var(--border-color)] rounded-xl px-3.5 py-2 text-xs text-[var(--text-main)] focus:border-neon font-mono focus:outline-none"
                   />
                   <span className="absolute right-3 top-2 text-[10px] text-[var(--text-muted)] font-mono pointer-events-none">
@@ -811,15 +920,25 @@ export const SubBotsConfig = () => {
                     min="0"
                     step="5"
                     value={config?.calendar?.bufferBetweenAppointmentsMin ?? 0}
-                    onChange={(e) =>
-                      setConfig({
-                        ...config,
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value) || 0;
+                      if (typeof window !== 'undefined' && tenantId) {
+                        try {
+                          const raw = localStorage.getItem(`vector_bot_config_${tenantId}`);
+                          const parsed = raw ? JSON.parse(raw) : {};
+                          if (!parsed.calendar) parsed.calendar = {};
+                          parsed.calendar.bufferBetweenAppointmentsMin = val;
+                          localStorage.setItem(`vector_bot_config_${tenantId}`, JSON.stringify(parsed));
+                        } catch (err) {}
+                      }
+                      setConfig((prev) => ({
+                        ...prev,
                         calendar: {
-                          ...config?.calendar,
-                          bufferBetweenAppointmentsMin: parseInt(e.target.value) || 0,
+                          ...prev?.calendar,
+                          bufferBetweenAppointmentsMin: val,
                         },
-                      })
-                    }
+                      }));
+                    }}
                     className="w-full bg-[var(--bg-base)] border border-[var(--border-color)] rounded-xl px-3.5 py-2 text-xs text-[var(--text-main)] focus:border-neon font-mono focus:outline-none"
                   />
                   <span className="absolute right-3 top-2 text-[10px] text-[var(--text-muted)] font-mono pointer-events-none">
@@ -838,15 +957,25 @@ export const SubBotsConfig = () => {
                 <input
                   type="text"
                   value={config?.calendar?.googleCalendarId || ''}
-                  onChange={(e) =>
-                    setConfig({
-                      ...config,
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (typeof window !== 'undefined' && tenantId) {
+                      try {
+                        const raw = localStorage.getItem(`vector_bot_config_${tenantId}`);
+                        const parsed = raw ? JSON.parse(raw) : {};
+                        if (!parsed.calendar) parsed.calendar = {};
+                        parsed.calendar.googleCalendarId = val;
+                        localStorage.setItem(`vector_bot_config_${tenantId}`, JSON.stringify(parsed));
+                      } catch (err) {}
+                    }
+                    setConfig((prev) => ({
+                      ...prev,
                       calendar: {
-                        ...config?.calendar,
-                        googleCalendarId: e.target.value,
+                        ...prev?.calendar,
+                        googleCalendarId: val,
                       },
-                    })
-                  }
+                    }));
+                  }}
                   className="w-full bg-[var(--bg-base)] border border-[var(--border-color)] rounded-xl px-3.5 py-2 text-xs text-[var(--text-main)] focus:border-neon font-mono focus:outline-none"
                 />
                 <p className="text-[10px] text-[var(--text-muted)] font-mono mt-1">
@@ -861,15 +990,25 @@ export const SubBotsConfig = () => {
                 <input
                   type="text"
                   value={config?.calendar?.workingHours || ''}
-                  onChange={(e) =>
-                    setConfig({
-                      ...config,
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (typeof window !== 'undefined' && tenantId) {
+                      try {
+                        const raw = localStorage.getItem(`vector_bot_config_${tenantId}`);
+                        const parsed = raw ? JSON.parse(raw) : {};
+                        if (!parsed.calendar) parsed.calendar = {};
+                        parsed.calendar.workingHours = val;
+                        localStorage.setItem(`vector_bot_config_${tenantId}`, JSON.stringify(parsed));
+                      } catch (err) {}
+                    }
+                    setConfig((prev) => ({
+                      ...prev,
                       calendar: {
-                        ...config?.calendar,
-                        workingHours: e.target.value,
+                        ...prev?.calendar,
+                        workingHours: val,
                       },
-                    })
-                  }
+                    }));
+                  }}
                   className="w-full bg-[var(--bg-base)] border border-[var(--border-color)] rounded-xl px-3.5 py-2 text-xs text-[var(--text-main)] focus:border-neon font-mono focus:outline-none"
                 />
                 <p className="text-[10px] text-[var(--text-muted)] font-mono mt-1">
@@ -960,15 +1099,26 @@ export const SubBotsConfig = () => {
                 <textarea
                   rows={3}
                   value={config?.followUp?.messageTemplate || ''}
-                  onChange={(e) =>
-                    setConfig({
-                      ...config,
+                  onChange={(e) => {
+                    const newMsg = e.target.value;
+                    if (typeof window !== 'undefined' && tenantId) {
+                      try {
+                        localStorage.setItem(`vector_bot_followup_${tenantId}`, newMsg);
+                        const raw = localStorage.getItem(`vector_bot_config_${tenantId}`);
+                        const parsed = raw ? JSON.parse(raw) : {};
+                        if (!parsed.followUp) parsed.followUp = {};
+                        parsed.followUp.messageTemplate = newMsg;
+                        localStorage.setItem(`vector_bot_config_${tenantId}`, JSON.stringify(parsed));
+                      } catch (err) {}
+                    }
+                    setConfig((prev) => ({
+                      ...prev,
                       followUp: {
-                        ...config?.followUp,
-                        messageTemplate: e.target.value,
+                        ...prev?.followUp,
+                        messageTemplate: newMsg,
                       },
-                    })
-                  }
+                    }));
+                  }}
                   className="w-full bg-[var(--bg-base)] border border-[var(--border-color)] rounded-xl p-3 text-xs text-[var(--text-main)] focus:border-neon font-sans leading-relaxed focus:outline-none"
                 />
               </div>
@@ -1016,12 +1166,22 @@ export const SubBotsConfig = () => {
                 max="0.8"
                 step="0.05"
                 value={config?.temperature || 0.25}
-                onChange={(e) =>
-                  setConfig({
-                    ...config,
-                    temperature: parseFloat(e.target.value),
-                  })
-                }
+                onChange={(e) => {
+                  const newTemp = parseFloat(e.target.value);
+                  if (typeof window !== 'undefined' && tenantId) {
+                    try {
+                      localStorage.setItem(`vector_bot_temp_${tenantId}`, String(newTemp));
+                      const raw = localStorage.getItem(`vector_bot_config_${tenantId}`);
+                      const parsed = raw ? JSON.parse(raw) : {};
+                      parsed.temperature = newTemp;
+                      localStorage.setItem(`vector_bot_config_${tenantId}`, JSON.stringify(parsed));
+                    } catch (err) {}
+                  }
+                  setConfig((prev) => ({
+                    ...prev,
+                    temperature: newTemp,
+                  }));
+                }}
                 className="w-full accent-[var(--neon-primary)]"
               />
               <div className="flex justify-between text-[10px] text-[var(--text-muted)] font-mono mt-1">
@@ -1037,7 +1197,19 @@ export const SubBotsConfig = () => {
               <textarea
                 rows={3}
                 value={config?.systemPrompt || ''}
-                onChange={(e) => setConfig({ ...config, systemPrompt: e.target.value })}
+                onChange={(e) => {
+                  const newPrompt = e.target.value;
+                  if (typeof window !== 'undefined' && tenantId) {
+                    try {
+                      localStorage.setItem(`vector_bot_prompt_${tenantId}`, newPrompt);
+                      const raw = localStorage.getItem(`vector_bot_config_${tenantId}`);
+                      const parsed = raw ? JSON.parse(raw) : {};
+                      parsed.systemPrompt = newPrompt;
+                      localStorage.setItem(`vector_bot_config_${tenantId}`, JSON.stringify(parsed));
+                    } catch (err) {}
+                  }
+                  setConfig((prev) => ({ ...prev, systemPrompt: newPrompt }));
+                }}
                 className="w-full bg-[var(--bg-base)] border border-[var(--border-color)] rounded-xl p-3 text-xs text-[var(--text-main)] focus:border-neon font-sans leading-relaxed focus:outline-none"
               />
             </div>
@@ -1332,6 +1504,32 @@ export const SubBotsConfig = () => {
           </form>
         </div>
       </Modal>
+
+      {/* Dock Flotante de Cambios sin Guardar (Estilo UX Linear / Notion) */}
+      {hasUnsavedChanges && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 bg-[var(--bg-panel)]/95 backdrop-blur-md border border-neon/50 px-5 py-3 rounded-2xl shadow-2xl shadow-black/80 animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <div className="flex items-center gap-2 text-xs font-mono text-neon">
+            <AlertCircle className="w-4 h-4 animate-pulse" />
+            <span>Tienes cambios sin guardar en Asistente & Estilo</span>
+          </div>
+          <Button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className="bg-neon text-black hover:bg-neon/90 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-neon/20 transition-all hover:scale-105 active:scale-95"
+          >
+            {saving ? (
+              <>
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Guardando...
+              </>
+            ) : (
+              <>
+                <Save className="w-3.5 h-3.5" /> Guardar Cambios (Ctrl+S)
+              </>
+            )}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
