@@ -181,8 +181,9 @@ export function generateTenantAdaptivePrompts(tenant) {
   if (isB2B) {
     const resolvedCta = cta || 'agendar su Discovery Call estratégica';
     const resolvedHook = hook || 'la propuesta de aceleración comercial con IA';
+    const scheduleDirectives = '\n\n• Reglas de Agenda & Disponibilidad: Atención y calificación de prospectos 24/7 en WhatsApp y Web. Las reuniones comerciales / Discovery Calls se agendan exclusivamente de Lunes a Viernes entre 09:00 y 18:00 hrs (duración: 60 minutos por sesión). Bajo ninguna circunstancia ofrezcas citas fuera de este rango comercial ni en horarios nocturnos/madrugada.';
     return {
-      prompt: `Eres el Asistente Ejecutivo de ${name}. Tu objetivo es calificar requerimientos comerciales con precisión y criterio estratégico, responder con autoridad técnica y visión de negocio, y guiar al tomador de decisión a ${resolvedCta}.${purpose ? ` Propósito rector: ${purpose}` : ''}`,
+      prompt: `Eres el Asistente Ejecutivo de ${name}. Tu objetivo es calificar requerimientos comerciales con precisión y criterio estratégico, responder con autoridad técnica y visión de negocio, y guiar al tomador de decisión a ${resolvedCta}.${purpose ? ` Propósito rector: ${purpose}` : ''}${scheduleDirectives}`,
       followUp: `¡Hola! Vimos que revisaste ${resolvedHook} de ${name}. Si te surgió alguna duda técnica o quieres evaluar cómo aplicaría a tu embudo antes de ${resolvedCta}, dime y lo revisamos con gusto.`,
     };
   }
@@ -335,7 +336,7 @@ export const SubBotsConfig = () => {
           currentTenant?.calendarConfig?.slotDurationMin ||
           currentTenant?.appointmentDuration ||
           storedConfig?.service_appointments?.defaultAppointmentDurationMin ||
-          (isB2B ? 45 : currentTenant?.vertical === 'hospitality' ? 90 : 30);
+          (isB2B ? 60 : currentTenant?.vertical === 'hospitality' ? 90 : 30);
 
         const googleCalId =
           currentTenant?.calendarConfig?.googleCalendarId ||
@@ -347,6 +348,8 @@ export const SubBotsConfig = () => {
         const hasCustomShifts = Array.isArray(shifts) && shifts.length > 0;
         const workingHoursText = hasCustomShifts
           ? shifts.map((s) => `${s.name || 'Turno'}: ${s.start} - ${s.end}`).join(' | ')
+          : isB2B
+          ? 'Lun-Vie 09:00 - 18:00 (Reuniones Comerciales)'
           : (storedConfig?.service_appointments?.workingHours && !storedConfig.service_appointments.workingHours.includes('09:00 - 19:00'))
           ? storedConfig.service_appointments.workingHours
           : 'Atención Digital 24/7 (Sin turnos restringidos)';
@@ -406,7 +409,7 @@ export const SubBotsConfig = () => {
             bufferBetweenAppointmentsMin:
               currentTenant?.calendarConfig?.bufferBetweenAppointmentsMin ??
               storedConfig?.service_appointments?.bufferBetweenAppointmentsMin ??
-              (isB2B ? 15 : 0),
+              0,
             workingHours: workingHoursText,
             concurrencyLimit: currentTenant?.calendarConfig?.concurrencyLimit || 1,
           },
@@ -550,12 +553,18 @@ export const SubBotsConfig = () => {
           temperature: config.temperature,
           systemPrompt: config.systemPrompt,
           followUpMessage: config.followUp?.messageTemplate,
+          appointmentDuration: config.calendar.slotDurationMin,
           calendarConfig: {
             ...currentTenant.calendarConfig,
             googleCalendarId: config.calendar.googleCalendarId,
             slotDurationMin: config.calendar.slotDurationMin,
             bufferBetweenAppointmentsMin: config.calendar.bufferBetweenAppointmentsMin,
             workingHours: config.calendar.workingHours,
+            shifts: Array.isArray(currentTenant.calendarConfig?.shifts) && currentTenant.calendarConfig.shifts.length > 0
+              ? currentTenant.calendarConfig.shifts
+              : [{ id: 'shift-1', name: 'Horario Comercial', start: '09:00', end: '18:00' }],
+            activeDays: currentTenant.calendarConfig?.activeDays || ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'],
+            concurrencyLimit: config.calendar.concurrencyLimit || 1,
           },
         });
       }
@@ -601,7 +610,7 @@ export const SubBotsConfig = () => {
         currentInput.toLowerCase().includes('precio');
 
       if (isAppointment) {
-        botReply = `Consultando la disponibilidad de Google Calendar de ${currentTenant.name} (${config?.calendar?.slotDurationMin || 45} min por cita):\n\n• Horario disponible sugerido: Jueves a las 16:00 hrs o Viernes a las 11:30 hrs.\n\n¿Te aparto alguno de estos turnos?`;
+        botReply = `Consultando la disponibilidad de Google Calendar de ${currentTenant.name} (${config?.calendar?.slotDurationMin || 60} min por cita):\n\n• Horario disponible sugerido: Jueves a las 11:00 hrs o Viernes a las 16:00 hrs.\n\n¿Te aparto alguno de estos espacios comerciales?`;
       } else {
         botReply = `Gracias por tu mensaje. ${config?.systemPrompt?.slice(0, 120)}...\n\n¿Te gustaría coordinar una fecha de atención directa?`;
       }
@@ -771,13 +780,13 @@ export const SubBotsConfig = () => {
                     type="number"
                     min="15"
                     step="5"
-                    value={config?.calendar?.slotDurationMin || 45}
+                    value={config?.calendar?.slotDurationMin || 60}
                     onChange={(e) =>
                       setConfig({
                         ...config,
                         calendar: {
                           ...config?.calendar,
-                          slotDurationMin: parseInt(e.target.value) || 45,
+                          slotDurationMin: parseInt(e.target.value) || 60,
                         },
                       })
                     }

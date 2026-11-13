@@ -1582,7 +1582,9 @@ export const RAGWizard = ({
 
     // Google Calendar & Performance (Iniciamos 100% limpio en turnos)
     googleCalendarId: '',
-    appointmentDuration: 30,
+    appointmentDuration: 60,
+    bufferBetweenAppointmentsMin: 0,
+    userEditedDuration: false,
     calendarScheduleType: 'single', // 'single' (corrido) | 'split' (2 turnos) | 'hospitality' (mesas) | 'calls' (b2b)
     shifts: [], // Limpio por defecto: el usuario agrega turnos manualmente
     shiftMorningStart: '',
@@ -1938,7 +1940,7 @@ export const RAGWizard = ({
     } else if (verticalId === 'b2b' || verticalId === 'legal_accounting') {
       suggestedSchedule = {
         calendarScheduleType: 'calls',
-        appointmentDuration: 30,
+        appointmentDuration: 60,
         concurrencyLimit: 1,
         activeDays: ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'],
       };
@@ -1959,6 +1961,8 @@ export const RAGWizard = ({
       enableCrisisPillar: true,
       inviolableRules: prev.inviolableRules,
       ...suggestedSchedule,
+      appointmentDuration: prev.userEditedDuration ? prev.appointmentDuration : suggestedSchedule.appointmentDuration,
+      bufferBetweenAppointmentsMin: prev.bufferBetweenAppointmentsMin ?? 0,
     }));
 
     setSuggestions(verticalConfig.proactiveSuggestions || []);
@@ -2259,16 +2263,20 @@ export const RAGWizard = ({
       inviolableRules: wizardData.inviolableRules || [],
       buyerPersona: wizardData.buyerPersona || null,
       marketingMix4P: wizardData.marketingMix4P || null,
+      appointmentDuration: wizardData.appointmentDuration || 60,
       calendarId: wizardData.googleCalendarId || `c_${tenantSlug}_agenda@group.calendar.google.com`,
       calendarConfig: {
         googleCalendarId: wizardData.googleCalendarId || `c_${tenantSlug}_agenda@group.calendar.google.com`,
-        slotDurationMin: wizardData.appointmentDuration || 45,
-        shifts: Array.isArray(wizardData.shifts) ? wizardData.shifts : [],
+        slotDurationMin: wizardData.appointmentDuration || 60,
+        bufferBetweenAppointmentsMin: wizardData.bufferBetweenAppointmentsMin ?? 0,
+        shifts: Array.isArray(wizardData.shifts) && wizardData.shifts.length > 0
+          ? wizardData.shifts
+          : [{ id: 'shift-1', name: 'Horario Comercial', start: '09:00', end: '18:00' }],
         concurrencyLimit: wizardData.concurrencyLimit || 1,
         activeDays: wizardData.activeDays || ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'],
       },
       systemPrompt: (vert.id === 'b2b' || tenantSlug.includes('vector'))
-        ? `Eres el Asistente Ejecutivo de ${wizardData.businessName}. Tu objetivo es calificar requerimientos comerciales con precisión y criterio estratégico, responder con autoridad técnica y visión de negocio, y guiar al tomador de decisión a ${wizardData.offerCta || 'agendar su Discovery Call estratégica'}.${wizardData.brandPurpose ? ` Propósito rector: ${wizardData.brandPurpose}` : ''}`
+        ? `Eres el Asistente Ejecutivo de ${wizardData.businessName}. Tu objetivo es calificar requerimientos comerciales con precisión y criterio estratégico, responder con autoridad técnica y visión de negocio, y guiar al tomador de decisión a ${wizardData.offerCta || 'agendar su Discovery Call estratégica'}.${wizardData.brandPurpose ? ` Propósito rector: ${wizardData.brandPurpose}` : ''}\n\n• Reglas de Agenda & Disponibilidad: Atención y calificación de prospectos 24/7 en WhatsApp y Web. Las reuniones comerciales / Discovery Calls se agendan exclusivamente de Lunes a Viernes entre 09:00 y 18:00 hrs (duración: ${wizardData.appointmentDuration || 60} minutos por sesión). Bajo ninguna circunstancia ofrezcas citas fuera de este rango comercial ni en horarios nocturnos/madrugada.`
         : `Eres el Asistente Inteligente de ${wizardData.businessName}. Tu objetivo es atender con profesionalismo y agilidad, resolver consultas sobre productos y servicios y guiar al usuario a ${wizardData.offerCta || 'agendar su cita o llamada de atención'}.`,
       followUpMessage: (vert.id === 'b2b' || tenantSlug.includes('vector'))
         ? `¡Hola! Vimos que revisaste ${wizardData.offerHook || 'la propuesta de aceleración comercial con IA'} de ${wizardData.businessName}. Si te surgió alguna duda técnica o quieres evaluar cómo aplicaría a tu embudo antes de ${wizardData.offerCta || 'agendar la Discovery Call'}, dime y lo revisamos con gusto.`
@@ -4859,15 +4867,15 @@ export const RAGWizard = ({
                         )}
                       </div>
 
-                      {/* 3. Duración de Cada Cita / Slot Libre & Capacidad */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                      {/* 3. Duración de Cada Cita / Slot Libre, Margen de Descanso & Capacidad */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
                         <div className="p-3.5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1.5">
                           <div className="flex items-center justify-between">
                             <label className="text-[10px] text-[var(--text-muted)] block font-bold uppercase">
-                              Duración de Cita / Slot (Libre)
+                              Duración de Cita / Slot
                             </label>
                             <span className="text-[10px] text-emerald-400 font-bold font-mono">
-                              {wizardData.appointmentDuration || 30} minutos
+                              {wizardData.appointmentDuration || 60} min
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -4876,9 +4884,15 @@ export const RAGWizard = ({
                                 type="number"
                                 min={1}
                                 max={480}
-                                value={wizardData.appointmentDuration || 30}
-                                onChange={(e) => setWizardData({ ...wizardData, appointmentDuration: Math.max(1, Number(e.target.value)) })}
-                                placeholder="45"
+                                value={wizardData.appointmentDuration || 60}
+                                onChange={(e) =>
+                                  setWizardData({
+                                    ...wizardData,
+                                    appointmentDuration: Math.max(1, Number(e.target.value)),
+                                    userEditedDuration: true,
+                                  })
+                                }
+                                placeholder="60"
                                 className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg p-2.5 text-xs text-center text-[var(--text-main)] font-mono outline-none focus:border-neon pr-12"
                               />
                               <span className="text-[11px] text-[var(--text-muted)] font-mono font-bold absolute right-3 pointer-events-none">
@@ -4887,14 +4901,50 @@ export const RAGWizard = ({
                             </div>
                           </div>
                           <span className="text-[9px] text-[var(--text-muted)] block">
-                            Define libremente los minutos exactos de cada espacio en agenda.
+                            Minutos exactos de cada espacio en agenda comercial.
                           </span>
                         </div>
 
                         <div className="p-3.5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1.5">
                           <div className="flex items-center justify-between">
                             <label className="text-[10px] text-[var(--text-muted)] block font-bold uppercase">
-                              Capacidad Simultánea en Paralelo
+                              Margen de Descanso (Buffer)
+                            </label>
+                            <span className="text-[10px] text-amber-400 font-bold font-mono">
+                              {wizardData.bufferBetweenAppointmentsMin ?? 0} min
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-full flex items-center relative">
+                              <input
+                                type="number"
+                                min={0}
+                                max={120}
+                                step={5}
+                                value={wizardData.bufferBetweenAppointmentsMin ?? 0}
+                                onChange={(e) =>
+                                  setWizardData({
+                                    ...wizardData,
+                                    bufferBetweenAppointmentsMin: Math.max(0, Number(e.target.value) || 0),
+                                  })
+                                }
+                                placeholder="0"
+                                className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg p-2.5 text-xs text-center text-[var(--text-main)] font-mono outline-none focus:border-neon pr-12"
+                              />
+                              <span className="text-[11px] text-[var(--text-muted)] font-mono font-bold absolute right-3 pointer-events-none">
+                                min
+                              </span>
+                            </div>
+                          </div>
+                          <span className="text-[9px] text-[var(--text-muted)] block">
+                            Minutos libres entre citas (0 = citas continuas sin buffer).
+                          </span>
+                        </div>
+
+                        <div className="p-3.5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <label className="text-[10px] text-[var(--text-muted)] block font-bold uppercase">
+                              Capacidad Simultánea
                             </label>
                             <span className="text-[10px] text-cyan-400 font-bold font-mono">
                               Max {wizardData.concurrencyLimit || 1}
@@ -4906,10 +4956,10 @@ export const RAGWizard = ({
                             max={500}
                             value={wizardData.concurrencyLimit || 1}
                             onChange={(e) => setWizardData({ ...wizardData, concurrencyLimit: Math.max(1, Number(e.target.value)) })}
-                            className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg p-2 text-xs text-center text-[var(--text-main)] font-mono outline-none focus:border-neon"
+                            className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg p-2.5 text-xs text-center text-[var(--text-main)] font-mono outline-none focus:border-neon"
                           />
                           <span className="text-[9px] text-[var(--text-muted)] block">
-                            1 para citas privadas 1-on-1, o más para sillones, salas o mesas paralelas.
+                            1 para llamadas 1-on-1, o más para salas/mesas paralelas.
                           </span>
                         </div>
                       </div>
