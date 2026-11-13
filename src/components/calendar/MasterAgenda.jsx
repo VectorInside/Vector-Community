@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useTenant } from '@/hooks/useTenant';
 import { calendarService } from '@/services/calendarService';
@@ -9,6 +9,7 @@ import { Button } from '@/components/common/Button';
 import { Portal } from '@/components/common/Portal';
 import { Badge } from '@/components/common/Badge';
 import { formatDateTime } from '@/utils/formatters';
+import { resolveBrandPreset } from '@/utils/brandPresets';
 import {
   Calendar as CalendarIcon,
   RefreshCw,
@@ -89,16 +90,34 @@ export function recomputeShiftsHours(shifts, durationMin = 60) {
   }));
 }
 
+// Cálculo de contraste de texto accesible WCAG AA/AAA para botones y acentos
+export function getOptimalTextColor(hexColor) {
+  if (!hexColor || typeof hexColor !== 'string' || !hexColor.startsWith('#')) return '#000000';
+  const cleanHex = hexColor.replace('#', '');
+  if (cleanHex.length !== 6) return '#000000';
+  const r = parseInt(cleanHex.substring(0, 2), 16) || 0;
+  const g = parseInt(cleanHex.substring(2, 4), 16) || 0;
+  const b = parseInt(cleanHex.substring(4, 6), 16) || 0;
+  // Fórmula estándar Luma ITU-R BT.601
+  const luma = (r * 299 + g * 587 + b * 114) / 1000;
+  return luma >= 140 ? '#000000' : '#FFFFFF';
+}
+
+// Regex estándar de validación de correo electrónico RFC 5322
+export function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email?.trim() || '');
+}
+
 export const DEFAULT_EMAIL_TEMPLATE = {
-  senderName: 'Mi Negocio',
-  senderEmail: 'citas@minegocio.com',
-  logoAvatar: '🏢',
+  senderName: 'Vector Inside',
+  senderEmail: 'citas@vectorinside.com',
+  logoAvatar: '🐺',
   accentColor: '#D4FF00',
   subject: '✅ Cita Confirmada: {{servicio}} en {{negocio}}',
   welcomeMessage: '¡Hola, {{cliente}}! Tu cita ha sido agendada con éxito en nuestro sistema.',
   instructions: 'Por favor preséntate 10 minutos antes de tu cita programada.',
   locationType: 'physical',
-  locationAddress: 'Dirección principal del negocio',
+  locationAddress: 'Oficina Central Vector Inside',
   virtualLink: '',
   cancellationPolicy: 'Puedes cancelar o reprogramar sin costo notificando con al menos 24 horas de antelación vía WhatsApp.',
   ctaText: 'Añadir a Google Calendar / Outlook',
@@ -106,26 +125,106 @@ export const DEFAULT_EMAIL_TEMPLATE = {
   includeWhatsapp: true,
   sampleClient: 'Cliente Registrado',
   sampleClientEmail: 'cliente@correo.com',
-  sampleService: 'Servicio General',
+  sampleService: 'Sesión Estratégica',
   sampleSpecialist: 'Especialista Asignado',
   sampleDateTime: 'Horario Programado',
 };
+
+/**
+ * Construye de forma inteligente la plantilla de email heredando el ADN de marca del tenant y BrandPresets
+ */
+export function buildTenantDefaultEmailConfig(tenant) {
+  if (!tenant) return DEFAULT_EMAIL_TEMPLATE;
+  const preset = resolveBrandPreset(tenant);
+  const tenantName = tenant.name || tenant.shortName || preset?.name || 'Vector Inside';
+  const tenantAvatar = tenant.avatar || preset?.avatar || '🐺';
+  const tenantColor = tenant.brandColor || tenant.primaryColor || preset?.colors?.[0]?.hex || '#D4FF00';
+
+  let rawEmail = tenant.email || tenant.contactEmail || '';
+  if (!rawEmail && tenant.id) {
+    const cleanId = String(tenant.id).toLowerCase().replace(/[^a-z0-9]/g, '');
+    rawEmail = cleanId.includes('vector') ? 'citas@vectorinside.com' : `citas@${cleanId}.com`;
+  }
+  const senderEmail = rawEmail || 'citas@vectorinside.com';
+
+  const isVirtual = Boolean(
+    tenant.vertical === 'b2b_agencies' ||
+    tenant.vertical === 'infoproducts_bootcamps' ||
+    tenant.vertical === 'creator' ||
+    tenant.vertical === 'courses' ||
+    tenant.giro?.toLowerCase().includes('software') ||
+    tenant.giro?.toLowerCase().includes('consultoría') ||
+    tenant.giro?.toLowerCase().includes('marketing')
+  );
+
+  const locationAddress = tenant.address || tenant.locationAddress || (isVirtual
+    ? 'Reunión Virtual vía Google Meet / Zoom (Enlace generado por la IA)'
+    : 'Dirección física corporativa registrada');
+
+  return {
+    ...DEFAULT_EMAIL_TEMPLATE,
+    senderName: tenantName,
+    senderEmail: senderEmail,
+    logoAvatar: tenantAvatar,
+    accentColor: tenantColor,
+    subject: `✅ Cita Confirmada: {{servicio}} en ${tenantName}`,
+    welcomeMessage: `¡Hola, {{cliente}}! Tu cita en ${tenantName} ha sido agendada con éxito en nuestra agenda oficial.`,
+    instructions: isVirtual
+      ? 'Por favor conéctate 5 minutos antes con micrófono y cámara listos para tu sesión estratégica.'
+      : (tenant.vertical === 'service_appointments'
+          ? 'Por favor preséntate 10 minutos antes con tu documento de identidad e indicaciones clínicas previas.'
+          : 'Por favor preséntate 10 minutos antes de tu cita programada.'),
+    locationType: isVirtual ? 'virtual' : 'physical',
+    locationAddress: locationAddress,
+    virtualLink: isVirtual ? 'https://meet.google.com/new' : '',
+    sampleService: isVirtual ? 'Discovery Call Estratégico' : (tenant.verticalLabel || 'Servicio Profesional'),
+    sampleSpecialist: isVirtual ? 'Director de Cuentas' : 'Especialista Asignado',
+  };
+}
+
+/**
+ * Resuelve la configuración de email activa priorizando Backend -> LocalStorage -> Preset Oficial de Marca
+ */
+export function resolveTenantEmailConfig(tenant, localConfigs = {}) {
+  if (!tenant) return DEFAULT_EMAIL_TEMPLATE;
+  const tenantKey = tenant.id || tenant.key || 'default';
+  const backendConfig = tenant.calendarConfig?.emailConfig || tenant.emailConfig;
+  const localConfig = localConfigs[tenantKey];
+  const brandDefault = buildTenantDefaultEmailConfig(tenant);
+
+  const candidate = localConfig || backendConfig;
+  if (candidate && typeof candidate === 'object') {
+    // Si la configuración almacenada tiene datos dummy del template antiguo, purgar a brandDefault
+    const isDummy = candidate.senderName === 'Mi Negocio' || candidate.senderEmail === 'citas@minegocio.com';
+    if (!isDummy) {
+      return {
+        ...brandDefault,
+        ...candidate,
+      };
+    }
+  }
+
+  return brandDefault;
+}
 
 export const TENANT_EMAIL_TEMPLATES = {
   default: DEFAULT_EMAIL_TEMPLATE,
 };
 
-export function replaceEmailVariables(text, vars = {}, tenantKey = 'default') {
+export function replaceEmailVariables(text, vars = {}, configOrKey = 'default') {
   if (!text) return '';
-  const template = TENANT_EMAIL_TEMPLATES[tenantKey] || DEFAULT_EMAIL_TEMPLATE;
+  const template = typeof configOrKey === 'object' && configOrKey !== null
+    ? configOrKey
+    : (TENANT_EMAIL_TEMPLATES[configOrKey] || DEFAULT_EMAIL_TEMPLATE);
+
   return text
-    .replaceAll('{{cliente}}', vars?.cliente || vars?.client || template.sampleClient)
-    .replaceAll('{{servicio}}', vars?.servicio || vars?.service || template.sampleService)
+    .replaceAll('{{cliente}}', vars?.cliente || vars?.client || template.sampleClient || 'Cliente')
+    .replaceAll('{{servicio}}', vars?.servicio || vars?.service || template.sampleService || 'Servicio')
     .replaceAll('{{fecha}}', vars?.fecha || vars?.date || template.sampleDateTime?.split('•')[0]?.trim() || 'Fecha Programada')
     .replaceAll('{{hora}}', vars?.hora || vars?.hour || template.sampleDateTime?.split('•')[1]?.trim() || '11:00 hrs')
-    .replaceAll('{{especialista}}', vars?.especialista || vars?.specialist || template.sampleSpecialist)
-    .replaceAll('{{negocio}}', vars?.negocio || vars?.business || template.senderName)
-    .replaceAll('{{ubicacion}}', vars?.ubicacion || vars?.location || template.locationAddress);
+    .replaceAll('{{especialista}}', vars?.especialista || vars?.specialist || template.sampleSpecialist || 'Especialista')
+    .replaceAll('{{negocio}}', vars?.negocio || vars?.business || template.senderName || 'Vector Inside')
+    .replaceAll('{{ubicacion}}', vars?.ubicacion || vars?.location || template.locationAddress || 'Ubicación Registrada');
 }
 
 const MONTH_NAMES_ES = [
@@ -222,6 +321,32 @@ export function resolveCalendarConfig(tenant) {
 // Citas precargadas vacías para producción (Zero-State)
 const INITIAL_DEMO_APPOINTMENTS = [];
 
+// Subcomponente de Variable Dinámica Clickeable con micro-interacción
+function VariablePill({ tag, sampleVal, onInsert, isRecentlyInserted }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onInsert(tag)}
+      title={`Clic para insertar en el cursor o copiar al portapapeles.\nEjemplo resuelto: "${sampleVal}"`}
+      className={`group relative px-2.5 py-1 rounded-lg text-[11px] font-mono font-medium flex items-center gap-1.5 transition-all active:scale-95 border ${
+        isRecentlyInserted
+          ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-sm'
+          : 'bg-[var(--bg-card)] hover:bg-brand-primary/15 text-[var(--text-main)] hover:text-brand-primary border-[var(--border-color)] hover:border-brand-primary/40'
+      }`}
+    >
+      <span className="text-brand-primary font-bold group-hover:scale-110 transition-transform">
+        {isRecentlyInserted ? <Check className="w-3 h-3 text-emerald-400" /> : <Plus className="w-3 h-3" />}
+      </span>
+      <span>{tag}</span>
+      {isRecentlyInserted && (
+        <span className="text-[9px] bg-emerald-500/30 text-emerald-300 px-1 rounded animate-fadeIn">
+          ¡Listo!
+        </span>
+      )}
+    </button>
+  );
+}
+
 export const MasterAgenda = () => {
   const { activeTenant: authActiveTenant, activeTenantKey, tenantsData, updateTenantPolicy } = useAuth();
   const { activeTenant: zustandActiveTenant, activeTenantId: zustandTenantId } = useTenant();
@@ -275,24 +400,28 @@ export const MasterAgenda = () => {
   // Leer configuración de calendario extraída por la IA para este tenant específico (o personalizada en vivo)
   const [calendarConfig, setCalendarConfig] = useState(() => resolveCalendarConfig(activeTenant));
 
-  // Almacenar configuraciones por tenant de forma estrictamente aislada
+  // Almacenar configuraciones por tenant de forma estrictamente aislada y reactiva
   const [tenantEmailConfigs, setTenantEmailConfigs] = useState(() => {
     if (typeof window !== 'undefined') {
       try {
         const saved = localStorage.getItem('vector_email_configs_by_tenant');
-        if (saved) return { ...TENANT_EMAIL_TEMPLATES, ...JSON.parse(saved) };
+        if (saved) return JSON.parse(saved);
       } catch (e) {}
     }
-    return TENANT_EMAIL_TEMPLATES;
+    return {};
   });
 
-  const emailConfig = (activeKey && tenantEmailConfigs[activeKey]) || DEFAULT_EMAIL_TEMPLATE;
-  const currentTenantTemplate = (activeKey && TENANT_EMAIL_TEMPLATES[activeKey]) || DEFAULT_EMAIL_TEMPLATE;
+  // Resolución reactiva del emailConfig del tenant activo heredando Brand DNA
+  const emailConfig = useMemo(() => {
+    return resolveTenantEmailConfig(activeTenant, tenantEmailConfigs);
+  }, [activeTenant, tenantEmailConfigs]);
+
+  const currentTenantTemplate = emailConfig;
 
   const setEmailConfig = (updaterOrObj) => {
     if (!activeKey) return;
     setTenantEmailConfigs((prev) => {
-      const current = prev[activeKey] || DEFAULT_EMAIL_TEMPLATE;
+      const current = prev[activeKey] || resolveTenantEmailConfig(activeTenant, prev);
       const newObj = typeof updaterOrObj === 'function' ? updaterOrObj(current) : updaterOrObj;
       const updated = { ...prev, [activeKey]: newObj };
       if (typeof window !== 'undefined') {
@@ -302,6 +431,91 @@ export const MasterAgenda = () => {
       }
       return updated;
     });
+  };
+
+  // Botón: Sincronizar / Restablecer a Marca Oficial del Tenant
+  const handleResetToBrandIdentity = () => {
+    if (!activeTenant && !activeKey) return;
+    const brandDefault = buildTenantDefaultEmailConfig(activeTenant);
+    setEmailConfig(brandDefault);
+    try {
+      confetti({
+        particleCount: 35,
+        spread: 60,
+        colors: [brandDefault.accentColor || '#D4FF00', '#10B981', '#38BDF8'],
+      });
+    } catch (e) {}
+  };
+
+  // Estado y referencias para inserción de variables en la posición del cursor
+  const [activeFieldName, setActiveFieldName] = useState('subject');
+  const activeFieldRef = useRef(null);
+  const [lastInsertedVar, setLastInsertedVar] = useState(null);
+  const [splitPreview, setSplitPreview] = useState(false);
+
+  const subjectInputRef = useRef(null);
+  const welcomeInputRef = useRef(null);
+  const instructionsInputRef = useRef(null);
+  const locationInputRef = useRef(null);
+  const ctaInputRef = useRef(null);
+  const policyInputRef = useRef(null);
+
+  // Paleta de colores oficiales del Brand DNA del tenant activo
+  const tenantBrandPreset = useMemo(() => resolveBrandPreset(activeTenant), [activeTenant]);
+  const activeTenantBrandColors = useMemo(() => {
+    const list = [];
+    if (tenantBrandPreset?.colors && Array.isArray(tenantBrandPreset.colors)) {
+      list.push(...tenantBrandPreset.colors);
+    }
+    if (activeTenant?.brandColors && Array.isArray(activeTenant.brandColors)) {
+      activeTenant.brandColors.forEach((c) => {
+        if (typeof c === 'string' && !list.some((item) => item.hex.toLowerCase() === c.toLowerCase())) {
+          list.push({ name: 'Color Marca', hex: c });
+        } else if (c?.hex && !list.some((item) => item.hex.toLowerCase() === c.hex.toLowerCase())) {
+          list.push(c);
+        }
+      });
+    }
+    if (list.length === 0) {
+      list.push(
+        { name: 'Neón Vector', hex: '#D4FF00' },
+        { name: 'Azul Médico', hex: '#3B82F6' },
+        { name: 'Esmeralda', hex: '#10B981' },
+        { name: 'Púrpura VIP', hex: '#8B5CF6' },
+        { name: 'Ámbar Cálido', hex: '#F59E0B' }
+      );
+    }
+    return list;
+  }, [activeTenant, tenantBrandPreset]);
+
+  // Insertar variable en cursor o portapapeles
+  const handleInsertVariable = (variableTag) => {
+    const inputEl = activeFieldRef.current;
+    const fieldName = activeFieldName;
+
+    if (inputEl && fieldName && emailConfig[fieldName] !== undefined) {
+      const start = typeof inputEl.selectionStart === 'number' ? inputEl.selectionStart : (emailConfig[fieldName] || '').length;
+      const end = typeof inputEl.selectionEnd === 'number' ? inputEl.selectionEnd : start;
+      const val = emailConfig[fieldName] || '';
+      const nextVal = val.slice(0, start) + variableTag + val.slice(end);
+
+      setEmailConfig((prev) => ({ ...prev, [fieldName]: nextVal }));
+
+      setTimeout(() => {
+        if (inputEl && typeof inputEl.focus === 'function') {
+          inputEl.focus();
+          const newPos = start + variableTag.length;
+          inputEl.setSelectionRange(newPos, newPos);
+        }
+      }, 20);
+    } else {
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        navigator.clipboard.writeText(variableTag).catch(() => {});
+      }
+    }
+
+    setLastInsertedVar(variableTag);
+    setTimeout(() => setLastInsertedVar(null), 1800);
   };
 
   // Reloj en tiempo real (sincronizado segundo a segundo con la hora local/CDMX)
@@ -451,33 +665,50 @@ export const MasterAgenda = () => {
     const updatedConfig = {
       ...calendarConfig,
       shifts: finalizedShifts,
+      emailConfig: emailConfig, // Persistencia estructural en JSONB
     };
     setCalendarConfig(updatedConfig);
+
     if (activeKey) {
+      // 1. AuthContext & LocalStorage vector_tenants_data & Backend TenantEntity
       if (typeof updateTenantPolicy === 'function') {
         updateTenantPolicy(activeKey, {
           calendarConfig: updatedConfig,
+          emailConfig: emailConfig,
           appointmentDuration: updatedConfig.slotDurationMin,
           bufferMinutes: updatedConfig.bufferMin || 0,
         });
       }
-      tenantService.updateVerticalConfig(activeKey, updatedConfig).catch(() => {});
+
+      // 2. Persistencia en Backend PostgreSQL calendar_config (vía tenantService)
+      tenantService.updateVerticalConfig(activeKey, updatedConfig).catch((err) => {
+        console.warn('[MasterAgenda.handleSaveConfig] Fallback al guardar verticalConfig:', err);
+      });
+
+      // 3. LocalStorage vector_email_configs_by_tenant y vector_bot_config_${activeKey}
       if (typeof window !== 'undefined') {
         try {
-          const raw = localStorage.getItem(`vector_bot_config_${activeKey}`);
-          const current = raw ? JSON.parse(raw) : {};
-          current.calendar = {
-            ...(current.calendar || {}),
+          const rawEmail = localStorage.getItem('vector_email_configs_by_tenant');
+          const emailMap = rawEmail ? JSON.parse(rawEmail) : {};
+          emailMap[activeKey] = emailConfig;
+          localStorage.setItem('vector_email_configs_by_tenant', JSON.stringify(emailMap));
+
+          const rawBot = localStorage.getItem(`vector_bot_config_${activeKey}`);
+          const currentBot = rawBot ? JSON.parse(rawBot) : {};
+          currentBot.emailConfig = emailConfig;
+          currentBot.calendar = {
+            ...(currentBot.calendar || {}),
             slotDurationMin: updatedConfig.slotDurationMin,
             bufferBetweenAppointmentsMin: updatedConfig.bufferMin || 0,
             concurrencyLimit: updatedConfig.concurrencyLimit || 1,
             shifts: finalizedShifts,
             workingHours: finalizedShifts.map((s) => `${s.name || 'Turno'}: ${s.start} - ${s.end}`).join(' | '),
           };
-          localStorage.setItem(`vector_bot_config_${activeKey}`, JSON.stringify(current));
+          localStorage.setItem(`vector_bot_config_${activeKey}`, JSON.stringify(currentBot));
         } catch (e) {}
       }
     }
+
     setSavedConfigSuccess(true);
     try {
       confetti({ particleCount: 40, spread: 60, colors: [emailConfig.accentColor || '#D4FF00', '#10B981'] });
@@ -1752,7 +1983,7 @@ export const MasterAgenda = () => {
               if (e.target === e.currentTarget) setShowConfigModal(false);
             }}
           >
-            <div className="w-full max-w-4xl rounded-3xl bg-[var(--bg-panel)] border border-brand-primary/50 shadow-2xl p-5 sm:p-7 relative flex flex-col max-h-[92vh] overflow-hidden my-auto animate-scale-up">
+            <div className={`w-full ${splitPreview && activeModalTab === 'email' ? 'max-w-5xl' : 'max-w-4xl'} rounded-3xl bg-[var(--bg-panel)] border border-brand-primary/50 shadow-2xl p-5 sm:p-7 relative flex flex-col max-h-[92vh] overflow-hidden my-auto animate-scale-up`}>
             {/* Header del Modal */}
             <div className="flex items-start justify-between pb-4 border-b border-[var(--border-color)] shrink-0">
               <div className="space-y-1">
@@ -2056,192 +2287,532 @@ export const MasterAgenda = () => {
               )}
 
               {/* ================================================================= */}
-              {/* PESTAÑA 2: EMAIL STUDIO & DISEÑADOR DE MEMBRETE                   */}
+              {/* PESTAÑA 2: EMAIL STUDIO & DISEÑADOR DE MEMBRETE (PRO UX/UI)        */}
               {/* ================================================================= */}
               {activeModalTab === 'email' && (
                 <div className="space-y-5 animate-fadeIn">
-                  {/* Identidad del Remitente */}
-                  <div className="p-4 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-4">
-                    <span className="text-xs font-bold text-[var(--text-main)] font-mono flex items-center gap-2">
-                      <Building2 className="w-4 h-4 text-brand-primary" />
-                      1. Identidad del Remitente & Branding Oficial
-                    </span>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono">
-                      <div>
-                        <label className="text-[10px] text-[var(--text-muted)] block mb-1">Nombre Oficial Remitente</label>
-                        <input
-                          type="text"
-                          value={emailConfig.senderName}
-                          onChange={(e) => setEmailConfig({ ...emailConfig, senderName: e.target.value })}
-                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2 text-[var(--text-main)] focus:border-brand-primary outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] text-[var(--text-muted)] block mb-1">Correo Emisor (Gmail / SMTP)</label>
-                        <input
-                          type="text"
-                          value={emailConfig.senderEmail}
-                          onChange={(e) => setEmailConfig({ ...emailConfig, senderEmail: e.target.value })}
-                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2 text-[var(--text-main)] focus:border-brand-primary outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] text-[var(--text-muted)] block mb-1">Logotipo / Avatar del Negocio</label>
-                        <input
-                          type="text"
-                          value={emailConfig.logoAvatar}
-                          onChange={(e) => setEmailConfig({ ...emailConfig, logoAvatar: e.target.value })}
-                          placeholder="Emoji (🦷) o URL de imagen"
-                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2 text-[var(--text-main)] focus:border-brand-primary outline-none"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Selector de Color de Marca */}
-                    <div className="space-y-2 pt-1">
-                      <label className="text-[10px] text-[var(--text-muted)] font-mono block">
-                        Color Primario del Membrete & Botones:
-                      </label>
-                      <div className="flex flex-wrap items-center gap-2">
-                        {[
-                          { name: 'Neón Vector', color: '#D4FF00' },
-                          { name: 'Azul Médico', color: '#3B82F6' },
-                          { name: 'Esmeralda', color: '#10B981' },
-                          { name: 'Púrpura VIP', color: '#8B5CF6' },
-                          { name: 'Ámbar Cálido', color: '#F59E0B' },
-                          { name: 'Magenta Rose', color: '#EC4899' },
-                        ].map((c) => (
-                          <button
-                            key={c.color}
-                            type="button"
-                            onClick={() => setEmailConfig({ ...emailConfig, accentColor: c.color })}
-                            className={`px-3 py-1.5 rounded-xl border text-xs font-mono flex items-center gap-2 transition-all ${
-                              emailConfig.accentColor === c.color
-                                ? 'bg-brand-primary/20 text-[var(--text-main)] font-bold border-brand-primary shadow-sm'
-                                : 'bg-[var(--bg-card)] text-[var(--text-muted)] border-[var(--border-color)] hover:text-[var(--text-main)]'
-                            }`}
-                          >
-                            <span className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: c.color }} />
-                            <span>{c.name}</span>
-                          </button>
-                        ))}
-                        <input
-                          type="color"
-                          value={emailConfig.accentColor}
-                          onChange={(e) => setEmailConfig({ ...emailConfig, accentColor: e.target.value })}
-                          className="w-8 h-8 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] cursor-pointer"
-                          title="Color personalizado"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Redacción & Variables Dinámicas */}
-                  <div className="p-4 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <span className="text-xs font-bold text-[var(--text-main)] font-mono flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-brand-primary" />
-                        2. Redacción del Correo & Variables Dinámicas
+                  {/* Barra de Sincronización con Identidad de Marca Oficial */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-brand-primary/10 border border-brand-primary/30">
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-2xl p-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
+                        {emailConfig.logoAvatar || activeTenant?.avatar || '🐺'}
                       </span>
-                      <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-mono text-[var(--text-muted)]">
-                        <span className="text-[var(--text-muted)]">Variables:</span>
-                        {['{{cliente}}', '{{servicio}}', '{{fecha}}', '{{hora}}', '{{especialista}}', '{{negocio}}'].map((v) => (
-                          <span key={v} className="px-1.5 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--border-color)] text-brand-primary">
-                            {v}
-                          </span>
-                        ))}
+                      <div>
+                        <span className="text-xs font-bold text-[var(--text-main)] font-mono block">
+                          Identidad de Marca: {activeTenant?.name || 'Vector Inside'}
+                        </span>
+                        <span className="text-[10px] text-[var(--text-muted)] font-mono">
+                          Heredando colores ({emailConfig.accentColor}), avatar y membrete corporativo oficial.
+                        </span>
                       </div>
                     </div>
 
-                    <div className="space-y-3 text-xs font-mono">
-                      <div>
-                        <label className="text-[10px] text-[var(--text-muted)] block mb-1">Asunto del Correo (Subject)</label>
-                        <input
-                          type="text"
-                          value={emailConfig.subject}
-                          onChange={(e) => setEmailConfig({ ...emailConfig, subject: e.target.value })}
-                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2.5 text-[var(--text-main)] focus:border-brand-primary outline-none"
-                        />
-                      </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleResetToBrandIdentity}
+                        className="px-3 py-1.5 rounded-xl bg-brand-primary hover:bg-brand-primary/90 text-black text-xs font-mono font-bold flex items-center justify-center gap-1.5 shadow-sm transition-transform active:scale-95 shrink-0"
+                        title="Restablece los campos de remitente, avatar, color y políticas a los valores oficiales del negocio activo"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 fill-black" />
+                        <span>Restablecer a Marca Oficial</span>
+                      </button>
 
-                      <div>
-                        <label className="text-[10px] text-[var(--text-muted)] block mb-1">Mensaje de Saludo & Bienvenida</label>
-                        <textarea
-                          rows={2}
-                          value={emailConfig.welcomeMessage}
-                          onChange={(e) => setEmailConfig({ ...emailConfig, welcomeMessage: e.target.value })}
-                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2.5 text-[var(--text-main)] focus:border-brand-primary outline-none"
-                        />
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSplitPreview(!splitPreview)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 border transition-all ${
+                          splitPreview
+                            ? 'bg-brand-primary/20 text-brand-primary border-brand-primary'
+                            : 'bg-[var(--bg-card)] text-[var(--text-muted)] border-[var(--border-color)] hover:text-[var(--text-main)]'
+                        }`}
+                        title="Alternar vista previa lado a lado en tiempo real"
+                      >
+                        <Sliders className="w-3.5 h-3.5" />
+                        <span>{splitPreview ? 'Ocultar Mini-Preview' : 'Dividir Pantalla (Split View)'}</span>
+                      </button>
 
-                      <div>
-                        <label className="text-[10px] text-[var(--text-muted)] block mb-1">
-                          Indicaciones Previas / Preparación para la Cita
-                        </label>
-                        <textarea
-                          rows={2}
-                          value={emailConfig.instructions}
-                          onChange={(e) => setEmailConfig({ ...emailConfig, instructions: e.target.value })}
-                          placeholder="Ej: Llegar 10 min antes, presentar identificación oficial y estudios previos."
-                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2.5 text-[var(--text-main)] focus:border-brand-primary outline-none"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <label className="text-[10px] text-[var(--text-muted)] block mb-1">Modalidad & Dirección Física</label>
-                          <input
-                            type="text"
-                            value={emailConfig.locationAddress}
-                            onChange={(e) => setEmailConfig({ ...emailConfig, locationAddress: e.target.value })}
-                            className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2 text-[var(--text-main)] focus:border-brand-primary outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[10px] text-[var(--text-muted)] block mb-1">Texto Botón de Acción (CTA)</label>
-                          <input
-                            type="text"
-                            value={emailConfig.ctaText}
-                            onChange={(e) => setEmailConfig({ ...emailConfig, ctaText: e.target.value })}
-                            className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2 text-[var(--text-main)] focus:border-brand-primary outline-none"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="text-[10px] text-[var(--text-muted)] block mb-1">Políticas de Cancelación & Reprogramación</label>
-                        <input
-                          type="text"
-                          value={emailConfig.cancellationPolicy}
-                          onChange={(e) => setEmailConfig({ ...emailConfig, cancellationPolicy: e.target.value })}
-                          className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2.5 text-[var(--text-main)] focus:border-brand-primary outline-none"
-                        />
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setActiveModalTab('preview')}
+                        className="px-3 py-1.5 rounded-xl text-xs font-mono bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)] flex items-center gap-1.5 transition-all"
+                        title="Ir a inspección detallada a pantalla completa"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Vista Previa Completa</span>
+                      </button>
                     </div>
                   </div>
 
-                  {/* Automatizaciones de Adjunto & WhatsApp */}
-                  <div className="p-4 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-2 text-xs font-mono">
-                    <label className="flex items-center gap-2.5 cursor-pointer text-[var(--text-main)]">
-                      <input
-                        type="checkbox"
-                        checked={emailConfig.includeIcs}
-                        onChange={(e) => setEmailConfig({ ...emailConfig, includeIcs: e.target.checked })}
-                        className="w-4 h-4 accent-brand-primary rounded"
-                      />
-                      <span>Adjuntar archivo <strong>.ICS (RFC 5545)</strong> autogenerado para Google / Apple / Outlook Calendar</span>
-                    </label>
+                  {/* Layout Principal: 1 Columna o 2 Columnas (Split View) */}
+                  <div className={`grid gap-5 items-start ${splitPreview ? 'lg:grid-cols-12' : 'grid-cols-1'}`}>
+                    {/* Columna Formulario */}
+                    <div className={`space-y-4 ${splitPreview ? 'lg:col-span-7' : 'w-full'}`}>
+                      {/* 1. Identidad del Remitente */}
+                      <div className="p-4 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-4">
+                        <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-2.5">
+                          <span className="text-xs font-bold text-[var(--text-main)] font-mono flex items-center gap-2">
+                            <Building2 className="w-4 h-4 text-brand-primary" />
+                            1. Identidad del Remitente & Branding Oficial
+                          </span>
+                          <span className="text-[10px] text-[var(--text-muted)] font-mono">
+                            Negocio: <strong className="text-[var(--text-main)]">{activeTenant?.name || 'Vector Inside'}</strong>
+                          </span>
+                        </div>
 
-                    <label className="flex items-center gap-2.5 cursor-pointer text-[var(--text-main)]">
-                      <input
-                        type="checkbox"
-                        checked={emailConfig.includeWhatsapp}
-                        onChange={(e) => setEmailConfig({ ...emailConfig, includeWhatsapp: e.target.checked })}
-                        className="w-4 h-4 accent-brand-primary rounded"
-                      />
-                      <span>Incluir botón interactivo de confirmación y dudas directas a <strong>WhatsApp Business</strong></span>
-                    </label>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono">
+                          <div>
+                            <label className="text-[10px] text-[var(--text-muted)] block mb-1 font-bold">
+                              Nombre Oficial Remitente <span className="text-red-400">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={emailConfig.senderName}
+                              onFocus={() => {
+                                activeFieldRef.current = null;
+                                setActiveFieldName('senderName');
+                              }}
+                              onChange={(e) => setEmailConfig({ ...emailConfig, senderName: e.target.value })}
+                              placeholder="Ej: Vector Inside"
+                              className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2 text-[var(--text-main)] focus:border-brand-primary outline-none"
+                            />
+                          </div>
+
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="text-[10px] text-[var(--text-muted)] font-bold">
+                                Correo Emisor <span className="text-red-400">*</span>
+                              </label>
+                              {isValidEmail(emailConfig.senderEmail) ? (
+                                <span className="text-[9px] text-emerald-400 font-bold flex items-center gap-0.5">
+                                  <Check className="w-2.5 h-2.5" /> Válido
+                                </span>
+                              ) : (
+                                <span className="text-[9px] text-amber-400 font-bold">Requerido</span>
+                              )}
+                            </div>
+                            <input
+                              type="email"
+                              value={emailConfig.senderEmail}
+                              onFocus={() => {
+                                activeFieldRef.current = null;
+                                setActiveFieldName('senderEmail');
+                              }}
+                              onChange={(e) => setEmailConfig({ ...emailConfig, senderEmail: e.target.value })}
+                              placeholder="citas@vectorinside.com"
+                              className={`w-full bg-[var(--bg-panel)] border rounded-xl p-2 text-[var(--text-main)] outline-none transition-colors ${
+                                isValidEmail(emailConfig.senderEmail)
+                                  ? 'border-[var(--border-color)] focus:border-brand-primary'
+                                  : 'border-amber-500/50 focus:border-amber-500'
+                              }`}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="text-[10px] text-[var(--text-muted)] block mb-1 font-bold">
+                              Logotipo / Avatar del Negocio
+                            </label>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="text"
+                                value={emailConfig.logoAvatar}
+                                onFocus={() => {
+                                  activeFieldRef.current = null;
+                                  setActiveFieldName('logoAvatar');
+                                }}
+                                onChange={(e) => setEmailConfig({ ...emailConfig, logoAvatar: e.target.value })}
+                                placeholder="🐺 o URL https://..."
+                                className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2 text-[var(--text-main)] focus:border-brand-primary outline-none"
+                              />
+                              <div className="w-8 h-8 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-center shrink-0 text-lg overflow-hidden">
+                                {emailConfig.logoAvatar?.startsWith('http') ? (
+                                  /* eslint-disable-next-line @next/next/no-img-element */
+                                  <img src={emailConfig.logoAvatar} alt="Logo" className="w-full h-full object-cover" />
+                                ) : (
+                                  emailConfig.logoAvatar || '🐺'
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Selector de Color de Marca Conectado a Brand DNA */}
+                        <div className="space-y-2 pt-2 border-t border-[var(--border-color)]/60">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[10px] font-mono">
+                            <label className="text-[var(--text-muted)] font-bold flex items-center gap-1.5">
+                              <Sparkles className="w-3.5 h-3.5 text-brand-primary" />
+                              Color Primario del Membrete & Botones (Brand DNA):
+                            </label>
+                            <span className="text-[var(--text-muted)]">
+                              Texto en botón:{' '}
+                              <strong style={{ color: emailConfig.accentColor || '#D4FF00' }}>
+                                {getOptimalTextColor(emailConfig.accentColor || '#D4FF00') === '#000000'
+                                  ? 'Legibilidad Alta (Texto Negro)'
+                                  : 'Legibilidad Alta (Texto Blanco)'}
+                              </strong>
+                            </span>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2">
+                            {/* Colores Oficiales Detectados del Tenant */}
+                            {activeTenantBrandColors.map((brandC) => (
+                              <button
+                                key={brandC.hex}
+                                type="button"
+                                onClick={() => setEmailConfig({ ...emailConfig, accentColor: brandC.hex })}
+                                className={`px-2.5 py-1.5 rounded-xl border text-xs font-mono flex items-center gap-1.5 transition-all ${
+                                  emailConfig.accentColor?.toLowerCase() === brandC.hex.toLowerCase()
+                                    ? 'bg-brand-primary/20 text-[var(--text-main)] font-bold border-brand-primary shadow-sm ring-1 ring-brand-primary/50'
+                                    : 'bg-[var(--bg-card)] text-[var(--text-muted)] border-[var(--border-color)] hover:text-[var(--text-main)]'
+                                }`}
+                              >
+                                <span className="w-3.5 h-3.5 rounded-full border border-black/20 shrink-0" style={{ backgroundColor: brandC.hex }} />
+                                <span>{brandC.name}</span>
+                              </button>
+                            ))}
+
+                            {/* Selector HEX Libre con Cuadro Color Picker */}
+                            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
+                              <input
+                                type="color"
+                                value={emailConfig.accentColor || '#D4FF00'}
+                                onChange={(e) => setEmailConfig({ ...emailConfig, accentColor: e.target.value.toUpperCase() })}
+                                className="w-6 h-6 rounded-md bg-transparent border-0 cursor-pointer"
+                                title="Seleccionar cualquier color"
+                              />
+                              <input
+                                type="text"
+                                value={emailConfig.accentColor || '#D4FF00'}
+                                onChange={(e) => setEmailConfig({ ...emailConfig, accentColor: e.target.value })}
+                                className="w-18 bg-transparent text-xs font-mono text-[var(--text-main)] uppercase outline-none px-1"
+                                maxLength={7}
+                                placeholder="#D4FF00"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 2. Redacción & Variables Dinámicas */}
+                      <div className="p-4 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-4">
+                        <div className="space-y-2 border-b border-[var(--border-color)] pb-3">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                            <span className="text-xs font-bold text-[var(--text-main)] font-mono flex items-center gap-2">
+                              <Mail className="w-4 h-4 text-brand-primary" />
+                              2. Redacción del Correo & Variables Dinámicas
+                            </span>
+                            <span className="text-[10px] text-[var(--text-muted)] font-mono">
+                              Haz clic en una variable para insertarla en el campo activo
+                            </span>
+                          </div>
+
+                          {/* Chips de Variables Dinámicas Interactivas */}
+                          <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                            {[
+                              { tag: '{{cliente}}', sample: currentTenantTemplate.sampleClient },
+                              { tag: '{{servicio}}', sample: currentTenantTemplate.sampleService },
+                              { tag: '{{fecha}}', sample: '15 de Noviembre' },
+                              { tag: '{{hora}}', sample: '11:00 hrs' },
+                              { tag: '{{especialista}}', sample: currentTenantTemplate.sampleSpecialist },
+                              { tag: '{{negocio}}', sample: emailConfig.senderName },
+                              { tag: '{{ubicacion}}', sample: emailConfig.locationAddress },
+                            ].map((v) => (
+                              <VariablePill
+                                key={v.tag}
+                                tag={v.tag}
+                                sampleVal={v.sample}
+                                isRecentlyInserted={lastInsertedVar === v.tag}
+                                onInsert={() => handleInsertVariable(v.tag)}
+                              />
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="space-y-3.5 text-xs font-mono">
+                          {/* Asunto con Gauge de Caracteres Móviles */}
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="text-[10px] text-[var(--text-muted)] font-bold">
+                                Asunto del Correo (Subject) <span className="text-red-400">*</span>
+                              </label>
+                              <div className="flex items-center gap-1.5 text-[10px]">
+                                <span
+                                  className={
+                                    (emailConfig.subject?.length || 0) <= 55
+                                      ? 'text-emerald-400 font-bold'
+                                      : (emailConfig.subject?.length || 0) <= 70
+                                      ? 'text-amber-400 font-bold'
+                                      : 'text-red-400 font-bold'
+                                  }
+                                >
+                                  {emailConfig.subject?.length || 0} / 60 chars recomendados
+                                </span>
+                              </div>
+                            </div>
+                            <input
+                              ref={subjectInputRef}
+                              type="text"
+                              value={emailConfig.subject}
+                              onFocus={() => {
+                                activeFieldRef.current = subjectInputRef.current;
+                                setActiveFieldName('subject');
+                              }}
+                              onChange={(e) => setEmailConfig({ ...emailConfig, subject: e.target.value })}
+                              className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2.5 text-[var(--text-main)] focus:border-brand-primary outline-none"
+                              placeholder="✅ Cita Confirmada: {{servicio}} en {{negocio}}"
+                            />
+                            <p className="text-[10px] text-[var(--text-muted)] mt-1 truncate">
+                              Vista previa resuelta:{' '}
+                              <span className="text-[var(--text-main)] font-semibold">
+                                {replaceEmailVariables(emailConfig.subject, {
+                                  cliente: currentTenantTemplate.sampleClient,
+                                  servicio: currentTenantTemplate.sampleService,
+                                  negocio: emailConfig.senderName,
+                                }, emailConfig)}
+                              </span>
+                            </p>
+                          </div>
+
+                          {/* Mensaje de Saludo & Bienvenida */}
+                          <div>
+                            <label className="text-[10px] text-[var(--text-muted)] block mb-1 font-bold">
+                              Mensaje de Saludo & Bienvenida
+                            </label>
+                            <textarea
+                              ref={welcomeInputRef}
+                              rows={2}
+                              value={emailConfig.welcomeMessage}
+                              onFocus={() => {
+                                activeFieldRef.current = welcomeInputRef.current;
+                                setActiveFieldName('welcomeMessage');
+                              }}
+                              onChange={(e) => setEmailConfig({ ...emailConfig, welcomeMessage: e.target.value })}
+                              className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2.5 text-[var(--text-main)] focus:border-brand-primary outline-none leading-relaxed"
+                              placeholder="¡Hola, {{cliente}}! Tu cita ha sido agendada con éxito..."
+                            />
+                          </div>
+
+                          {/* Indicaciones Previas */}
+                          <div>
+                            <label className="text-[10px] text-[var(--text-muted)] block mb-1 font-bold">
+                              Indicaciones Previas / Preparación para la Cita
+                            </label>
+                            <textarea
+                              ref={instructionsInputRef}
+                              rows={2}
+                              value={emailConfig.instructions}
+                              onFocus={() => {
+                                activeFieldRef.current = instructionsInputRef.current;
+                                setActiveFieldName('instructions');
+                              }}
+                              onChange={(e) => setEmailConfig({ ...emailConfig, instructions: e.target.value })}
+                              placeholder="Ej: Llegar 10 min antes, presentar identificación oficial y estudios previos."
+                              className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2.5 text-[var(--text-main)] focus:border-brand-primary outline-none leading-relaxed"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-[10px] text-[var(--text-muted)] block mb-1 font-bold">
+                                Modalidad & Dirección Física / Enlace
+                              </label>
+                              <input
+                                ref={locationInputRef}
+                                type="text"
+                                value={emailConfig.locationAddress}
+                                onFocus={() => {
+                                  activeFieldRef.current = locationInputRef.current;
+                                  setActiveFieldName('locationAddress');
+                                }}
+                                onChange={(e) => setEmailConfig({ ...emailConfig, locationAddress: e.target.value })}
+                                className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2 text-[var(--text-main)] focus:border-brand-primary outline-none"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[10px] text-[var(--text-muted)] block mb-1 font-bold">
+                                Texto Botón de Acción (CTA)
+                              </label>
+                              <input
+                                ref={ctaInputRef}
+                                type="text"
+                                value={emailConfig.ctaText}
+                                onFocus={() => {
+                                  activeFieldRef.current = ctaInputRef.current;
+                                  setActiveFieldName('ctaText');
+                                }}
+                                onChange={(e) => setEmailConfig({ ...emailConfig, ctaText: e.target.value })}
+                                className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2 text-[var(--text-main)] focus:border-brand-primary outline-none"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="text-[10px] text-[var(--text-muted)] block mb-1 font-bold">
+                              Políticas de Cancelación & Reprogramación
+                            </label>
+                            <input
+                              ref={policyInputRef}
+                              type="text"
+                              value={emailConfig.cancellationPolicy}
+                              onFocus={() => {
+                                activeFieldRef.current = policyInputRef.current;
+                                setActiveFieldName('cancellationPolicy');
+                              }}
+                              onChange={(e) => setEmailConfig({ ...emailConfig, cancellationPolicy: e.target.value })}
+                              className="w-full bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl p-2.5 text-[var(--text-main)] focus:border-brand-primary outline-none"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 3. Automatizaciones de Adjunto & WhatsApp */}
+                      <div className="p-4 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-2 text-xs font-mono">
+                        <label className="flex items-center gap-2.5 cursor-pointer text-[var(--text-main)] hover:text-brand-primary transition-colors">
+                          <input
+                            type="checkbox"
+                            checked={emailConfig.includeIcs}
+                            onChange={(e) => setEmailConfig({ ...emailConfig, includeIcs: e.target.checked })}
+                            className="w-4 h-4 accent-brand-primary rounded cursor-pointer"
+                          />
+                          <span>Adjuntar archivo <strong>.ICS (RFC 5545)</strong> autogenerado para Google / Apple / Outlook Calendar</span>
+                        </label>
+
+                        <label className="flex items-center gap-2.5 cursor-pointer text-[var(--text-main)] hover:text-brand-primary transition-colors">
+                          <input
+                            type="checkbox"
+                            checked={emailConfig.includeWhatsapp}
+                            onChange={(e) => setEmailConfig({ ...emailConfig, includeWhatsapp: e.target.checked })}
+                            className="w-4 h-4 accent-brand-primary rounded cursor-pointer"
+                          />
+                          <span>Incluir botón interactivo de confirmación y dudas directas a <strong>WhatsApp Business</strong></span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Columna Split View (Mini-Preview en Tiempo Real) */}
+                    {splitPreview && (
+                      <div className="lg:col-span-5 lg:sticky lg:top-2 space-y-3">
+                        <div className="flex items-center justify-between pb-1.5 border-b border-[var(--border-color)]">
+                          <span className="text-[11px] font-mono font-bold text-[var(--text-main)] flex items-center gap-1.5">
+                            <Eye className="w-3.5 h-3.5 text-brand-primary" />
+                            Vista Previa en Vivo (WYSIWYG)
+                          </span>
+                          <div className="flex items-center gap-1 p-0.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] text-[10px] font-mono">
+                            <button
+                              type="button"
+                              onClick={() => setPreviewDevice('desktop')}
+                              className={`px-2 py-0.5 rounded ${previewDevice === 'desktop' ? 'bg-[var(--bg-panel)] font-bold text-[var(--text-main)]' : 'text-[var(--text-muted)]'}`}
+                            >
+                              Desktop
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPreviewDevice('mobile')}
+                              className={`px-2 py-0.5 rounded ${previewDevice === 'mobile' ? 'bg-[var(--bg-panel)] font-bold text-[var(--text-main)]' : 'text-[var(--text-muted)]'}`}
+                            >
+                              Móvil
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Tarjeta del Correo Renderizado en Tiempo Real */}
+                        <div className={`rounded-2xl border border-[var(--border-color)] bg-[var(--bg-panel)] shadow-xl overflow-hidden font-sans text-xs transition-all ${
+                          previewDevice === 'mobile' ? 'max-w-xs mx-auto text-[11px]' : 'w-full'
+                        }`}>
+                          {/* Headers del Correo */}
+                          <div className="p-3 bg-[var(--bg-card)] border-b border-[var(--border-color)] font-mono text-[10px] space-y-0.5">
+                            <div>
+                              <strong className="text-[var(--text-main)]">De:</strong> {emailConfig.senderName || 'Vector Inside'} &lt;{emailConfig.senderEmail || 'citas@vectorinside.com'}&gt;
+                            </div>
+                            <div>
+                              <strong className="text-[var(--text-main)]">Para:</strong> {currentTenantTemplate.sampleClient} &lt;{currentTenantTemplate.sampleClientEmail}&gt;
+                            </div>
+                            <div className="text-[var(--text-main)] font-bold pt-0.5 truncate">
+                              {replaceEmailVariables(emailConfig.subject, {
+                                cliente: currentTenantTemplate.sampleClient,
+                                servicio: currentTenantTemplate.sampleService,
+                                negocio: emailConfig.senderName,
+                              }, emailConfig)}
+                            </div>
+                          </div>
+
+                          {/* Cuerpo Membretado */}
+                          <div
+                            className="p-4 space-y-3 bg-[var(--bg-panel)]"
+                            style={{ borderTop: `4px solid ${emailConfig.accentColor || '#D4FF00'}` }}
+                          >
+                            <div className="flex items-center justify-between pb-2 border-b border-[var(--border-color)]">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xl p-1 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)]">
+                                  {emailConfig.logoAvatar || activeTenant?.avatar || '🐺'}
+                                </span>
+                                <div>
+                                  <h5 className="font-bold text-[var(--text-main)] leading-tight">{emailConfig.senderName || 'Vector Inside'}</h5>
+                                  <span className="text-[9px] text-[var(--text-muted)] font-mono">Notificación Oficial</span>
+                                </div>
+                              </div>
+                              <span
+                                className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full"
+                                style={{
+                                  backgroundColor: `${emailConfig.accentColor || '#D4FF00'}20`,
+                                  color: emailConfig.accentColor || '#D4FF00',
+                                }}
+                              >
+                                CONFIRMADA
+                              </span>
+                            </div>
+
+                            <p className="text-xs font-semibold text-[var(--text-main)] leading-relaxed">
+                              {replaceEmailVariables(emailConfig.welcomeMessage, {
+                                cliente: currentTenantTemplate.sampleClient,
+                                servicio: currentTenantTemplate.sampleService,
+                                especialista: currentTenantTemplate.sampleSpecialist,
+                              }, emailConfig)}
+                            </p>
+
+                            <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1.5 text-[11px] font-mono">
+                              <div className="flex justify-between">
+                                <span className="text-[var(--text-muted)]">Servicio:</span>
+                                <strong className="text-[var(--text-main)]">{currentTenantTemplate.sampleService}</strong>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-[var(--text-muted)]">Horario:</span>
+                                <strong className="text-[var(--text-main)]">{currentTenantTemplate.sampleDateTime}</strong>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-[var(--text-muted)]">Ubicación:</span>
+                                <span className="text-[var(--text-main)] truncate max-w-[150px]">{emailConfig.locationAddress}</span>
+                              </div>
+                            </div>
+
+                            {emailConfig.instructions && (
+                              <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500 dark:text-amber-200 text-[10px] font-mono flex items-start gap-1.5">
+                                <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                                <span>{emailConfig.instructions}</span>
+                              </div>
+                            )}
+
+                            {/* Botón CTA con Contraste Dinámico WCAG */}
+                            <button
+                              type="button"
+                              className="w-full py-2 px-3 rounded-xl font-bold text-[11px] font-mono flex items-center justify-center gap-1.5 shadow-md"
+                              style={{
+                                backgroundColor: emailConfig.accentColor || '#D4FF00',
+                                color: getOptimalTextColor(emailConfig.accentColor || '#D4FF00'),
+                              }}
+                            >
+                              <CalendarIcon className="w-3.5 h-3.5" />
+                              <span>{emailConfig.ctaText || 'Añadir a Google Calendar'}</span>
+                            </button>
+
+                            <div className="pt-2 border-t border-[var(--border-color)] text-center text-[9px] text-[var(--text-muted)] font-mono">
+                              <p>{emailConfig.cancellationPolicy}</p>
+                              <p className="opacity-70 mt-0.5">© 2026 {emailConfig.senderName}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -2305,7 +2876,7 @@ export const MasterAgenda = () => {
                             cliente: currentTenantTemplate.sampleClient,
                             servicio: currentTenantTemplate.sampleService,
                             negocio: emailConfig.senderName,
-                          }, activeKey)}
+                          }, emailConfig)}
                         </div>
                       </div>
 
@@ -2318,7 +2889,7 @@ export const MasterAgenda = () => {
                         <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)]">
                           <div className="flex items-center gap-3">
                             <span className="text-2xl p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
-                              {emailConfig.logoAvatar || activeTenant?.avatar || '🏢'}
+                              {emailConfig.logoAvatar || activeTenant?.avatar || '🐺'}
                             </span>
                             <div>
                               <h4 className="text-sm font-bold text-[var(--text-main)] leading-tight">{emailConfig.senderName}</h4>
@@ -2344,7 +2915,7 @@ export const MasterAgenda = () => {
                               cliente: currentTenantTemplate.sampleClient,
                               servicio: currentTenantTemplate.sampleService,
                               especialista: currentTenantTemplate.sampleSpecialist,
-                            }, activeKey)}
+                            }, emailConfig)}
                           </p>
                           <p className="text-xs text-[var(--text-muted)] leading-relaxed">
                             A continuación encontrarás los detalles completos de tu cita programada y el archivo para sincronizarlo con tu calendario personal.
@@ -2386,8 +2957,11 @@ export const MasterAgenda = () => {
                         <div className="space-y-2 pt-2">
                           <button
                             type="button"
-                            className="w-full py-2.5 px-4 rounded-xl text-black font-bold text-xs font-mono flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-95"
-                            style={{ backgroundColor: emailConfig.accentColor || '#D4FF00' }}
+                            className="w-full py-2.5 px-4 rounded-xl font-bold text-xs font-mono flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-95"
+                            style={{
+                              backgroundColor: emailConfig.accentColor || '#D4FF00',
+                              color: getOptimalTextColor(emailConfig.accentColor || '#D4FF00'),
+                            }}
                           >
                             <CalendarIcon className="w-4 h-4" />
                             <span>{emailConfig.ctaText || 'Añadir a Google Calendar / Outlook'}</span>
@@ -2458,11 +3032,29 @@ export const MasterAgenda = () => {
               </div>
             )}
 
-            {/* Footer con Botones de Acción */}
-            <div className="flex items-center justify-between pt-4 border-t border-[var(--border-color)] shrink-0">
-              <span className="text-xs text-[var(--text-muted)] font-mono hidden sm:inline">
-                {calendarConfig.shifts?.length || 0} Turnos configurados • {calendarConfig.slotDurationMin} min/bloque
-              </span>
+            {/* Footer con Botones de Acción y Status de Completitud */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-[var(--border-color)] shrink-0">
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-[var(--text-muted)] font-mono hidden sm:inline">
+                  {calendarConfig.shifts?.length || 0} Turnos configurados • {calendarConfig.slotDurationMin} min/bloque
+                </span>
+
+                {activeModalTab === 'email' && (
+                  <div>
+                    {isValidEmail(emailConfig.senderEmail) && emailConfig.senderName && emailConfig.subject ? (
+                      <span className="flex items-center gap-1.5 text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-1 rounded-xl border border-emerald-500/20 text-xs font-mono">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        Configuración de Correo Lista
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1.5 text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-xl border border-amber-500/20 text-xs font-mono">
+                        <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
+                        Faltan campos obligatorios
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
 
               <div className="flex items-center gap-3">
                 <button
@@ -2476,6 +3068,7 @@ export const MasterAgenda = () => {
                   variant="primary"
                   size="md"
                   onClick={handleSaveConfig}
+                  disabled={activeModalTab === 'email' && (!emailConfig.senderName || !isValidEmail(emailConfig.senderEmail) || !emailConfig.subject)}
                   className="shadow-neon-sm"
                 >
                   Guardar Configuración en Vivo

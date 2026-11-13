@@ -50,12 +50,12 @@ export function getTenantDefaultAddress(tenant) {
   return 'Dirección registrada del negocio';
 }
 
-// Generate RFC 5545 .ics calendar file content
-export function generateIcsContent(apt, tenant) {
-  const tenantName = tenant?.name || 'Vector Inside';
+// Generate RFC 5545 .ics calendar file content respetando el membrete y configuración del tenant
+export function generateIcsContent(apt, tenant, emailConfig = {}) {
+  const tenantName = emailConfig?.senderName || tenant?.name || 'Vector Inside';
   const title = apt?.title || `Cita: ${apt?.serviceName || 'Servicio'} con ${tenantName}`;
-  const details = `${apt?.details || 'Cita confirmada en Vector Inside'}. Especialista: ${apt?.specialist || 'Asignado'}. Teléfono: ${apt?.phone || 'N/A'}`;
-  const location = getTenantDefaultAddress(tenant);
+  const details = `${apt?.details || 'Cita confirmada en ' + tenantName}. Especialista: ${apt?.specialist || 'Asignado'}. Teléfono: ${apt?.phone || 'N/A'}`;
+  const location = emailConfig?.locationAddress || getTenantDefaultAddress(tenant);
 
   const startIso = apt?.start ? new Date(apt.start) : new Date();
   const endIso = apt?.end ? new Date(apt.end) : new Date(startIso.getTime() + 45 * 60 * 1000);
@@ -86,8 +86,8 @@ export function generateIcsContent(apt, tenant) {
 }
 
 // Trigger browser download of .ics file
-export function triggerIcsDownload(apt, tenant) {
-  const content = generateIcsContent(apt, tenant);
+export function triggerIcsDownload(apt, tenant, emailConfig = {}) {
+  const content = generateIcsContent(apt, tenant, emailConfig);
   const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -100,13 +100,13 @@ export function triggerIcsDownload(apt, tenant) {
 }
 
 // Generate Google Calendar direct URL
-export function getGoogleCalendarUrl(apt, tenant) {
-  const tenantName = tenant?.name || 'Vector Inside';
+export function getGoogleCalendarUrl(apt, tenant, emailConfig = {}) {
+  const tenantName = emailConfig?.senderName || tenant?.name || 'Vector Inside';
   const title = encodeURIComponent(apt?.title || `Cita: ${apt?.serviceName || 'Servicio'} - ${tenantName}`);
   const details = encodeURIComponent(
     `Cita confirmada en ${tenantName}.\nEspecialista: ${apt?.specialist || 'Asignado'}\nCliente: ${apt?.client || 'N/A'}\nTeléfono: ${apt?.phone || 'N/A'}\nDetalles: ${apt?.details || 'N/A'}`
   );
-  const location = encodeURIComponent(getTenantDefaultAddress(tenant));
+  const location = encodeURIComponent(emailConfig?.locationAddress || getTenantDefaultAddress(tenant));
 
   const startIso = apt?.start ? new Date(apt.start) : new Date();
   const endIso = apt?.end ? new Date(apt.end) : new Date(startIso.getTime() + 45 * 60 * 1000);
@@ -153,15 +153,18 @@ export const AppointmentConfirmationEmailModal = ({
 
   if (!isOpen || !appointment) return null;
 
-  const tenantName = tenant?.name || 'Mi Negocio';
-  const tenantAvatar = tenant?.avatar || '🏢';
-  const accentColor = emailConfig?.accentColor || '#D4FF00';
-  const senderEmail = emailConfig?.senderEmail || `citas@${tenant?.id || 'negocio'}.com`;
+  const tenantName = emailConfig?.senderName || tenant?.name || 'Vector Inside';
+  const tenantAvatar = emailConfig?.logoAvatar || tenant?.avatar || '🐺';
+  const accentColor = emailConfig?.accentColor || tenant?.brandColor || '#D4FF00';
+  const senderEmail = emailConfig?.senderEmail || tenant?.email || `citas@${tenant?.id || 'vectorinside'}.com`;
+  const locationAddress = emailConfig?.locationAddress || getTenantDefaultAddress(tenant);
+  const cancellationPolicy = emailConfig?.cancellationPolicy || 'Puedes cancelar o reprogramar sin costo notificando con al menos 24 horas de antelación.';
+  const ctaButtonText = emailConfig?.ctaText || 'Añadir a mi Google Calendar (Móvil / Web)';
 
-  const googleCalUrl = getGoogleCalendarUrl(appointment, tenant);
+  const googleCalUrl = getGoogleCalendarUrl(appointment, tenant, emailConfig);
 
   const handleDownloadIcs = () => {
-    triggerIcsDownload(appointment, tenant);
+    triggerIcsDownload(appointment, tenant, emailConfig);
     try {
       confetti({ particleCount: 20, spread: 40 });
     } catch (e) {}
@@ -193,7 +196,7 @@ export const AppointmentConfirmationEmailModal = ({
 
   const handleShareWhatsapp = () => {
     const text = encodeURIComponent(
-      `¡Hola ${appointment.client}! Te confirmamos tu cita en ${tenantName}:\n\n🗓️ Fecha: ${appointment.hour || '11:00'} hrs (${appointment.dayId?.toUpperCase() || ''})\n🩺 Servicio: ${appointment.serviceName || appointment.title}\n📍 Ubicación: ${emailConfig?.locationAddress || getTenantDefaultAddress(tenant)}\n\nAgrega la cita a tu Google Calendar:\n${googleCalUrl}`
+      `¡Hola ${appointment.client}! Te confirmamos tu cita en ${tenantName}:\n\n🗓️ Horario: ${appointment.hour || '11:00'} hrs (${appointment.dayId?.toUpperCase() || ''})\n🩺 Servicio: ${appointment.serviceName || appointment.title}\n📍 Ubicación: ${locationAddress}\n\nAgrega la cita a tu Google Calendar:\n${googleCalUrl}`
     );
     window.open(`https://wa.me/${appointment.phone?.replace(/[^0-9]/g, '')}?text=${text}`, '_blank');
   };
@@ -323,8 +326,14 @@ export const AppointmentConfirmationEmailModal = ({
                   <div className="text-[11px] text-[var(--text-muted)]">
                     <strong className="text-[var(--text-main)]">Para:</strong> {appointment.client} &lt;{recipientEmail}&gt;
                   </div>
-                  <div className="text-xs font-bold text-[var(--text-main)] pt-0.5">
-                    ✅ Cita Confirmada: {appointment.serviceName || appointment.title} en {tenantName}
+                  <div className="text-xs font-bold text-[var(--text-main)] pt-0.5 truncate">
+                    {emailConfig?.subject
+                      ? emailConfig.subject
+                          .replaceAll('{{cliente}}', appointment.client || 'Cliente')
+                          .replaceAll('{{servicio}}', appointment.serviceName || appointment.title || 'Servicio')
+                          .replaceAll('{{negocio}}', tenantName)
+                          .replaceAll('{{especialista}}', appointment.specialist || 'Especialista')
+                      : `✅ Cita Confirmada: ${appointment.serviceName || appointment.title} en ${tenantName}`}
                   </div>
                 </div>
 
@@ -361,7 +370,13 @@ export const AppointmentConfirmationEmailModal = ({
                   {/* Mensaje de Bienvenida */}
                   <div className="space-y-1.5">
                     <p className="text-sm font-bold text-[var(--text-main)]">
-                      ¡Hola, {appointment.client}! Tu cita ha sido agendada con éxito.
+                      {emailConfig?.welcomeMessage
+                        ? emailConfig.welcomeMessage
+                            .replaceAll('{{cliente}}', appointment.client || 'Cliente')
+                            .replaceAll('{{servicio}}', appointment.serviceName || appointment.title || 'Servicio')
+                            .replaceAll('{{negocio}}', tenantName)
+                            .replaceAll('{{especialista}}', appointment.specialist || 'Especialista')
+                        : `¡Hola, ${appointment.client}! Tu cita ha sido agendada con éxito.`}
                     </p>
                     <p className="text-xs text-[var(--text-muted)] leading-relaxed">
                       Hemos reservado y bloqueado tu horario en nuestra agenda oficial. A continuación encuentras la ficha técnica y los botones directos para integrarla a tu Google Calendar o calendario en tu celular.
@@ -425,53 +440,56 @@ export const AppointmentConfirmationEmailModal = ({
                       style={{ backgroundColor: accentColor }}
                     >
                       <Calendar className="w-4 h-4" />
-                      <span>Añadir a mi Google Calendar (Móvil / Web)</span>
+                      <span>{ctaButtonText}</span>
                       <ExternalLink className="w-3.5 h-3.5" />
                     </a>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={handleDownloadIcs}
-                        className="py-2 px-3 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] border border-[var(--border-color)] font-bold text-xs font-mono flex items-center justify-center gap-2 transition-all"
-                      >
-                        <Download className="w-3.5 h-3.5 text-blue-500" />
-                        <span>Descargar Archivo .ICS</span>
-                      </button>
+                      {emailConfig?.includeIcs !== false && (
+                        <button
+                          type="button"
+                          onClick={handleDownloadIcs}
+                          className="py-2 px-3 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] border border-[var(--border-color)] font-bold text-xs font-mono flex items-center justify-center gap-2 transition-all"
+                        >
+                          <Download className="w-3.5 h-3.5 text-blue-500" />
+                          <span>Descargar Archivo .ICS</span>
+                        </button>
+                      )}
 
-                      <button
-                        type="button"
-                        onClick={handleShareWhatsapp}
-                        className="py-2 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-bold text-xs font-mono flex items-center justify-center gap-2 transition-all"
-                      >
-                        <MessageCircle className="w-3.5 h-3.5" />
-                        <span>Enviar por WhatsApp</span>
-                      </button>
+                      {emailConfig?.includeWhatsapp !== false && (
+                        <button
+                          type="button"
+                          onClick={handleShareWhatsapp}
+                          className="py-2 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-bold text-xs font-mono flex items-center justify-center gap-2 transition-all"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          <span>Enviar por WhatsApp</span>
+                        </button>
+                      )}
                     </div>
                   </div>
 
                   {/* Archivo Adjunto Simulado */}
-                  <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-between text-xs font-mono">
-                    <div className="flex items-center gap-2 text-[var(--text-main)]">
-                      <Paperclip className="w-4 h-4 text-neon" />
-                      <div>
-                        <span className="block font-bold">confirmacion-cita-{appointment.id}.ics</span>
-                        <span className="text-[10px] text-[var(--text-muted)]">
-                          Archivo iCalendar estándar compatible con Android, iPhone y Outlook
-                        </span>
+                  {emailConfig?.includeIcs !== false && (
+                    <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-between text-xs font-mono">
+                      <div className="flex items-center gap-2 text-[var(--text-main)]">
+                        <Paperclip className="w-4 h-4 text-neon" />
+                        <div>
+                          <span className="block font-bold">confirmacion-cita-{appointment.id}.ics</span>
+                          <span className="text-[10px] text-[var(--text-muted)]">
+                            Archivo iCalendar estándar compatible con Android, iPhone y Outlook
+                          </span>
+                        </div>
                       </div>
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">
+                        Adjunto
+                      </span>
                     </div>
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">
-                      Adjunto
-                    </span>
-                  </div>
+                  )}
 
                   {/* Footer & Políticas */}
                   <div className="pt-3 border-t border-[var(--border-color)] text-center text-[10px] text-[var(--text-muted)] font-mono space-y-1">
-                    <p>
-                      {emailConfig?.cancellationPolicy ||
-                        'Puedes cancelar o reprogramar sin costo notificando con al menos 24 horas de antelación.'}
-                    </p>
+                    <p>{cancellationPolicy}</p>
                     <p className="opacity-80">
                       © 2026 {tenantName} • Confirmación generada por Vector Inside OS
                     </p>
