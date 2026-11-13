@@ -2259,6 +2259,20 @@ export const RAGWizard = ({
       inviolableRules: wizardData.inviolableRules || [],
       buyerPersona: wizardData.buyerPersona || null,
       marketingMix4P: wizardData.marketingMix4P || null,
+      calendarId: wizardData.googleCalendarId || `c_${tenantSlug}_agenda@group.calendar.google.com`,
+      calendarConfig: {
+        googleCalendarId: wizardData.googleCalendarId || `c_${tenantSlug}_agenda@group.calendar.google.com`,
+        slotDurationMin: wizardData.appointmentDuration || 45,
+        shifts: Array.isArray(wizardData.shifts) ? wizardData.shifts : [],
+        concurrencyLimit: wizardData.concurrencyLimit || 1,
+        activeDays: wizardData.activeDays || ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'],
+      },
+      systemPrompt: (vert.id === 'b2b' || tenantSlug.includes('vector'))
+        ? `Eres el Asistente Ejecutivo de ${wizardData.businessName}. Tu objetivo es calificar requerimientos comerciales con precisión y criterio estratégico, responder con autoridad técnica y visión de negocio, y guiar al tomador de decisión a ${wizardData.offerCta || 'agendar su Discovery Call estratégica'}.${wizardData.brandPurpose ? ` Propósito rector: ${wizardData.brandPurpose}` : ''}`
+        : `Eres el Asistente Inteligente de ${wizardData.businessName}. Tu objetivo es atender con profesionalismo y agilidad, resolver consultas sobre productos y servicios y guiar al usuario a ${wizardData.offerCta || 'agendar su cita o llamada de atención'}.`,
+      followUpMessage: (vert.id === 'b2b' || tenantSlug.includes('vector'))
+        ? `¡Hola! Vimos que revisaste ${wizardData.offerHook || 'la propuesta de aceleración comercial con IA'} de ${wizardData.businessName}. Si te surgió alguna duda técnica o quieres evaluar cómo aplicaría a tu embudo antes de ${wizardData.offerCta || 'agendar la Discovery Call'}, dime y lo revisamos con gusto.`
+        : `¡Hola! Notamos que te interesó la información de ${wizardData.businessName}. ¿Tienes alguna duda puntual o te gustaría que coordinemos tu horario de atención?`,
       pillars: {
         pillar1: {
           enabled: wizardData.enablePricingPillar,

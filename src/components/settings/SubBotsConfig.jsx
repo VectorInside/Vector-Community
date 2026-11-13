@@ -139,6 +139,81 @@ const PROVIDER_CONFIGS = {
   },
 };
 
+/**
+ * Sintetizador Contextual de Prompts & Nurturing basado en el ADN de Marca
+ */
+export function generateTenantAdaptivePrompts(tenant) {
+  if (!tenant) return { prompt: '', followUp: '' };
+
+  const name = tenant.name || 'el Negocio';
+  const v = (tenant.vertical || tenant.verticalKey || '').toLowerCase();
+  const g = (tenant.giro || '').toLowerCase();
+  const n = name.toLowerCase();
+
+  const isB2B =
+    v === 'b2b' ||
+    g.includes('marketing') ||
+    g.includes('saas') ||
+    g.includes('consultor') ||
+    n.includes('vector');
+
+  const isClinic =
+    v === 'healthcare' ||
+    g.includes('médic') ||
+    g.includes('salud') ||
+    g.includes('dental') ||
+    g.includes('clínic');
+
+  const isFitness =
+    v === 'gym_fitness' ||
+    g.includes('gym') ||
+    g.includes('fitness');
+
+  const isHospitality =
+    v === 'hospitality' ||
+    g.includes('restaurant') ||
+    g.includes('gastro');
+
+  const hook = tenant.commercialOffer?.hook || tenant.offerHook || '';
+  const cta = tenant.commercialOffer?.cta || tenant.offerCta || '';
+  const purpose = tenant.brandPurpose || '';
+
+  if (isB2B) {
+    const resolvedCta = cta || 'agendar su Discovery Call estratégica';
+    const resolvedHook = hook || 'la propuesta de aceleración comercial con IA';
+    return {
+      prompt: `Eres el Asistente Ejecutivo de ${name}. Tu objetivo es calificar requerimientos comerciales con precisión y criterio estratégico, responder con autoridad técnica y visión de negocio, y guiar al tomador de decisión a ${resolvedCta}.${purpose ? ` Propósito rector: ${purpose}` : ''}`,
+      followUp: `¡Hola! Vimos que revisaste ${resolvedHook} de ${name}. Si te surgió alguna duda técnica o quieres evaluar cómo aplicaría a tu embudo antes de ${resolvedCta}, dime y lo revisamos con gusto.`,
+    };
+  }
+
+  if (isClinic) {
+    return {
+      prompt: `Eres el Asistente de Atención Médica de ${name}. Tu objetivo es brindar orientación cercana, empática y profesional, resolver dudas sobre tratamientos o estudios y coordinar la agenda de consulta médica o valoración.`,
+      followUp: `¡Hola! Notamos que consultaste información médica en ${name}. ¿Tienes alguna duda sobre los tratamientos o te gustaría verificar disponibilidad para tu valoración médica?`,
+    };
+  }
+
+  if (isFitness) {
+    return {
+      prompt: `Eres el Asesor de Entrenamiento y Bienestar de ${name}. Tu objetivo es motivar, resolver dudas sobre membresías e instalaciones y agendar su clase muestra o sesión de diagnóstico físico.`,
+      followUp: `¡Hola! Vimos que te interesaron los planes de entrenamiento de ${name}. ¿Te gustaría que te apartemos un horario para tu clase muestra gratuita?`,
+    };
+  }
+
+  if (isHospitality) {
+    return {
+      prompt: `Eres el Asistente de Hospitalidad de ${name}. Tu objetivo es atender con calidez, presentar el menú y promociones vigentes y asegurar la reservación de mesa del comensal.`,
+      followUp: `¡Hola! Notamos tu interés en reservar en ${name}. ¿Deseas que te reservemos una mesa para tu fecha especial?`,
+    };
+  }
+
+  return {
+    prompt: `Eres el Asistente Inteligente de ${name}. Tu objetivo es atender con profesionalismo y agilidad, resolver consultas sobre productos y servicios y guiar al prospecto a agendar su cita o llamada de atención.`,
+    followUp: `¡Hola! Notamos que te interesó la información de ${name}. ¿Tienes alguna duda puntual o te gustaría que coordinemos tu horario de atención?`,
+  };
+}
+
 export const SubBotsConfig = () => {
   const {
     isAdmin,
@@ -164,6 +239,41 @@ export const SubBotsConfig = () => {
 
   const tenantId = currentTenant?.id || null;
 
+  // Detección contextual de vertical para vocabulario dinámico
+  const isB2B = useMemo(() => {
+    const v = (currentTenant?.vertical || currentTenant?.verticalKey || '').toLowerCase();
+    const g = (currentTenant?.giro || '').toLowerCase();
+    const n = (currentTenant?.name || '').toLowerCase();
+    return (
+      v === 'b2b' ||
+      g.includes('marketing') ||
+      g.includes('saas') ||
+      g.includes('consultor') ||
+      n.includes('vector')
+    );
+  }, [currentTenant]);
+
+  const slotDurationLabel = useMemo(() => {
+    const v = (currentTenant?.vertical || currentTenant?.verticalKey || '').toLowerCase();
+    const g = (currentTenant?.giro || '').toLowerCase();
+    if (isB2B) return 'Duración de Reunión / Discovery Call (Minutos)';
+    if (v === 'healthcare' || g.includes('médic') || g.includes('salud') || g.includes('dental') || g.includes('clínic')) {
+      return 'Duración de Consulta Médica (Minutos)';
+    }
+    if (v === 'gym_fitness' || g.includes('fitness') || g.includes('gym')) {
+      return 'Duración de Sesión / Clase (Minutos)';
+    }
+    if (v === 'hospitality' || g.includes('restaurant')) {
+      return 'Duración de Reserva / Mesa (Minutos)';
+    }
+    return 'Duración de Cita / Sesión (Minutos)';
+  }, [currentTenant, isB2B]);
+
+  const slotDurationHelper = useMemo(() => {
+    if (isB2B) return 'Tiempo reservado en Google Calendar / Meet para la Discovery Call.';
+    return 'Tiempo que el bot aparta por cita en la agenda.';
+  }, [isB2B]);
+
   // Configuración técnica y operativa
   const [config, setConfig] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -176,6 +286,26 @@ export const SubBotsConfig = () => {
     anthropic: false,
     groq: false,
   });
+
+  // Sincronizar copies de asistente y nurturing con el ADN de la marca
+  const handleSyncWithBrandDna = () => {
+    const adaptive = generateTenantAdaptivePrompts(currentTenant);
+    setConfig((prev) => ({
+      ...prev,
+      systemPrompt: adaptive.prompt,
+      followUp: {
+        ...prev.followUp,
+        messageTemplate: adaptive.followUp,
+      },
+    }));
+    try {
+      confetti({
+        particleCount: 45,
+        spread: 60,
+        colors: ['#E7F900', '#00FFFF', '#FFFFFF'],
+      });
+    } catch (e) {}
+  };
 
   // Estado de pruebas de latencia de API (Ping)
   const [pingStatus, setPingStatus] = useState({
@@ -203,27 +333,49 @@ export const SubBotsConfig = () => {
 
         const slotMin =
           currentTenant?.calendarConfig?.slotDurationMin ||
+          currentTenant?.appointmentDuration ||
           storedConfig?.service_appointments?.defaultAppointmentDurationMin ||
-          (currentTenant?.vertical === 'hospitality' ? 90 : 45);
+          (isB2B ? 45 : currentTenant?.vertical === 'hospitality' ? 90 : 30);
 
         const googleCalId =
+          currentTenant?.calendarConfig?.googleCalendarId ||
           currentTenant?.calendarId ||
           storedConfig?.service_appointments?.googleCalendarId ||
           `c_${tenantId}_agenda@group.calendar.google.com`;
 
-        const workingHoursText =
-          currentTenant?.calendarConfig?.shifts
-            ? currentTenant.calendarConfig.shifts.map((s) => `${s.name}: ${s.start} - ${s.end}`).join(' | ')
-            : storedConfig?.service_appointments?.workingHours || 'Lun-Vie 09:00 - 19:00 | Sáb 09:00 - 14:00';
+        const shifts = currentTenant?.calendarConfig?.shifts || currentTenant?.shifts;
+        const hasCustomShifts = Array.isArray(shifts) && shifts.length > 0;
+        const workingHoursText = hasCustomShifts
+          ? shifts.map((s) => `${s.name || 'Turno'}: ${s.start} - ${s.end}`).join(' | ')
+          : (storedConfig?.service_appointments?.workingHours && !storedConfig.service_appointments.workingHours.includes('09:00 - 19:00'))
+          ? storedConfig.service_appointments.workingHours
+          : 'Atención Digital 24/7 (Sin turnos restringidos)';
+
+        const adaptivePrompts = generateTenantAdaptivePrompts(currentTenant);
+
+        const isLegacyPrompt = (p) =>
+          !p ||
+          p.includes('confirmar su reservación') ||
+          p.includes('atender con cordialidad, resolver dudas sobre los servicios y guiar al usuario para agendar su cita o confirmar su reservación');
+
+        const isLegacyFollowUp = (m) =>
+          !m ||
+          m.includes('pero no alcanzamos a confirmar tu fecha') ||
+          m.includes('Notamos que te interesó nuestra información en');
 
         const defaultPrompt =
-          currentTenant?.systemPrompt ||
-          storedConfig?.systemPrompt ||
-          `Eres el Asistente Inteligente de ${currentTenant.name}. Tu objetivo es atender con cordialidad, resolver dudas sobre los servicios y guiar al usuario para agendar su cita o confirmar su reservación.`;
+          currentTenant?.systemPrompt && !isLegacyPrompt(currentTenant.systemPrompt)
+            ? currentTenant.systemPrompt
+            : storedConfig?.systemPrompt && !isLegacyPrompt(storedConfig.systemPrompt)
+            ? storedConfig.systemPrompt
+            : adaptivePrompts.prompt;
 
         const defaultFollowUpMessage =
-          storedConfig?.followUp?.messageTemplate ||
-          `¡Hola! Notamos que te interesó nuestra información en ${currentTenant.name} pero no alcanzamos a confirmar tu fecha. ¿Tienes alguna duda puntual que podamos resolverte de inmediato?`;
+          currentTenant?.followUpMessage && !isLegacyFollowUp(currentTenant.followUpMessage)
+            ? currentTenant.followUpMessage
+            : storedConfig?.followUp?.messageTemplate && !isLegacyFollowUp(storedConfig.followUp.messageTemplate)
+            ? storedConfig.followUp.messageTemplate
+            : adaptivePrompts.followUp;
 
         setConfig({
           isAiActive: currentTenant.isAiActive ?? true,
@@ -234,7 +386,7 @@ export const SubBotsConfig = () => {
           temperature:
             currentTenant.temperature ??
             storedConfig?.temperature ??
-            (currentTenant.vertical === 'service_appointments' ? 0.2 : 0.35),
+            (isB2B ? 0.35 : currentTenant.vertical === 'service_appointments' ? 0.2 : 0.35),
           systemPrompt: defaultPrompt,
           useCustomKeys: storedConfig?.useCustomKeys ?? false,
           apiKeys: {
@@ -252,7 +404,9 @@ export const SubBotsConfig = () => {
             calendarSyncEnabled: true,
             slotDurationMin: slotMin,
             bufferBetweenAppointmentsMin:
-              storedConfig?.service_appointments?.bufferBetweenAppointmentsMin || 15,
+              currentTenant?.calendarConfig?.bufferBetweenAppointmentsMin ??
+              storedConfig?.service_appointments?.bufferBetweenAppointmentsMin ??
+              (isB2B ? 15 : 0),
             workingHours: workingHoursText,
             concurrencyLimit: currentTenant?.calendarConfig?.concurrencyLimit || 1,
           },
@@ -277,7 +431,7 @@ export const SubBotsConfig = () => {
     };
 
     loadTenantBotConfig();
-  }, [currentTenant, tenantId]);
+  }, [currentTenant, tenantId, isB2B]);
 
   // Probar latencia y validez de API Key contra el backend
   const handlePingTest = async (providerKey) => {
@@ -395,9 +549,13 @@ export const SubBotsConfig = () => {
           activeModel: config.activeModel,
           temperature: config.temperature,
           systemPrompt: config.systemPrompt,
+          followUpMessage: config.followUp?.messageTemplate,
           calendarConfig: {
             ...currentTenant.calendarConfig,
+            googleCalendarId: config.calendar.googleCalendarId,
             slotDurationMin: config.calendar.slotDurationMin,
+            bufferBetweenAppointmentsMin: config.calendar.bufferBetweenAppointmentsMin,
+            workingHours: config.calendar.workingHours,
           },
         });
       }
@@ -606,7 +764,7 @@ export const SubBotsConfig = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
-                  Duración de Consulta / Cita (Minutos)
+                  {slotDurationLabel}
                 </label>
                 <div className="relative">
                   <input
@@ -630,7 +788,7 @@ export const SubBotsConfig = () => {
                   </span>
                 </div>
                 <p className="text-[10px] text-[var(--text-muted)] font-mono mt-1">
-                  Tiempo que el bot aparta por cita en la agenda.
+                  {slotDurationHelper}
                 </p>
               </div>
 
@@ -643,7 +801,7 @@ export const SubBotsConfig = () => {
                     type="number"
                     min="0"
                     step="5"
-                    value={config?.calendar?.bufferBetweenAppointmentsMin || 15}
+                    value={config?.calendar?.bufferBetweenAppointmentsMin ?? 0}
                     onChange={(e) =>
                       setConfig({
                         ...config,
@@ -660,7 +818,7 @@ export const SubBotsConfig = () => {
                   </span>
                 </div>
                 <p className="text-[10px] text-[var(--text-muted)] font-mono mt-1">
-                  Minutos libres entre citas para evitar retrasos.
+                  {isB2B ? 'Minutos libres de preparación previa/posterior a la Discovery Call (0 = sin descanso).' : 'Minutos libres entre citas para evitar retrasos.'}
                 </p>
               </div>
 
@@ -705,22 +863,38 @@ export const SubBotsConfig = () => {
                   }
                   className="w-full bg-[var(--bg-base)] border border-[var(--border-color)] rounded-xl px-3.5 py-2 text-xs text-[var(--text-main)] focus:border-neon font-mono focus:outline-none"
                 />
+                <p className="text-[10px] text-[var(--text-muted)] font-mono mt-1">
+                  {config?.calendar?.workingHours?.includes('24/7')
+                    ? 'El bot atiende y califica prospectos 24/7 en WhatsApp y Web. Sin restricciones de turnos presenciales.'
+                    : 'Turnos operativos sincronizados con la oferta de slots en Google Calendar.'}
+                </p>
               </div>
             </div>
           </div>
 
           {/* MÓDULO 2: SEGUIMIENTO AUTOMÁTICO (NURTURING) */}
           <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-4">
-            <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[var(--border-color)] pb-3 gap-2">
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-amber-500" />
                 <h3 className="text-sm font-bold text-[var(--text-main)] uppercase tracking-wide font-mono">
                   2. Seguimiento Automático de Prospectos (Nurturing)
                 </h3>
               </div>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30 font-bold">
-                Recuperación +32%
-              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleSyncWithBrandDna}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-neon/15 hover:bg-neon/25 text-neon font-mono text-[10px] font-bold border border-neon/30 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                  title="Sincronizar el mensaje con el tono y oferta del Perfil de Marca"
+                >
+                  <Sparkles className="w-3 h-3 text-neon" />
+                  <span>Sincronizar con ADN</span>
+                </button>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30 font-bold">
+                  Recuperación +32%
+                </span>
+              </div>
             </div>
 
             <p className="text-xs text-[var(--text-muted)] leading-relaxed">
@@ -794,20 +968,31 @@ export const SubBotsConfig = () => {
 
           {/* MÓDULO 3: DIRECTRIZ DE COMPORTAMIENTO & TONO */}
           <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-4">
-            <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[var(--border-color)] pb-3 gap-2">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-neon" />
                 <h3 className="text-sm font-bold text-[var(--text-main)] uppercase tracking-wide font-mono">
                   3. Directriz de Comportamiento & Estilo
                 </h3>
               </div>
-              <span className="text-[10px] font-mono font-bold text-neon">
-                {config?.temperature <= 0.2
-                  ? '0.2 (Preciso & Estricto)'
-                  : config?.temperature <= 0.4
-                  ? '0.35 (Equilibrado)'
-                  : '0.6 (Creativo & Comercial)'}
-              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleSyncWithBrandDna}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-neon/15 hover:bg-neon/25 text-neon font-mono text-[10px] font-bold border border-neon/30 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                  title="Sincronizar la instrucción del asistente con el propósito y tono del Perfil de Marca"
+                >
+                  <Sparkles className="w-3 h-3 text-neon" />
+                  <span>Sincronizar con ADN</span>
+                </button>
+                <span className="text-[10px] font-mono font-bold text-neon">
+                  {config?.temperature <= 0.2
+                    ? '0.2 (Preciso & Estricto)'
+                    : config?.temperature <= 0.4
+                    ? '0.35 (Equilibrado)'
+                    : '0.6 (Creativo & Comercial)'}
+                </span>
+              </div>
             </div>
 
             <div>
