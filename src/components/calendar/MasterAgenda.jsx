@@ -1010,20 +1010,20 @@ export const MasterAgenda = () => {
   const estimatedDayRevenue = dayAppointments.reduce((acc, curr) => acc + (curr.estimatedValue || 1200), 0);
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 block animate-fade-in space-y-6 max-w-7xl mx-auto font-sans">
+    <div className="w-full max-w-[1780px] mx-auto p-3 sm:p-5 lg:p-7 block animate-fade-in space-y-4 sm:space-y-5 font-sans">
       {/* ========================================================================= */}
       {/* 1. TOP HERO: GOOGLE CALENDAR 2-WAY SYNC BANNER                            */}
       {/* ========================================================================= */}
-      <div className="p-6 rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] shadow-2xl backdrop-blur-xl flex flex-col md:flex-row md:items-center justify-between gap-5 relative overflow-hidden">
+      <div className="p-4 sm:p-5 lg:p-6 rounded-2xl sm:rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] shadow-xl backdrop-blur-xl flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative overflow-hidden">
         <div className="absolute -top-16 -right-16 w-64 h-64 bg-neon/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="flex items-center gap-4 relative z-10">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-neon/20 via-neon/5 to-transparent border border-neon/30 flex items-center justify-center text-neon shadow-neon-sm">
-            <CalendarIcon className="w-6 h-6" />
+        <div className="flex items-center gap-3 sm:gap-4 relative z-10">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-neon/20 via-neon/5 to-transparent border border-neon/30 flex items-center justify-center text-neon shadow-neon-sm shrink-0">
+            <CalendarIcon className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
           <div>
-            <div className="flex flex-wrap items-center gap-2.5">
-              <h2 className="text-2xl font-black text-[var(--text-main)] tracking-tight uppercase">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-xl sm:text-2xl font-black text-[var(--text-main)] tracking-tight uppercase">
                 Master <span className="text-neon">Agenda</span>
               </h2>
               <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold flex items-center gap-1.5">
@@ -1032,13 +1032,13 @@ export const MasterAgenda = () => {
               </span>
               <span
                 suppressHydrationWarning
-                className="px-2.5 py-0.5 rounded-full bg-neon/10 text-lime-700 dark:text-neon border border-neon/30 text-[10px] font-mono font-bold flex items-center gap-1.5"
+                className="px-2 py-0.5 rounded-full bg-neon/10 text-lime-700 dark:text-neon border border-neon/30 text-[10px] font-mono font-bold flex items-center gap-1.5"
               >
                 <Clock className="w-3 h-3" />
                 Tiempo Real CDMX: {liveTimeFormatted} hrs • {todayIsoStr}
               </span>
             </div>
-            <p className="text-xs text-[var(--text-muted)] mt-0.5 flex flex-wrap items-center gap-2 font-mono">
+            <p className="text-xs text-[var(--text-muted)] mt-0.5 flex flex-wrap items-center gap-1.5 sm:gap-2 font-mono">
               <span>Negocio activo:</span>
               <strong className="text-[var(--text-main)]">{activeTenant?.name || 'Sin negocio seleccionado'}</strong>
               <span className="text-[var(--text-muted)]">•</span>
@@ -1047,35 +1047,35 @@ export const MasterAgenda = () => {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5 relative z-10">
+        <div className="flex flex-wrap items-center gap-2 relative z-10">
           <button
             type="button"
             onClick={() => setShowMobileSyncModal(true)}
-            className="px-3.5 py-2.5 rounded-xl bg-neon text-black font-bold text-xs flex items-center gap-2 shadow-[0_0_15px_var(--neon-glow)] hover:scale-105 active:scale-95 transition-all border border-neon/50"
+            className="px-3 py-2 rounded-xl bg-neon text-black font-bold text-xs flex items-center gap-1.5 shadow-[0_0_15px_var(--neon-glow)] hover:scale-102 active:scale-98 transition-all border border-neon/50 shrink-0"
             title="Ver en tu celular con Código QR y sincronizar con Google Calendar"
           >
-            <Smartphone className="w-4 h-4" />
+            <Smartphone className="w-3.5 h-3.5" />
             <span>Ver en Celular & Google Calendar</span>
           </button>
 
           <button
             type="button"
             onClick={() => setShowConfigModal(true)}
-            className="px-3.5 py-2.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] border border-neon/50 hover:border-neon text-xs font-mono font-bold flex items-center gap-2 transition-all shadow-sm hover:shadow-neon-sm"
+            className="px-3 py-2 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] border border-neon/50 hover:border-neon text-xs font-mono font-bold flex items-center gap-1.5 transition-all shadow-sm hover:shadow-neon-sm shrink-0"
             title="Personalizar turnos, duración de citas, descansos y membrete de correo"
           >
-            <Settings2 className="w-4 h-4 text-neon" />
+            <Settings2 className="w-3.5 h-3.5 text-neon" />
             <span>Personalizar Agenda & Turnos</span>
           </button>
 
           <Button
             variant="primary"
-            size="md"
+            size="sm"
             icon={RefreshCw}
             loading={syncing}
             disabled={syncing}
             onClick={handleSyncGoogleCalendar}
-            className="shadow-neon-sm"
+            className="shadow-neon-sm text-xs shrink-0"
           >
             {syncing ? 'Sincronizando...' : 'Sincronizar Google Calendar'}
           </Button>
@@ -1083,8 +1083,8 @@ export const MasterAgenda = () => {
       </div>
 
       {syncMessage && (
-        <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-mono flex items-center gap-3 animate-fadeIn shadow-lg">
-          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+        <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-mono flex items-center gap-3 animate-fadeIn shadow-lg">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
           <span className="font-semibold">{syncMessage}</span>
         </div>
       )}
@@ -1092,64 +1092,64 @@ export const MasterAgenda = () => {
       {/* ========================================================================= */}
       {/* 2. BARRA DE CONTROL: SWITCHER DE VISTAS & FILTROS                          */}
       {/* ========================================================================= */}
-      <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
-        {/* Selector de Vistas Segmentado */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)]">
+      <div className="p-3 sm:p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-sm">
+        {/* Selector de Vistas Segmentado con scroll horizontal táctil */}
+        <div className="flex items-center gap-1 p-1 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] overflow-x-auto no-scrollbar shrink-0">
           <button
             type="button"
             onClick={() => setViewMode('month')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shrink-0 ${
               viewMode === 'month'
                 ? 'bg-neon text-black font-bold shadow-[0_0_10px_var(--neon-glow)]'
                 : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
             }`}
           >
             <CalendarIcon className="w-3.5 h-3.5" />
-            <span suppressHydrationWarning>🗓️ Mes Completo ({activeMonthName})</span>
+            <span suppressHydrationWarning>Mes Completo ({activeMonthName})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setViewMode('grid')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shrink-0 ${
               viewMode === 'grid'
                 ? 'bg-neon text-black font-bold shadow-[0_0_10px_var(--neon-glow)]'
                 : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
-            <span>⏱️ Detalle del Día & Turnos</span>
+            <span>Detalle del Día & Turnos</span>
           </button>
 
           <button
             type="button"
             onClick={() => setViewMode('week_table')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shrink-0 ${
               viewMode === 'week_table'
                 ? 'bg-neon text-black font-bold shadow-[0_0_10px_var(--neon-glow)]'
                 : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
             }`}
           >
             <CalendarDays className="w-3.5 h-3.5" />
-            <span suppressHydrationWarning>📅 Semana {currentWeekNumber}</span>
+            <span suppressHydrationWarning>Semana {currentWeekNumber}</span>
           </button>
 
           <button
             type="button"
             onClick={() => setViewMode('list')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shrink-0 ${
               viewMode === 'list'
                 ? 'bg-neon text-black font-bold shadow-[0_0_10px_var(--neon-glow)]'
                 : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
             }`}
           >
             <List className="w-3.5 h-3.5" />
-            <span>📋 Lista Resumen</span>
+            <span>Lista Resumen</span>
           </button>
         </div>
 
         {/* Filtros de Estado */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           <span className="text-xs text-[var(--text-muted)] font-mono hidden sm:inline">Filtrar Citas:</span>
           {[
             { id: 'ALL', label: 'Todas' },
@@ -1160,7 +1160,7 @@ export const MasterAgenda = () => {
               key={st.id}
               type="button"
               onClick={() => setFilterStatus(st.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 filterStatus === st.id
                   ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white font-bold border border-zinc-300 dark:border-zinc-700 shadow-sm'
                   : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
@@ -1176,27 +1176,27 @@ export const MasterAgenda = () => {
       {/* 2.5 VISTA MES COMPLETO (SINCRONIZADO EN TIEMPO REAL Y HORA REAL)          */}
       {/* ========================================================================= */}
       {viewMode === 'month' && (
-        <div className="rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-6 space-y-6 animate-fadeIn shadow-2xl">
+        <div className="rounded-2xl sm:rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-3.5 sm:p-5 lg:p-6 space-y-3.5 sm:space-y-4 animate-fadeIn shadow-2xl">
           {/* Cabecera del Mes */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-[var(--border-color)] gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 sm:pb-4 border-b border-[var(--border-color)] gap-3">
             <div>
-              <div className="flex items-center gap-3">
-                <span className="p-2.5 rounded-2xl bg-neon/15 text-lime-700 dark:text-neon border border-neon/30">
-                  <CalendarIcon className="w-5 h-5" />
+              <div className="flex items-center gap-2.5">
+                <span className="p-2 rounded-xl bg-neon/15 text-lime-700 dark:text-neon border border-neon/30 shrink-0">
+                  <CalendarIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                 </span>
                 <div>
-                  <h3 className="text-lg font-bold text-[var(--text-main)] flex flex-wrap items-center gap-2">
+                  <h3 className="text-base sm:text-lg font-bold text-[var(--text-main)] flex flex-wrap items-center gap-2">
                     <span suppressHydrationWarning>
                       {activeMonthName} {activeYear}
                     </span>
                     <span
                       suppressHydrationWarning
-                      className="text-xs font-mono font-normal px-2.5 py-0.5 rounded-full bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-muted)]"
+                      className="text-[11px] font-mono font-normal px-2 py-0.5 rounded-full bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-muted)]"
                     >
-                      {daysInMonth} Días • Sincronizado en Tiempo Real ({liveTimeFormatted} hrs)
+                      {daysInMonth} Días • Tiempo Real ({liveTimeFormatted} hrs)
                     </span>
                   </h3>
-                  <p className="text-xs text-[var(--text-muted)] font-mono mt-0.5">
+                  <p className="text-[11px] sm:text-xs text-[var(--text-muted)] font-mono mt-0.5">
                     Negocio: <strong>{activeTenant?.name || 'Sin negocio seleccionado'}</strong> • Haz clic en cualquier día para hacer <strong>Zoom</strong> a sus horarios y citas.
                   </p>
                 </div>
@@ -1231,13 +1231,13 @@ export const MasterAgenda = () => {
                 </button>
               </div>
 
-              <span className="text-xs font-mono px-3 py-1.5 rounded-xl bg-neon/15 text-lime-800 dark:text-neon border border-neon/30 font-bold">
+              <span className="text-[11px] sm:text-xs font-mono px-3 py-1.5 rounded-xl bg-neon/15 text-lime-800 dark:text-neon border border-neon/30 font-bold">
                 {filteredAppointments.length} Citas del Mes
               </span>
               <button
                 type="button"
                 onClick={() => setShowMobileSyncModal(true)}
-                className="px-3.5 py-1.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-xs font-mono font-bold text-[var(--text-main)] flex items-center gap-1.5 transition-all"
+                className="px-3 py-1.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[11px] sm:text-xs font-mono font-bold text-[var(--text-main)] flex items-center gap-1.5 transition-all"
               >
                 <Smartphone className="w-3.5 h-3.5 text-neon" />
                 <span>Móvil Sync</span>
@@ -1246,7 +1246,7 @@ export const MasterAgenda = () => {
           </div>
 
           {/* Días de la semana Header (Lunes a Domingo) */}
-          <div className="grid grid-cols-7 gap-2 text-center text-xs font-mono font-bold uppercase tracking-wider text-[var(--text-muted)] pb-2 border-b border-[var(--border-color)]">
+          <div className="grid grid-cols-7 gap-1 sm:gap-1.5 lg:gap-2.5 text-center text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider text-[var(--text-muted)] pb-1.5 border-b border-[var(--border-color)]">
             <span className="text-lime-700 dark:text-neon">Lun</span>
             <span>Mar</span>
             <span>Mié</span>
@@ -1256,18 +1256,18 @@ export const MasterAgenda = () => {
             <span className="text-rose-500/80">Dom</span>
           </div>
 
-          {/* Grilla Dinámica del Mes Actual */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2.5">
+          {/* Grilla Dinámica del Mes Actual - SIEMPRE 7 COLUMNAS ESTRICTAS PARA PRESERVAR EL FORMATO DE CALENDARIO */}
+          <div className="grid grid-cols-7 gap-1 sm:gap-1.5 lg:gap-2">
             {/* Días previos del mes anterior para alinear el Lunes */}
             {Array.from({ length: leadingBlankDays }, (_, idx) => {
               const d = prevMonthDaysCount - leadingBlankDays + idx + 1;
               return (
                 <div
                   key={`prev-${d}`}
-                  className="min-h-[105px] p-2.5 rounded-2xl bg-[var(--bg-base)]/40 border border-dashed border-[var(--border-color)]/40 opacity-30 select-none flex flex-col justify-between"
+                  className="min-h-[58px] sm:min-h-[72px] lg:min-h-[80px] p-1.5 sm:p-2 rounded-xl sm:rounded-2xl bg-[var(--bg-base)]/40 border border-dashed border-[var(--border-color)]/30 opacity-25 select-none flex flex-col justify-between"
                 >
-                  <span className="text-xs font-mono font-bold text-[var(--text-muted)]">{d}</span>
-                  <span className="text-[9px] font-mono text-[var(--text-muted)]">
+                  <span className="text-[11px] sm:text-xs font-mono font-bold text-[var(--text-muted)]">{d}</span>
+                  <span className="text-[8px] sm:text-[9px] font-mono text-[var(--text-muted)] truncate">
                     {MONTH_NAMES_ES[prevMonthIndex]}
                   </span>
                 </div>
@@ -1307,7 +1307,7 @@ export const MasterAgenda = () => {
                     setSelectedDay(dayId);
                     setViewMode('grid');
                   }}
-                  className={`min-h-[115px] p-3 rounded-2xl border flex flex-col justify-between cursor-pointer transition-all duration-200 group relative overflow-hidden ${
+                  className={`min-h-[58px] sm:min-h-[72px] lg:min-h-[82px] p-1.5 sm:p-2 rounded-xl sm:rounded-2xl border flex flex-col justify-between cursor-pointer transition-all duration-200 group relative overflow-hidden ${
                     isSelected
                       ? 'bg-neon/15 border-neon shadow-[0_0_20px_var(--neon-glow)] ring-2 ring-neon/40'
                       : isToday
@@ -1321,10 +1321,10 @@ export const MasterAgenda = () => {
                   title={`Haz clic para ver el detalle del ${dayNum} de ${activeMonthName} ${activeYear}`}
                 >
                   {/* Encabezado del número de día */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
+                  <div className="flex items-center justify-between gap-1">
+                    <div className="flex items-center gap-1">
                       <span
-                        className={`text-sm font-mono font-black ${
+                        className={`text-xs sm:text-sm font-mono font-black ${
                           isToday || hasApts
                             ? 'text-neon'
                             : 'text-[var(--text-main)] group-hover:text-neon transition-colors'
@@ -1333,54 +1333,56 @@ export const MasterAgenda = () => {
                         {dayNum}
                       </span>
                       {isToday && (
-                        <span className="px-1.5 py-0.5 rounded bg-neon text-black text-[8px] font-mono font-black uppercase">
+                        <span className="px-1 py-0.2 rounded bg-neon text-black text-[7px] sm:text-[8px] font-mono font-black uppercase tracking-tight">
                           HOY
                         </span>
                       )}
                     </div>
                     {hasApts ? (
-                      <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-mono font-bold flex items-center gap-1 border border-emerald-500/30">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="px-1 sm:px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-400 text-[9px] sm:text-[10px] font-mono font-bold flex items-center gap-1 border border-emerald-500/30 shrink-0">
+                        <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                         {aptsOnThisDay.length}
                       </span>
                     ) : !activeTenant ? (
-                      <span className="text-[9px] font-mono text-[var(--text-muted)]">Sin negocio</span>
+                      <span className="text-[8px] sm:text-[9px] font-mono text-[var(--text-muted)] hidden sm:inline">Sin negocio</span>
                     ) : !isOperating ? (
-                      <span className="text-[9px] font-mono text-[var(--text-muted)]">Cerrado</span>
+                      <span className="text-[8px] sm:text-[9px] font-mono text-[var(--text-muted)] hidden sm:inline">Cerrado</span>
                     ) : null}
                   </div>
 
                   {/* Citas preview dentro del día */}
-                  <div className="space-y-1 my-1">
-                    {aptsOnThisDay.slice(0, 2).map((apt) => (
-                      <div
-                        key={apt.id}
-                        className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--bg-panel)] border border-[var(--border-color)] text-[var(--text-main)] truncate"
-                        style={{ borderLeftColor: apt.serviceColor || '#3B82F6', borderLeftWidth: '2px' }}
-                      >
-                        <span className="font-bold text-neon mr-1">{apt.hour}</span>
-                        <span>{apt.client.split(' ')[0]}</span>
-                      </div>
-                    ))}
-                    {aptsOnThisDay.length > 2 && (
-                      <span className="text-[9px] font-mono text-[var(--text-muted)] block text-right">
-                        +{aptsOnThisDay.length - 2} más...
-                      </span>
-                    )}
-                  </div>
+                  {hasApts && (
+                    <div className="space-y-0.5 my-0.5">
+                      {aptsOnThisDay.slice(0, 2).map((apt) => (
+                        <div
+                          key={apt.id}
+                          className="text-[9px] font-mono px-1 py-0.2 rounded bg-[var(--bg-panel)] border border-[var(--border-color)] text-[var(--text-main)] truncate"
+                          style={{ borderLeftColor: apt.serviceColor || '#3B82F6', borderLeftWidth: '2px' }}
+                        >
+                          <span className="font-bold text-neon mr-1">{apt.hour}</span>
+                          <span className="hidden sm:inline">{apt.client.split(' ')[0]}</span>
+                        </div>
+                      ))}
+                      {aptsOnThisDay.length > 2 && (
+                        <span className="text-[8px] font-mono text-[var(--text-muted)] block text-right">
+                          +{aptsOnThisDay.length - 2} más
+                        </span>
+                      )}
+                    </div>
+                  )}
 
                   {/* Footer del día */}
-                  <div className="pt-1.5 border-t border-[var(--border-color)] flex items-center justify-between text-[10px] font-mono">
+                  <div className="pt-1 mt-auto border-t border-[var(--border-color)]/60 flex items-center justify-between text-[9px] sm:text-[10px] font-mono">
                     {hasApts ? (
-                      <span suppressHydrationWarning className="text-emerald-400 font-bold">
+                      <span suppressHydrationWarning className="text-emerald-400 font-bold truncate">
                         ${String(dayTotalRevenue).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                       </span>
                     ) : (
-                      <span className="text-[var(--text-muted)] text-[9px]">
-                        {!activeTenant ? 'Selecciona negocio' : isOperating ? 'Libre' : 'No opera'}
+                      <span className="text-[var(--text-muted)] text-[8px] sm:text-[9px] truncate">
+                        {!activeTenant ? 'Sin negocio' : isOperating ? 'Libre' : 'No opera'}
                       </span>
                     )}
-                    <span className="text-[9px] text-neon opacity-0 group-hover:opacity-100 font-bold transition-opacity">
+                    <span className="text-[8px] sm:text-[9px] text-neon opacity-0 group-hover:opacity-100 font-bold transition-opacity hidden sm:inline">
                       Zoom →
                     </span>
                   </div>
@@ -1392,10 +1394,10 @@ export const MasterAgenda = () => {
             {Array.from({ length: trailingBlankDays }, (_, idx) => (
               <div
                 key={`next-${idx + 1}`}
-                className="min-h-[105px] p-2.5 rounded-2xl bg-[var(--bg-base)]/40 border border-dashed border-[var(--border-color)]/40 opacity-30 select-none flex flex-col justify-between"
+                className="min-h-[58px] sm:min-h-[72px] lg:min-h-[80px] p-1.5 sm:p-2 rounded-xl sm:rounded-2xl bg-[var(--bg-base)]/40 border border-dashed border-[var(--border-color)]/30 opacity-25 select-none flex flex-col justify-between"
               >
-                <span className="text-xs font-mono font-bold text-[var(--text-muted)]">{idx + 1}</span>
-                <span className="text-[9px] font-mono text-[var(--text-muted)]">
+                <span className="text-[11px] sm:text-xs font-mono font-bold text-[var(--text-muted)]">{idx + 1}</span>
+                <span className="text-[8px] sm:text-[9px] font-mono text-[var(--text-muted)] truncate">
                   {MONTH_NAMES_ES[nextMonthIndex]}
                 </span>
               </div>
