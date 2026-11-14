@@ -44,6 +44,7 @@ import {
   Edit3,
   Heart,
   Share,
+  Trash2,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Badge } from '@/components/common/Badge';
@@ -114,6 +115,7 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
   const [copiedHookId, setCopiedHookId] = useState(null);
   const [previewPost, setPreviewPost] = useState(null);
   const [editingPost, setEditingPost] = useState(null);
+  const [postToDelete, setPostToDelete] = useState(null);
   const [selectedViralReel, setSelectedViralReel] = useState(null);
 
   // Estados asíncronos para operaciones reales con IA y Meta
@@ -492,6 +494,20 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
     }
     setEditingPost(null);
     triggerModal('Guion Actualizado', 'Los cambios en el título, gancho y copy han sido guardados con éxito.');
+  };
+
+  const confirmDeletePost = async () => {
+    if (!postToDelete) return;
+    const postId = postToDelete.id;
+    const updated = posts.filter((p) => p.id !== postId);
+    persistPosts(updated);
+    try {
+      await contentService.deletePost(postId);
+    } catch (e) {
+      console.warn('Error deleting post from backend:', e);
+    }
+    setPostToDelete(null);
+    triggerModal('Publicación Eliminada', 'La pieza editorial ha sido descartada y eliminada de la parrilla.');
   };
 
   const handleResetToCanonicalDna = () => {
@@ -1217,6 +1233,16 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
                         <span className="text-[10px] font-bold">{copiedPostId === post.id ? '¡Copiado!' : 'Copiar'}</span>
                       </button>
 
+                      {/* Eliminar Post */}
+                      <button
+                        type="button"
+                        onClick={() => setPostToDelete(post)}
+                        className="p-1.5 rounded-lg bg-[var(--bg-card-subtle)] hover:bg-rose-500/15 hover:border-rose-500/40 text-[var(--text-muted)] hover:text-rose-400 border border-[var(--border-color)] transition-colors"
+                        title="Descartar y eliminar publicación de la parrilla"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+
                       {/* Aprobar / Reabrir */}
                       {isPending ? (
                         <button
@@ -1918,6 +1944,64 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </Portal>
+      )}
+
+      {/* MODAL DE CONFIRMACIÓN DE ELIMINACIÓN */}
+      {postToDelete && (
+        <Portal>
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setPostToDelete(null);
+            }}
+          >
+            <div className="w-full max-w-md rounded-3xl bg-[var(--bg-panel)] border border-rose-500/40 shadow-2xl p-6 relative space-y-4 my-auto animate-scale-up">
+              <div className="flex items-center gap-3">
+                <span className="p-3 rounded-2xl bg-rose-500/15 text-rose-500 border border-rose-500/30 shrink-0">
+                  <Trash2 className="w-5 h-5" />
+                </span>
+                <div>
+                  <h3 className="text-base font-bold text-[var(--text-main)]">
+                    ¿Eliminar esta publicación?
+                  </h3>
+                  <p className="text-xs text-[var(--text-muted)] font-mono">
+                    La pieza se descartará y removerá de la parrilla editorial.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-xs font-mono space-y-1">
+                <span className="text-[10px] text-zinc-400 uppercase font-bold block">
+                  Pieza a descartar:
+                </span>
+                <p className="text-[var(--text-main)] font-bold truncate">
+                  {postToDelete.title}
+                </p>
+                <p className="text-[11px] text-[var(--text-muted)] italic truncate">
+                  "{postToDelete.hookText}"
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setPostToDelete(null)}
+                  className="px-4 py-2 rounded-xl bg-[var(--bg-card-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)] text-xs font-mono font-bold"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDeletePost}
+                  className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs font-mono shadow-md flex items-center gap-1.5 active:scale-95 transition-all"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Sí, Eliminar</span>
+                </button>
+              </div>
             </div>
           </div>
         </Portal>
