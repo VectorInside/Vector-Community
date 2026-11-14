@@ -63,11 +63,12 @@ export const aiService = {
   /**
    * Genera copys y sugerencias de contenido guiado por Brand DNA.
    */
-  async generateContent({ tenantId, topicPrompt, channel = 'INSTAGRAM', tone = 'DIRECTO' }) {
+  async generateContent({ tenantId, topicPrompt, targetNetwork = 'INSTAGRAM', postType = 'Reel 9:16', channel, tone }) {
     const response = await api.post('/ai/generate-content', {
       tenantId,
-      topicPrompt,
-      channel,
+      topicPrompt: topicPrompt || 'Promoción de oferta insignia y resolución de dolor del cliente',
+      targetNetwork: targetNetwork || channel || 'INSTAGRAM',
+      postType: postType || 'Reel 9:16',
       tone,
     });
     return unwrapApiData(response);

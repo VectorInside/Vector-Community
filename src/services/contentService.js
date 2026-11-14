@@ -72,6 +72,12 @@ export const contentService = {
     return normalizePostFromApi(unwrapApiData(response));
   },
 
+  async updatePost(postId, postData) {
+    const payload = serializePostToApi(postData);
+    const response = await api.put(`/posts/${postId}`, payload);
+    return normalizePostFromApi(unwrapApiData(response));
+  },
+
   async approvePost(postId) {
     const response = await api.patch(`/posts/${postId}/approve`);
     return normalizePostFromApi(unwrapApiData(response));

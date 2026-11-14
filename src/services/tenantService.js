@@ -285,6 +285,16 @@ export const tenantService = {
       }
     },
 
+  async updateCommercialOffer(id, commercialOffer) {
+      try {
+        const response = await api.put(`/tenants/${id}/commercial-offer`, commercialOffer);
+        return normalizeTenantFromApi(unwrapApiData(response));
+      } catch (error) {
+        console.warn(`[tenantService.updateCommercialOffer] Fallback for ${id}:`, error?.message);
+        return null;
+      }
+    },
+
   async getVerticalConfig(tenantId) {
       if (!isBackendAvailable) {
         return INITIAL_VERTICAL_CONFIGS[tenantId] || INITIAL_VERTICAL_CONFIGS['tenant-mex-001'];
