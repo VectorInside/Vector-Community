@@ -56,6 +56,7 @@ import confetti from 'canvas-confetti';
 import { Badge } from '@/components/common/Badge';
 import { Portal } from '@/components/common/Portal';
 import { SOCIAL_NETWORKS_CATALOG } from '@/utils/constants';
+import { resolveBrandPreset } from '@/utils/brandPresets';
 
 // Mapa seguro de iconos de formato (garantiza compatibilidad con persistencia JSON / SSR)
 const POST_TYPE_ICONS = {
@@ -93,8 +94,52 @@ const EMPTY_DNA = {
   tabooWords: '',
   icpPains: '',
   icpObjections: '',
-  leadMagnetHook: '',
-  leadMagnetCta: '',
+};
+
+export const getCanonicalDnaForTenant = (tenant) => {
+  const preset = resolveBrandPreset(tenant);
+  const tenantText = `${tenant?.name || ''} ${tenant?.id || ''} ${tenant?.giro || ''} ${tenant?.verticalLabel || ''}`.toLowerCase();
+  const isVector = tenantText.includes('vector');
+  const isMedical = tenantText.includes('médic') || tenantText.includes('medic') || tenantText.includes('dental') || tenantText.includes('clínic') || tenantText.includes('clinic');
+  const isFitness = tenantText.includes('fit') || tenantText.includes('gym') || tenantText.includes('crossfit');
+
+  if (isVector) {
+    return {
+      archetype: 'El Líder Estratégico & Autoridad Tecnológica (El Sabio / Lobo Vectorial)',
+      tone: 'Estratégico, analítico, tecnológico, directo y orientado al ROI y crecimiento predecible',
+      tabooWords: 'barato, gratis, promocioncita, dolor, milagroso, solución 360, sin compromiso',
+      icpPains: 'Pérdida de leads calificados por respuesta lenta en WhatsApp; dependencia de referidos impredecibles; falta de un sistema omnicanal automatizado',
+      icpObjections: 'Falta de tiempo para implementar; temor a que la IA suene artificial o desatienda prospectos de alto valor; presupuesto de arranque',
+    };
+  }
+
+  if (isMedical) {
+    return {
+      archetype: 'La Autoridad Quirúrgica Confiable (El Sanador & Sabio)',
+      tone: 'Cálido, empático, altamente profesional y médico-clínico (sin tecnicismos alarmistas ni promesas milagrosas)',
+      tabooWords: 'dolor insoportable, barato, remedio casero, garantizado 100%, sangrado, milagroso',
+      icpPains: 'Miedo al dolor en procedimientos; desconfianza en clínicas sin tecnología; malas experiencias previas con cotizaciones infladas',
+      icpObjections: 'Precio percibido elevado; miedo a sufrir dolor; falta de tiempo entre semana para acudir a consulta',
+    };
+  }
+
+  if (isFitness) {
+    return {
+      archetype: 'El Mentor Enérgico & Transformador (El Atleta / Héroe)',
+      tone: 'Enérgico, motivacional, directo, disciplinado y enfocado en hábitos y resultados físicos medibles',
+      tabooWords: 'fácil, dieta mágica, sin esfuerzo, barato, pastillas milagro, pereza',
+      icpPains: 'Frustración por no ver resultados en poco tiempo; desmotivación al entrenar solo; falta de disciplina y guía personalizada',
+      icpObjections: 'No tengo tiempo para entrenar; me da pena empezar si estoy fuera de forma; el costo de la membresía',
+    };
+  }
+
+  return {
+    archetype: 'La Autoridad Confiable del Sector (El Especialista Experto)',
+    tone: preset?.defaultTone || 'Profesional, empático, consultivo y orientado a soluciones de alto valor',
+    tabooWords: 'barato, regalado, promocioncita, sin compromiso, milagroso, urgente',
+    icpPains: 'Falta de proveedores confiables; frustración por procesos lentos y falta de respuesta transparente',
+    icpObjections: 'Costo vs beneficio; tiempo de implementación; incertidumbre sobre el resultado final',
+  };
 };
 
 const EMPTY_OFFER = {
@@ -123,6 +168,7 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
   const [editingPost, setEditingPost] = useState(null);
   const [postToDelete, setPostToDelete] = useState(null);
   const [selectedViralReel, setSelectedViralReel] = useState(null);
+  const [newTabooWord, setNewTabooWord] = useState('');
 
   // Estados para Modal de Generación IA Quirúrgica (Plataformas, Objetivo, Tono, RAG)
   const [showAiGenModal, setShowAiGenModal] = useState(false);
@@ -200,16 +246,23 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
 
   // State initialization with Tenant Isolation (ADR-001)
   const [brandDna, setBrandDna] = useState(() => {
-    return activeTenant?.brandDna || (tenantKey && CANONICAL_DNA_BY_TENANT[tenantKey]) || EMPTY_DNA;
+    const defaultDna = getCanonicalDnaForTenant(activeTenant);
+    const raw = activeTenant?.brandDna;
+    if (raw && (raw.archetype || raw.tone)) {
+      return { ...defaultDna, ...raw };
+    }
+    return defaultDna;
   });
 
   const [commercialOffer, setCommercialOffer] = useState(() => {
+    const defaultDna = getCanonicalDnaForTenant(activeTenant);
     const rawOffer = activeTenant?.commercialOffer;
     return {
       docName: rawOffer?.docName || 'Sin documento cargado',
-      hook: rawOffer?.hook || activeTenant?.brandDna?.leadMagnetHook || '',
-      cta: rawOffer?.cta || activeTenant?.brandDna?.leadMagnetCta || '',
-      validity: rawOffer?.validity || '',
+      docSize: rawOffer?.docSize || null,
+      hook: rawOffer?.hook || defaultDna.leadMagnetHook || 'Diagnóstico de Conversión y Auditoría de Fuga de Leads sin costo',
+      cta: rawOffer?.cta || defaultDna.leadMagnetCta || 'Envía AUDITORIA por WhatsApp para agendar tu sesión de 15 min',
+      validity: rawOffer?.validity || 'Mes en curso',
     };
   });
 
@@ -235,22 +288,38 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
       return;
     }
 
-    const tenantDna = activeTenant?.brandDna || CANONICAL_DNA_BY_TENANT[tenantKey] || EMPTY_DNA;
+    const defaultDna = getCanonicalDnaForTenant(activeTenant);
+    const rawDna = activeTenant?.brandDna;
+    const tenantDna = (rawDna && (rawDna.archetype || rawDna.tone))
+      ? { ...defaultDna, ...rawDna }
+      : defaultDna;
+
     const rawOffer = activeTenant?.commercialOffer;
     const tenantOffer = {
       docName: rawOffer?.docName || 'Sin documento cargado',
-      hook: rawOffer?.hook || tenantDna.leadMagnetHook || '',
-      cta: rawOffer?.cta || tenantDna.leadMagnetCta || '',
-      validity: rawOffer?.validity || '',
+      docSize: rawOffer?.docSize || null,
+      hook: rawOffer?.hook || defaultDna.leadMagnetHook || 'Diagnóstico de Conversión y Auditoría de Fuga de Leads sin costo',
+      cta: rawOffer?.cta || defaultDna.leadMagnetCta || 'Envía AUDITORIA por WhatsApp para agendar tu sesión de 15 min',
+      validity: rawOffer?.validity || 'Mes en curso',
     };
 
     if (typeof window !== 'undefined') {
       try {
         const savedDna = localStorage.getItem(`vector_planner_dna_${tenantKey}`);
-        setBrandDna(savedDna ? JSON.parse(savedDna) : tenantDna);
+        if (savedDna) {
+          const parsed = JSON.parse(savedDna);
+          setBrandDna(parsed.archetype || parsed.tone ? { ...defaultDna, ...parsed } : defaultDna);
+        } else {
+          setBrandDna(tenantDna);
+        }
 
         const savedOffer = localStorage.getItem(`vector_planner_offer_${tenantKey}`);
-        setCommercialOffer(savedOffer ? JSON.parse(savedOffer) : tenantOffer);
+        if (savedOffer) {
+          const parsed = JSON.parse(savedOffer);
+          setCommercialOffer(parsed.hook ? { ...tenantOffer, ...parsed } : tenantOffer);
+        } else {
+          setCommercialOffer(tenantOffer);
+        }
       } catch (e) {
         setBrandDna(tenantDna);
         setCommercialOffer(tenantOffer);
@@ -610,11 +679,11 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
   };
 
   const handleResetToCanonicalDna = () => {
-    const canonical = (tenantKey && CANONICAL_DNA_BY_TENANT[tenantKey]) || EMPTY_DNA;
+    const canonical = getCanonicalDnaForTenant(activeTenant);
     persistBrandDna(canonical);
     triggerModal(
-      'ADN Canónico Restaurado',
-      `Se han restablecido los valores predeterminados de la industria para <b>${activeTenant?.name || 'el negocio'}</b> (${activeTenant?.giro || 'Estándar'}).`
+      'Preset de Industria Cargado',
+      `Se han precargado las directrices maestras recomendadas para <b>${activeTenant?.name || 'tu negocio'}</b> (${activeTenant?.giro || activeTenant?.verticalLabel || 'Estándar'}).`
     );
   };
 
@@ -936,9 +1005,15 @@ Palabras tabú prohibidas: [${brandDna?.tabooWords || 'ninguna'}].`;
     );
   };
 
-  const handleSaveBrandDna = () => {
+  const handleSaveBrandDna = async () => {
     persistBrandDna(brandDna);
-    tenantService.updateBrandDna(tenantKey, brandDna).catch(() => {});
+    if (tenantKey) {
+      try {
+        await tenantService.updateBrandDna(tenantKey, brandDna);
+      } catch (err) {
+        console.warn('Error syncing brandDna to backend:', err);
+      }
+    }
     try {
       confetti({
         particleCount: 50,
@@ -948,8 +1023,8 @@ Palabras tabú prohibidas: [${brandDna?.tabooWords || 'ninguna'}].`;
       });
     } catch (e) {}
     triggerModal(
-      'ADN de Negocio Sincronizado',
-      `Los parámetros de Arquetipo, Glosario Prohibido y Dolores del ICP para <b>${activeTenant?.name}</b> han sido guardados localmente y sincronizados con la memoria RAG de DeepSeek R1.`
+      'Directrices de Marca Sincronizadas',
+      `Los parámetros de Arquetipo, Tono, Glosario Prohibido y Dolores del ICP para <b>${activeTenant?.name}</b> han sido guardados y sincronizados con la memoria RAG de DeepSeek R1.`
     );
   };
 
@@ -1706,7 +1781,7 @@ Palabras tabú prohibidas: [${brandDna?.tabooWords || 'ninguna'}].`;
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 2: PLANTILLA DE ADN DE NEGOCIO (IDEA 7)                               */}
+      {/* TAB 2: PLANTILLA DE ADN DE NEGOCIO (BRAND DNA CANVAS 2.0 - SIN REDUNDANCIAS) */}
       {/* ========================================================================= */}
       {activeTab === 'dna' && (
         <div className="rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-6 sm:p-8 space-y-6 animate-fade-in">
@@ -1725,7 +1800,7 @@ Palabras tabú prohibidas: [${brandDna?.tabooWords || 'ninguna'}].`;
                   </span>
                 </div>
                 <p className="text-xs text-[var(--text-muted)] font-mono">
-                  Directrices maestras de identidad, tono de voz y personalidad para {activeTenant?.name}
+                  Directrices maestras de identidad, tono de voz y límites de comunicación para {activeTenant?.name}
                 </p>
               </div>
             </div>
@@ -1734,19 +1809,11 @@ Palabras tabú prohibidas: [${brandDna?.tabooWords || 'ninguna'}].`;
               <button
                 type="button"
                 onClick={handleResetToCanonicalDna}
-                className="px-3 py-2 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-main)] text-xs font-mono border border-[var(--border-color)] flex items-center gap-1.5 transition-colors font-bold"
-                title="Restaurar parámetros predeterminados de la industria"
+                className="px-3.5 py-2 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-lime-700 dark:hover:text-neon text-xs font-mono border border-[var(--border-color)] hover:border-neon/40 flex items-center gap-1.5 transition-colors font-bold"
+                title="Cargar arquetipo, tono y reglas recomendadas según el giro del negocio"
               >
-                <RotateCcw className="w-3.5 h-3.5 text-amber-500" />
-                <span>Restaurar Canónico</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleCopyBrandDna}
-                className="px-3.5 py-2 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-[var(--text-main)] text-xs font-mono border border-[var(--border-color)] flex items-center gap-1.5 transition-colors font-bold"
-              >
-                {copiedCanvas ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copiedCanvas ? '¡Copiado!' : 'Copiar JSON'}</span>
+                <Zap className="w-3.5 h-3.5 text-lime-700 dark:text-neon" />
+                <span>Cargar Preset de Industria</span>
               </button>
               <button
                 type="button"
@@ -1754,99 +1821,320 @@ Palabras tabú prohibidas: [${brandDna?.tabooWords || 'ninguna'}].`;
                 className="px-4 py-2 rounded-xl bg-neon text-black font-bold text-xs font-mono shadow-[0_0_12px_var(--neon-glow)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-1.5"
               >
                 <ShieldCheck className="w-4 h-4" />
-                <span>Sincronizar con Memoria RAG</span>
+                <span>Guardar Directrices de Marca</span>
               </button>
             </div>
           </div>
 
           {/* Form Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-mono text-xs">
-            {/* Arquetipo */}
-            <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-2">
-              <span className="text-[10px] text-lime-700 dark:text-neon font-bold uppercase tracking-wider block">
-                1. Arquetipo de Marca
-              </span>
+            {/* 1. Arquetipo de Marca */}
+            <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-lime-700 dark:text-neon font-bold uppercase tracking-wider block">
+                  1. Arquetipo de Marca (Postura Psicológica)
+                </span>
+                <span className="text-[9px] text-[var(--text-muted)]">StoryBrand / Jung</span>
+              </div>
+
+              {/* Chips Rápidos de Arquetipo */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                {[
+                  { label: '🏛️ Autoridad Confiable', desc: 'El Sabio / Especialista riguroso', value: 'La Autoridad Confiable (El Sabio / Especialista Técnico)' },
+                  { label: '💡 Creador Visionario', desc: 'El Innovador / Futurista y audaz', value: 'El Creador Visionario (El Innovador Tecnológico)' },
+                  { label: '🤝 Mentor Cercano', desc: 'El Aliado / Empático y accesible', value: 'El Mentor Cercano (El Aliado Empático)' },
+                  { label: '⚡ Líder Disruptivo', desc: 'El Rebelde / Quiebre de reglas', value: 'El Líder Disruptivo (El Rebelde y Desafiante)' },
+                ].map((item) => (
+                  <button
+                    key={item.label}
+                    type="button"
+                    onClick={() => setBrandDna((prev) => ({ ...prev, archetype: item.value }))}
+                    className={`p-2.5 rounded-xl border text-left transition-all ${
+                      brandDna.archetype === item.value
+                        ? 'bg-neon/15 border-neon text-lime-700 dark:text-neon font-bold'
+                        : 'bg-[var(--bg-card-subtle)] border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                    }`}
+                  >
+                    <span className="text-[11px] font-bold block">{item.label}</span>
+                    <span className="text-[9px] text-[var(--text-muted)] block mt-0.5 leading-tight">{item.desc}</span>
+                  </button>
+                ))}
+              </div>
+
               <input
                 type="text"
                 value={brandDna.archetype}
-                onChange={(e) => setBrandDna({ ...brandDna, archetype: e.target.value })}
-                className="w-full bg-[var(--bg-card-subtle)] border border-[var(--border-color)] rounded-xl p-3 text-[var(--text-main)] focus:border-neon outline-none font-sans text-xs"
+                onChange={(e) => setBrandDna((prev) => ({ ...prev, archetype: e.target.value }))}
+                placeholder="Personalizar arquetipo de marca..."
+                className="w-full bg-[var(--bg-card-subtle)] border border-[var(--border-color)] rounded-xl p-3 text-[var(--text-main)] focus:border-neon outline-none font-sans text-xs transition-colors"
               />
               <p className="text-[10px] text-[var(--text-muted)] font-sans">
-                Define la postura psicológica: La Autoridad Confiable, El Mentor Enérgico, El Amigo Rebelde.
+                Define cómo se posiciona tu marca ante el prospecto al redactar guiones publicitarios.
               </p>
             </div>
 
-            {/* Tono de Voz */}
-            <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-2">
-              <span className="text-[10px] text-lime-700 dark:text-neon font-bold uppercase tracking-wider block">
-                2. Tono de Voz & Adjetivos Clave
-              </span>
+            {/* 2. Tono de Voz Rector */}
+            <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-lime-700 dark:text-neon font-bold uppercase tracking-wider block">
+                  2. Tono de Voz Rector & Estilo
+                </span>
+                <span className="text-[9px] text-[var(--text-muted)]">Fuente Única de Verdad</span>
+              </div>
+
+              {/* Pills de Selección Rápida */}
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  '👔 Ejecutivo B2B',
+                  '📊 Basado en Datos & ROI',
+                  '⚡ Enérgico & Directo',
+                  '🤝 Cálido & Humano',
+                  '🎯 Venta Conversacional',
+                ].map((pill) => {
+                  const clean = pill.slice(2).trim();
+                  const isPresent = (brandDna.tone || '').toLowerCase().includes(clean.toLowerCase());
+                  return (
+                    <button
+                      key={pill}
+                      type="button"
+                      onClick={() => {
+                        if (isPresent) {
+                          const updated = (brandDna.tone || '')
+                            .split(',')
+                            .map((t) => t.trim())
+                            .filter((t) => !t.toLowerCase().includes(clean.toLowerCase()))
+                            .join(', ');
+                          setBrandDna((prev) => ({ ...prev, tone: updated }));
+                        } else {
+                          const updated = brandDna.tone ? `${brandDna.tone}, ${clean}` : clean;
+                          setBrandDna((prev) => ({ ...prev, tone: updated }));
+                        }
+                      }}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all ${
+                        isPresent
+                          ? 'bg-neon text-black border-neon'
+                          : 'bg-[var(--bg-card-subtle)] border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                      }`}
+                    >
+                      {pill}
+                    </button>
+                  );
+                })}
+              </div>
+
               <input
                 type="text"
                 value={brandDna.tone}
-                onChange={(e) => setBrandDna({ ...brandDna, tone: e.target.value })}
-                className="w-full bg-[var(--bg-card-subtle)] border border-[var(--border-color)] rounded-xl p-3 text-[var(--text-main)] focus:border-neon outline-none font-sans text-xs"
+                onChange={(e) => setBrandDna((prev) => ({ ...prev, tone: e.target.value }))}
+                placeholder="Estilo de redacción en DMs, WhatsApp y guiones..."
+                className="w-full bg-[var(--bg-card-subtle)] border border-[var(--border-color)] rounded-xl p-3 text-[var(--text-main)] focus:border-neon outline-none font-sans text-xs transition-colors"
               />
               <p className="text-[10px] text-[var(--text-muted)] font-sans">
-                Estilo de redacción en DMs, WhatsApp y guiones de Reels.
+                Modula la temperatura de las palabras para sonar auténtico sin caer en clichés corporativos.
               </p>
             </div>
 
-            {/* Palabras Tabú / Glosario Prohibido */}
-            <div className="p-5 rounded-2xl bg-red-500/5 border border-red-500/30 space-y-2">
-              <span className="text-[10px] text-red-600 dark:text-red-400 font-bold uppercase tracking-wider block flex items-center gap-1.5">
-                <AlertTriangle className="w-3.5 h-3.5" />
-                3. Glosario Prohibido (Palabras Tabú)
-              </span>
-              <textarea
-                rows={3}
-                value={brandDna.tabooWords}
-                onChange={(e) => setBrandDna({ ...brandDna, tabooWords: e.target.value })}
-                className="w-full bg-[var(--bg-card-subtle)] border border-red-500/30 rounded-xl p-3 text-[var(--text-main)] focus:border-red-400 outline-none resize-none font-sans text-xs"
-              />
-              <p className="text-[10px] text-[var(--text-muted)] font-sans">
-                Palabras que el bot o los guiones tienen ESTRICTAMENTE prohibido pronunciar.
-              </p>
-            </div>
+            {/* 3. Glosario Prohibido (Palabras Tabú) */}
+            <div className="p-5 rounded-2xl bg-rose-500/5 border border-rose-500/30 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-rose-500 font-bold uppercase tracking-wider block flex items-center gap-1.5">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  3. Glosario Prohibido (Palabras Tabú & Guardrails)
+                </span>
+                <span className="text-[9px] text-rose-400 font-bold">Regla Inviolable IA</span>
+              </div>
 
-            {/* Dolores Primarios del ICP */}
-            <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-2">
-              <span className="text-[10px] text-lime-700 dark:text-neon font-bold uppercase tracking-wider block">
-                4. Dolores Agudos del Cliente Ideal (ICP)
-              </span>
-              <textarea
-                rows={3}
-                value={brandDna.icpPains}
-                onChange={(e) => setBrandDna({ ...brandDna, icpPains: e.target.value })}
-                className="w-full bg-[var(--bg-card-subtle)] border border-[var(--border-color)] rounded-xl p-3 text-[var(--text-main)] focus:border-neon outline-none resize-none font-sans text-xs"
-              />
-              <p className="text-[10px] text-[var(--text-muted)] font-sans">
-                Las motivaciones emocionales profundas que impulsan la decisión de agendar.
-              </p>
-            </div>
+              {/* Renderizado de Tags de Palabras Tabú */}
+              <div className="flex flex-wrap gap-1.5 min-h-[38px] p-2 rounded-xl bg-[var(--bg-card-subtle)] border border-rose-500/20 items-center">
+                {(brandDna.tabooWords || '')
+                  .split(',')
+                  .map((w) => w.trim())
+                  .filter(Boolean)
+                  .map((word) => (
+                    <span
+                      key={word}
+                      className="px-2 py-0.5 rounded-md bg-rose-500/15 text-rose-400 border border-rose-500/30 text-[10px] font-bold flex items-center gap-1"
+                    >
+                      <span>{word}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const remaining = (brandDna.tabooWords || '')
+                            .split(',')
+                            .map((w) => w.trim())
+                            .filter((w) => w.toLowerCase() !== word.toLowerCase())
+                            .join(', ');
+                          setBrandDna((prev) => ({ ...prev, tabooWords: remaining }));
+                        }}
+                        className="hover:text-rose-200"
+                        title={`Eliminar "${word}"`}
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
 
-            {/* Oferta Gancho Irresistible */}
-            <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-neon/40 space-y-2 md:col-span-2">
-              <span className="text-[10px] text-lime-700 dark:text-neon font-bold uppercase tracking-wider block flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5" />
-                5. Oferta Gancho Irresistible (Lead Magnet Activo)
-              </span>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* Input inline para agregar palabras */}
                 <input
                   type="text"
-                  value={brandDna.leadMagnetHook}
-                  onChange={(e) => setBrandDna({ ...brandDna, leadMagnetHook: e.target.value })}
-                  placeholder="Gancho de la oferta..."
-                  className="w-full bg-[var(--bg-card-subtle)] border border-[var(--border-color)] rounded-xl p-3 text-[var(--text-main)] focus:border-neon outline-none font-sans text-xs"
+                  value={newTabooWord}
+                  onChange={(e) => setNewTabooWord(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ',') {
+                      e.preventDefault();
+                      const val = newTabooWord.trim().replace(/^,|,$/g, '');
+                      if (val) {
+                        const existing = (brandDna.tabooWords || '').split(',').map((w) => w.trim()).filter(Boolean);
+                        if (!existing.some((w) => w.toLowerCase() === val.toLowerCase())) {
+                          const updated = [...existing, val].join(', ');
+                          setBrandDna((prev) => ({ ...prev, tabooWords: updated }));
+                        }
+                        setNewTabooWord('');
+                      }
+                    }
+                  }}
+                  placeholder="Escribe palabra y pulsa Enter..."
+                  className="bg-transparent border-none text-[var(--text-main)] text-xs font-mono focus:outline-none flex-1 min-w-[140px]"
                 />
+              </div>
+
+              {/* Sugerencias Rápidas de 1 Clic */}
+              <div className="space-y-1">
+                <span className="text-[9px] text-[var(--text-muted)] block">
+                  Sugerencias comunes para filtrar clichés:
+                </span>
+                <div className="flex flex-wrap gap-1">
+                  {['barato', 'gratis', 'promocioncita', 'milagroso', 'solución 360', 'sin compromiso'].map((sug) => {
+                    const isAdded = (brandDna.tabooWords || '').toLowerCase().includes(sug.toLowerCase());
+                    return (
+                      <button
+                        key={sug}
+                        type="button"
+                        disabled={isAdded}
+                        onClick={() => {
+                          const existing = (brandDna.tabooWords || '').split(',').map((w) => w.trim()).filter(Boolean);
+                          if (!existing.some((w) => w.toLowerCase() === sug.toLowerCase())) {
+                            const updated = [...existing, sug].join(', ');
+                            setBrandDna((prev) => ({ ...prev, tabooWords: updated }));
+                          }
+                        }}
+                        className={`text-[9px] px-2 py-0.5 rounded border transition-colors ${
+                          isAdded
+                            ? 'opacity-40 line-through border-zinc-700 bg-zinc-900 text-zinc-500 cursor-not-allowed'
+                            : 'border-rose-500/20 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20'
+                        }`}
+                      >
+                        + "{sug}"
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* 4. Audiencia & Dolores del Cliente Ideal (ICP) */}
+            <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-lime-700 dark:text-neon font-bold uppercase tracking-wider block">
+                  4. Audiencia & Dolores Clave (Buyer Persona)
+                </span>
+                <span className="text-[9px] text-cyan-400 font-bold">Sincronizado</span>
+              </div>
+
+              {/* Ficha Resumen del Buyer Persona */}
+              <div className="p-2.5 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[10px] space-y-1">
+                <div className="flex items-center justify-between text-[var(--text-muted)]">
+                  <span>Perfil Oficial:</span>
+                  <strong className="text-[var(--text-main)]">
+                    {activeTenant?.buyerPersona?.name || 'Cliente Ideal B2B / Propietario'} ({activeTenant?.buyerPersona?.ageRange || '30-55 años'}, {activeTenant?.buyerPersona?.location || 'México'})
+                  </strong>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <span className="text-[9px] uppercase text-[var(--text-muted)] font-bold block">
+                  Dolores Agudos (Struggling Moments):
+                </span>
+                <textarea
+                  rows={2}
+                  value={brandDna.icpPains}
+                  onChange={(e) => setBrandDna((prev) => ({ ...prev, icpPains: e.target.value }))}
+                  placeholder="ej. Pérdida de leads calificados por respuesta lenta en WhatsApp..."
+                  className="w-full bg-[var(--bg-card-subtle)] border border-[var(--border-color)] rounded-xl p-2.5 text-[var(--text-main)] focus:border-neon outline-none resize-none font-sans text-xs transition-colors"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <span className="text-[9px] uppercase text-[var(--text-muted)] font-bold block">
+                  Objeciones de Compra a Derribar:
+                </span>
                 <input
                   type="text"
-                  value={brandDna.leadMagnetCta}
-                  onChange={(e) => setBrandDna({ ...brandDna, leadMagnetCta: e.target.value })}
-                  placeholder="Call to Action con palabra clave..."
-                  className="w-full bg-[var(--bg-card-subtle)] border border-[var(--border-color)] rounded-xl p-3 text-[var(--text-main)] focus:border-neon outline-none font-sans text-xs"
+                  value={brandDna.icpObjections}
+                  onChange={(e) => setBrandDna((prev) => ({ ...prev, icpObjections: e.target.value }))}
+                  placeholder="ej. Falta de tiempo para implementar; temor al costo de arranque..."
+                  className="w-full bg-[var(--bg-card-subtle)] border border-[var(--border-color)] rounded-xl p-2.5 text-[var(--text-main)] focus:border-neon outline-none font-sans text-xs transition-colors"
                 />
+              </div>
+            </div>
+
+            {/* 5. Ancla Comercial Activa (Oferta del Mes Vinculada - Single Source of Truth) */}
+            <div className="p-5 rounded-2xl bg-gradient-to-r from-[var(--bg-card)] via-[var(--bg-card)] to-neon/5 border-2 border-neon/50 space-y-3 md:col-span-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[var(--border-color)]">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded bg-neon text-black">
+                    5. ANCLA COMERCIAL ACTIVA (OFERTA DEL MES VINCULADA)
+                  </span>
+                  <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 font-bold">
+                    Single Source of Truth
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowOfferModal(true)}
+                  className="px-3 py-1.5 rounded-xl bg-neon text-black font-bold text-xs font-mono shadow-[0_0_12px_var(--neon-glow)] hover:bg-[var(--neon-hover)] transition-all flex items-center gap-1.5 self-start sm:self-auto active:scale-95"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Actualizar Oferta Comercial & Documento</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+                <div className="p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-1">
+                  <span className="text-[9px] uppercase text-[var(--text-muted)] font-bold block flex items-center gap-1">
+                    <FileText className="w-3 h-3 text-cyan-400" />
+                    Documento de Respaldo RAG:
+                  </span>
+                  <p className="text-xs font-bold text-[var(--text-main)] truncate">
+                    {commercialOffer.docName || 'Sin documento cargado'}
+                  </p>
+                  <span className="text-[9px] font-mono text-emerald-400 block">
+                    {commercialOffer.docSize ? `Tamaño: ${commercialOffer.docSize} • Listo para IA` : 'Puedes adjuntar PDF/Word'}
+                  </span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-1">
+                  <span className="text-[9px] uppercase text-[var(--text-muted)] font-bold block flex items-center gap-1">
+                    <Flame className="w-3 h-3 text-lime-700 dark:text-neon" />
+                    Gancho Rector Activo:
+                  </span>
+                  <p className="text-xs italic font-bold text-[var(--text-main)] line-clamp-2">
+                    "{commercialOffer.hook || 'Sin gancho definido'}"
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-1">
+                  <span className="text-[9px] uppercase text-[var(--text-muted)] font-bold block flex items-center gap-1">
+                    <MessageSquare className="w-3 h-3 text-emerald-400" />
+                    CTA & Vigencia:
+                  </span>
+                  <p className="text-xs font-bold text-[var(--text-main)] line-clamp-1">
+                    "{commercialOffer.cta || 'Escríbenos por WhatsApp'}"
+                  </p>
+                  <span className="text-[9px] font-mono text-zinc-400 block">
+                    Vigencia: {commercialOffer.validity || 'Mes en curso'}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
