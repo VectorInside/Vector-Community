@@ -914,36 +914,6 @@ export const MasterAgenda = () => {
   const allShiftsHours = (calendarConfig.shifts || []).flatMap((s) => s.hours || []);
   const totalSlotsCount = allShiftsHours.length;
 
-  // Citas y métricas para el día seleccionado en la vista mensual (Executive Right Rail)
-  const selectedDayApts = useMemo(() => {
-    if (!selectedMonthDate) return [];
-    return filteredAppointments.filter((a) => {
-      if (a.fullDate === selectedMonthDate) return true;
-      if (a.start && a.start.startsWith(selectedMonthDate)) return true;
-      return false;
-    });
-  }, [filteredAppointments, selectedMonthDate]);
-
-  const selectedDayRevenue = useMemo(() => {
-    return selectedDayApts.reduce((acc, curr) => acc + (curr.estimatedValue || 1200), 0);
-  }, [selectedDayApts]);
-
-  const selectedDateFormattedLabel = useMemo(() => {
-    if (!selectedMonthDate) return '';
-    try {
-      const [y, m, d] = selectedMonthDate.split('-').map(Number);
-      const dt = new Date(y, m - 1, d, 12, 0, 0);
-      const formatted = dt.toLocaleDateString('es-MX', {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-      });
-      return formatted.charAt(0).toUpperCase() + formatted.slice(1);
-    } catch {
-      return selectedMonthDate;
-    }
-  }, [selectedMonthDate]);
-
   const handleSyncGoogleCalendar = async () => {
     setSyncing(true);
     try {
@@ -1038,6 +1008,36 @@ export const MasterAgenda = () => {
   const freeSlotsCount = Math.max(0, totalSlotsCount - dayAppointments.length);
   const totalOccupancyPct = totalSlotsCount > 0 ? Math.round((dayAppointments.length / totalSlotsCount) * 100) : 0;
   const estimatedDayRevenue = dayAppointments.reduce((acc, curr) => acc + (curr.estimatedValue || 1200), 0);
+
+  // Citas y métricas para el día seleccionado en la vista mensual (Executive Right Rail)
+  const selectedDayApts = useMemo(() => {
+    if (!selectedMonthDate) return [];
+    return filteredAppointments.filter((a) => {
+      if (a.fullDate === selectedMonthDate) return true;
+      if (a.start && a.start.startsWith(selectedMonthDate)) return true;
+      return false;
+    });
+  }, [filteredAppointments, selectedMonthDate]);
+
+  const selectedDayRevenue = useMemo(() => {
+    return selectedDayApts.reduce((acc, curr) => acc + (curr.estimatedValue || 1200), 0);
+  }, [selectedDayApts]);
+
+  const selectedDateFormattedLabel = useMemo(() => {
+    if (!selectedMonthDate) return '';
+    try {
+      const [y, m, d] = selectedMonthDate.split('-').map(Number);
+      const dt = new Date(y, m - 1, d, 12, 0, 0);
+      const formatted = dt.toLocaleDateString('es-MX', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+      });
+      return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+    } catch {
+      return selectedMonthDate;
+    }
+  }, [selectedMonthDate]);
 
   return (
     <div className="w-full max-w-[1780px] mx-auto p-3 sm:p-5 lg:p-7 block animate-fade-in space-y-4 sm:space-y-5 font-sans">
