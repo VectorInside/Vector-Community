@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { contentService } from '@/services/contentService';
 import { tenantService } from '@/services/tenantService';
@@ -45,6 +45,8 @@ import {
   Heart,
   Share,
   Trash2,
+  UploadCloud,
+  Paperclip,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Badge } from '@/components/common/Badge';
@@ -117,6 +119,11 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
   const [editingPost, setEditingPost] = useState(null);
   const [postToDelete, setPostToDelete] = useState(null);
   const [selectedViralReel, setSelectedViralReel] = useState(null);
+
+  // Estados y referencias para carga real de documentos (PDF / Doc / RAG)
+  const fileInputRef = useRef(null);
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
+  const [uploadedFileSize, setUploadedFileSize] = useState(null);
 
   // Estados asíncronos para operaciones reales con IA y Meta
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
@@ -390,6 +397,56 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
     } catch (err) {
       console.error('Error al actualizar oferta comercial:', err);
       setShowOfferModal(false);
+    }
+  };
+
+  const handleFileUpload = (file) => {
+    if (!file) return;
+    const allowedExtensions = ['.pdf', '.docx', '.doc', '.txt', '.md'];
+    const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+    if (!allowedExtensions.includes(ext)) {
+      triggerModal('Formato No Soportado', 'Por favor selecciona un archivo PDF (.pdf), Word (.docx) o texto (.txt, .md).');
+      return;
+    }
+
+    const sizeFormatted = file.size > 1024 * 1024
+      ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+      : `${Math.round(file.size / 1024)} KB`;
+
+    setUploadedFileSize(sizeFormatted);
+    setCommercialOffer((prev) => ({
+      ...prev,
+      docName: file.name,
+      docSize: sizeFormatted,
+    }));
+
+    if (ext === '.txt' || ext === '.md') {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const textContent = e.target.result;
+        if (!commercialOffer.hook && textContent && textContent.length > 15) {
+          const firstLine = textContent.split('\n').map((l) => l.trim()).filter(Boolean)[0] || '';
+          if (firstLine) {
+            setCommercialOffer((prev) => ({
+              ...prev,
+              hook: firstLine.slice(0, 140),
+            }));
+          }
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  const handleRemoveUploadedFile = () => {
+    setUploadedFileSize(null);
+    setCommercialOffer((prev) => ({
+      ...prev,
+      docName: '',
+      docSize: null,
+    }));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -1651,17 +1708,102 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
             </div>
 
             <form onSubmit={handleUpdateCommercialOffer} className="space-y-3 font-mono text-xs">
+              {/* CARGADOR REAL DE DOCUMENTO DE OFERTA (PDF, WORD, TXT) */}
               <div>
-                <label className="block text-[var(--text-main)] font-bold mb-1">
-                  Documento de Propuesta Comercial (.pdf, .docx, .md)
+                <label className="block text-[var(--text-main)] font-bold mb-1.5 flex items-center justify-between">
+                  <span>Documento de Propuesta Comercial</span>
+                  <span className="text-[10px] font-mono text-[var(--text-muted)]">.pdf, .docx, .md, .txt</span>
                 </label>
+
+                {/* Input oculto para selección de archivos */}
                 <input
-                  type="text"
-                  value={commercialOffer.docName || ''}
-                  onChange={(e) => setCommercialOffer({ ...commercialOffer, docName: e.target.value })}
-                  placeholder="ej. Propuesta_Comercial_2026.pdf"
-                  className="w-full bg-[var(--bg-card-subtle)] border border-[var(--border-color)] rounded-xl p-3 text-[var(--text-main)] focus:border-neon outline-none"
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.docx,.doc,.txt,.md"
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) handleFileUpload(e.target.files[0]);
+                  }}
+                  className="hidden"
                 />
+
+                {commercialOffer.docName && commercialOffer.docName !== 'Sin documento cargado' ? (
+                  /* Vista de Archivo Ya Cargado */
+                  <div className="p-3.5 rounded-2xl bg-[var(--bg-card-subtle)] border border-neon/40 flex items-center justify-between gap-3 shadow-sm">
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <span className="p-2.5 rounded-xl bg-neon/15 text-lime-700 dark:text-neon border border-neon/30 shrink-0">
+                        <FileText className="w-5 h-5" />
+                      </span>
+                      <div className="overflow-hidden">
+                        <p className="text-xs font-bold text-[var(--text-main)] truncate font-mono">
+                          {commercialOffer.docName}
+                        </p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[10px] font-mono text-zinc-400">
+                            {uploadedFileSize || commercialOffer.docSize || 'Documento adjunto'}
+                          </span>
+                          <span className="text-[9px] font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.2 rounded-full">
+                            ✓ Listo para RAG
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="px-2.5 py-1 rounded-lg bg-[var(--bg-card)] hover:bg-[var(--bg-base)] text-[10px] font-mono font-bold text-[var(--text-main)] border border-[var(--border-color)] transition-colors"
+                      >
+                        Cambiar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleRemoveUploadedFile}
+                        className="p-1 rounded-lg hover:bg-rose-500/15 text-[var(--text-muted)] hover:text-rose-400 border border-transparent hover:border-rose-500/30 transition-colors"
+                        title="Remover documento"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Dropzone Interactivo para Subir Archivo */
+                  <div
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setIsDraggingFile(true);
+                    }}
+                    onDragLeave={() => setIsDraggingFile(false)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setIsDraggingFile(false);
+                      if (e.dataTransfer.files?.[0]) {
+                        handleFileUpload(e.dataTransfer.files[0]);
+                      }
+                    }}
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`p-5 rounded-2xl border-2 border-dashed transition-all cursor-pointer text-center flex flex-col items-center justify-center gap-2 select-none ${
+                      isDraggingFile
+                        ? 'border-neon bg-neon/10 scale-[0.99]'
+                        : 'border-[var(--border-color)] hover:border-neon/50 bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-card)]'
+                    }`}
+                  >
+                    <span className="p-3 rounded-2xl bg-neon/10 text-lime-700 dark:text-neon border border-neon/30">
+                      <UploadCloud className="w-6 h-6 animate-pulse" />
+                    </span>
+                    <div>
+                      <p className="text-xs font-bold text-[var(--text-main)]">
+                        Arrastra tu PDF o documento aquí
+                      </p>
+                      <p className="text-[10px] font-mono text-[var(--text-muted)] mt-0.5">
+                        o haz clic para explorar en tu computadora (.pdf, .docx, .md, .txt)
+                      </p>
+                    </div>
+                    <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-[var(--bg-card)] border border-[var(--border-color)] text-zinc-400">
+                      Tamaño máx: 25 MB
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div>
