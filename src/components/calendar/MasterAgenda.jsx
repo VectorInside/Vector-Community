@@ -914,6 +914,36 @@ export const MasterAgenda = () => {
   const allShiftsHours = (calendarConfig.shifts || []).flatMap((s) => s.hours || []);
   const totalSlotsCount = allShiftsHours.length;
 
+  // Citas y métricas para el día seleccionado en la vista mensual (Executive Right Rail)
+  const selectedDayApts = useMemo(() => {
+    if (!selectedMonthDate) return [];
+    return filteredAppointments.filter((a) => {
+      if (a.fullDate === selectedMonthDate) return true;
+      if (a.start && a.start.startsWith(selectedMonthDate)) return true;
+      return false;
+    });
+  }, [filteredAppointments, selectedMonthDate]);
+
+  const selectedDayRevenue = useMemo(() => {
+    return selectedDayApts.reduce((acc, curr) => acc + (curr.estimatedValue || 1200), 0);
+  }, [selectedDayApts]);
+
+  const selectedDateFormattedLabel = useMemo(() => {
+    if (!selectedMonthDate) return '';
+    try {
+      const [y, m, d] = selectedMonthDate.split('-').map(Number);
+      const dt = new Date(y, m - 1, d, 12, 0, 0);
+      const formatted = dt.toLocaleDateString('es-MX', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+      });
+      return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+    } catch {
+      return selectedMonthDate;
+    }
+  }, [selectedMonthDate]);
+
   const handleSyncGoogleCalendar = async () => {
     setSyncing(true);
     try {
@@ -1173,235 +1203,359 @@ export const MasterAgenda = () => {
       </div>
 
       {/* ========================================================================= */}
-      {/* 2.5 VISTA MES COMPLETO (SINCRONIZADO EN TIEMPO REAL Y HORA REAL)          */}
+      {/* 2.5 VISTA MES COMPLETO (ARQUITECTURA MASTER-DETAIL EXECUTIVE WIDESCREEN)  */}
       {/* ========================================================================= */}
       {viewMode === 'month' && (
-        <div className="rounded-2xl sm:rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-3.5 sm:p-5 lg:p-6 space-y-3.5 sm:space-y-4 animate-fadeIn shadow-2xl">
-          {/* Cabecera del Mes */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 sm:pb-4 border-b border-[var(--border-color)] gap-3">
-            <div>
-              <div className="flex items-center gap-2.5">
-                <span className="p-2 rounded-xl bg-neon/15 text-lime-700 dark:text-neon border border-neon/30 shrink-0">
-                  <CalendarIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-                </span>
-                <div>
-                  <h3 className="text-base sm:text-lg font-bold text-[var(--text-main)] flex flex-wrap items-center gap-2">
-                    <span suppressHydrationWarning>
-                      {activeMonthName} {activeYear}
-                    </span>
-                    <span
-                      suppressHydrationWarning
-                      className="text-[11px] font-mono font-normal px-2 py-0.5 rounded-full bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-muted)]"
-                    >
-                      {daysInMonth} Días • Tiempo Real ({liveTimeFormatted} hrs)
-                    </span>
-                  </h3>
-                  <p className="text-[11px] sm:text-xs text-[var(--text-muted)] font-mono mt-0.5">
-                    Negocio: <strong>{activeTenant?.name || 'Sin negocio seleccionado'}</strong> • Haz clic en cualquier día para hacer <strong>Zoom</strong> a sus horarios y citas.
-                  </p>
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 animate-fadeIn">
+          {/* COLUMNA PRINCIPAL (70%): CUADRÍCULA MENSUAL CON PROPORCIÓN ÁUREA */}
+          <div className="xl:col-span-8 2xl:col-span-9 rounded-2xl sm:rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-3.5 sm:p-5 lg:p-6 space-y-3.5 sm:space-y-4 shadow-xl flex flex-col justify-between">
+            {/* Cabecera del Mes */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 sm:pb-4 border-b border-[var(--border-color)] gap-3">
+              <div>
+                <div className="flex items-center gap-2.5">
+                  <span className="p-2 sm:p-2.5 rounded-2xl bg-neon/15 text-lime-700 dark:text-neon border border-neon/30 shrink-0 shadow-neon-sm">
+                    <CalendarIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                  </span>
+                  <div>
+                    <h3 className="text-base sm:text-lg font-black text-[var(--text-main)] flex flex-wrap items-center gap-2">
+                      <span suppressHydrationWarning>
+                        {activeMonthName} <span className="text-neon">{activeYear}</span>
+                      </span>
+                      <span
+                        suppressHydrationWarning
+                        className="text-[10px] sm:text-[11px] font-mono font-normal px-2 py-0.5 rounded-full bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-muted)]"
+                      >
+                        {daysInMonth} Días • Tiempo Real ({liveTimeFormatted} hrs)
+                      </span>
+                    </h3>
+                    <p className="text-[11px] sm:text-xs text-[var(--text-muted)] font-mono mt-0.5">
+                      Negocio: <strong>{activeTenant?.name || 'Sin negocio'}</strong> • Haz clic en un día para inspeccionar su agenda en el panel lateral o doble clic para Zoom.
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-1 bg-[var(--bg-card-subtle)] p-1 rounded-xl border border-[var(--border-color)]">
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-1 bg-[var(--bg-card-subtle)] p-1 rounded-xl border border-[var(--border-color)]">
+                  <button
+                    type="button"
+                    onClick={handlePrevMonth}
+                    className="p-1.5 rounded-lg hover:bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
+                    title="Mes Anterior"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleGoToToday}
+                    className="px-2.5 py-1 rounded-lg bg-neon/15 hover:bg-neon hover:text-black text-lime-800 dark:text-neon text-[11px] font-mono font-bold transition-all"
+                    title="Ir al día de hoy en tiempo real"
+                  >
+                    Hoy
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleNextMonth}
+                    className="p-1.5 rounded-lg hover:bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
+                    title="Mes Siguiente"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <span className="text-[11px] sm:text-xs font-mono px-3 py-1.5 rounded-xl bg-neon/15 text-lime-800 dark:text-neon border border-neon/30 font-bold shrink-0">
+                  {filteredAppointments.length} Citas del Mes
+                </span>
                 <button
                   type="button"
-                  onClick={handlePrevMonth}
-                  className="p-1.5 rounded-lg hover:bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
-                  title="Mes Anterior"
+                  onClick={() => setShowMobileSyncModal(true)}
+                  className="px-3 py-1.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[11px] sm:text-xs font-mono font-bold text-[var(--text-main)] flex items-center gap-1.5 transition-all"
                 >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={handleGoToToday}
-                  className="px-2.5 py-1 rounded-lg bg-neon/15 hover:bg-neon hover:text-black text-lime-800 dark:text-neon text-[11px] font-mono font-bold transition-all"
-                  title="Ir al día de hoy en tiempo real"
-                >
-                  Hoy
-                </button>
-                <button
-                  type="button"
-                  onClick={handleNextMonth}
-                  className="p-1.5 rounded-lg hover:bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
-                  title="Mes Siguiente"
-                >
-                  <ChevronRight className="w-4 h-4" />
+                  <Smartphone className="w-3.5 h-3.5 text-neon" />
+                  <span className="hidden sm:inline">Móvil Sync</span>
                 </button>
               </div>
-
-              <span className="text-[11px] sm:text-xs font-mono px-3 py-1.5 rounded-xl bg-neon/15 text-lime-800 dark:text-neon border border-neon/30 font-bold">
-                {filteredAppointments.length} Citas del Mes
-              </span>
-              <button
-                type="button"
-                onClick={() => setShowMobileSyncModal(true)}
-                className="px-3 py-1.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[11px] sm:text-xs font-mono font-bold text-[var(--text-main)] flex items-center gap-1.5 transition-all"
-              >
-                <Smartphone className="w-3.5 h-3.5 text-neon" />
-                <span>Móvil Sync</span>
-              </button>
             </div>
-          </div>
 
-          {/* Días de la semana Header (Lunes a Domingo) */}
-          <div className="grid grid-cols-7 gap-1 sm:gap-1.5 lg:gap-2.5 text-center text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider text-[var(--text-muted)] pb-1.5 border-b border-[var(--border-color)]">
-            <span className="text-lime-700 dark:text-neon">Lun</span>
-            <span>Mar</span>
-            <span>Mié</span>
-            <span>Jue</span>
-            <span>Vie</span>
-            <span>Sáb</span>
-            <span className="text-rose-500/80">Dom</span>
-          </div>
+            {/* Días de la semana Header (Lunes a Domingo) */}
+            <div className="grid grid-cols-7 gap-1 sm:gap-1.5 lg:gap-2 text-center text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider text-[var(--text-muted)] pb-2 border-b border-[var(--border-color)]">
+              <span className="text-lime-700 dark:text-neon">Lun</span>
+              <span>Mar</span>
+              <span>Mié</span>
+              <span>Jue</span>
+              <span>Vie</span>
+              <span>Sáb</span>
+              <span className="text-rose-500/80">Dom</span>
+            </div>
 
-          {/* Grilla Dinámica del Mes Actual - SIEMPRE 7 COLUMNAS ESTRICTAS PARA PRESERVAR EL FORMATO DE CALENDARIO */}
-          <div className="grid grid-cols-7 gap-1 sm:gap-1.5 lg:gap-2">
-            {/* Días previos del mes anterior para alinear el Lunes */}
-            {Array.from({ length: leadingBlankDays }, (_, idx) => {
-              const d = prevMonthDaysCount - leadingBlankDays + idx + 1;
-              return (
+            {/* Grilla Dinámica del Mes con Proporción Áurea */}
+            <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+              {/* Días previos del mes anterior para alinear el Lunes */}
+              {Array.from({ length: leadingBlankDays }, (_, idx) => {
+                const d = prevMonthDaysCount - leadingBlankDays + idx + 1;
+                return (
+                  <div
+                    key={`prev-${d}`}
+                    className="min-h-[85px] sm:min-h-[100px] xl:min-h-[115px] p-2 rounded-xl sm:rounded-2xl bg-[var(--bg-base)]/30 border border-dashed border-[var(--border-color)]/25 opacity-20 select-none flex flex-col justify-between"
+                  >
+                    <span className="text-xs font-mono font-semibold text-[var(--text-muted)]">{d}</span>
+                    <span className="text-[8px] font-mono text-[var(--text-muted)] truncate">
+                      {MONTH_NAMES_ES[prevMonthIndex]}
+                    </span>
+                  </div>
+                );
+              })}
+
+              {/* Días reales del mes activo */}
+              {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((dayNum) => {
+                const dayStr = String(dayNum).padStart(2, '0');
+                const monthStr = String(currentCalendarMonth.month + 1).padStart(2, '0');
+                const fullDate = `${activeYear}-${monthStr}-${dayStr}`;
+
+                const dt = new Date(`${fullDate}T12:00:00`);
+                const dayId = DAY_IDS_BY_JS_DAY[dt.getDay()];
+                const isOperating = activeTenant
+                  ? !calendarConfig.operatingDays || calendarConfig.operatingDays.includes(dayId)
+                  : false;
+
+                const aptsOnThisDay = !isOperating
+                  ? []
+                  : filteredAppointments.filter((a) => {
+                      if (a.fullDate === fullDate) return true;
+                      if (a.start && a.start.startsWith(fullDate)) return true;
+                      return false;
+                    });
+
+                const isToday = fullDate === todayIsoStr;
+                const isSelected = selectedMonthDate === fullDate;
+                const hasApts = aptsOnThisDay.length > 0;
+                const dayTotalRevenue = aptsOnThisDay.reduce((acc, curr) => acc + (curr.estimatedValue || 1200), 0);
+
+                return (
+                  <div
+                    key={fullDate}
+                    onClick={() => {
+                      setSelectedMonthDate(fullDate);
+                      setSelectedDay(dayId);
+                    }}
+                    onDoubleClick={() => {
+                      setSelectedMonthDate(fullDate);
+                      setSelectedDay(dayId);
+                      setViewMode('grid');
+                    }}
+                    className={`min-h-[85px] sm:min-h-[100px] xl:min-h-[115px] p-2 sm:p-2.5 rounded-xl sm:rounded-2xl border flex flex-col justify-between cursor-pointer transition-all duration-150 group relative overflow-hidden select-none ${
+                      isSelected
+                        ? 'bg-neon/15 border-neon shadow-[0_0_16px_var(--neon-glow)] ring-2 ring-neon/50 -translate-y-0.5'
+                        : isToday
+                        ? 'bg-emerald-500/10 border-emerald-500/60 ring-1 ring-emerald-500/40'
+                        : hasApts
+                        ? 'bg-[var(--bg-card)] border-neon/40 hover:border-neon hover:shadow-md hover:-translate-y-0.5'
+                        : isOperating
+                        ? 'bg-[var(--bg-card)] border-[var(--border-color)]/70 hover:border-[var(--text-muted)] hover:bg-[var(--bg-card-subtle)]'
+                        : 'bg-[var(--bg-card-subtle)]/40 border-[var(--border-color)]/40 opacity-40'
+                    }`}
+                    title={`Haz clic para ver la agenda del ${dayNum} de ${activeMonthName} o doble clic para Zoom`}
+                  >
+                    {/* Header de la Celda */}
+                    <div className="flex items-center justify-between gap-1">
+                      {isToday ? (
+                        <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-neon text-black font-mono font-black text-[11px] sm:text-xs flex items-center justify-center shadow-[0_0_10px_var(--neon-glow)]">
+                          {dayNum}
+                        </span>
+                      ) : (
+                        <span
+                          className={`text-xs sm:text-sm font-mono font-bold transition-colors ${
+                            isSelected
+                              ? 'text-neon font-black'
+                              : hasApts
+                              ? 'text-[var(--text-main)] group-hover:text-neon'
+                              : 'text-[var(--text-muted)] group-hover:text-[var(--text-main)]'
+                          }`}
+                        >
+                          {dayNum}
+                        </span>
+                      )}
+
+                      {hasApts ? (
+                        <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-400 text-[9px] font-mono font-bold flex items-center gap-1 border border-emerald-500/30 shrink-0">
+                          <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
+                          {aptsOnThisDay.length}
+                        </span>
+                      ) : !activeTenant ? (
+                        <span className="text-[8px] font-mono text-[var(--text-muted)]">Sin negocio</span>
+                      ) : !isOperating ? (
+                        <span className="text-[8px] font-mono text-[var(--text-muted)]">Cerrado</span>
+                      ) : null}
+                    </div>
+
+                    {/* Chips de citas estilo Linear/Notion */}
+                    <div className="space-y-1 my-1 flex-1">
+                      {hasApts && (
+                        <>
+                          {aptsOnThisDay.slice(0, 2).map((apt) => (
+                            <div
+                              key={apt.id}
+                              className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[var(--bg-panel)]/90 border border-[var(--border-color)] text-[var(--text-main)] truncate flex items-center gap-1"
+                              style={{ borderLeftColor: apt.serviceColor || '#3B82F6', borderLeftWidth: '2.5px' }}
+                            >
+                              <span className="font-bold text-neon shrink-0">{apt.hour}</span>
+                              <span className="truncate">{apt.client.split(' ')[0]}</span>
+                            </div>
+                          ))}
+                          {aptsOnThisDay.length > 2 && (
+                            <span className="text-[8px] font-mono text-[var(--text-muted)] block text-right font-semibold">
+                              +{aptsOnThisDay.length - 2} más
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </div>
+
+                    {/* Pie de Celda: SIN línea divisoria huérfana en días vacíos */}
+                    {hasApts ? (
+                      <div className="pt-1 mt-auto border-t border-[var(--border-color)]/60 flex items-center justify-between text-[9px] font-mono">
+                        <span suppressHydrationWarning className="text-emerald-400 font-bold truncate">
+                          ${String(dayTotalRevenue).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                        </span>
+                        <span className="text-[8px] text-neon opacity-0 group-hover:opacity-100 font-bold transition-opacity">
+                          Ver ↗
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="mt-auto flex items-center justify-between text-[8px] font-mono">
+                        {isOperating ? (
+                          <span className="text-neon opacity-0 group-hover:opacity-100 font-bold transition-opacity">
+                            + Agendar
+                          </span>
+                        ) : (
+                          <span className="text-[var(--text-muted)]/50">No opera</span>
+                        )}
+                        <span className="text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity ml-auto">
+                          Zoom ↗
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Días del mes siguiente para completar la última fila */}
+              {Array.from({ length: trailingBlankDays }, (_, idx) => (
                 <div
-                  key={`prev-${d}`}
-                  className="min-h-[58px] sm:min-h-[72px] lg:min-h-[80px] p-1.5 sm:p-2 rounded-xl sm:rounded-2xl bg-[var(--bg-base)]/40 border border-dashed border-[var(--border-color)]/30 opacity-25 select-none flex flex-col justify-between"
+                  key={`next-${idx + 1}`}
+                  className="min-h-[85px] sm:min-h-[100px] xl:min-h-[115px] p-2 rounded-xl sm:rounded-2xl bg-[var(--bg-base)]/30 border border-dashed border-[var(--border-color)]/25 opacity-20 select-none flex flex-col justify-between"
                 >
-                  <span className="text-[11px] sm:text-xs font-mono font-bold text-[var(--text-muted)]">{d}</span>
-                  <span className="text-[8px] sm:text-[9px] font-mono text-[var(--text-muted)] truncate">
-                    {MONTH_NAMES_ES[prevMonthIndex]}
+                  <span className="text-xs font-mono font-semibold text-[var(--text-muted)]">{idx + 1}</span>
+                  <span className="text-[8px] font-mono text-[var(--text-muted)] truncate">
+                    {MONTH_NAMES_ES[nextMonthIndex]}
                   </span>
                 </div>
-              );
-            })}
+              ))}
+            </div>
+          </div>
 
-            {/* Días reales del mes activo */}
-            {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((dayNum) => {
-              const dayStr = String(dayNum).padStart(2, '0');
-              const monthStr = String(currentCalendarMonth.month + 1).padStart(2, '0');
-              const fullDate = `${activeYear}-${monthStr}-${dayStr}`;
-
-              const dt = new Date(`${fullDate}T12:00:00`);
-              const dayId = DAY_IDS_BY_JS_DAY[dt.getDay()];
-              const isOperating = activeTenant
-                ? !calendarConfig.operatingDays || calendarConfig.operatingDays.includes(dayId)
-                : false;
-
-              const aptsOnThisDay = !isOperating
-                ? []
-                : filteredAppointments.filter((a) => {
-                    if (a.fullDate === fullDate) return true;
-                    if (a.start && a.start.startsWith(fullDate)) return true;
-                    return false;
-                  });
-
-              const isToday = fullDate === todayIsoStr;
-              const isSelected = selectedMonthDate === fullDate;
-              const hasApts = aptsOnThisDay.length > 0;
-              const dayTotalRevenue = aptsOnThisDay.reduce((acc, curr) => acc + (curr.estimatedValue || 1200), 0);
-
-              return (
-                <div
-                  key={fullDate}
-                  onClick={() => {
-                    setSelectedMonthDate(fullDate);
-                    setSelectedDay(dayId);
-                    setViewMode('grid');
-                  }}
-                  className={`min-h-[58px] sm:min-h-[72px] lg:min-h-[82px] p-1.5 sm:p-2 rounded-xl sm:rounded-2xl border flex flex-col justify-between cursor-pointer transition-all duration-200 group relative overflow-hidden ${
-                    isSelected
-                      ? 'bg-neon/15 border-neon shadow-[0_0_20px_var(--neon-glow)] ring-2 ring-neon/40'
-                      : isToday
-                      ? 'bg-emerald-500/10 border-emerald-500/60 ring-1 ring-emerald-500/40'
-                      : hasApts
-                      ? 'bg-[var(--bg-card)] border-neon/40 hover:border-neon hover:shadow-lg hover:-translate-y-0.5'
-                      : isOperating
-                      ? 'bg-[var(--bg-card)] border-[var(--border-color)] hover:border-[var(--text-muted)] hover:bg-[var(--bg-card-subtle)]'
-                      : 'bg-[var(--bg-card-subtle)]/60 border-[var(--border-color)]/60 opacity-50'
-                  }`}
-                  title={`Haz clic para ver el detalle del ${dayNum} de ${activeMonthName} ${activeYear}`}
-                >
-                  {/* Encabezado del número de día */}
-                  <div className="flex items-center justify-between gap-1">
-                    <div className="flex items-center gap-1">
-                      <span
-                        className={`text-xs sm:text-sm font-mono font-black ${
-                          isToday || hasApts
-                            ? 'text-neon'
-                            : 'text-[var(--text-main)] group-hover:text-neon transition-colors'
-                        }`}
-                      >
-                        {dayNum}
-                      </span>
-                      {isToday && (
-                        <span className="px-1 py-0.2 rounded bg-neon text-black text-[7px] sm:text-[8px] font-mono font-black uppercase tracking-tight">
-                          HOY
-                        </span>
-                      )}
-                    </div>
-                    {hasApts ? (
-                      <span className="px-1 sm:px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-400 text-[9px] sm:text-[10px] font-mono font-bold flex items-center gap-1 border border-emerald-500/30 shrink-0">
-                        <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                        {aptsOnThisDay.length}
-                      </span>
-                    ) : !activeTenant ? (
-                      <span className="text-[8px] sm:text-[9px] font-mono text-[var(--text-muted)] hidden sm:inline">Sin negocio</span>
-                    ) : !isOperating ? (
-                      <span className="text-[8px] sm:text-[9px] font-mono text-[var(--text-muted)] hidden sm:inline">Cerrado</span>
-                    ) : null}
-                  </div>
-
-                  {/* Citas preview dentro del día */}
-                  {hasApts && (
-                    <div className="space-y-0.5 my-0.5">
-                      {aptsOnThisDay.slice(0, 2).map((apt) => (
-                        <div
-                          key={apt.id}
-                          className="text-[9px] font-mono px-1 py-0.2 rounded bg-[var(--bg-panel)] border border-[var(--border-color)] text-[var(--text-main)] truncate"
-                          style={{ borderLeftColor: apt.serviceColor || '#3B82F6', borderLeftWidth: '2px' }}
-                        >
-                          <span className="font-bold text-neon mr-1">{apt.hour}</span>
-                          <span className="hidden sm:inline">{apt.client.split(' ')[0]}</span>
-                        </div>
-                      ))}
-                      {aptsOnThisDay.length > 2 && (
-                        <span className="text-[8px] font-mono text-[var(--text-muted)] block text-right">
-                          +{aptsOnThisDay.length - 2} más
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Footer del día */}
-                  <div className="pt-1 mt-auto border-t border-[var(--border-color)]/60 flex items-center justify-between text-[9px] sm:text-[10px] font-mono">
-                    {hasApts ? (
-                      <span suppressHydrationWarning className="text-emerald-400 font-bold truncate">
-                        ${String(dayTotalRevenue).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                      </span>
-                    ) : (
-                      <span className="text-[var(--text-muted)] text-[8px] sm:text-[9px] truncate">
-                        {!activeTenant ? 'Sin negocio' : isOperating ? 'Libre' : 'No opera'}
-                      </span>
-                    )}
-                    <span className="text-[8px] sm:text-[9px] text-neon opacity-0 group-hover:opacity-100 font-bold transition-opacity hidden sm:inline">
-                      Zoom →
-                    </span>
-                  </div>
+          {/* COLUMNA LATERAL (30%): EXECUTIVE RIGHT RAIL (PANEL DEL DÍA SELECCIONADO) */}
+          <div className="xl:col-span-4 2xl:col-span-3 rounded-2xl sm:rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-4 sm:p-5 space-y-4 shadow-xl flex flex-col">
+            {/* Header del Día Seleccionado */}
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)]">
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-neon animate-pulse" />
+                  <h4 className="text-xs font-bold text-[var(--text-main)] font-mono uppercase tracking-wider">
+                    Agenda del Día
+                  </h4>
                 </div>
-              );
-            })}
-
-            {/* Días del mes siguiente para completar la última fila */}
-            {Array.from({ length: trailingBlankDays }, (_, idx) => (
-              <div
-                key={`next-${idx + 1}`}
-                className="min-h-[58px] sm:min-h-[72px] lg:min-h-[80px] p-1.5 sm:p-2 rounded-xl sm:rounded-2xl bg-[var(--bg-base)]/40 border border-dashed border-[var(--border-color)]/30 opacity-25 select-none flex flex-col justify-between"
+                <p className="text-xs text-neon font-mono font-bold mt-1">
+                  {selectedDateFormattedLabel || selectedMonthDate}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setViewMode('grid')}
+                className="px-3 py-1.5 rounded-xl bg-neon text-black text-xs font-mono font-bold shadow-neon-sm hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5"
+                title="Abrir vista de turnos y horas detalladas para este día"
               >
-                <span className="text-[11px] sm:text-xs font-mono font-bold text-[var(--text-muted)]">{idx + 1}</span>
-                <span className="text-[8px] sm:text-[9px] font-mono text-[var(--text-muted)] truncate">
-                  {MONTH_NAMES_ES[nextMonthIndex]}
+                <span>Zoom Horario</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* KPIs del día seleccionado */}
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
+                <span className="text-[10px] font-mono text-[var(--text-muted)] block">Citas Agendadas</span>
+                <span className="text-lg font-mono font-black text-[var(--text-main)] mt-0.5 block">
+                  {selectedDayApts.length}
                 </span>
               </div>
-            ))}
+              <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
+                <span className="text-[10px] font-mono text-[var(--text-muted)] block">Proyección Valor</span>
+                <span className="text-lg font-mono font-black text-emerald-400 mt-0.5 block">
+                  ${String(selectedDayRevenue).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                </span>
+              </div>
+            </div>
+
+            {/* Lista de citas del día con scroll suave */}
+            <div className="flex-1 overflow-y-auto space-y-2 max-h-[360px] pr-1">
+              {selectedDayApts.length === 0 ? (
+                <div className="p-6 text-center rounded-2xl bg-[var(--bg-card-subtle)] border border-dashed border-[var(--border-color)] text-[var(--text-muted)] space-y-2.5">
+                  <CalendarCheck className="w-8 h-8 text-[var(--text-muted)]/50 mx-auto" />
+                  <p className="text-xs font-mono font-semibold text-[var(--text-main)]">Sin citas registradas hoy</p>
+                  <p className="text-[11px] text-[var(--text-muted)] font-mono leading-relaxed">
+                    Este día se encuentra 100% disponible. Puedes programar una cita directa o pulsar Zoom Horario.
+                  </p>
+                </div>
+              ) : (
+                selectedDayApts.map((apt) => (
+                  <div
+                    key={apt.id}
+                    onClick={() => setSelectedAppointment(apt)}
+                    className="p-3 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] border border-[var(--border-color)] hover:border-neon/50 transition-all cursor-pointer group shadow-sm"
+                  >
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="w-3 h-3 text-neon" />
+                        <span className="text-xs font-mono font-bold text-neon">{apt.hour} hrs</span>
+                      </div>
+                      <span
+                        className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-full ${
+                          apt.depositPaid
+                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                            : 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                        }`}
+                      >
+                        {apt.depositPaid ? 'Confirmada' : 'Pre-Cita Triage'}
+                      </span>
+                    </div>
+                    <p className="text-xs font-bold text-[var(--text-main)] group-hover:text-neon transition-colors truncate">
+                      {apt.client}
+                    </p>
+                    <div className="flex items-center justify-between mt-1 text-[10px] text-[var(--text-muted)] font-mono">
+                      <span className="truncate">{apt.serviceName || 'Servicio General'}</span>
+                      <span className="text-emerald-400 font-bold shrink-0">
+                        ${String(apt.estimatedValue || 1200).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Acciones Rápidas en Footer */}
+            <div className="pt-3 border-t border-[var(--border-color)] space-y-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const shift = calendarConfig.shifts?.[0] || { name: 'Turno Regular' };
+                  handleManualBook(shift, '10:00');
+                }}
+                className="w-full py-2.5 rounded-xl bg-neon text-black font-mono font-bold text-xs flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 shadow-neon-sm transition-all"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Agendar en este Día</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
