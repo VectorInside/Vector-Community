@@ -41,6 +41,9 @@ import {
   Share2,
   MessageSquare,
   RotateCcw,
+  Edit3,
+  Heart,
+  Share,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Badge } from '@/components/common/Badge';
@@ -108,6 +111,9 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
   const [selectedNetworkFilter, setSelectedNetworkFilter] = useState('ALL');
   const [copiedCanvas, setCopiedCanvas] = useState(false);
   const [copiedPostId, setCopiedPostId] = useState(null);
+  const [copiedHookId, setCopiedHookId] = useState(null);
+  const [previewPost, setPreviewPost] = useState(null);
+  const [editingPost, setEditingPost] = useState(null);
   const [selectedViralReel, setSelectedViralReel] = useState(null);
 
   // Estados asíncronos para operaciones reales con IA y Meta
@@ -385,25 +391,79 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
     }
   };
 
-  const handleApprovePost = (postId) => {
+  const getPlatformFormatInfo = (network) => {
+    const net = (network || '').toUpperCase();
+    switch (net) {
+      case 'WHATSAPP':
+        return { type: 'Estado 24h & Difusión', channel: 'WhatsApp Estados & Broadcast', ratio: '9:16' };
+      case 'FACEBOOK':
+        return { type: 'Post Feed & Reels', channel: 'Facebook Feed & Reels', ratio: '1:1' };
+      case 'TIKTOK':
+        return { type: 'TikTok 9:16', channel: 'TikTok For You Feed', ratio: '9:16' };
+      case 'YOUTUBE':
+        return { type: 'Short 9:16', channel: 'YouTube Shorts & Feed', ratio: '9:16' };
+      case 'LINKEDIN':
+        return { type: 'Post B2B', channel: 'LinkedIn Feed B2B', ratio: '4:5' };
+      case 'INSTAGRAM':
+      default:
+        return { type: 'Reel 9:16', channel: 'Instagram Reels & Feed', ratio: '9:16' };
+    }
+  };
+
+  const getNormalizedChannelName = (post) => {
+    const net = (post.network || '').toUpperCase();
+    if (net === 'WHATSAPP') {
+      return 'WhatsApp Estados & Difusión';
+    }
+    if (net === 'INSTAGRAM') {
+      return post.channel && !post.channel.includes('WHATSAPP') ? post.channel : 'Instagram Reels & Feed';
+    }
+    if (net === 'FACEBOOK') {
+      return post.channel && !post.channel.includes('WHATSAPP') ? post.channel : 'Facebook Feed & Reels';
+    }
+    if (net === 'TIKTOK') return 'TikTok For You Feed';
+    if (net === 'YOUTUBE') return 'YouTube Shorts & Feed';
+    if (net === 'LINKEDIN') return 'LinkedIn Feed B2B';
+    return post.channel || 'Red Social Feed';
+  };
+
+  const getNormalizedFormatBadge = (post) => {
+    const net = (post.network || '').toUpperCase();
+    if (net === 'WHATSAPP') return 'Estado 24h & Difusión';
+    if (net === 'TIKTOK') return 'TikTok 9:16';
+    if (net === 'YOUTUBE') return 'Short 9:16';
+    if (net === 'LINKEDIN') return 'Post B2B';
+    return post.type || 'Reel 9:16';
+  };
+
+  const handleToggleApprovePost = (postId) => {
+    const post = posts.find((p) => p.id === postId);
+    if (!post) return;
+    const isCurrentlyApproved = post.status === 'APROBADO_PROGRAMADO' || post.status === 'APPROVED';
+    const nextStatus = isCurrentlyApproved ? 'PENDIENTE_CLIENTE' : 'APROBADO_PROGRAMADO';
     const updated = posts.map((p) =>
-      p.id === postId ? { ...p, status: 'APROBADO_PROGRAMADO' } : p
+      p.id === postId ? { ...p, status: nextStatus } : p
     );
     persistPosts(updated);
-    contentService.approvePost(postId).catch(() => {});
-
-    try {
-      confetti({
-        particleCount: 35,
-        spread: 55,
-        colors: ['#D4FF00', '#10B981', '#FFFFFF'],
-      });
-    } catch (e) {}
-
-    triggerModal(
-      'Publicación Aprobada & Programada',
-      'El post ha recibido el visto bueno del cliente. El despachador automático lo publicará exactamente en la fecha y hora programada.'
-    );
+    if (!isCurrentlyApproved) {
+      contentService.approvePost(postId).catch(() => {});
+      try {
+        confetti({
+          particleCount: 35,
+          spread: 55,
+          colors: ['#D4FF00', '#10B981', '#FFFFFF'],
+        });
+      } catch (e) {}
+      triggerModal(
+        'Publicación Aprobada & Programada',
+        'El post ha recibido el visto bueno del cliente. El despachador lo tiene listo para su publicación oficial.'
+      );
+    } else {
+      triggerModal(
+        'Publicación Devuelta a Revisión',
+        'El post ha retornado al estado Pendiente Cliente para ajustes o edición.'
+      );
+    }
   };
 
   const handleCopyPostCopy = (postId, text) => {
@@ -412,6 +472,26 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
       setCopiedPostId(postId);
       setTimeout(() => setCopiedPostId(null), 2000);
     }
+  };
+
+  const handleCopyHook = (postId, hookText) => {
+    if (navigator?.clipboard) {
+      navigator.clipboard.writeText(hookText);
+      setCopiedHookId(postId);
+      setTimeout(() => setCopiedHookId(null), 2000);
+    }
+  };
+
+  const handleSaveEditedPost = async (updatedPost) => {
+    const updated = posts.map((p) => (p.id === updatedPost.id ? updatedPost : p));
+    persistPosts(updated);
+    try {
+      await contentService.updatePost(updatedPost.id, updatedPost);
+    } catch (e) {
+      console.warn('Error saving updated post to backend:', e);
+    }
+    setEditingPost(null);
+    triggerModal('Guion Actualizado', 'Los cambios en el título, gancho y copy han sido guardados con éxito.');
   };
 
   const handleResetToCanonicalDna = () => {
@@ -469,11 +549,13 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
       const generatedHashtags = parsed?.hashtags || `#${(activeTenant?.shortName || activeTenant?.name || 'Vector').replace(/\s+/g, '')} #Crecimiento #Estrategia`;
       const matchScore = parsed?.aiConfidence || 97;
 
+      const formatInfo = getPlatformFormatInfo(networkTarget);
+
       const newPostData = {
         tenantId: tenantKey,
         network: networkTarget,
-        type: 'Reel 9:16',
-        channel: `${networkTarget} Reels & Feed`,
+        type: formatInfo.type,
+        channel: formatInfo.channel,
         publishDate: 'Próx. Miércoles • 19:00 hrs',
         title: generatedTitle,
         hookText: generatedHook,
@@ -808,12 +890,16 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
       {/* ========================================================================= */}
       {activeTab === 'grid' && (
         <div className="space-y-6 animate-fade-in">
-          {/* BANNER: OFERTA COMERCIAL VIGENTE */}
-          <div className="rounded-2xl bg-[var(--bg-card)] border-2 border-neon/50 p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
-            <div className="space-y-1.5 flex-1">
+          {/* BANNER: OFERTA COMERCIAL VIGENTE & CEREBRO RAG */}
+          <div className="rounded-2xl bg-[var(--bg-card)] border-2 border-neon/50 p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm relative overflow-hidden">
+            <div className="space-y-2 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded bg-neon text-black">
+                <span className="text-[10px] font-mono font-black uppercase px-2.5 py-1 rounded-md bg-neon text-black shadow-neon-sm">
                   OFERTA COMERCIAL DEL MES
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 flex items-center gap-1 font-bold">
+                  <Sparkles className="w-3 h-3 text-cyan-400" />
+                  Cerebro RAG Activo (DeepSeek R1)
                 </span>
                 <span className="text-xs font-mono text-[var(--text-muted)]">
                   Doc Activo:{' '}
@@ -829,15 +915,15 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
               </div>
 
               {(commercialOffer.hook || brandDna.leadMagnetHook) ? (
-                <>
+                <div className="space-y-1">
                   <p className="text-xs text-[var(--text-main)] font-bold font-mono">
-                    Gancho:{' '}
+                    Gancho Rector:{' '}
                     <span className="text-lime-700 dark:text-neon font-black">
                       "{commercialOffer.hook || brandDna.leadMagnetHook}"
                     </span>
                   </p>
                   <p className="text-[11px] text-[var(--text-muted)] font-mono font-medium">
-                    CTA:{' '}
+                    CTA de Cierre:{' '}
                     <span className="text-cyan-600 dark:text-cyan-400 font-bold">
                       {commercialOffer.cta || brandDna.leadMagnetCta || 'Sin llamado a la acción'}
                     </span>
@@ -845,7 +931,10 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
                       <span> • Vigencia: <strong className="text-[var(--text-main)]">{commercialOffer.validity}</strong></span>
                     )}
                   </p>
-                </>
+                  <p className="text-[10px] font-mono text-[var(--text-muted)] pt-0.5">
+                    💡 <em>Este gancho y CTA se inyectan como anclas comerciales directas en cada guion generado abajo.</em>
+                  </p>
+                </div>
               ) : (
                 <p className="text-xs text-[var(--text-muted)] font-mono italic">
                   Define el gancho comercial del mes para que los guiones de DeepSeek R1 promuevan tu oferta insignia con autoridad.
@@ -856,7 +945,7 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
             <button
               type="button"
               onClick={() => setShowOfferModal(true)}
-              className="px-4 py-2 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-xs font-mono font-bold text-[var(--text-main)] border border-[var(--border-color)] transition-all shrink-0 flex items-center gap-1.5"
+              className="px-4 py-2 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-xs font-mono font-bold text-[var(--text-main)] border border-[var(--border-color)] transition-all shrink-0 flex items-center gap-1.5 shadow-sm"
             >
               <Sparkles className="w-3.5 h-3.5 text-lime-700 dark:text-neon" />
               <span>{commercialOffer.hook || brandDna.leadMagnetHook ? 'Actualizar Oferta del Mes' : 'Configurar Oferta del Mes'}</span>
@@ -981,103 +1070,174 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
                 name: post.network || 'Red Social',
                 badgeColor: 'border-[var(--border-color)] text-[var(--text-muted)] bg-[var(--bg-card-subtle)]',
               };
+              const normalizedChannel = getNormalizedChannelName(post);
+              const normalizedBadge = getNormalizedFormatBadge(post);
 
               return (
                 <div
                   key={post.id}
-                  className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] overflow-hidden shadow-sm flex flex-col justify-between hover:border-neon/50 transition-all"
+                  className={`rounded-2xl bg-[var(--bg-card)] border overflow-hidden shadow-sm flex flex-col justify-between transition-all duration-200 group ${
+                    isPending
+                      ? 'border-[var(--border-color)] hover:border-neon/50'
+                      : 'border-emerald-500/30 bg-emerald-500/[0.02]'
+                  }`}
                 >
-                  <div className="p-5 space-y-4">
+                  <div className="p-5 space-y-3.5">
+                    {/* Header de la Tarjeta */}
                     <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <span className="p-2 rounded-xl bg-[var(--bg-card-subtle)] text-lime-700 dark:text-neon border border-[var(--border-color)]">
+                      <div className="flex items-center gap-2.5">
+                        <span className="p-2 rounded-xl bg-[var(--bg-card-subtle)] text-lime-700 dark:text-neon border border-[var(--border-color)] shrink-0">
                           <IconFormat className="w-4 h-4" />
                         </span>
                         <div>
-                          <div className="flex items-center gap-1.5 mb-0.5">
+                          <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
                             <span className={`text-[9px] font-mono uppercase px-2 py-0.5 rounded font-black border ${networkCatalog.badgeColor}`}>
                               {networkCatalog.name}
                             </span>
-                            <span className="text-[10px] font-mono uppercase text-[var(--text-muted)] font-bold">
-                              {post.channel}
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-muted)] font-bold">
+                              {normalizedBadge}
                             </span>
                           </div>
-                          <span className="text-xs font-mono font-bold text-[var(--text-main)]">
-                            {post.publishDate}
+                          <span className="text-xs font-mono font-bold text-[var(--text-main)] block">
+                            {normalizedChannel} • {post.publishDate}
                           </span>
                         </div>
                       </div>
 
-                      <span
-                        className={`text-[10px] font-mono px-2.5 py-1 rounded-full font-bold uppercase tracking-wider shrink-0 ${
+                      <button
+                        type="button"
+                        onClick={() => handleToggleApprovePost(post.id)}
+                        className={`text-[10px] font-mono px-2.5 py-1 rounded-full font-bold uppercase tracking-wider shrink-0 transition-all flex items-center gap-1.5 ${
                           isPending
-                            ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30'
-                            : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                            ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 hover:bg-amber-500/20'
+                            : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25'
                         }`}
+                        title="Haz clic para alternar el estado de aprobación"
                       >
-                        {isPending ? 'Pendiente Cliente' : 'Aprobado'}
-                      </span>
+                        <span className={`w-1.5 h-1.5 rounded-full ${isPending ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'}`} />
+                        <span>{isPending ? 'Pendiente Cliente' : 'Aprobado'}</span>
+                      </button>
                     </div>
 
-                    <h4 className="text-base font-bold text-[var(--text-main)] font-sans">
+                    {/* Título de la Pieza */}
+                    <h4 className="text-base font-bold text-[var(--text-main)] font-sans tracking-tight leading-snug">
                       {post.title}
                     </h4>
 
-                    {/* Hook Text Card */}
-                    <div className="p-3.5 rounded-xl bg-[var(--bg-card-subtle)] border border-neon/40 text-xs font-mono space-y-1">
-                      <span className="text-[10px] text-lime-700 dark:text-neon uppercase font-bold flex items-center gap-1">
-                        <Flame className="w-3 h-3 text-lime-700 dark:text-neon" />
-                        Gancho Viral (0-3s Hook)
+                    {/* Tag de Trazabilidad RAG */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-neon/10 text-lime-700 dark:text-neon border border-neon/30 flex items-center gap-1 font-bold">
+                        <Sparkles className="w-2.5 h-2.5 text-lime-700 dark:text-neon" />
+                        Inyectado de Oferta del Mes
                       </span>
-                      <p className="text-[var(--text-main)] font-bold italic">
+                      <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-bold">
+                        {post.aiConfidence || 97}% Match con ADN
+                      </span>
+                    </div>
+
+                    {/* Hook Text Card con botón de copiado rápido */}
+                    <div className="p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-neon/40 text-xs font-mono space-y-1 relative group/hook">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-lime-700 dark:text-neon uppercase font-bold flex items-center gap-1">
+                          <Flame className="w-3 h-3 text-lime-700 dark:text-neon" />
+                          Gancho Viral (0-3s Hook)
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyHook(post.id, post.hookText)}
+                          className="opacity-70 hover:opacity-100 text-[10px] font-mono text-lime-700 dark:text-neon font-bold flex items-center gap-1"
+                          title="Copiar únicamente el Gancho"
+                        >
+                          {copiedHookId === post.id ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                          <span>{copiedHookId === post.id ? '¡Copiado!' : 'Copiar Gancho'}</span>
+                        </button>
+                      </div>
+                      <p className="text-[var(--text-main)] font-bold italic leading-relaxed">
                         "{post.hookText}"
                       </p>
                     </div>
 
-                    {/* Full Copy */}
-                    <div className="space-y-1.5 text-xs font-sans">
+                    {/* Full Copy & CTA */}
+                    <div className="space-y-1 text-xs font-sans">
                       <span className="text-[10px] font-mono uppercase text-[var(--text-muted)] block font-bold">
-                        Copy & CTA
+                        Copy & Llamado a la Acción (CTA)
                       </span>
-                      <p className="text-[var(--text-main)] leading-relaxed bg-[var(--bg-card-subtle)] p-3 rounded-xl border border-[var(--border-color)] font-mono text-[11px]">
+                      <p className="text-[var(--text-main)] leading-relaxed bg-[var(--bg-card-subtle)] p-3 rounded-xl border border-[var(--border-color)] font-mono text-[11px] whitespace-pre-line">
                         {post.copy}
                       </p>
-                      <p className="text-[11px] font-mono text-blue-600 dark:text-blue-400 font-semibold">
+                      <p className="text-[11px] font-mono text-blue-600 dark:text-blue-400 font-semibold pt-0.5">
                         {post.hashtags}
                       </p>
                     </div>
                   </div>
 
-                  <div className="p-4 border-t border-[var(--border-color)] bg-[var(--bg-card)] flex items-center justify-between">
-                    <span className="text-[11px] font-mono text-[var(--text-muted)] flex items-center gap-1.5">
-                      <Eye className="w-3.5 h-3.5 text-[var(--text-muted)]" />
-                      <span>{post.estimatedReach}</span>
-                    </span>
+                  {/* Barra de Métricas Predictivas & Barra de Acciones */}
+                  <div className="p-3.5 border-t border-[var(--border-color)] bg-[var(--bg-card)] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                    <div className="flex items-center gap-3 text-[10px] font-mono text-[var(--text-muted)]">
+                      <span className="flex items-center gap-1" title="Alcance estimado por algoritmo">
+                        <Eye className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+                        <span>{post.estimatedReach}</span>
+                      </span>
+                      <span className="text-emerald-400 font-bold" title="Hook Rate de retención estimada en 0-3 segundos">
+                        ~32.4% Retención
+                      </span>
+                    </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {/* Vista Previa Móvil */}
+                      <button
+                        type="button"
+                        onClick={() => setPreviewPost(post)}
+                        className="px-2.5 py-1.5 rounded-lg bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-main)] text-xs font-mono border border-[var(--border-color)] flex items-center gap-1 transition-colors"
+                        title="Simular visualización en pantalla de smartphone"
+                      >
+                        <Smartphone className="w-3.5 h-3.5 text-cyan-400" />
+                        <span className="text-[10px] font-bold">Preview</span>
+                      </button>
+
+                      {/* Editar Post */}
+                      <button
+                        type="button"
+                        onClick={() => setEditingPost(post)}
+                        className="px-2.5 py-1.5 rounded-lg bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-main)] text-xs font-mono border border-[var(--border-color)] flex items-center gap-1 transition-colors"
+                        title="Ajustar gancho, copy o hashtags"
+                      >
+                        <Edit3 className="w-3.5 h-3.5 text-lime-700 dark:text-neon" />
+                        <span className="text-[10px] font-bold">Editar</span>
+                      </button>
+
+                      {/* Copiar Todo */}
                       <button
                         type="button"
                         onClick={() => handleCopyPostCopy(post.id, `${post.copy}\n\n${post.hashtags}`)}
                         className="px-2.5 py-1.5 rounded-lg bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-main)] text-xs font-mono border border-[var(--border-color)] flex items-center gap-1 transition-colors"
-                        title="Copiar Copy y Hashtags"
+                        title="Copiar Copy Completo y Hashtags al Portapapeles"
                       >
                         {copiedPostId === post.id ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
                         <span className="text-[10px] font-bold">{copiedPostId === post.id ? '¡Copiado!' : 'Copiar'}</span>
                       </button>
 
+                      {/* Aprobar / Reabrir */}
                       {isPending ? (
                         <button
                           type="button"
-                          onClick={() => handleApprovePost(post.id)}
-                          className="bg-neon text-black text-xs font-bold px-3.5 py-1.5 rounded-xl hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_12px_var(--neon-glow)] flex items-center gap-1.5 active:scale-95"
+                          onClick={() => handleToggleApprovePost(post.id)}
+                          className="bg-neon text-black text-xs font-bold px-3 py-1.5 rounded-xl hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_12px_var(--neon-glow)] flex items-center gap-1.5 active:scale-95"
+                          title="Aprobar para programación"
                         >
                           <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Aprobar Publicación</span>
+                          <span>Aprobar</span>
                         </button>
                       ) : (
-                        <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Programado
-                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleApprovePost(post.id)}
+                          className="px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-mono font-bold flex items-center gap-1 hover:bg-emerald-500/20 transition-all"
+                          title="Clic para regresar a estado pendiente si requieres ajustes"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>Aprobado ✓</span>
+                        </button>
                       )}
                     </div>
                   </div>
@@ -1543,6 +1703,223 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
             </form>
           </div>
         </div>
+        </Portal>
+      )}
+
+      {/* MODAL DE VISTA PREVIA MÓVIL (RATIO 9:16 VERTICAL SIMULATOR) */}
+      {previewPost && (
+        <Portal>
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setPreviewPost(null);
+            }}
+          >
+            <div className="relative w-full max-w-[360px] bg-zinc-950 border-4 border-zinc-700/80 rounded-[44px] shadow-[0_0_50px_rgba(0,0,0,0.9)] overflow-hidden flex flex-col aspect-[9/18.5] max-h-[92vh] animate-scale-up select-none">
+              {/* Dynamic Island / Notch */}
+              <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-24 h-5 bg-black rounded-full z-30 flex items-center justify-center border border-zinc-800">
+                <span className="w-2 h-2 rounded-full bg-zinc-800 ml-auto mr-2" />
+              </div>
+
+              {/* Header de la Simulación Móvil */}
+              <div className="pt-9 px-4 pb-2 z-20 flex items-center justify-between bg-gradient-to-b from-black/80 via-black/40 to-transparent">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-neon/20 border border-neon/50 text-neon font-black text-[10px] flex items-center justify-center">
+                    {(activeTenant?.name || 'V').slice(0, 1)}
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-white block leading-none">
+                      {activeTenant?.name || 'Vector Inside'}
+                    </span>
+                    <span className="text-[9px] font-mono text-zinc-400">
+                      {getNormalizedChannelName(previewPost)}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPreviewPost(null)}
+                  className="p-1 rounded-full bg-black/50 hover:bg-black/80 text-white/80 hover:text-white transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Pantalla Central Simulada (Video Frame 9:16) */}
+              <div className="flex-1 relative overflow-hidden flex flex-col justify-end p-4 bg-gradient-to-br from-zinc-900 via-zinc-950 to-black">
+                {/* Fondo cinemático abstracto */}
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-neon/15 via-transparent to-transparent pointer-events-none" />
+
+                {/* Gancho Viral Display (Subtítulo Cinemático Central) */}
+                <div className="my-auto text-center px-2 py-4 z-10">
+                  <span className="inline-block px-2 py-0.5 rounded-full bg-black/60 border border-neon/40 text-[9px] font-mono font-bold text-neon uppercase mb-3">
+                    🔥 Gancho (Primeros 3 Segundos)
+                  </span>
+                  <p className="text-lg sm:text-xl font-black text-white leading-snug drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+                    "{previewPost.hookText}"
+                  </p>
+                </div>
+
+                {/* Botones de Interacción Lateral de Red Social (Like, Comment, Share) */}
+                <div className="absolute right-3 bottom-20 z-20 flex flex-col items-center gap-4 text-white">
+                  <div className="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform">
+                    <span className="p-2 rounded-full bg-black/40 backdrop-blur-sm border border-white/10">
+                      <Heart className="w-5 h-5 text-rose-500 fill-rose-500" />
+                    </span>
+                    <span className="text-[10px] font-bold">1.4k</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform">
+                    <span className="p-2 rounded-full bg-black/40 backdrop-blur-sm border border-white/10">
+                      <MessageSquare className="w-5 h-5 text-white" />
+                    </span>
+                    <span className="text-[10px] font-bold">89</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform">
+                    <span className="p-2 rounded-full bg-black/40 backdrop-blur-sm border border-white/10">
+                      <Share2 className="w-5 h-5 text-white" />
+                    </span>
+                    <span className="text-[10px] font-bold">Share</span>
+                  </div>
+                </div>
+
+                {/* Copy y CTA Inferior del Reel / Estado */}
+                <div className="z-10 pr-12 space-y-1.5 max-h-[140px] overflow-y-auto bg-black/40 backdrop-blur-sm p-3 rounded-2xl border border-white/10">
+                  <p className="text-[11px] font-sans font-medium text-white/90 leading-relaxed">
+                    {previewPost.copy}
+                  </p>
+                  <p className="text-[10px] font-mono text-cyan-400 font-semibold">
+                    {previewPost.hashtags}
+                  </p>
+                </div>
+              </div>
+
+              {/* Botón de Acción Footer */}
+              <div className="p-3 bg-black/90 border-t border-zinc-800 z-20 flex items-center justify-between">
+                <span className="text-[10px] font-mono text-zinc-400">
+                  Formato: <strong className="text-white">{getNormalizedFormatBadge(previewPost)}</strong>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleCopyPostCopy(previewPost.id, `${previewPost.copy}\n\n${previewPost.hashtags}`);
+                    setPreviewPost(null);
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-neon text-black font-bold text-xs font-mono flex items-center gap-1 hover:bg-[var(--neon-hover)]"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>Copiar Copy</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </Portal>
+      )}
+
+      {/* MODAL DE EDICIÓN RÁPIDA DE PUBLICACIÓN */}
+      {editingPost && (
+        <Portal>
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setEditingPost(null);
+            }}
+          >
+            <div className="w-full max-w-lg rounded-3xl bg-[var(--bg-panel)] border border-neon/40 shadow-2xl p-6 relative space-y-4 my-auto animate-scale-up">
+              <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)]">
+                <div>
+                  <h3 className="text-lg font-black text-[var(--text-main)] flex items-center gap-2">
+                    <Edit3 className="w-4 h-4 text-neon" />
+                    <span>Editar Publicación & Copy</span>
+                  </h3>
+                  <p className="text-xs text-[var(--text-muted)] font-mono">
+                    Canal: <strong>{getNormalizedChannelName(editingPost)}</strong>
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditingPost(null)}
+                  className="p-1.5 rounded-lg hover:bg-[var(--bg-card-subtle)] text-[var(--text-muted)]"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSaveEditedPost(editingPost);
+                }}
+                className="space-y-3 font-mono text-xs"
+              >
+                <div>
+                  <label className="block text-[var(--text-main)] font-bold mb-1">
+                    Título de la Pieza
+                  </label>
+                  <input
+                    type="text"
+                    value={editingPost.title || ''}
+                    onChange={(e) => setEditingPost({ ...editingPost, title: e.target.value })}
+                    className="w-full bg-[var(--bg-card-subtle)] border border-[var(--border-color)] rounded-xl p-2.5 text-[var(--text-main)] focus:border-neon outline-none"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-lime-700 dark:text-neon font-bold mb-1">
+                    Gancho Viral (0-3s Hook)
+                  </label>
+                  <input
+                    type="text"
+                    value={editingPost.hookText || ''}
+                    onChange={(e) => setEditingPost({ ...editingPost, hookText: e.target.value })}
+                    className="w-full bg-[var(--bg-card-subtle)] border border-neon/50 rounded-xl p-2.5 text-[var(--text-main)] focus:border-neon outline-none font-bold italic"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[var(--text-main)] font-bold mb-1">
+                    Cuerpo del Copy & Llamado a la Acción (CTA)
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={editingPost.copy || ''}
+                    onChange={(e) => setEditingPost({ ...editingPost, copy: e.target.value })}
+                    className="w-full bg-[var(--bg-card-subtle)] border border-[var(--border-color)] rounded-xl p-2.5 text-[var(--text-main)] focus:border-neon outline-none font-sans text-xs"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-cyan-500 font-bold mb-1">
+                    Hashtags Estratégicos
+                  </label>
+                  <input
+                    type="text"
+                    value={editingPost.hashtags || ''}
+                    onChange={(e) => setEditingPost({ ...editingPost, hashtags: e.target.value })}
+                    className="w-full bg-[var(--bg-card-subtle)] border border-[var(--border-color)] rounded-xl p-2.5 text-[var(--text-main)] focus:border-neon outline-none"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2.5 pt-3 border-t border-[var(--border-color)]">
+                  <button
+                    type="button"
+                    onClick={() => setEditingPost(null)}
+                    className="px-4 py-2 rounded-xl bg-[var(--bg-card-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)] font-bold"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 rounded-xl bg-neon text-black font-bold hover:bg-[var(--neon-hover)] shadow-neon"
+                  >
+                    Guardar Cambios
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         </Portal>
       )}
     </div>
