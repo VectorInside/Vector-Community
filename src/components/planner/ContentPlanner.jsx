@@ -47,6 +47,10 @@ import {
   Trash2,
   UploadCloud,
   Paperclip,
+  Settings,
+  Sliders,
+  Zap,
+  RefreshCw,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Badge } from '@/components/common/Badge';
@@ -119,6 +123,44 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
   const [editingPost, setEditingPost] = useState(null);
   const [postToDelete, setPostToDelete] = useState(null);
   const [selectedViralReel, setSelectedViralReel] = useState(null);
+
+  // Estados para Modal de Generación IA Quirúrgica (Plataformas, Objetivo, Tono, RAG)
+  const [showAiGenModal, setShowAiGenModal] = useState(false);
+  const [aiGenConfig, setAiGenConfig] = useState({
+    network: 'INSTAGRAM',
+    objective: 'LEAD_MAGNET',
+    tone: 'AUTORIDAD',
+    injectCommercialOffer: true,
+    customTopic: '',
+    volume: 1,
+  });
+
+  // Estados para Re-roll IA en Tarjetas (Regenerar con Enfoque Táctico)
+  const [rerollPost, setRerollPost] = useState(null);
+  const [rerollAngle, setRerollAngle] = useState('HOOK_ONLY');
+  const [rerollCustomNote, setRerollCustomNote] = useState('');
+  const [rerollingPostId, setRerollingPostId] = useState(null);
+
+  // Estados para Autogenerador Semanal (Cron Scheduler & Feedback Loop)
+  const [showWeeklyCronModal, setShowWeeklyCronModal] = useState(false);
+  const [weeklyCronConfig, setWeeklyCronConfig] = useState(() => {
+    if (typeof window !== 'undefined' && tenantKey) {
+      try {
+        const saved = localStorage.getItem(`vector_planner_weekly_cron_${tenantKey}`);
+        if (saved) return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return {
+      enabled: true,
+      dayOfWeek: 'Lunes',
+      time: '08:00',
+      volume: 5,
+      useViralHooks: true,
+      useCommercialOffer: true,
+      useWhatsappObjections: true,
+    };
+  });
+  const [dismissBatchBanner, setDismissBatchBanner] = useState(false);
 
   // Estados y referencias para carga real de documentos (PDF / Doc / RAG)
   const fileInputRef = useRef(null);
@@ -576,77 +618,128 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
     );
   };
 
-  const handleGenerateAiPost = async () => {
+  const handleGenerateAiPost = () => {
     if (!tenantKey) {
       triggerModal('Atención', 'Por favor selecciona un negocio activo para generar contenido con IA.');
       return;
     }
+    // Si el usuario tiene una red filtrada en la barra de tabs, pre-seleccionarla
+    if (selectedNetworkFilter && selectedNetworkFilter !== 'ALL') {
+      setAiGenConfig((prev) => ({
+        ...prev,
+        network: selectedNetworkFilter,
+      }));
+    }
+    setShowAiGenModal(true);
+  };
+
+  const handleExecuteAiGenModal = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!tenantKey) return;
     setIsGeneratingAi(true);
 
-    const networkTarget = selectedNetworkFilter !== 'ALL'
-      ? selectedNetworkFilter
-      : (connectedNetworks[0] || 'INSTAGRAM');
+    const { network, objective, tone, injectCommercialOffer, customTopic, volume } = aiGenConfig;
+
+    // Lista de redes destino: si es OMNI_PACK genera para todas las activas
+    let targetNetworksList = [network];
+    if (network === 'OMNI_PACK') {
+      targetNetworksList = connectedNetworks.length > 0 ? connectedNetworks.slice(0, 3) : ['INSTAGRAM', 'WHATSAPP', 'FACEBOOK'];
+    }
 
     const effectiveHook = commercialOffer?.hook || brandDna?.leadMagnetHook || '';
     const effectiveCta = commercialOffer?.cta || brandDna?.leadMagnetCta || '';
-    const topicPrompt = `Crear pieza publicitaria de alto impacto para ${activeTenant?.name} (${activeTenant?.giro || activeTenant?.verticalLabel || 'Servicios'}). Oferta comercial activa: ${effectiveHook || 'Valor diferencial de marca'}. CTA esperado: ${effectiveCta || 'Escríbenos por WhatsApp'}. Arquetipo de marca: ${brandDna?.archetype || 'Líder en el sector'}. Tono rector: ${brandDna?.tone || activeTenant?.toneOfVoice || 'Profesional y directo'}. Resolver objeciones: ${brandDna?.icpObjections || 'Precio y tiempo'}.`;
+
+    // Directiva del objetivo comercial para el prompt
+    let objectiveDirective = 'Promover la oferta comercial activa y resolver las principales objeciones de compra.';
+    if (objective === 'LEAD_MAGNET') {
+      objectiveDirective = `Promover la oferta gancho insignia (Lead Magnet): "${effectiveHook || 'Oferta especial'}". CTA prioritario hacia WhatsApp: "${effectiveCta || 'Escríbenos para agendar'}".`;
+    } else if (objective === 'OBJECTION_PRICE') {
+      objectiveDirective = `Derribar frontalmente la objeción de precio/costo (${brandDna?.icpObjections || 'está muy caro / no tengo presupuesto'}). Justificar el valor tangible y demostrar el alto costo de no resolver el problema hoy.`;
+    } else if (objective === 'OBJECTION_TIME') {
+      objectiveDirective = `Derribar la objeción de falta de tiempo del cliente. Enfatizar proceso ágil, atención guiada y facilidad para iniciar sin esfuerzo.`;
+    } else if (objective === 'AUTHORITY_CASE') {
+      objectiveDirective = `Construir máxima autoridad de marca. Exponer un caso de éxito, método probado y diferenciador de mercado (${brandDna?.archetype || 'Líder del sector'}).`;
+    } else if (objective === 'URGENCY_FOMO') {
+      objectiveDirective = `Generar urgencia comercial y escasez legítima. Resaltar vigencia de la oferta del mes (${commercialOffer?.validity || 'este mes'}) y cupos limitados.`;
+    }
+
+    // Directiva del tono
+    let toneDirective = brandDna?.tone || activeTenant?.toneOfVoice || 'Profesional y directo';
+    if (tone === 'AUTORIDAD') toneDirective = 'Autoridad Médica/Técnica de alto nivel, fundamentado en resultados y confianza.';
+    if (tone === 'DISRUPTIVO') toneDirective = 'Disruptivo, desafiante, quiebre de creencias erróneas comunes y gancho polarizante.';
+    if (tone === 'EMPATICO') toneDirective = 'Empático, cálido, comprendiendo profundamente la frustración del prospecto.';
+    if (tone === 'DIRECTO') toneDirective = 'Directo al grano, enérgico, de alta tracción y venta conversacional.';
 
     try {
-      const res = await aiService.generateContent({
-        tenantId: tenantKey,
-        targetNetwork: networkTarget,
-        postType: 'Reel 9:16',
-        topicPrompt,
-      });
+      const generatedPostsList = [];
 
-      let parsed = null;
-      if (res?.generatedRawJson) {
-        try {
-          parsed = typeof res.generatedRawJson === 'string' ? JSON.parse(res.generatedRawJson) : res.generatedRawJson;
-        } catch (e) {
-          console.warn('Error parsing generatedRawJson:', e);
+      for (const targetNet of targetNetworksList) {
+        const formatInfo = getPlatformFormatInfo(targetNet);
+        const loopCount = network === 'OMNI_PACK' ? 1 : Math.max(1, volume || 1);
+
+        for (let i = 0; i < loopCount; i++) {
+          const topicPrompt = `Crear publicación publicitaria de alto impacto para ${activeTenant?.name} (${activeTenant?.giro || activeTenant?.verticalLabel || 'Servicios'}).
+Canal: ${targetNet} (${formatInfo.type}, ratio ${formatInfo.ratio}).
+Objetivo estratégico: ${objectiveDirective}
+Tono rector: ${toneDirective}
+${injectCommercialOffer && effectiveHook ? `Oferta activa del mes: "${effectiveHook}". CTA: "${effectiveCta}".` : ''}
+${customTopic ? `Enfoque temático solicitado por el estratega: "${customTopic}".` : ''}
+${targetNet === 'WHATSAPP' ? 'Regla de canal: Redacción hiper-directa para WhatsApp Estados/Difusión. Formato claro con emojis sutiles. PROHIBIDO USAR HASHTAGS.' : ''}
+Palabras tabú prohibidas: [${brandDna?.tabooWords || 'ninguna'}].`;
+
+          const res = await aiService.generateContent({
+            tenantId: tenantKey,
+            targetNetwork: targetNet,
+            postType: formatInfo.type,
+            tone: toneDirective,
+            topicPrompt,
+          });
+
+          let parsed = null;
+          if (res?.generatedRawJson) {
+            try {
+              parsed = typeof res.generatedRawJson === 'string' ? JSON.parse(res.generatedRawJson) : res.generatedRawJson;
+            } catch (e) {}
+          } else if (res?.content) {
+            try {
+              parsed = typeof res.content === 'string' ? JSON.parse(res.content) : res.content;
+            } catch (e) {}
+          } else if (typeof res === 'object') {
+            parsed = res;
+          }
+
+          const generatedTitle = parsed?.title || `Estrategia ${targetNet}: ${activeTenant?.name}`;
+          const generatedHook = parsed?.hookText || effectiveHook || `¿Por qué elegir a ${activeTenant?.name}?`;
+          const generatedCopy = parsed?.copy || `En ${activeTenant?.name} te acompañamos con resultados reales. ${effectiveHook}. ${effectiveCta}`;
+          const generatedHashtags = targetNet === 'WHATSAPP' ? '' : (parsed?.hashtags || `#${(activeTenant?.shortName || activeTenant?.name || 'Vector').replace(/\s+/g, '')} #Crecimiento`);
+          const matchScore = parsed?.aiConfidence || 97;
+
+          const newPostData = {
+            tenantId: tenantKey,
+            network: targetNet,
+            type: formatInfo.type,
+            channel: formatInfo.channel,
+            publishDate: i === 0 ? 'Próx. Lunes • 09:00 hrs' : (i === 1 ? 'Próx. Miércoles • 19:00 hrs' : 'Próx. Viernes • 18:00 hrs'),
+            title: generatedTitle,
+            hookText: generatedHook,
+            copy: generatedCopy,
+            hashtags: generatedHashtags,
+            status: 'PENDIENTE_CLIENTE',
+            estimatedReach: targetNet === 'WHATSAPP' ? 'Base de Contactos & Difusión' : '15,000 - 28,000 cuentas',
+            aiConfidence: typeof matchScore === 'number' ? matchScore : 97,
+          };
+
+          const savedPost = await contentService.createPost(newPostData);
+          generatedPostsList.push({
+            ...savedPost,
+            formatIcon: POST_TYPE_ICONS[formatInfo.type] || Video,
+          });
         }
-      } else if (res?.content) {
-        try {
-          parsed = typeof res.content === 'string' ? JSON.parse(res.content) : res.content;
-        } catch (e) {
-          console.warn('Error parsing content:', e);
-        }
-      } else if (typeof res === 'object') {
-        parsed = res;
       }
 
-      const generatedTitle = parsed?.title || `Estrategia de Crecimiento: ${activeTenant?.name}`;
-      const generatedHook = parsed?.hookText || effectiveHook || `¿Por qué el 95% busca una solución como ${activeTenant?.name}?`;
-      const generatedCopy = parsed?.copy || `En ${activeTenant?.name} entendemos tus necesidades y diseñamos la mejor experiencia. ${effectiveHook ? `${effectiveHook}. ` : ''}${effectiveCta}`;
-      const generatedHashtags = parsed?.hashtags || `#${(activeTenant?.shortName || activeTenant?.name || 'Vector').replace(/\s+/g, '')} #Crecimiento #Estrategia`;
-      const matchScore = parsed?.aiConfidence || 97;
-
-      const formatInfo = getPlatformFormatInfo(networkTarget);
-
-      const newPostData = {
-        tenantId: tenantKey,
-        network: networkTarget,
-        type: formatInfo.type,
-        channel: formatInfo.channel,
-        publishDate: 'Próx. Miércoles • 19:00 hrs',
-        title: generatedTitle,
-        hookText: generatedHook,
-        copy: generatedCopy,
-        hashtags: generatedHashtags,
-        status: 'PENDIENTE_CLIENTE',
-        estimatedReach: '18,500 - 32,000 cuentas',
-        aiConfidence: typeof matchScore === 'number' ? matchScore : 97,
-      };
-
-      const savedPost = await contentService.createPost(newPostData);
-      const postWithIcon = {
-        ...savedPost,
-        formatIcon: Video,
-      };
-
-      const updated = [postWithIcon, ...posts];
+      const updated = [...generatedPostsList, ...posts];
       persistPosts(updated);
+      setShowAiGenModal(false);
 
       try {
         confetti({
@@ -658,26 +751,17 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
       } catch (e) {}
 
       triggerModal(
-        `✨ Guion Publicitario IA Generado con DeepSeek R1`,
+        `✨ ${generatedPostsList.length} Guion(es) Publicitario(s) Generado(s)`,
         `<div class="space-y-3 font-mono text-xs">
           <div class="p-3 rounded-xl bg-neon/10 border border-neon/30 text-lime-700 dark:text-neon">
             <b>🧠 Parámetros RAG Inyectados en Tiempo Real:</b><br>
             • <b>Negocio:</b> ${activeTenant?.name} (${activeTenant?.giro || activeTenant?.verticalLabel})<br>
-            • <b>Red Social:</b> ${networkTarget} (Reel 9:16)<br>
-            • <b>Arquetipo:</b> ${brandDna?.archetype || 'Autoridad Confiable'}<br>
+            • <b>Plataforma:</b> ${network === 'OMNI_PACK' ? 'Pack Omnicanal (Varias Redes)' : network}<br>
+            • <b>Objetivo:</b> ${aiGenConfig.objective}<br>
+            • <b>Tono:</b> ${aiGenConfig.tone}<br>
             • <b>Oferta Activa:</b> "${effectiveHook || 'Oferta general'}"
           </div>
-          <div class="p-3.5 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-2">
-            <p class="font-bold text-[var(--text-main)] text-sm">🎬 ${generatedTitle}</p>
-            <p><b class="text-lime-700 dark:text-neon">[0-3s Gancho]:</b> "${generatedHook}"</p>
-            <p class="text-[var(--text-muted)] mt-1 whitespace-pre-line">${generatedCopy}</p>
-            <p class="text-cyan-600 dark:text-cyan-400 font-bold">${generatedHashtags}</p>
-          </div>
-          <div class="flex items-center justify-between text-[11px] text-[var(--text-muted)] pt-1">
-            <span>Tokens Utilizados: <b>${res?.tokensUsed || '~480'}</b></span>
-            <span>Costo Estimado: <b>$${res?.costUsd ? Number(res.costUsd).toFixed(5) : '0.00015'} USD</b></span>
-            <span class="text-emerald-500 font-bold">${matchScore}% Match con ADN</span>
-          </div>
+          <p class="text-[var(--text-muted)]">Las publicaciones han sido agregadas en estado <b>Pendiente Cliente</b> listas para su validación.</p>
         </div>`
       );
     } catch (err) {
@@ -689,6 +773,167 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
     } finally {
       setIsGeneratingAi(false);
     }
+  };
+
+  const handleExecuteReroll = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!rerollPost || !tenantKey) return;
+
+    const targetPost = rerollPost;
+    setRerollingPostId(targetPost.id);
+    setRerollPost(null);
+
+    let angleInstruction = '';
+    if (rerollAngle === 'HOOK_ONLY') {
+      angleInstruction = `CONSERVA el sentido del copy actual pero GENERA UN GANCHO VIRAL (0-3s) COMPLETAMENTE NUEVO, con interrupción de patrón, máxima intriga o dato contundente. Gancho anterior a reemplazar: "${targetPost.hookText}".`;
+    } else if (rerollAngle === 'MORE_PERSUASIVE') {
+      angleInstruction = `Reescribe el copy para que sea MUCHO MÁS PERSUASIVO, con sensación de urgencia ética, derribo de barreras y un CTA contundente directo a la acción.`;
+    } else if (rerollAngle === 'OBJECTION_PRICE') {
+      angleInstruction = `Re-enfoca el guión atacando frontalmente la objeción de PRECIO/PRESUPUESTO. Explica el retorno tangible de la inversión y por qué postergar sale más caro.`;
+    } else if (rerollAngle === 'OBJECTION_TIME') {
+      angleInstruction = `Re-enfoca el guión atacando la objeción de FALTA DE TIEMPO. Demuestra que el servicio es ágil, cómodo y sin fricciones de agenda.`;
+    } else if (rerollAngle === 'FULL_REWRITE') {
+      angleInstruction = `Regenera este post por completo desde un ángulo creativo fresco e innovador.`;
+    }
+
+    if (rerollCustomNote) {
+      angleInstruction += ` NOTA ESPECÍFICA DEL ESTRATEGA: "${rerollCustomNote}".`;
+    }
+
+    const effectiveHook = commercialOffer?.hook || brandDna?.leadMagnetHook || '';
+    const effectiveCta = commercialOffer?.cta || brandDna?.leadMagnetCta || '';
+    const formatInfo = getPlatformFormatInfo(targetPost.network);
+
+    const topicPrompt = `RE-ROLL / REGENERACIÓN TÁCTICA DE CONTENIDO para ${activeTenant?.name}.
+Red: ${targetPost.network} (${formatInfo.type}).
+Título previo: "${targetPost.title}".
+Gancho previo: "${targetPost.hookText}".
+Copy previo: "${targetPost.copy}".
+
+DIRECTIVA DE RE-ROLL:
+${angleInstruction}
+
+Oferta del mes de respaldo: "${effectiveHook}". CTA: "${effectiveCta}".
+Palabras tabú prohibidas: [${brandDna?.tabooWords || 'ninguna'}].`;
+
+    try {
+      const res = await aiService.generateContent({
+        tenantId: tenantKey,
+        targetNetwork: targetPost.network,
+        postType: formatInfo.type,
+        topicPrompt,
+      });
+
+      let parsed = null;
+      if (res?.generatedRawJson) {
+        try {
+          parsed = typeof res.generatedRawJson === 'string' ? JSON.parse(res.generatedRawJson) : res.generatedRawJson;
+        } catch (e) {}
+      } else if (res?.content) {
+        try {
+          parsed = typeof res.content === 'string' ? JSON.parse(res.content) : res.content;
+        } catch (e) {}
+      } else if (typeof res === 'object') {
+        parsed = res;
+      }
+
+      const updatedPost = {
+        ...targetPost,
+        title: parsed?.title || targetPost.title,
+        hookText: parsed?.hookText || targetPost.hookText,
+        copy: parsed?.copy || targetPost.copy,
+        hashtags: targetPost.network === 'WHATSAPP' ? '' : (parsed?.hashtags || targetPost.hashtags),
+        revisionCount: (targetPost.revisionCount || 0) + 1,
+      };
+
+      const updatedList = posts.map((p) => (p.id === targetPost.id ? updatedPost : p));
+      persistPosts(updatedList);
+
+      try {
+        await contentService.updatePost(targetPost.id, updatedPost);
+      } catch (e) {
+        console.warn('Error syncing rerolled post to backend:', e);
+      }
+
+      try {
+        confetti({
+          particleCount: 40,
+          spread: 60,
+          colors: ['#D4FF00', '#10B981'],
+        });
+      } catch (e) {}
+
+      triggerModal(
+        '🎲 Guión Regenerado con Éxito (Re-roll IA)',
+        `Se ha aplicado el ajuste: <b>${rerollAngle}</b>.<br><br>
+        <b>Nuevo Gancho (0-3s):</b> <i>"${updatedPost.hookText}"</i><br><br>
+        La publicación se mantiene en <b>Pendiente Cliente</b> para tu validación final.`
+      );
+    } catch (err) {
+      console.error('Error al hacer re-roll:', err);
+      triggerModal('Error en Re-roll', err?.message || 'No se pudo regenerar el guión.');
+    } finally {
+      setRerollingPostId(null);
+      setRerollCustomNote('');
+    }
+  };
+
+  const handleBatchApproveAll = async () => {
+    const pendingList = posts.filter(
+      (p) => p.status === 'PENDIENTE_CLIENTE' || p.status === 'PENDIENTE_APROBACION' || p.status === 'PENDING'
+    );
+    if (pendingList.length === 0) {
+      triggerModal('Todo al Día', 'No hay publicaciones pendientes de aprobación en este momento.');
+      return;
+    }
+
+    const updated = posts.map((p) => {
+      if (p.status === 'PENDIENTE_CLIENTE' || p.status === 'PENDIENTE_APROBACION' || p.status === 'PENDING') {
+        return { ...p, status: 'APROBADO_PROGRAMADO' };
+      }
+      return p;
+    });
+
+    persistPosts(updated);
+
+    // Sincronizar en paralelo con backend
+    Promise.allSettled(pendingList.map((p) => contentService.approvePost(p.id))).catch(() => {});
+
+    try {
+      confetti({
+        particleCount: 70,
+        spread: 80,
+        origin: { y: 0.5 },
+        colors: ['#D4FF00', '#10B981', '#38BDF8'],
+      });
+    } catch (e) {}
+
+    triggerModal(
+      '✓ Parrilla Aprobada en Lote',
+      `Se han aprobado y validado <b>${pendingList.length} publicaciones</b> con un solo clic. El equipo de contenido ya cuenta con luz verde para su programación oficial.`
+    );
+  };
+
+  const handleSaveWeeklyCronConfig = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (typeof window !== 'undefined' && tenantKey) {
+      try {
+        localStorage.setItem(`vector_planner_weekly_cron_${tenantKey}`, JSON.stringify(weeklyCronConfig));
+      } catch (err) {}
+    }
+    setShowWeeklyCronModal(false);
+
+    try {
+      confetti({ particleCount: 35, spread: 55, colors: ['#D4FF00', '#10B981'] });
+    } catch (e) {}
+
+    triggerModal(
+      '⚡ Disparador Semanal Configurado',
+      `El motor autónomo de DeepSeek R1 generará una propuesta de <b>${weeklyCronConfig.volume} publicaciones</b> cada <b>${weeklyCronConfig.dayOfWeek} a las ${weeklyCronConfig.time} hrs</b>.<br><br>
+      • <b>Estado:</b> ${weeklyCronConfig.enabled ? '<span class="text-emerald-400 font-bold">ACTIVO</span>' : '<span class="text-zinc-400 font-bold">PAUSADO</span>'}<br>
+      • <b>Feedback Loop:</b> ${weeklyCronConfig.useViralHooks ? 'Replicar mejores Hooks' : ''} ${weeklyCronConfig.useCommercialOffer ? '+ Oferta RAG' : ''} ${weeklyCronConfig.useWhatsappObjections ? '+ Dudas WhatsApp' : ''}<br>
+      • <b>Human-In-The-Loop:</b> Todas las piezas se depositarán como <i>Pendientes de Aprobación</i>.`
+    );
   };
 
   const handleSaveBrandDna = () => {
@@ -839,7 +1084,25 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            {/* Widget Disparador Semanal */}
+            <button
+              type="button"
+              onClick={() => setShowWeeklyCronModal(true)}
+              className="px-3 py-2 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] text-xs font-mono border border-[var(--border-color)] hover:border-neon/40 flex items-center gap-2 transition-all shadow-sm"
+              title="Configurar Autogenerador Semanal con IA"
+            >
+              <Zap className={`w-3.5 h-3.5 ${weeklyCronConfig.enabled ? 'text-lime-700 dark:text-neon animate-pulse' : 'text-zinc-500'}`} />
+              <div className="text-left hidden sm:block">
+                <span className="text-[10px] text-[var(--text-muted)] block leading-none">Autogenerador</span>
+                <span className="text-[11px] font-bold text-lime-700 dark:text-neon leading-none">
+                  {weeklyCronConfig.enabled ? `${weeklyCronConfig.dayOfWeek} ${weeklyCronConfig.time}` : 'Pausado'}
+                </span>
+              </div>
+              <Settings className="w-3.5 h-3.5 text-[var(--text-muted)] ml-1" />
+            </button>
+
+            {/* Botón Generar Guion IA (Abre Modal Quirúrgico) */}
             <button
               type="button"
               onClick={handleGenerateAiPost}
@@ -963,6 +1226,84 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
       {/* ========================================================================= */}
       {activeTab === 'grid' && (
         <div className="space-y-6 animate-fade-in">
+          {/* BANNER HERO: REVISIÓN DE PARRILLA HITL (HUMAN-IN-THE-LOOP) */}
+          {!dismissBatchBanner && posts.length > 0 && (() => {
+            const pendingCount = posts.filter(
+              (p) => p.status === 'PENDIENTE_CLIENTE' || p.status === 'PENDIENTE_APROBACION' || p.status === 'PENDING'
+            ).length;
+            const approvedCount = posts.length - pendingCount;
+            const progressPercent = Math.round((approvedCount / posts.length) * 100);
+
+            if (pendingCount === 0) return null;
+
+            return (
+              <div className="rounded-2xl bg-gradient-to-r from-[var(--bg-card)] via-[var(--bg-card)] to-neon/5 border border-neon/40 p-4 sm:p-5 relative overflow-hidden shadow-sm animate-fade-in">
+                <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+                  <div className="space-y-1.5 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-md bg-neon text-black flex items-center gap-1 shadow-neon-sm">
+                        <Bot className="w-3 h-3" />
+                        Parrilla Semanal HITL
+                      </span>
+                      <span className="text-[11px] font-mono text-[var(--text-muted)]">
+                        DeepSeek R1 • Feedback de Métricas & Oferta Activa
+                      </span>
+                    </div>
+                    <h3 className="text-sm sm:text-base font-bold text-[var(--text-main)] flex items-center gap-2">
+                      <span>Lote de Contenido Pendiente de Revisión</span>
+                      <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                        {pendingCount} por validar
+                      </span>
+                    </h3>
+                    <p className="text-xs text-[var(--text-muted)] font-mono">
+                      Revisa los guiones generados por la IA. Puedes regenerar (re-roll) cualquier pieza individual o dar el visto bueno general.
+                    </p>
+
+                    {/* Barra de progreso de aprobación */}
+                    <div className="pt-1.5 flex items-center gap-3">
+                      <div className="w-48 sm:w-64 h-2 rounded-full bg-[var(--bg-base)] border border-[var(--border-color)] overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-neon to-emerald-400 transition-all duration-500"
+                          style={{ width: `${progressPercent}%` }}
+                        />
+                      </div>
+                      <span className="text-[11px] font-mono font-bold text-[var(--text-main)]">
+                        {approvedCount} de {posts.length} aprobados ({progressPercent}%)
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2.5 shrink-0 w-full sm:w-auto">
+                    <button
+                      type="button"
+                      onClick={handleBatchApproveAll}
+                      className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-neon text-black font-bold text-xs font-mono shadow-[0_0_15px_var(--neon-glow)] hover:bg-[var(--neon-hover)] transition-all flex items-center justify-center gap-2 active:scale-95"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Aprobar Todos los Pendientes ({pendingCount})</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowWeeklyCronModal(true)}
+                      className="p-2.5 rounded-xl bg-[var(--bg-card-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)] hover:border-neon/40 transition-colors"
+                      title="Configurar disparador semanal"
+                    >
+                      <Settings className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDismissBatchBanner(true)}
+                      className="p-2.5 rounded-xl bg-[var(--bg-card-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)] transition-colors"
+                      title="Ocultar este aviso"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           {/* BANNER: OFERTA COMERCIAL VIGENTE & CEREBRO RAG */}
           <div className="rounded-2xl bg-[var(--bg-card)] border-2 border-neon/50 p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm relative overflow-hidden">
             <div className="space-y-2 flex-1">
@@ -1149,12 +1490,25 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
               return (
                 <div
                   key={post.id}
-                  className={`rounded-2xl bg-[var(--bg-card)] border overflow-hidden shadow-sm flex flex-col justify-between transition-all duration-200 group ${
+                  className={`rounded-2xl bg-[var(--bg-card)] border overflow-hidden shadow-sm flex flex-col justify-between transition-all duration-200 group relative ${
                     isPending
                       ? 'border-[var(--border-color)] hover:border-neon/50'
                       : 'border-emerald-500/30 bg-emerald-500/[0.02]'
                   }`}
                 >
+                  {/* Overlay durante Re-roll individual */}
+                  {rerollingPostId === post.id && (
+                    <div className="absolute inset-0 bg-black/85 backdrop-blur-xs z-20 flex flex-col items-center justify-center gap-2.5 p-4 animate-fade-in text-center">
+                      <Sparkles className="w-6 h-6 text-lime-700 dark:text-neon animate-spin" />
+                      <span className="text-xs font-mono font-bold text-lime-700 dark:text-neon">
+                        DeepSeek R1 re-escribiendo guión...
+                      </span>
+                      <span className="text-[10px] font-mono text-zinc-400 max-w-xs">
+                        Aplicando ajuste táctico y preservando Brand DNA
+                      </span>
+                    </div>
+                  )}
+
                   <div className="p-5 space-y-3.5">
                     {/* Header de la Tarjeta */}
                     <div className="flex items-start justify-between gap-3">
@@ -1278,6 +1632,26 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
                         <Edit3 className="w-3.5 h-3.5 text-lime-700 dark:text-neon" />
                         <span className="text-[10px] font-bold">Editar</span>
                       </button>
+
+                      {/* Re-roll / Regenerar con IA */}
+                      {isPending && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRerollPost(post);
+                            setRerollAngle('HOOK_ONLY');
+                            setRerollCustomNote('');
+                          }}
+                          disabled={rerollingPostId === post.id}
+                          className="px-2.5 py-1.5 rounded-lg bg-[var(--bg-card-subtle)] hover:bg-neon/10 hover:border-neon/40 text-[var(--text-muted)] hover:text-lime-700 dark:hover:text-neon text-xs font-mono border border-[var(--border-color)] flex items-center gap-1 transition-all"
+                          title="Regenerar este guión con otro ángulo psicológico (Re-roll)"
+                        >
+                          <RotateCcw className={`w-3.5 h-3.5 text-lime-700 dark:text-neon ${rerollingPostId === post.id ? 'animate-spin' : ''}`} />
+                          <span className="text-[10px] font-bold">
+                            {rerollingPostId === post.id ? 'Re-roll...' : 'Re-roll IA'}
+                          </span>
+                        </button>
+                      )}
 
                       {/* Copiar Todo */}
                       <button
@@ -2144,6 +2518,549 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
                   <span>Sí, Eliminar</span>
                 </button>
               </div>
+            </div>
+          </div>
+        </Portal>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL 1: GENERACIÓN IA QUIRÚRGICA CON SELECTOR DE PLATAFORMAS & OBJETIVO  */}
+      {/* ========================================================================= */}
+      {showAiGenModal && (
+        <Portal>
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto"
+            onClick={(e) => {
+              if (e.target === e.currentTarget && !isGeneratingAi) setShowAiGenModal(false);
+            }}
+          >
+            <div className="w-full max-w-2xl rounded-3xl bg-[var(--bg-panel)] border-2 border-neon/50 shadow-2xl p-5 sm:p-7 relative space-y-5 my-auto animate-scale-up max-h-[92vh] overflow-y-auto">
+              <div className="flex items-start justify-between gap-4 pb-2 border-b border-[var(--border-color)]">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="p-2 rounded-xl bg-neon text-black font-black text-xs">
+                      <Sparkles className="w-4 h-4" />
+                    </span>
+                    <h3 className="text-lg font-bold text-[var(--text-main)] font-mono">
+                      Generador Estratégico de Contenido (DeepSeek R1)
+                    </h3>
+                  </div>
+                  <p className="text-xs text-[var(--text-muted)] font-mono">
+                    Negocio: <b className="text-[var(--text-main)]">{activeTenant?.name}</b> • Arquetipo: <b className="text-lime-700 dark:text-neon">{brandDna?.archetype || 'Líder del Sector'}</b>
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={isGeneratingAi}
+                  onClick={() => setShowAiGenModal(false)}
+                  className="p-2 rounded-xl bg-[var(--bg-card-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)]"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleExecuteAiGenModal} className="space-y-5 text-xs font-mono">
+                {/* 1. Selector de Canal de Destino */}
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-[var(--text-main)] uppercase block">
+                    1. Canal de Destino & Formato
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {[
+                      { id: 'INSTAGRAM', name: 'Instagram', format: 'Reel 9:16', icon: Instagram },
+                      { id: 'WHATSAPP', name: 'WhatsApp', format: 'Estados & Difusión', icon: MessageSquare },
+                      { id: 'FACEBOOK', name: 'Facebook', format: 'Feed 1:1', icon: Facebook },
+                      { id: 'TIKTOK', name: 'TikTok', format: 'Video 9:16', icon: Video },
+                      { id: 'LINKEDIN', name: 'LinkedIn', format: 'Post B2B 4:5', icon: Linkedin },
+                      { id: 'OMNI_PACK', name: '⚡ Pack Omnicanal', format: 'Multi-red (3 posts)', icon: Zap },
+                    ].map((ch) => {
+                      const isSelected = aiGenConfig.network === ch.id;
+                      const IconComp = ch.icon;
+                      return (
+                        <button
+                          key={ch.id}
+                          type="button"
+                          onClick={() => setAiGenConfig((prev) => ({ ...prev, network: ch.id }))}
+                          className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all ${
+                            isSelected
+                              ? 'bg-neon/15 border-neon text-lime-700 dark:text-neon font-bold shadow-[0_0_12px_rgba(212,255,0,0.15)]'
+                              : 'bg-[var(--bg-card-subtle)] border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)] hover:border-zinc-700'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <IconComp className="w-4 h-4 shrink-0" />
+                            <span className="text-[9px] uppercase px-1.5 py-0.2 rounded bg-black/40 border border-white/10">
+                              {ch.format}
+                            </span>
+                          </div>
+                          <span className="text-xs font-bold">{ch.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 2. Selector de Objetivo Estratégico */}
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-[var(--text-main)] uppercase block">
+                    2. Objetivo Estratégico de la Pieza
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {[
+                      { id: 'LEAD_MAGNET', label: '🎯 Captación / Lead Magnet', desc: 'Promover la oferta gancho para WhatsApp' },
+                      { id: 'OBJECTION_PRICE', label: '🛡️ Derribar Objeción Precio', desc: 'Justificar el valor y retorno de inversión' },
+                      { id: 'OBJECTION_TIME', label: '⏱️ Resolver Objeción Tiempo', desc: 'Enfatizar proceso ágil, cómodo y sin esfuerzo' },
+                      { id: 'AUTHORITY_CASE', label: '🏆 Caso de Éxito / Autoridad', desc: 'Mostrar método probado y posicionamiento' },
+                      { id: 'URGENCY_FOMO', label: '⚡ Urgencia Comercial / FOMO', desc: 'Cupos limitados y vigencia de la oferta' },
+                    ].map((obj) => (
+                      <button
+                        key={obj.id}
+                        type="button"
+                        onClick={() => setAiGenConfig((prev) => ({ ...prev, objective: obj.id }))}
+                        className={`p-2.5 rounded-xl border text-left transition-all ${
+                          aiGenConfig.objective === obj.id
+                            ? 'bg-neon/15 border-neon text-lime-700 dark:text-neon font-bold'
+                            : 'bg-[var(--bg-card-subtle)] border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                        }`}
+                      >
+                        <span className="text-xs font-bold block">{obj.label}</span>
+                        <span className="text-[10px] text-[var(--text-muted)] block mt-0.5">{obj.desc}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 3. Selector de Tono */}
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-[var(--text-main)] uppercase block">
+                    3. Tono Rector & Estilo
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      { id: 'AUTORIDAD', label: '★ Confiable / Autoridad' },
+                      { id: 'DISRUPTIVO', label: '💥 Enérgico / Provocador' },
+                      { id: 'EMPATICO', label: '❤️ Empático / Humano' },
+                      { id: 'DIRECTO', label: '⚡ Directo / Venta Directa' },
+                    ].map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => setAiGenConfig((prev) => ({ ...prev, tone: t.id }))}
+                        className={`p-2 rounded-xl border text-center transition-all text-[11px] ${
+                          aiGenConfig.tone === t.id
+                            ? 'bg-neon text-black font-black border-neon'
+                            : 'bg-[var(--bg-card-subtle)] border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                        }`}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 4. Inyección RAG Oferta Comercial del Mes */}
+                <div className="p-3.5 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={aiGenConfig.injectCommercialOffer}
+                      onChange={(e) => setAiGenConfig((prev) => ({ ...prev, injectCommercialOffer: e.target.checked }))}
+                      className="accent-[#D4FF00] w-4 h-4 rounded"
+                    />
+                    <span className="text-xs font-bold text-[var(--text-main)] flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-lime-700 dark:text-neon" />
+                      Inyectar Oferta del Mes Activa (Memoria RAG)
+                    </span>
+                  </label>
+                  {aiGenConfig.injectCommercialOffer && (
+                    <div className="pl-6 text-[11px] text-[var(--text-muted)] space-y-1">
+                      <p>
+                        <b className="text-[var(--text-main)]">Gancho Activo:</b> "{commercialOffer.hook || brandDna.leadMagnetHook || 'Sin gancho definido'}"
+                      </p>
+                      <p>
+                        <b className="text-[var(--text-main)]">CTA Destino:</b> "{commercialOffer.cta || brandDna.leadMagnetCta || 'WhatsApp'}"
+                      </p>
+                      <p className="text-[10px] text-cyan-400">
+                        Doc Respaldo: {commercialOffer.docName || 'Cargado en sistema'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* 5. Instrucción o Enfoque Temático Libre */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-[var(--text-main)] uppercase block">
+                    5. Enfoque Temático Específico (Opcional)
+                  </label>
+                  <input
+                    type="text"
+                    value={aiGenConfig.customTopic}
+                    onChange={(e) => setAiGenConfig((prev) => ({ ...prev, customTopic: e.target.value }))}
+                    placeholder="ej. Enfatizar que no duele el procedimiento y que se realiza en menos de 45 minutos..."
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] text-[var(--text-main)] text-xs font-mono focus:outline-none focus:border-neon transition-colors"
+                  />
+                </div>
+
+                {/* 6. Volumen (si no es OMNI_PACK) */}
+                {aiGenConfig.network !== 'OMNI_PACK' && (
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)]">
+                    <span className="text-xs font-bold text-[var(--text-main)]">
+                      Volumen de Generación:
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setAiGenConfig((prev) => ({ ...prev, volume: 1 }))}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold border ${
+                          aiGenConfig.volume === 1
+                            ? 'bg-neon text-black border-neon'
+                            : 'bg-[var(--bg-base)] text-[var(--text-muted)] border-[var(--border-color)]'
+                        }`}
+                      >
+                        1 Guión Quirúrgico
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAiGenConfig((prev) => ({ ...prev, volume: 3 }))}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold border ${
+                          aiGenConfig.volume === 3
+                            ? 'bg-neon text-black border-neon'
+                            : 'bg-[var(--bg-base)] text-[var(--text-muted)] border-[var(--border-color)]'
+                        }`}
+                      >
+                        3 Guiones (Mini Lote)
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Acciones del Modal */}
+                <div className="flex items-center justify-end gap-3 pt-3 border-t border-[var(--border-color)]">
+                  <button
+                    type="button"
+                    disabled={isGeneratingAi}
+                    onClick={() => setShowAiGenModal(false)}
+                    className="px-4 py-2.5 rounded-xl bg-[var(--bg-card-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)] text-xs font-mono font-bold"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isGeneratingAi}
+                    className="px-5 py-2.5 rounded-xl bg-neon text-black font-bold text-xs font-mono shadow-[0_0_15px_var(--neon-glow)] hover:bg-[var(--neon-hover)] transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
+                  >
+                    <Sparkles className={`w-4 h-4 ${isGeneratingAi ? 'animate-spin' : ''}`} />
+                    <span>{isGeneratingAi ? 'Pensando con DeepSeek R1...' : 'Generar con DeepSeek R1'}</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </Portal>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL 2: RE-ROLL IA (REGENERACIÓN TÁCTICA DE TARJETA INDIVIDUAL)          */}
+      {/* ========================================================================= */}
+      {rerollPost && (
+        <Portal>
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in"
+            onClick={(e) => {
+              if (e.target === e.currentTarget && !rerollingPostId) setRerollPost(null);
+            }}
+          >
+            <div className="w-full max-w-lg rounded-3xl bg-[var(--bg-panel)] border-2 border-neon/50 shadow-2xl p-5 sm:p-6 relative space-y-4 my-auto animate-scale-up">
+              <div className="flex items-start justify-between gap-3 pb-2 border-b border-[var(--border-color)]">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="p-2 rounded-xl bg-neon text-black font-bold text-xs">
+                      <RotateCcw className="w-4 h-4" />
+                    </span>
+                    <h3 className="text-base font-bold text-[var(--text-main)] font-mono">
+                      Re-roll IA: Regenerar Guión
+                    </h3>
+                  </div>
+                  <p className="text-xs text-[var(--text-muted)] font-mono">
+                    Red: <b className="text-[var(--text-main)]">{rerollPost.network}</b> • Formato: <b className="text-lime-700 dark:text-neon">{rerollPost.type}</b>
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setRerollPost(null)}
+                  className="p-1.5 rounded-xl bg-[var(--bg-card-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)]"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Gancho Actual */}
+              <div className="p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-xs font-mono space-y-1">
+                <span className="text-[10px] text-zinc-400 uppercase font-bold block">
+                  Gancho Actual (0-3s):
+                </span>
+                <p className="text-[var(--text-main)] italic font-bold">
+                  "{rerollPost.hookText}"
+                </p>
+              </div>
+
+              <form onSubmit={handleExecuteReroll} className="space-y-4 text-xs font-mono">
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-[var(--text-main)] uppercase block">
+                    Selecciona el Ajuste Táctico Deseado:
+                  </label>
+                  <div className="space-y-1.5">
+                    {[
+                      { id: 'HOOK_ONLY', label: '🎯 Cambiar sólo el Gancho (0-3s)', desc: 'Mantiene el copy y genera un nuevo gancho de alto impacto' },
+                      { id: 'MORE_PERSUASIVE', label: '🔥 Más Persuasivo / Urgencia de Cierre', desc: 'Eleva la urgencia comercial e intensifica el llamado a la acción' },
+                      { id: 'OBJECTION_PRICE', label: '🛡️ Re-enfocar en Objeción de Precio', desc: 'Justifica el valor tangible y el costo de posponer la decisión' },
+                      { id: 'OBJECTION_TIME', label: '⏱️ Re-enfocar en Objeción de Tiempo', desc: 'Demuestra rapidez, proceso ágil y facilidad de agenda' },
+                      { id: 'FULL_REWRITE', label: '🔄 Regeneración Completa del Guión', desc: 'Explora un enfoque creativo totalmente fresco desde cero' },
+                    ].map((opt) => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setRerollAngle(opt.id)}
+                        className={`w-full p-2.5 rounded-xl border text-left transition-all flex items-start gap-2.5 ${
+                          rerollAngle === opt.id
+                            ? 'bg-neon/15 border-neon text-lime-700 dark:text-neon font-bold'
+                            : 'bg-[var(--bg-card-subtle)] border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                        }`}
+                      >
+                        <span className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${rerollAngle === opt.id ? 'bg-neon' : 'bg-zinc-600'}`} />
+                        <div>
+                          <span className="text-xs font-bold block">{opt.label}</span>
+                          <span className="text-[10px] text-[var(--text-muted)] block">{opt.desc}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-[var(--text-main)] uppercase block">
+                    Indicación Específica Adicional (Opcional)
+                  </label>
+                  <input
+                    type="text"
+                    value={rerollCustomNote}
+                    onChange={(e) => setRerollCustomNote(e.target.value)}
+                    placeholder="ej. Hazlo más directo y usa un tono más empático..."
+                    className="w-full px-3 py-2 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] text-[var(--text-main)] text-xs font-mono focus:outline-none focus:border-neon"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-[var(--border-color)]">
+                  <button
+                    type="button"
+                    onClick={() => setRerollPost(null)}
+                    className="px-4 py-2 rounded-xl bg-[var(--bg-card-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)] text-xs font-mono font-bold"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 rounded-xl bg-neon text-black font-bold text-xs font-mono shadow-[0_0_12px_var(--neon-glow)] hover:bg-[var(--neon-hover)] transition-all flex items-center gap-1.5 active:scale-95"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Aplicar Re-roll IA</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </Portal>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL 3: CONFIGURACIÓN DE AUTOGENERACIÓN SEMANAL (CRON SCHEDULER HITL)    */}
+      {/* ========================================================================= */}
+      {showWeeklyCronModal && (
+        <Portal>
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setShowWeeklyCronModal(false);
+            }}
+          >
+            <div className="w-full max-w-xl rounded-3xl bg-[var(--bg-panel)] border-2 border-neon/50 shadow-2xl p-5 sm:p-7 relative space-y-5 my-auto animate-scale-up max-h-[92vh] overflow-y-auto">
+              <div className="flex items-start justify-between gap-4 pb-2 border-b border-[var(--border-color)]">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="p-2 rounded-xl bg-neon text-black font-bold text-xs">
+                      <Zap className="w-4 h-4" />
+                    </span>
+                    <h3 className="text-lg font-bold text-[var(--text-main)] font-mono">
+                      Configurar Autogenerador Semanal (Cron IA)
+                    </h3>
+                  </div>
+                  <p className="text-xs text-[var(--text-muted)] font-mono">
+                    DeepSeek R1 estructurará tu lote semanal de contenidos en modo Human-In-The-Loop.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowWeeklyCronModal(false)}
+                  className="p-2 rounded-xl bg-[var(--bg-card-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)]"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveWeeklyCronConfig} className="space-y-4 text-xs font-mono">
+                {/* 1. Toggle Activo / Pausado */}
+                <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)]">
+                  <div>
+                    <span className="text-xs font-bold text-[var(--text-main)] block">
+                      Estado del Motor Autónomo
+                    </span>
+                    <span className="text-[11px] text-[var(--text-muted)] block mt-0.5">
+                      Generar automáticamente cada semana una propuesta de parrilla.
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setWeeklyCronConfig((prev) => ({ ...prev, enabled: !prev.enabled }))}
+                    className={`px-3.5 py-1.5 rounded-xl font-bold text-xs border transition-all ${
+                      weeklyCronConfig.enabled
+                        ? 'bg-neon text-black border-neon shadow-[0_0_12px_var(--neon-glow)]'
+                        : 'bg-zinc-800 text-zinc-400 border-zinc-700'
+                    }`}
+                  >
+                    {weeklyCronConfig.enabled ? '● ACTIVADO' : '○ PAUSADO'}
+                  </button>
+                </div>
+
+                {/* 2. Día y Hora de Disparo */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-bold text-[var(--text-main)] uppercase block">
+                      Día de Entrega Semanal
+                    </label>
+                    <select
+                      value={weeklyCronConfig.dayOfWeek}
+                      onChange={(e) => setWeeklyCronConfig((prev) => ({ ...prev, dayOfWeek: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] text-[var(--text-main)] text-xs font-mono focus:outline-none focus:border-neon"
+                    >
+                      {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Domingo'].map((d) => (
+                        <option key={d} value={d}>Cada {d}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-bold text-[var(--text-main)] uppercase block">
+                      Hora de Disparo (GMT-6)
+                    </label>
+                    <select
+                      value={weeklyCronConfig.time}
+                      onChange={(e) => setWeeklyCronConfig((prev) => ({ ...prev, time: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] text-[var(--text-main)] text-xs font-mono focus:outline-none focus:border-neon"
+                    >
+                      {['06:00', '08:00', '09:00', '14:00', '18:00'].map((h) => (
+                        <option key={h} value={h}>{h} hrs</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* 3. Volumen de Entrega */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-[var(--text-main)] uppercase block">
+                    Volumen de Publicaciones Semanales
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { vol: 3, label: '3 Posts / Semana', sub: 'Mínimo Estratégico' },
+                      { vol: 5, label: '5 Posts / Semana', sub: 'Recomendado' },
+                      { vol: 7, label: '7 Posts / Semana', sub: 'Alto Impacto Diario' },
+                    ].map((v) => (
+                      <button
+                        key={v.vol}
+                        type="button"
+                        onClick={() => setWeeklyCronConfig((prev) => ({ ...prev, volume: v.vol }))}
+                        className={`p-2.5 rounded-xl border text-center transition-all ${
+                          weeklyCronConfig.volume === v.vol
+                            ? 'bg-neon/15 border-neon text-lime-700 dark:text-neon font-bold'
+                            : 'bg-[var(--bg-card-subtle)] border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                        }`}
+                      >
+                        <span className="text-xs font-bold block">{v.label}</span>
+                        <span className="text-[9px] text-[var(--text-muted)] block mt-0.5">{v.sub}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 4. Fuentes de Feedback & Aprendizaje Continuo */}
+                <div className="p-3.5 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-2.5">
+                  <span className="text-[11px] font-bold text-[var(--text-main)] uppercase block">
+                    Fuentes de Telemetría & RAG Activo (Feedback Loop)
+                  </span>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={weeklyCronConfig.useViralHooks}
+                        onChange={(e) => setWeeklyCronConfig((prev) => ({ ...prev, useViralHooks: e.target.checked }))}
+                        className="accent-[#D4FF00] w-4 h-4 rounded"
+                      />
+                      <span className="text-xs text-[var(--text-main)]">
+                        <b>Laboratorio Viral:</b> Replicar fórmulas de Reels con mayor retención de Meta (&gt;30% Hook Rate).
+                      </span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={weeklyCronConfig.useCommercialOffer}
+                        onChange={(e) => setWeeklyCronConfig((prev) => ({ ...prev, useCommercialOffer: e.target.checked }))}
+                        className="accent-[#D4FF00] w-4 h-4 rounded"
+                      />
+                      <span className="text-xs text-[var(--text-main)]">
+                        <b>Oferta Comercial del Mes:</b> Inyectar gancho activo y CTA del documento PDF cargado.
+                      </span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={weeklyCronConfig.useWhatsappObjections}
+                        onChange={(e) => setWeeklyCronConfig((prev) => ({ ...prev, useWhatsappObjections: e.target.checked }))}
+                        className="accent-[#D4FF00] w-4 h-4 rounded"
+                      />
+                      <span className="text-xs text-[var(--text-main)]">
+                        <b>Objeciones Frecuentes de WhatsApp:</b> Convertir dudas reales de clientes en ganchos de venta.
+                      </span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Política HITL */}
+                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-500 flex items-start gap-2">
+                  <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>
+                    <b>Human-In-The-Loop Garantizado:</b> Todas las publicaciones generadas por el disparador semanal se crearán exclusivamente en estado <i>"Pendiente Cliente"</i>. Ninguna pieza se transmitirá a redes sin tu visto bueno formal.
+                  </span>
+                </div>
+
+                {/* Botones de acción */}
+                <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-[var(--border-color)]">
+                  <button
+                    type="button"
+                    onClick={() => setShowWeeklyCronModal(false)}
+                    className="px-4 py-2 rounded-xl bg-[var(--bg-card-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)] text-xs font-mono font-bold"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 rounded-xl bg-neon text-black font-bold text-xs font-mono shadow-[0_0_12px_var(--neon-glow)] hover:bg-[var(--neon-hover)] transition-all flex items-center gap-1.5 active:scale-95"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Guardar Configuración</span>
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </Portal>
