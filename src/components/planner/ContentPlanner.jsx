@@ -1814,16 +1814,18 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
               <Settings className="w-3.5 h-3.5 text-[var(--text-muted)] ml-1" />
             </button>
 
-            {/* Botón Generar Guion IA (Abre Modal Quirúrgico) */}
-            <button
-              type="button"
-              onClick={handleGenerateAiPost}
-              disabled={isGeneratingAi}
-              className="bg-neon text-black text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_15px_var(--neon-glow)] flex items-center gap-2 active:scale-95 disabled:opacity-50"
-            >
-              <Sparkles className={`w-4 h-4 ${isGeneratingAi ? 'animate-spin' : ''}`} />
-              <span>{isGeneratingAi ? 'Pensando con DeepSeek R1...' : 'Generar Guion IA (DeepSeek R1)'}</span>
-            </button>
+            {/* Botón Generar Guion IA (Abre Modal Quirúrgico) - Solo visible en la Parrilla */}
+            {activeTab === 'grid' && (
+              <button
+                type="button"
+                onClick={handleGenerateAiPost}
+                disabled={isGeneratingAi}
+                className="bg-neon text-black text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_15px_var(--neon-glow)] flex items-center gap-2 active:scale-95 disabled:opacity-50"
+              >
+                <Sparkles className={`w-4 h-4 ${isGeneratingAi ? 'animate-spin' : ''}`} />
+                <span>{isGeneratingAi ? 'Pensando con DeepSeek R1...' : 'Generar Guion IA (DeepSeek R1)'}</span>
+              </button>
+            )}
           </div>
         </header>
       )}
@@ -1920,7 +1922,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
         </button>
         </div>
 
-        {embedded && (
+        {embedded && activeTab === 'grid' && (
           <button
             type="button"
             onClick={handleGenerateAiPost}
