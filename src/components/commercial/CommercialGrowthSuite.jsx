@@ -72,7 +72,7 @@ export const CommercialGrowthSuite = ({ initialTab = 'kanban' }) => {
   };
 
   return (
-    <div className="w-full p-4 sm:p-6 lg:p-8 block animate-fade-in space-y-6 font-sans">
+    <div className="w-full p-3 sm:p-5 lg:p-6 block animate-fade-in space-y-6 font-sans min-w-0">
       {/* Header Unificado de la Suite */}
       <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center border-b border-[var(--border-color)] pb-5 gap-4">
         <div>
@@ -186,7 +186,7 @@ export const CommercialGrowthSuite = ({ initialTab = 'kanban' }) => {
 
       {/* VISTA 1: PIPELINE KANBAN & PROSPECTOS */}
       {activeSuiteTab === 'kanban' && (
-        <div className="space-y-3.5 animate-fade-in">
+        <div className="space-y-3.5 animate-fade-in w-full min-w-0">
           {/* Banner de Re-contacto y Automatización Dinámico según Tenant */}
           <div className="py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-500/10 via-[var(--bg-card)] to-emerald-500/10 border border-[var(--border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
             <div className="flex items-center gap-2 min-w-0">

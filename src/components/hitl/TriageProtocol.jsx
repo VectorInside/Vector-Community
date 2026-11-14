@@ -952,7 +952,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
   };
 
   return (
-    <div className={`${embedded ? 'p-0 space-y-4' : 'p-4 sm:p-6 lg:p-8 space-y-6'} block animate-fade-in max-w-[1920px] mx-auto`}>
+    <div className={`${embedded ? 'p-0 space-y-4' : 'p-3 sm:p-5 lg:p-6 space-y-6'} block animate-fade-in w-full max-w-[1920px] mx-auto min-w-0`}>
       {/* ========================================================================= */}
       {/* 1. HEADER PRINCIPAL Y CENTRO DE MANDO (O SWITCHER COMPACTO SI ES EMBEDDED) */}
       {/* ========================================================================= */}
@@ -1332,74 +1332,96 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
             </div>
           ) : (
             /* Lienzo Kanban Horizontal con Ancho Adaptativo (Modo Todas las Columnas) */
-            <div className="flex gap-4 overflow-x-auto pb-6 pt-2 px-1 scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700/60 scrollbar-track-zinc-100 dark:scrollbar-track-zinc-950/20 snap-x items-start">
-              {displayedColumns.map((col) => {
-                const leadsInCol = Object.entries(threads).filter(
-                  ([_, item]) => item.leadState === col.id
-                );
-                const isCompact = kanbanDensity === 'compact';
+            <div className="relative w-full min-w-0">
+              <div
+                className={`w-full pb-6 pt-2 px-1 scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700/60 scrollbar-track-zinc-100 dark:scrollbar-track-zinc-950/20 snap-x items-start ${
+                  kanbanDensity === 'compact'
+                    ? 'flex gap-3 overflow-x-auto xl:grid xl:grid-cols-5 xl:gap-3 xl:overflow-x-visible'
+                    : 'flex gap-4 overflow-x-auto'
+                }`}
+              >
+                {displayedColumns.map((col) => {
+                  const leadsInCol = Object.entries(threads).filter(
+                    ([_, item]) => item.leadState === col.id
+                  );
+                  const isCompact = kanbanDensity === 'compact';
 
-                // Accent color borders
-                const getColumnAccent = () => {
-                  switch (col.id) {
-                    case LEAD_STATUS_ENUM.LEAD_COLD_24H:
-                      return 'from-blue-500 to-cyan-500';
-                    case LEAD_STATUS_ENUM.LEAD_WARM_24H:
-                      return 'from-amber-400 to-yellow-500';
-                    case LEAD_STATUS_ENUM.LEAD_HOT_PREQUAL:
-                      return 'from-orange-500 to-amber-500';
-                    case LEAD_STATUS_ENUM.BILLABLE_LEAD:
-                      return 'from-neon to-lime-400';
-                    case LEAD_STATUS_ENUM.HITL_INTERVENTION:
-                      return 'from-rose-500 to-red-600';
-                    default:
-                      return 'from-zinc-500 to-zinc-700';
-                  }
-                };
+                  // Accent color borders
+                  const getColumnAccent = () => {
+                    switch (col.id) {
+                      case LEAD_STATUS_ENUM.LEAD_COLD_24H:
+                        return 'from-blue-500 to-cyan-500';
+                      case LEAD_STATUS_ENUM.LEAD_WARM_24H:
+                        return 'from-amber-400 to-yellow-500';
+                      case LEAD_STATUS_ENUM.LEAD_HOT_PREQUAL:
+                        return 'from-orange-500 to-amber-500';
+                      case LEAD_STATUS_ENUM.BILLABLE_LEAD:
+                        return 'from-neon to-lime-400';
+                      case LEAD_STATUS_ENUM.HITL_INTERVENTION:
+                        return 'from-rose-500 to-red-600';
+                      default:
+                        return 'from-zinc-500 to-zinc-700';
+                    }
+                  };
 
-                return (
-                  <div
-                    key={col.id}
-                    className={`${isCompact
-                        ? 'min-w-[260px] max-w-[280px] w-[270px]'
-                        : 'min-w-[320px] max-w-[350px] w-[340px]'
-                      } flex-shrink-0 flex flex-col rounded-2xl ${getColumnContainerStyle(col.id)} shadow-sm dark:shadow-xl backdrop-blur-md relative overflow-hidden snap-start transition-all`}
-                  >
-                    {/* Top Accent Stripe */}
-                    <div className={`h-1.5 w-full bg-gradient-to-r ${getColumnAccent()}`} />
+                  return (
+                    <div
+                      key={col.id}
+                      className={`${
+                        isCompact
+                          ? 'min-w-[220px] max-w-[260px] w-[240px] xl:min-w-0 xl:max-w-none xl:w-full flex-shrink-0 xl:flex-shrink'
+                          : 'min-w-[320px] max-w-[350px] w-[340px] flex-shrink-0'
+                      } flex flex-col rounded-2xl ${getColumnContainerStyle(col.id)} shadow-sm dark:shadow-xl backdrop-blur-md relative overflow-hidden snap-start transition-all`}
+                    >
+                      {/* Top Accent Stripe */}
+                      <div className={`h-1.5 w-full bg-gradient-to-r ${getColumnAccent()}`} />
 
-                    {/* Header de la Columna */}
-                    <div className={`${isCompact ? 'p-3 space-y-1.5' : 'p-4 space-y-2'} border-b border-zinc-100 dark:border-zinc-800/80 font-mono`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className={`w-2 h-2 rounded-full ${col.dotColor} shadow-[0_0_8px_currentColor] shrink-0`} />
-                          <h4 className={`${isCompact ? 'text-[11px]' : 'text-xs'} font-heading font-black uppercase text-zinc-900 dark:text-white tracking-wider truncate`}>
-                            {col.title}
-                          </h4>
+                      {/* Header de la Columna */}
+                      <div className={`${isCompact ? 'p-2.5 sm:p-3 space-y-1' : 'p-4 space-y-2'} border-b border-zinc-100 dark:border-zinc-800/80 font-mono`}>
+                        <div className="flex items-start justify-between gap-1.5">
+                          <div className="flex items-start gap-1.5 min-w-0 flex-1">
+                            <span className={`w-2 h-2 rounded-full ${col.dotColor} shadow-[0_0_8px_currentColor] shrink-0 mt-1`} />
+                            <h4
+                              title={col.title}
+                              className={`${isCompact ? 'text-[11px]' : 'text-xs'} font-heading font-black uppercase text-zinc-900 dark:text-white tracking-wide leading-tight line-clamp-2 break-words`}
+                            >
+                              {col.title}
+                            </h4>
+                          </div>
+                          <span className="text-[11px] font-black px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white shrink-0">
+                            {leadsInCol.length}
+                          </span>
                         </div>
-                        <span className="text-xs font-black px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white shrink-0">
-                          {leadsInCol.length}
-                        </span>
+
+                        <p
+                          title={col.description}
+                          className={`${isCompact ? 'text-[10px]' : 'text-[11px]'} text-zinc-500 dark:text-zinc-400 font-sans leading-tight line-clamp-2`}
+                        >
+                          {col.description}
+                        </p>
                       </div>
 
-                      <p className={`${isCompact ? 'text-[10px]' : 'text-[11px]'} text-zinc-500 dark:text-zinc-400 font-sans leading-tight line-clamp-1`}>
-                        {col.description}
-                      </p>
+                      {/* Lista de Tarjetas de Leads dentro de la Columna */}
+                      <div className={`${isCompact ? 'p-2 space-y-2.5 max-h-[calc(100vh-280px)] min-h-[440px]' : 'p-3 space-y-3 max-h-[calc(100vh-320px)] min-h-[460px]'} flex-1 overflow-y-auto bg-zinc-50/50 dark:bg-transparent`}>
+                        {leadsInCol.length === 0 ? (
+                          renderColumnEmptyState(col)
+                        ) : (
+                          leadsInCol.map(([leadKey, item]) =>
+                            renderLeadCard(leadKey, item, false)
+                          )
+                        )}
+                      </div>
                     </div>
+                  );
+                })}
+              </div>
 
-                    {/* Lista de Tarjetas de Leads dentro de la Columna */}
-                    <div className={`${isCompact ? 'p-2 space-y-2.5 max-h-[calc(100vh-280px)] min-h-[440px]' : 'p-3 space-y-3 max-h-[calc(100vh-320px)] min-h-[460px]'} flex-1 overflow-y-auto bg-zinc-50/50 dark:bg-transparent`}>
-                      {leadsInCol.length === 0 ? (
-                        renderColumnEmptyState(col)
-                      ) : (
-                        leadsInCol.map(([leadKey, item]) =>
-                          renderLeadCard(leadKey, item, false)
-                        )
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+              {/* Gradiente sutil de desbordamiento a la derecha */}
+              <div
+                className={`pointer-events-none absolute right-0 top-0 bottom-6 w-8 sm:w-12 bg-gradient-to-l from-[var(--bg-base)] via-[var(--bg-base)]/70 to-transparent z-10 transition-opacity ${
+                  kanbanDensity === 'compact' ? 'xl:hidden' : 'block'
+                }`}
+              />
             </div>
           )}
         </div>
