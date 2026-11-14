@@ -23,6 +23,7 @@ import {
   Zap,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import api, { unwrapApiData } from '@/services/api';
 
 export const WhatsAppConnectModal = ({
   isOpen,
@@ -55,8 +56,10 @@ export const WhatsAppConnectModal = ({
 
   if (!isOpen) return null;
 
-  const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://vectorinside.com';
-  const callbackUrl = `${currentOrigin}/api/v1/webhooks/whatsapp`;
+  const backendBase = process.env.NEXT_PUBLIC_API_URL
+    ? process.env.NEXT_PUBLIC_API_URL.replace(/\/api\/v1\/?$/, '')
+    : (typeof window !== 'undefined' ? window.location.origin : 'https://v-community-backend.onrender.com');
+  const callbackUrl = `${backendBase}/api/v1/webhooks/whatsapp`;
   const verifyToken = 'VectorInsideSecureWebhookToken2026';
 
   const handleCopy = (text, fieldName) => {
@@ -110,28 +113,19 @@ export const WhatsAppConnectModal = ({
 
     const hasToken = Boolean(accessToken.trim());
     const tenantId = activeTenant?.id || 'dental';
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
     try {
-      const res = await fetch(`${backendUrl}/api/v1/webhooks/whatsapp/health/${tenantId}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await api.get(`/webhooks/whatsapp/health/${tenantId}`);
+      const data = unwrapApiData(res);
+      setTestResult({
+        success: true,
+        phoneId: phoneNumberId.trim(),
+        hasToken: hasToken,
+        latencyMs: data?.latencyMs || 42,
+        timestamp: new Date().toLocaleTimeString(),
+        status: data?.status || 'CONNECTED',
+        metaApiVersion: data?.metaApiVersion || 'v21.0',
       });
-      if (res.ok) {
-        const payload = await res.json();
-        const data = payload?.data;
-        setTestResult({
-          success: true,
-          phoneId: phoneNumberId.trim(),
-          hasToken: hasToken,
-          latencyMs: data?.latencyMs || 42,
-          timestamp: new Date().toLocaleTimeString(),
-          status: data?.status || 'CONNECTED',
-          metaApiVersion: data?.metaApiVersion || 'v21.0',
-        });
-      } else {
-        throw new Error('Fallback local');
-      }
     } catch {
       setTestResult({
         success: true,

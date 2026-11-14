@@ -43,6 +43,7 @@ import { PreCitaDrawer } from '@/components/hitl/PreCitaDrawer';
 import { formatNumber } from '@/utils/formatters';
 import { MeasurementGuideModal } from '@/components/common/MeasurementGuideModal';
 import { leadService } from '@/services/leadService';
+import api, { unwrapApiData } from '@/services/api';
 import { WhatsAppConnectModal } from './WhatsAppConnectModal';
 
 // =========================================================================
@@ -194,17 +195,19 @@ export const ConversacionesInbox = () => {
     }
 
     setIsLoading(true);
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
     Promise.allSettled([
       leadService.getLeadsByTenant(tenantId),
-      fetch(`${backendUrl}/api/v1/webhooks/whatsapp/conversations/${tenantId}`)
-        .then((r) => (r.ok ? r.json() : null))
+      api
+        .get(`/webhooks/whatsapp/conversations/${tenantId}`)
+        .then((res) => unwrapApiData(res))
         .catch(() => null),
     ])
       .then(([leadsRes, convsRes]) => {
         const backendLeads = leadsRes.status === 'fulfilled' && Array.isArray(leadsRes.value) ? leadsRes.value : [];
-        const rawConvs = convsRes.status === 'fulfilled' && convsRes.value?.data ? convsRes.value.data : [];
+        const rawConvs = convsRes.status === 'fulfilled' && convsRes.value
+          ? (Array.isArray(convsRes.value) ? convsRes.value : convsRes.value?.data || [])
+          : [];
 
         // Hilos canónicos desde base de datos de mensajería (Meta Cloud API)
         const convThreads = Array.isArray(rawConvs)
