@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import {
   resolveBrandPreset,
@@ -116,7 +117,17 @@ export const PerfilMarcaView = () => {
   const [selectedAvatarCategory, setSelectedAvatarCategory] = useState(0);
 
   // Pestaña activa para ergonomía cognitiva y navegación estructurada
-  const [activeTab, setActiveTab] = useState('visual'); // 'visual' | 'ai' | 'strategy' | 'ops'
+  const searchParams = useSearchParams();
+  const queryTab = searchParams ? searchParams.get('tab') : null;
+  const [activeTab, setActiveTab] = useState(
+    queryTab && ['visual', 'ai', 'strategy', 'ops'].includes(queryTab) ? queryTab : 'visual'
+  );
+
+  useEffect(() => {
+    if (queryTab && ['visual', 'ai', 'strategy', 'ops'].includes(queryTab)) {
+      setActiveTab(queryTab);
+    }
+  }, [queryTab]);
   const [isSaving, setIsSaving] = useState(false);
   const [phoneError, setPhoneError] = useState(null);
 
