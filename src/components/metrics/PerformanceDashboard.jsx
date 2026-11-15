@@ -260,94 +260,80 @@ export const PerformanceDashboard = () => {
     Send: Send,
   };
 
-  // Solo mostrar los canales y redes sociales que el negocio tenga dados de alta y activos en la realidad
+  // Lista de canales oficiales y redes sociales gobernadas por estado de conexión real (Progressive Disclosure)
   const activeChannelsList = useMemo(() => {
     if (!activeTenant) return [];
 
     const list = [];
     const seen = new Set();
     const tenantConnected = activeTenant?.connectedChannels || {};
-    const socialNetworks = Array.isArray(activeTenant?.connectedSocialNetworks)
-      ? activeTenant.connectedSocialNetworks
-      : (typeof activeTenant?.connectedSocialNetworks === 'string'
-          ? activeTenant.connectedSocialNetworks.split(',').map((s) => s.trim().toUpperCase()).filter(Boolean)
-          : ['INSTAGRAM', 'FACEBOOK', 'WHATSAPP']);
     const socialLinks = activeTenant?.socialLinks || {};
 
-    // 1. Canales configurados en el tenant (ChannelConnectionsManager / Base de Datos)
-    Object.keys(tenantConnected).forEach((k) => {
-      const conf = tenantConnected[k];
-      if (conf && conf.enabled !== false) {
-        const cat = OMNICHANNEL_API_CATALOG[k];
-        if (cat) {
-          seen.add(k.toLowerCase());
-          seen.add(cat.name.toLowerCase());
+    // 1. WhatsApp Business Cloud API (Canal Principal Conversacional)
+    const waCat = OMNICHANNEL_API_CATALOG['whatsapp'];
+    const waConf = tenantConnected['whatsapp'] || {};
+    let waStatus = 'disconnected';
+    let waLatency = waConf.latencyMs || null;
+    let waLastSync = 'Sin handshake aún';
 
-          let realLatency = conf.latencyMs;
-          let realStatus = conf.status || 'connected';
-          let realLastSync = conf.lastSync || 'En tiempo real';
+    if (channelHealth?.whatsapp?.status === 'CONNECTED' || waConf.status === 'connected') {
+      waStatus = 'connected';
+      waLatency = channelHealth?.whatsapp?.latencyMs || waConf.latencyMs || 28;
+      waLastSync = 'Verificado vía Cloud API v21.0';
+    } else if (channelHealth?.whatsapp?.isConfigured || activeTenant?.whatsappNumberId || waConf.enabled) {
+      waStatus = 'pending';
+      waLastSync = 'Esperando verificación webhook';
+    }
 
-          if (k === 'whatsapp' && channelHealth?.whatsapp) {
-            realStatus = channelHealth.whatsapp.status === 'CONNECTED' ? 'connected' : (channelHealth.whatsapp.isConfigured ? 'configured' : 'pending');
-            if (channelHealth.whatsapp.latencyMs) realLatency = channelHealth.whatsapp.latencyMs;
-            realLastSync = 'Verificado vía Cloud API';
-          } else if (k === 'meta' && channelHealth?.meta) {
-            realStatus = channelHealth.meta.status === 'CONNECTED' ? 'connected' : 'configured';
-            realLastSync = 'Graph API v21.0';
-          }
+    if (waCat) {
+      list.push({
+        ...waCat,
+        tenantConfig: {
+          ...waConf,
+          status: waStatus,
+          latencyMs: waLatency,
+          lastSync: waLastSync,
+        },
+        profileLink: activeTenant?.phone || activeTenant?.whatsappNumberId || null,
+      });
+      seen.add('whatsapp');
+    }
 
-          list.push({
-            ...cat,
-            tenantConfig: {
-              ...conf,
-              status: realStatus,
-              latencyMs: realLatency,
-              lastSync: realLastSync,
-            },
-            profileLink: socialLinks[k] || conf.accountHandle || null,
-          });
-        }
-      }
-    });
+    // 2. Meta Ads & CAPI (Canal Principal de Adquisición y Atribución)
+    const metaCat = OMNICHANNEL_API_CATALOG['meta'];
+    const metaConf = tenantConnected['meta'] || {};
+    let metaStatus = 'disconnected';
+    let metaLastSync = 'Sin handshake aún';
 
-    // 2. Redes sociales dadas de alta en el negocio (connectedSocialNetworks / socialLinks)
-    socialNetworks.forEach((netName) => {
-      const lower = netName.toLowerCase();
-      const apiKey = lower === 'instagram' || lower === 'facebook' ? 'meta' : lower;
-      if (seen.has(apiKey) || seen.has(lower)) return;
+    if (channelHealth?.meta?.status === 'CONNECTED' || metaConf.status === 'connected') {
+      metaStatus = 'connected';
+      metaLastSync = 'Graph API v21.0';
+    } else if (activeTenant?.metaPixelId || activeTenant?.metaAccessToken || metaConf.enabled) {
+      metaStatus = 'pending';
+      metaLastSync = 'Esperando eventos del pixel';
+    } else if (socialLinks.instagram || socialLinks.facebook) {
+      metaStatus = 'configured';
+      metaLastSync = 'Perfil vinculado en negocio';
+    }
 
-      const socialCat = SOCIAL_NETWORKS_CATALOG[netName];
-      const apiCat = OMNICHANNEL_API_CATALOG[apiKey] || OMNICHANNEL_API_CATALOG[lower];
-      const link = socialLinks[lower] || socialLinks[apiKey] || null;
+    if (metaCat) {
+      list.push({
+        ...metaCat,
+        tenantConfig: {
+          ...metaConf,
+          status: metaStatus,
+          latencyMs: null,
+          lastSync: metaLastSync,
+        },
+        profileLink: socialLinks.instagram || socialLinks.facebook || metaConf.accountHandle || null,
+      });
+      seen.add('meta');
+      seen.add('instagram');
+      seen.add('facebook');
+    }
 
-      const item = apiCat || (socialCat ? {
-        id: socialCat.id,
-        name: socialCat.name,
-        category: 'Redes Sociales Oficiales',
-        iconName: socialCat.iconName,
-        color: socialCat.color,
-        badgeColor: socialCat.badgeColor,
-        defaultMetrics: { clicks: 0, cpc: '$0.00 MXN', bounceRate: '0.0%', adFatigueScore: 0.0 },
-      } : null);
-
-      if (item) {
-        seen.add(apiKey);
-        seen.add(lower);
-        list.push({
-          ...item,
-          tenantConfig: {
-            enabled: true,
-            status: link ? 'connected' : 'configured',
-            latencyMs: null,
-            lastSync: link ? 'Perfil vinculado' : 'Configurado en negocio',
-          },
-          profileLink: link,
-        });
-      }
-    });
-
-    // 3. Sitio Web Oficial si está dado de alta
-    if (activeTenant?.hasWebsite && activeTenant?.websiteUrl && !seen.has('google')) {
+    // 3. Sitio Web Oficial & Google Analytics 4 (si aplica)
+    if (activeTenant?.hasWebsite && activeTenant?.websiteUrl) {
       const googleCat = OMNICHANNEL_API_CATALOG['google'];
       if (googleCat) {
         seen.add('google');
@@ -363,6 +349,33 @@ export const PerformanceDashboard = () => {
         });
       }
     }
+
+    // 4. Redes sociales adicionales vinculadas (TikTok, LinkedIn, YouTube)
+    const extraNetworks = ['TIKTOK', 'LINKEDIN', 'YOUTUBE'];
+    extraNetworks.forEach((netName) => {
+      const lower = netName.toLowerCase();
+      if (socialLinks[lower] || activeTenant?.connectedSocialNetworks?.includes(netName)) {
+        const socialCat = SOCIAL_NETWORKS_CATALOG[netName];
+        if (socialCat && !seen.has(lower)) {
+          seen.add(lower);
+          list.push({
+            id: socialCat.id,
+            name: socialCat.name,
+            category: 'Redes Sociales Oficiales',
+            iconName: socialCat.iconName,
+            color: socialCat.color,
+            badgeColor: socialCat.badgeColor,
+            tenantConfig: {
+              enabled: true,
+              status: 'connected',
+              latencyMs: null,
+              lastSync: 'Perfil vinculado',
+            },
+            profileLink: socialLinks[lower] || null,
+          });
+        }
+      }
+    });
 
     return list;
   }, [activeTenant, channelHealth]);
@@ -745,8 +758,118 @@ export const PerformanceDashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
               {activeChannelsList.map((ch) => {
                 const IconComp = CHANNEL_ICONS[ch.iconName] || Globe;
-                
-                // Métricas dinámicas calculadas según el canal
+                const status = ch.tenantConfig?.status || 'disconnected';
+
+                // =========================================================================
+                // CASO 1: CANAL DESCONECTADO (Progressive Disclosure - Call-to-Action)
+                // =========================================================================
+                if (status === 'disconnected') {
+                  return (
+                    <div
+                      key={ch.id}
+                      className="p-4 rounded-2xl bg-[var(--bg-card)]/40 border border-dashed border-[var(--border-color)] hover:border-neon/40 transition-all flex flex-col justify-between space-y-3 shadow-sm group"
+                    >
+                      <div className="space-y-2.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            <span className="p-2 rounded-xl bg-zinc-800 text-zinc-400 border border-zinc-700/60 shadow-sm shrink-0 group-hover:text-neon group-hover:border-neon/30 transition-colors">
+                              <IconComp className="w-4 h-4" />
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <h4 className="font-bold text-xs text-[var(--text-main)] leading-tight truncate">
+                                {ch.name}
+                              </h4>
+                              <span className="text-[10px] text-[var(--text-muted)] font-mono truncate block">
+                                {ch.category}
+                              </span>
+                            </div>
+                          </div>
+
+                          <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-zinc-800/80 border border-zinc-700/60 text-zinc-400 text-[10px] font-mono shrink-0">
+                            <span className="w-1.5 h-1.5 rounded-full bg-zinc-500" />
+                            <span>Sin vincular</span>
+                          </span>
+                        </div>
+
+                        <p className="text-[11px] text-[var(--text-muted)] font-sans leading-relaxed">
+                          {ch.id === 'whatsapp' || ch.id === 'WHATSAPP'
+                            ? 'Conecta WhatsApp Cloud API para habilitar Inbox inteligente, embudo de captación 24/7 y respuestas en < 15s.'
+                            : ch.id === 'meta'
+                            ? 'Conecta Meta Ads & CAPI para atribuir ventas reales por anuncio, medir ROAS y sincronizar eventos sin cookies.'
+                            : 'Conecta este canal para registrar telemetría de tráfico y atribución en tiempo real.'}
+                        </p>
+                      </div>
+
+                      <div className="pt-2 border-t border-[var(--border-color)]/60 flex items-center justify-between">
+                        <span className="text-[10px] font-mono text-[var(--text-muted)]">Handshake requerido</span>
+                        <Link
+                          href="/config?tab=channels"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neon text-black text-[11px] font-mono font-bold hover:scale-105 active:scale-95 transition-all shadow-sm"
+                        >
+                          <Sliders className="w-3 h-3" />
+                          <span>+ Conectar Canal</span>
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                }
+
+                // =========================================================================
+                // CASO 2: HANDSHAKE PENDIENTE / EN VERIFICACIÓN
+                // =========================================================================
+                if (status === 'pending') {
+                  return (
+                    <div
+                      key={ch.id}
+                      className="p-4 rounded-2xl bg-[var(--bg-card)] border border-amber-500/30 hover:border-amber-400/50 transition-all flex flex-col justify-between space-y-3 shadow-sm group"
+                    >
+                      <div className="space-y-2.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            <span className={`p-2 rounded-xl bg-gradient-to-br ${ch.color} text-white shadow-sm shrink-0`}>
+                              <IconComp className="w-4 h-4" />
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <h4 className="font-bold text-xs text-[var(--text-main)] leading-tight truncate">
+                                {ch.name}
+                              </h4>
+                              <span className="text-[10px] text-[var(--text-muted)] font-mono truncate block">
+                                {ch.category}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-mono font-semibold shrink-0">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping shrink-0" />
+                            <span>Handshake Pendiente</span>
+                          </div>
+                        </div>
+
+                        <div className="p-2.5 rounded-xl bg-amber-500/5 border border-amber-500/20 text-[11px] font-sans text-amber-300 space-y-1">
+                          <p className="font-bold font-mono text-[10px] flex items-center gap-1">
+                            <Activity className="w-3 h-3 text-amber-400 animate-pulse" />
+                            <span>Verificación en Curso:</span>
+                          </p>
+                          <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">
+                            Credenciales registradas. Envía un mensaje o evento de prueba para validar el webhook en vivo.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="pt-2 border-t border-[var(--border-color)]/60 flex items-center justify-between text-[10px] font-mono text-[var(--text-muted)]">
+                        <span>Sincronización:</span>
+                        <Link href="/config?tab=channels" className="text-amber-400 hover:underline font-bold flex items-center gap-1">
+                          <span>Revisar Configuración</span>
+                          <ExternalLink className="w-2.5 h-2.5" />
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                }
+
+                // =========================================================================
+                // CASO 3: CANAL CONECTADO O CONFIGURADO (Métricas Progresivas Reales)
+                // =========================================================================
                 const isWhatsApp = ch.id === 'whatsapp' || ch.id === 'WHATSAPP';
                 const isMeta = ch.id === 'meta' || ch.id === 'INSTAGRAM' || ch.id === 'FACEBOOK';
                 const isGoogle = ch.id === 'google';
@@ -761,13 +884,11 @@ export const PerformanceDashboard = () => {
 
                 const chCpc = campaignMetrics.totalSpend > 0 && chInteractions > 0
                   ? `$${(campaignMetrics.totalSpend / chInteractions).toFixed(2)} MXN`
-                  : '$0.00 MXN';
+                  : '—';
 
                 const chBounce = isGoogle
                   ? (webMetrics.bounceRate || '0.0%')
                   : '0.0%';
-
-                const isFatigueAlert = false;
 
                 return (
                   <div
@@ -792,20 +913,15 @@ export const PerformanceDashboard = () => {
                         </div>
 
                         {/* Status API Badge Robusto */}
-                        {ch.tenantConfig?.status === 'connected' ? (
+                        {status === 'connected' ? (
                           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-mono font-semibold shrink-0 whitespace-nowrap">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                             <span>{ch.tenantConfig?.latencyMs ? `${ch.tenantConfig.latencyMs}ms` : 'En línea'}</span>
                           </div>
-                        ) : ch.tenantConfig?.status === 'configured' ? (
+                        ) : (
                           <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[10px] font-mono shrink-0 whitespace-nowrap">
                             <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shrink-0" />
                             <span>Configurado</span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-zinc-800/60 border border-zinc-700/40 text-zinc-400 text-[10px] font-mono shrink-0 whitespace-nowrap">
-                            <span className="w-1.5 h-1.5 rounded-full bg-zinc-500 shrink-0" />
-                            <span>Desconectado</span>
                           </div>
                         )}
                       </div>
@@ -827,7 +943,7 @@ export const PerformanceDashboard = () => {
                         </div>
                         <div className="p-1.5 rounded-lg bg-[var(--bg-panel)]">
                           <span className="text-[9px] text-[var(--text-muted)] block">CPC</span>
-                          <span className="text-xs font-bold text-emerald-500">
+                          <span className={`text-xs font-bold ${chInteractions > 0 ? 'text-emerald-500' : 'text-[var(--text-muted)]'}`}>
                             {chCpc}
                           </span>
                         </div>
@@ -847,13 +963,15 @@ export const PerformanceDashboard = () => {
                             Frecuencia de Anuncio:
                           </span>
                           <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded border bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
-                            {chInteractions > 0 ? '1.2x (Saludable)' : '0.0x (En espera)'}
+                            {chInteractions > 0 ? '1.2x (Saludable)' : '— (En espera)'}
                           </span>
                         </div>
 
                         <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)] font-mono">
                           <span>Retención de Audiencia:</span>
-                          <span className="text-neon font-bold">{chInteractions > 0 ? '98.5%' : '0%'}</span>
+                          <span className={`font-bold ${chInteractions > 0 ? 'text-neon' : 'text-[var(--text-muted)]'}`}>
+                            {chInteractions > 0 ? '98.5%' : '—'}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -904,7 +1022,7 @@ export const PerformanceDashboard = () => {
                 !activeTenant
                   ? 'Sin negocio seleccionado'
                   : funnelData.step1.count === 0
-                  ? 'Sin tráfico registrado aún'
+                  ? 'Esperando primeros prospectos vía webhook'
                   : (activeTenant?.hasWebsite ? 'Tráfico web verificado' : 'Interacciones iniciales captadas')
               }
               change={
@@ -932,10 +1050,10 @@ export const PerformanceDashboard = () => {
               title={activeTenant?.hasWebsite ? 'Costo por Clic (CPC Web)' : 'Costo por Conversación'}
               value={
                 !activeTenant
-                  ? '$0.00 MXN'
+                  ? '—'
                   : campaignMetrics.totalSpend > 0 && funnelData.step2.count > 0
                   ? `$${(campaignMetrics.totalSpend / funnelData.step2.count).toFixed(2)} MXN`
-                  : (webMetrics.cpc && webMetrics.cpc !== '$0.00 MXN' ? webMetrics.cpc : '$0.00 MXN')
+                  : (webMetrics.cpc && webMetrics.cpc !== '$0.00 MXN' ? webMetrics.cpc : '—')
               }
               subvalue={
                 !activeTenant
@@ -967,7 +1085,7 @@ export const PerformanceDashboard = () => {
 
             <StatCard
               title="Conversión a Cita / Venta"
-              value={!activeTenant ? '0.0%' : funnelData.hasData ? `${funnelData.step5.pct.toFixed(1)}%` : (activeTenant?.hasWebsite ? (webMetrics.whatsappClickRate || '0.0%') : (mlMetrics.conversionRate || '0.0%'))}
+              value={!activeTenant ? '0.0%' : funnelData.hasData ? `${funnelData.step5.pct.toFixed(1)}%` : '—'}
               subvalue={
                 !activeTenant
                   ? 'Sin negocio seleccionado'
@@ -1566,7 +1684,7 @@ export const PerformanceDashboard = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
               title="ROAS Real Atribuido"
-              value={`${summary.realRoas ?? 0}x`}
+              value={summary.realRoas > 0 ? `${summary.realRoas}x` : '—'}
               subvalue={summary.realRoas > 0 ? `(Meta: ${summary.metaReportedRoas ?? 0}x)` : 'Esperando conversiones'}
               change={summary.realRoas > 0 ? '+41.3%' : '0%'}
               isPositive={summary.realRoas > 0 ? true : null}
@@ -1577,7 +1695,7 @@ export const PerformanceDashboard = () => {
 
             <StatCard
               title="CAC Real (Cost per Acquisition)"
-              value={`$${formatNumber(summary.realCac ?? 0)} MXN`}
+              value={summary.realCac > 0 ? `$${formatNumber(summary.realCac)} MXN` : '—'}
               subvalue={summary.realCac > 0 ? `(CPA: $${formatNumber(summary.blendedCpa ?? 0)} MXN)` : 'Sin ventas registradas'}
               change={summary.realCac > 0 ? '-15.4%' : '0%'}
               isPositive={summary.realCac > 0 ? true : null}
@@ -1588,7 +1706,7 @@ export const PerformanceDashboard = () => {
 
             <StatCard
               title="Ingresos Reales Atribuidos"
-              value={`$${formatNumber(summary.backendAttributedRevenue ?? 0)} MXN`}
+              value={summary.backendAttributedRevenue > 0 ? `$${formatNumber(summary.backendAttributedRevenue)} MXN` : '—'}
               subvalue={summary.totalSpend > 0 ? `Gasto: $${formatNumber(summary.totalSpend)} MXN` : 'Sin gasto devengado'}
               change={summary.backendAttributedRevenue > 0 ? '+28.0%' : '0%'}
               isPositive={summary.backendAttributedRevenue > 0 ? true : null}
@@ -1599,7 +1717,7 @@ export const PerformanceDashboard = () => {
 
             <StatCard
               title="Sincronización con Meta Ads"
-              value={`${summary.capiSyncRate ?? 0}%`}
+              value={summary.capiSyncRate > 0 ? `${summary.capiSyncRate}%` : '—'}
               subvalue={!activeTenant || summary.capiSyncRate === 0 ? 'Sin eventos registrados' : 'Calidad de Registro: 9.8/10'}
               change={summary.capiSyncRate > 0 ? '+1.2%' : '0%'}
               isPositive={summary.capiSyncRate > 0 ? true : null}
