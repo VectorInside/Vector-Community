@@ -278,7 +278,7 @@ export const CampanasView = () => {
   };
 
   return (
-    <div className="w-full p-4 sm:p-6 lg:p-8 block animate-fade-in space-y-6 sm:space-y-8 font-sans pb-28 min-w-0 max-w-7xl mx-auto">
+    <div className="w-full p-3 sm:p-5 lg:p-6 block animate-fade-in space-y-6 font-sans pb-28 min-w-0">
       {/* Toast de Éxito de IA */}
       {aiSuccessToast && (
         <div className="fixed bottom-6 right-6 z-50 p-4 rounded-2xl bg-zinc-900 border border-neon/50 text-white shadow-2xl flex items-center gap-3 animate-slide-up">
@@ -468,8 +468,8 @@ export const CampanasView = () => {
           ========================================================================= */}
       {campaigns.length === 0 ? (
         /* CASO A: ESTADO CERO TOTAL -> LAUNCHPAD ASISTIDO CON 3 RUTAS */
-        <div className="rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-6 sm:p-8 lg:p-10 space-y-6 sm:space-y-8 shadow-sm">
-          <div className="max-w-2xl">
+        <div className="rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-5 sm:p-6 lg:p-8 space-y-6 shadow-sm">
+          <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neon/10 border border-neon/30 text-lime-700 dark:text-neon text-xs font-mono font-bold mb-3">
               <Sparkles className="w-3.5 h-3.5" />
               <span>LAUNCHPAD ESTRATÉGICO • {activeTenant?.name || 'ESPACIO ACTIVO'}</span>
@@ -482,7 +482,7 @@ export const CampanasView = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
             {/* RUTA 1: LANZAR CAMPAÑA CON META ADS DIRECTO A WHATSAPP */}
             <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-emerald-500/50 transition-all flex flex-col justify-between space-y-5 group">
               <div className="space-y-3">
@@ -696,7 +696,7 @@ export const CampanasView = () => {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
               {filteredCampaigns.map((camp) => {
                 const spendPct =
                   camp.budget > 0 ? Math.round((camp.spend / camp.budget) * 100) : 0;
