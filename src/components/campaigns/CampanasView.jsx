@@ -507,7 +507,7 @@ export const CampanasView = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
-            {/* RUTA 1: LANZAR CAMPAÑA CON META ADS DIRECTO A WHATSAPP */}
+            {/* RUTA 1: LANZAR CAMPAÑA PUBLICITARIA MULTICANAL */}
             <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-emerald-500/50 transition-all flex flex-col justify-between space-y-5 group">
               <div className="space-y-3">
                 <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
@@ -515,14 +515,14 @@ export const CampanasView = () => {
                 </div>
                 <div>
                   <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-400 font-bold block">
-                    Alta Conversión a Citas
+                    Meta Ads, Google & Conversiones
                   </span>
                   <h3 className="font-heading font-black text-base text-[var(--text-main)] group-hover:text-emerald-400 transition-colors">
-                    Lanzar con Meta Ads (WhatsApp)
+                    Crear Campaña Publicitaria
                   </h3>
                 </div>
                 <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                  Conecta anuncios en Instagram & FB directamente hacia WhatsApp con respuesta en &lt; 1 minuto por sub-bots cualificadores.
+                  Configura pauta en Instagram, Facebook o Google con captación multicanal, medición CAPI y derivación automática a citas.
                 </p>
               </div>
               <button
@@ -531,13 +531,13 @@ export const CampanasView = () => {
                   setNewCampaignForm((prev) => ({
                     ...prev,
                     channel: 'Meta Ads (Instagram & FB)',
-                    name: `Meta Ads WhatsApp — ${activeTenant?.name || 'Campaña'}`,
+                    name: `Campaña Multicanal — ${activeTenant?.name || 'Activa'}`,
                   }));
                   setIsNewModalOpen(true);
                 }}
                 className="w-full py-2.5 px-3 rounded-xl bg-emerald-500 text-black font-mono font-bold text-xs hover:bg-emerald-400 transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
               >
-                <span>Lanzar Campaña Meta</span>
+                <span>Crear Campaña</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
