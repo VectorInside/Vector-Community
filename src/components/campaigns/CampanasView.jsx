@@ -278,7 +278,7 @@ export const CampanasView = () => {
   };
 
   return (
-    <div className="w-full space-y-6 animate-fade-in font-sans pb-12">
+    <div className="w-full p-4 sm:p-6 lg:p-8 block animate-fade-in space-y-6 sm:space-y-8 font-sans pb-28 min-w-0 max-w-7xl mx-auto">
       {/* Toast de Éxito de IA */}
       {aiSuccessToast && (
         <div className="fixed bottom-6 right-6 z-50 p-4 rounded-2xl bg-zinc-900 border border-neon/50 text-white shadow-2xl flex items-center gap-3 animate-slide-up">
@@ -295,7 +295,7 @@ export const CampanasView = () => {
       )}
 
       {/* Header Unificado */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between pb-4 border-b border-[var(--border-color)] gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between pb-5 border-b border-[var(--border-color)] gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[10px] font-mono font-bold uppercase text-neon tracking-wider bg-neon/10 px-2 py-0.5 rounded border border-neon/30">
@@ -353,9 +353,9 @@ export const CampanasView = () => {
       </div>
 
       {/* KPI Cards Overview con Inteligencia de Estado Cero */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         {/* Presupuesto Asignado */}
-        <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2 shadow-sm">
+        <div className="p-4 sm:p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2.5 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block">
               Presupuesto Asignado
@@ -383,7 +383,7 @@ export const CampanasView = () => {
         </div>
 
         {/* Gasto Devengado */}
-        <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2 shadow-sm">
+        <div className="p-4 sm:p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2.5 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block">
               Gasto Devengado Real
@@ -408,7 +408,7 @@ export const CampanasView = () => {
         </div>
 
         {/* Prospectos Generados & CPL Proyectado */}
-        <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2 shadow-sm">
+        <div className="p-4 sm:p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2.5 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block">
               Prospectos Generados
@@ -433,7 +433,7 @@ export const CampanasView = () => {
         </div>
 
         {/* Piezas Creativas Vinculadas */}
-        <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2 shadow-sm">
+        <div className="p-4 sm:p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2.5 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block">
               Piezas en Estudio
@@ -468,7 +468,7 @@ export const CampanasView = () => {
           ========================================================================= */}
       {campaigns.length === 0 ? (
         /* CASO A: ESTADO CERO TOTAL -> LAUNCHPAD ASISTIDO CON 3 RUTAS */
-        <div className="rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-6 sm:p-8 space-y-6">
+        <div className="rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-6 sm:p-8 lg:p-10 space-y-6 sm:space-y-8 shadow-sm">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neon/10 border border-neon/30 text-lime-700 dark:text-neon text-xs font-mono font-bold mb-3">
               <Sparkles className="w-3.5 h-3.5" />
@@ -482,9 +482,9 @@ export const CampanasView = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
             {/* RUTA 1: LANZAR CAMPAÑA CON META ADS DIRECTO A WHATSAPP */}
-            <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-emerald-500/50 transition-all flex flex-col justify-between space-y-4 group">
+            <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-emerald-500/50 transition-all flex flex-col justify-between space-y-5 group">
               <div className="space-y-3">
                 <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
                   <Zap className="w-5 h-5" />
@@ -511,7 +511,7 @@ export const CampanasView = () => {
                   }));
                   setIsNewModalOpen(true);
                 }}
-                className="w-full py-2.5 px-3 rounded-xl bg-emerald-500 text-black font-mono font-bold text-xs hover:bg-emerald-400 transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                className="w-full py-2.5 px-3 rounded-xl bg-emerald-500 text-black font-mono font-bold text-xs hover:bg-emerald-400 transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
               >
                 <span>Lanzar Campaña Meta</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -519,7 +519,7 @@ export const CampanasView = () => {
             </div>
 
             {/* RUTA 2: COPILOT IA DE OFERTA GANCHO */}
-            <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-neon/40 hover:border-neon transition-all flex flex-col justify-between space-y-4 relative overflow-hidden group shadow-sm">
+            <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-card)] border border-neon/40 hover:border-neon transition-all flex flex-col justify-between space-y-5 relative overflow-hidden group shadow-sm">
               <div className="absolute top-0 right-0 w-24 h-24 bg-neon/10 rounded-full blur-xl pointer-events-none" />
               <div className="space-y-3 relative z-10">
                 <div className="w-10 h-10 rounded-xl bg-neon/20 border border-neon/40 flex items-center justify-center text-neon">
@@ -553,7 +553,7 @@ export const CampanasView = () => {
             </div>
 
             {/* RUTA 3: CONECTAR CANALES O IMPORTAR */}
-            <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-blue-500/50 transition-all flex flex-col justify-between space-y-4 group">
+            <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-blue-500/50 transition-all flex flex-col justify-between space-y-5 group">
               <div className="space-y-3">
                 <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400">
                   <ExternalLink className="w-5 h-5" />
@@ -573,7 +573,7 @@ export const CampanasView = () => {
               <button
                 type="button"
                 onClick={() => router.push('/connections?tab=channels')}
-                className="w-full py-2.5 px-3 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] hover:border-blue-400 text-blue-400 font-mono font-bold text-xs transition-all flex items-center justify-center gap-1.5"
+                className="w-full py-2.5 px-3 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] hover:border-blue-400 text-blue-400 font-mono font-bold text-xs transition-all flex items-center justify-center gap-1.5 active:scale-95"
               >
                 <span>Conectar Cuentas</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -583,9 +583,9 @@ export const CampanasView = () => {
         </div>
       ) : (
         /* CASO B: HAY CAMPAÑAS -> BARRA DE CONTROL ERGONÓMICA Y GRID */
-        <div className="space-y-5">
+        <div className="space-y-6">
           {/* Barra de Filtros y Búsqueda */}
-          <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 text-xs font-mono p-2.5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)]">
+          <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 text-xs font-mono p-3 sm:p-3.5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] shadow-sm">
             {/* Pills de Canales */}
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="text-[var(--text-muted)] font-bold px-2 flex items-center gap-1">
@@ -696,7 +696,7 @@ export const CampanasView = () => {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
               {filteredCampaigns.map((camp) => {
                 const spendPct =
                   camp.budget > 0 ? Math.round((camp.spend / camp.budget) * 100) : 0;
@@ -706,7 +706,7 @@ export const CampanasView = () => {
                 return (
                   <div
                     key={camp.id}
-                    className="p-5 rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] hover:border-neon/50 transition-all flex flex-col justify-between space-y-4 shadow-sm group relative overflow-hidden"
+                    className="p-5 sm:p-6 rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] hover:border-neon/50 transition-all flex flex-col justify-between space-y-4 shadow-sm group relative overflow-hidden"
                   >
                     <div className="absolute top-0 right-0 w-32 h-32 bg-neon/5 rounded-full blur-2xl pointer-events-none group-hover:bg-neon/10 transition-colors" />
 
