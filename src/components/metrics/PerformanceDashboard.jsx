@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { performanceService } from '@/services/performanceService';
+import { campaignService } from '@/services/campaignService';
 import { StatCard } from '@/components/common/StatCard';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
@@ -76,6 +77,7 @@ export const PerformanceDashboard = () => {
 
   const [data, setData] = useState(null);
   const [capiLogs, setCapiLogs] = useState([]);
+  const [campaignMetrics, setCampaignMetrics] = useState({ totalSpend: 0, totalLeads: 0, activeCount: 0 });
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('web'); // 'web' | 'capi' | 'microlanding'
   const [showMicroLandingModal, setShowMicroLandingModal] = useState(false);
@@ -120,10 +122,22 @@ export const PerformanceDashboard = () => {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const perf = await performanceService.getPerformanceMetrics(activeTenantId);
-      const logs = await performanceService.getCapiAttributionLogs(activeTenantId);
+      const [perf, logs, camps] = await Promise.all([
+        performanceService.getPerformanceMetrics(activeTenantId),
+        performanceService.getCapiAttributionLogs(activeTenantId),
+        activeTenantId ? campaignService.getCampaigns(activeTenantId) : Promise.resolve([]),
+      ]);
       setData(perf);
       setCapiLogs(logs);
+
+      if (Array.isArray(camps) && camps.length > 0) {
+        const totalSpend = camps.reduce((acc, c) => acc + (Number(c.spend) || 0), 0);
+        const totalLeads = camps.reduce((acc, c) => acc + (Number(c.leadsCount) || 0), 0);
+        const activeCount = camps.filter((c) => c.status === 'Activa').length;
+        setCampaignMetrics({ totalSpend, totalLeads, activeCount });
+      } else {
+        setCampaignMetrics({ totalSpend: 0, totalLeads: 0, activeCount: 0 });
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -137,7 +151,8 @@ export const PerformanceDashboard = () => {
 
   const handleCopyPublicLink = () => {
     const slug = activeTenant?.microLandingSlug || activeTenant?.id || 'demo';
-    const url = `https://app.vectorinside.com/m/${slug}`;
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://app.vectorinside.com';
+    const url = `${baseUrl}/m/${slug}`;
     navigator.clipboard.writeText(url);
     setCopiedLink(true);
     try {
@@ -188,7 +203,7 @@ export const PerformanceDashboard = () => {
         if (!cat) return null;
         return {
           ...cat,
-          tenantConfig: { enabled: true, status: 'connected', latencyMs: 0, lastSync: 'En tiempo real' },
+          tenantConfig: { enabled: true, status: 'connected', latencyMs: 28, lastSync: 'En tiempo real' },
         };
       })
       .filter(Boolean);
@@ -231,7 +246,7 @@ export const PerformanceDashboard = () => {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 block animate-fade-in space-y-6 max-w-7xl mx-auto font-sans">
+    <div className="w-full p-3 sm:p-5 lg:p-6 block animate-fade-in space-y-6 font-sans pb-28 min-w-0">
       {/* Header Contextual Homologado con el Tenant Activo */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border-color)] pb-4 gap-4">
         <div>
@@ -257,7 +272,7 @@ export const PerformanceDashboard = () => {
 
         <div className="flex flex-wrap items-center gap-2.5 shrink-0">
           <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] font-mono text-xs shadow-sm">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
             <span className="text-[var(--text-muted)]">Meta CAPI:</span>
             <span className="font-bold text-emerald-500">
               {!activeTenant ? 'Inactivo' : (activeTenant?.capiStatus || (summary.capiSyncRate > 0 ? `Conectado • ${summary.capiSyncRate}% Entrega` : 'En espera de eventos'))}
@@ -266,8 +281,9 @@ export const PerformanceDashboard = () => {
 
           <button
             type="button"
+            disabled={!activeTenant}
             onClick={() => setShowMicroLandingModal(true)}
-            className="px-3.5 py-2 rounded-xl bg-[var(--bg-panel)] hover:bg-[var(--bg-card)] text-[var(--text-main)] text-xs font-mono font-bold border border-[var(--border-color)] flex items-center gap-2 transition-all hover:border-neon shadow-sm"
+            className="px-3.5 py-2 rounded-xl bg-[var(--bg-panel)] hover:bg-[var(--bg-card)] disabled:opacity-50 disabled:cursor-not-allowed text-[var(--text-main)] text-xs font-mono font-bold border border-[var(--border-color)] flex items-center gap-2 transition-all hover:border-neon shadow-sm"
           >
             <Smartphone className="w-4 h-4 text-neon" />
             <span>Ver Micro-Landing</span>
@@ -280,40 +296,40 @@ export const PerformanceDashboard = () => {
         <button
           type="button"
           onClick={() => setActiveTab('web')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-medium flex items-center gap-2 transition-all ${
+          className={`px-4 py-2.5 rounded-xl text-xs font-medium flex items-center gap-2 transition-all whitespace-nowrap shrink-0 ${
             activeTab === 'web'
               ? 'bg-neon text-black font-bold shadow-[0_0_15px_rgba(231,249,0,0.3)]'
               : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)]'
           }`}
         >
           <Globe className="w-4 h-4" />
-          <span>{activeTenant?.hasWebsite ? 'Salud de Canales & Tráfico Web' : 'Salud de Canales & Direct-to-Chat'}</span>
+          <span>{activeTenant?.hasWebsite ? '1. Salud de Canales & Tráfico Web' : '1. Salud de Canales & Direct-to-Chat'}</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('capi')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-medium flex items-center gap-2 transition-all ${
+          className={`px-4 py-2.5 rounded-xl text-xs font-medium flex items-center gap-2 transition-all whitespace-nowrap shrink-0 ${
             activeTab === 'capi'
               ? 'bg-neon text-black font-bold shadow-[0_0_15px_rgba(231,249,0,0.3)]'
               : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)]'
           }`}
         >
           <Activity className="w-4 h-4" />
-          <span>Atribución Publicitaria (ROAS Real)</span>
+          <span>2. Atribución Publicitaria (ROAS Real)</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('microlanding')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-medium flex items-center gap-2 transition-all ${
+          className={`px-4 py-2.5 rounded-xl text-xs font-medium flex items-center gap-2 transition-all whitespace-nowrap shrink-0 ${
             activeTab === 'microlanding'
               ? 'bg-neon text-black font-bold shadow-[0_0_15px_rgba(231,249,0,0.3)]'
               : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)]'
           }`}
         >
           <Smartphone className="w-4 h-4" />
-          <span>Micro-Landing & Captación</span>
+          <span>3. Micro-Landing & Captación</span>
         </button>
       </div>
 
@@ -427,25 +443,32 @@ export const PerformanceDashboard = () => {
                     <div className="space-y-2.5">
                       {/* Top Header del Canal */}
                       <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2.5">
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
                           <span className={`p-2 rounded-xl bg-gradient-to-br ${ch.color} text-white shadow-sm shrink-0`}>
                             <IconComp className="w-4 h-4" />
                           </span>
-                          <div>
-                            <h4 className="font-bold text-xs text-[var(--text-main)] leading-tight">
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-bold text-xs text-[var(--text-main)] leading-tight truncate">
                               {ch.name}
                             </h4>
-                            <span className="text-[10px] text-[var(--text-muted)] font-mono">
+                            <span className="text-[10px] text-[var(--text-muted)] font-mono truncate block">
                               {ch.category}
                             </span>
                           </div>
                         </div>
 
-                        {/* Status API Badge */}
-                        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 text-[10px] font-mono font-bold shrink-0">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                          <span>{ch.tenantConfig?.latencyMs ?? metrics.latencyMs ?? 0}ms</span>
-                        </div>
+                        {/* Status API Badge Robusto */}
+                        {ch.tenantConfig?.enabled !== false ? (
+                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-mono font-semibold shrink-0 whitespace-nowrap">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                            <span>{ch.tenantConfig?.latencyMs ? `${ch.tenantConfig.latencyMs}ms` : 'En línea'}</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-zinc-800/60 border border-zinc-700/40 text-zinc-400 text-[10px] font-mono shrink-0 whitespace-nowrap">
+                            <span className="w-1.5 h-1.5 rounded-full bg-zinc-500 shrink-0" />
+                            <span>Desconectado</span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Métricas Principales del Canal */}
@@ -477,7 +500,7 @@ export const PerformanceDashboard = () => {
                             <Flame className="w-3 h-3 text-neon" />
                             Frecuencia de Anuncio:
                           </span>
-                          <span className={`font-mono text-[10px] font-bold px-1.5 py-0.2 rounded border ${
+                          <span className={`font-mono text-[10px] font-bold px-1.5 py-0.5 rounded border ${
                             isFatigueAlert
                               ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
                               : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
@@ -542,24 +565,64 @@ export const PerformanceDashboard = () => {
                   ? '0'
                   : activeTenant?.hasWebsite
                   ? (webMetrics.sessions ? String(webMetrics.sessions).replace(/\B(?=(\d{3})+(?!\d))/g, ',') : '0')
-                  : String(mlMetrics.ctaClicks || 0)
+                  : String(mlMetrics.ctaClicks || campaignMetrics.totalLeads || 0)
               }
-              subvalue={!activeTenant ? 'Sin negocio seleccionado' : (activeTenant?.hasWebsite ? 'Tráfico calificado de pago' : 'Conversaciones iniciadas')}
-              change={!activeTenant || !webMetrics.sessions ? '0%' : '+18.4%'}
-              isPositive={true}
+              subvalue={
+                !activeTenant
+                  ? 'Sin negocio seleccionado'
+                  : (Number(webMetrics.sessions) === 0 && Number(mlMetrics.ctaClicks) === 0 && Number(campaignMetrics.totalLeads) === 0)
+                  ? 'Sin tráfico registrado aún'
+                  : (activeTenant?.hasWebsite ? 'Tráfico calificado de pago' : 'Conversaciones iniciadas')
+              }
+              change={
+                !activeTenant || (Number(webMetrics.sessions) === 0 && Number(mlMetrics.ctaClicks) === 0 && Number(campaignMetrics.totalLeads) === 0)
+                  ? '0%'
+                  : '+18.4%'
+              }
+              isPositive={
+                (Number(webMetrics.sessions) === 0 && Number(mlMetrics.ctaClicks) === 0 && Number(campaignMetrics.totalLeads) === 0)
+                  ? null
+                  : true
+              }
               icon={Users}
-              badgeText={!activeTenant ? 'INACTIVO' : (activeTenant?.hasWebsite ? 'ANALÍTICA WEB' : 'DIRECT ADS')}
+              badgeText={
+                !activeTenant
+                  ? 'INACTIVO'
+                  : (Number(webMetrics.sessions) === 0 && Number(mlMetrics.ctaClicks) === 0 && Number(campaignMetrics.totalLeads) === 0)
+                  ? 'EN ESPERA'
+                  : (activeTenant?.hasWebsite ? 'ANALÍTICA WEB' : 'DIRECT ADS')
+              }
               accentColor="blue"
             />
 
             <StatCard
               title={activeTenant?.hasWebsite ? 'Costo por Clic (CPC Web)' : 'Costo por Conversación'}
               value={!activeTenant ? '$0.00 MXN' : (webMetrics.cpc || '$0.00 MXN')}
-              subvalue={!activeTenant ? 'Sin negocio seleccionado' : 'Costo unitario por prospecto'}
-              change={!activeTenant || (Number(webMetrics.sessions) === 0 && Number(mlMetrics.visits) === 0) ? '0%' : '-8.2%'}
-              isPositive={true}
+              subvalue={
+                !activeTenant
+                  ? 'Sin negocio seleccionado'
+                  : (Number(webMetrics.sessions) === 0 && Number(mlMetrics.visits) === 0 && Number(campaignMetrics.totalSpend) === 0)
+                  ? 'Sin pauta activa devengada'
+                  : 'Costo unitario por prospecto'
+              }
+              change={
+                !activeTenant || (Number(webMetrics.sessions) === 0 && Number(mlMetrics.visits) === 0 && Number(campaignMetrics.totalSpend) === 0)
+                  ? '0%'
+                  : '-8.2%'
+              }
+              isPositive={
+                (Number(webMetrics.sessions) === 0 && Number(mlMetrics.visits) === 0 && Number(campaignMetrics.totalSpend) === 0)
+                  ? null
+                  : true
+              }
               icon={DollarSign}
-              badgeText={!activeTenant ? 'INACTIVO' : 'ÓPTIMO'}
+              badgeText={
+                !activeTenant
+                  ? 'INACTIVO'
+                  : (Number(webMetrics.sessions) === 0 && Number(mlMetrics.visits) === 0 && Number(campaignMetrics.totalSpend) === 0)
+                  ? 'CALIBRANDO'
+                  : 'ÓPTIMO'
+              }
               accentColor="emerald"
             />
 
@@ -569,27 +632,67 @@ export const PerformanceDashboard = () => {
               subvalue={
                 !activeTenant
                   ? 'Sin negocio seleccionado'
+                  : (Number(webMetrics.sessions) === 0 && Number(mlMetrics.visits) === 0 && Number(campaignMetrics.totalLeads) === 0)
+                  ? 'Esperando primeros prospectos'
                   : activeTenant?.frictionAlert
                   ? '⚠️ Crítico (< 3.0% Umbral)'
                   : activeTenant?.hasWebsite
                   ? 'Saludable (> 3.0%)'
                   : 'Alta Conversión en Chat'
               }
-              change={!activeTenant || (Number(webMetrics.sessions) === 0 && Number(mlMetrics.visits) === 0) ? '0%' : (activeTenant?.frictionAlert ? '-32.1%' : '+14.5%')}
-              isPositive={!activeTenant?.frictionAlert}
+              change={
+                !activeTenant || (Number(webMetrics.sessions) === 0 && Number(mlMetrics.visits) === 0 && Number(campaignMetrics.totalLeads) === 0)
+                  ? '0%'
+                  : (activeTenant?.frictionAlert ? '-32.1%' : '+14.5%')
+              }
+              isPositive={
+                (Number(webMetrics.sessions) === 0 && Number(mlMetrics.visits) === 0 && Number(campaignMetrics.totalLeads) === 0)
+                  ? null
+                  : !activeTenant?.frictionAlert
+              }
               icon={MousePointerClick}
-              badgeText={!activeTenant ? 'INACTIVO' : (activeTenant?.frictionAlert ? 'FRICCIÓN' : 'CONVIRTIENDO')}
-              accentColor={activeTenant?.frictionAlert ? 'rose' : 'brand'}
+              badgeText={
+                !activeTenant
+                  ? 'INACTIVO'
+                  : (Number(webMetrics.sessions) === 0 && Number(mlMetrics.visits) === 0 && Number(campaignMetrics.totalLeads) === 0)
+                  ? 'EN ESPERA'
+                  : (activeTenant?.frictionAlert ? 'FRICCIÓN' : 'CONVIRTIENDO')
+              }
+              accentColor={
+                (Number(webMetrics.sessions) === 0 && Number(mlMetrics.visits) === 0 && Number(campaignMetrics.totalLeads) === 0)
+                  ? 'zinc'
+                  : (activeTenant?.frictionAlert ? 'rose' : 'brand')
+              }
             />
 
             <StatCard
               title="Tasa de Fuga / Rebote"
               value={!activeTenant ? '0.0%' : (activeTenant?.hasWebsite ? (webMetrics.bounceRate || '0%') : (mlMetrics.bounceRate || '0.0%'))}
-              subvalue={!activeTenant ? 'Sin negocio seleccionado' : (activeTenant?.hasWebsite ? 'Salidas en primer fold' : 'Cero rebote (Directo a chat)')}
-              change={!activeTenant || (Number(webMetrics.sessions) === 0 && Number(mlMetrics.visits) === 0) ? '0%' : (activeTenant?.hasWebsite ? '+4.2%' : '-100%')}
-              isPositive={!activeTenant?.hasWebsite}
+              subvalue={
+                !activeTenant
+                  ? 'Sin negocio seleccionado'
+                  : (Number(webMetrics.sessions) === 0 && Number(mlMetrics.visits) === 0)
+                  ? 'Directo a chat (Cero fugas)'
+                  : (activeTenant?.hasWebsite ? 'Salidas en primer fold' : 'Cero rebote (Directo a chat)')
+              }
+              change={
+                !activeTenant || (Number(webMetrics.sessions) === 0 && Number(mlMetrics.visits) === 0)
+                  ? '0%'
+                  : (activeTenant?.hasWebsite ? '+4.2%' : '-100%')
+              }
+              isPositive={
+                (Number(webMetrics.sessions) === 0 && Number(mlMetrics.visits) === 0)
+                  ? null
+                  : !activeTenant?.hasWebsite
+              }
               icon={TrendingUp}
-              badgeText={!activeTenant ? 'INACTIVO' : (activeTenant?.hasWebsite ? 'DIAGNÓSTICO' : 'GARANTIZADO')}
+              badgeText={
+                !activeTenant
+                  ? 'INACTIVO'
+                  : (Number(webMetrics.sessions) === 0 && Number(mlMetrics.visits) === 0)
+                  ? 'DIRECTO'
+                  : (activeTenant?.hasWebsite ? 'DIAGNÓSTICO' : 'GARANTIZADO')
+              }
               accentColor={activeTenant?.hasWebsite ? 'amber' : 'emerald'}
             />
           </div>
@@ -1067,34 +1170,34 @@ export const PerformanceDashboard = () => {
             <StatCard
               title="ROAS Real Atribuido"
               value={`${summary.realRoas ?? 0}x`}
-              subvalue={`(Meta: ${summary.metaReportedRoas ?? 0}x)`}
+              subvalue={summary.realRoas > 0 ? `(Meta: ${summary.metaReportedRoas ?? 0}x)` : 'Esperando conversiones'}
               change={summary.realRoas > 0 ? '+41.3%' : '0%'}
-              isPositive={true}
+              isPositive={summary.realRoas > 0 ? true : null}
               icon={TrendingUp}
-              badgeText={!activeTenant ? 'INACTIVO' : 'BACKEND REAL'}
-              accentColor="brand"
+              badgeText={!activeTenant ? 'INACTIVO' : summary.realRoas > 0 ? 'BACKEND REAL' : 'SIN REGISTRO'}
+              accentColor={summary.realRoas > 0 ? 'brand' : 'zinc'}
             />
 
             <StatCard
               title="CAC Real (Cost per Acquisition)"
               value={`$${summary.realCac ?? 0} USD`}
-              subvalue={`(CPA: $${summary.blendedCpa ?? 0})`}
+              subvalue={summary.realCac > 0 ? `(CPA: $${summary.blendedCpa ?? 0})` : 'Sin ventas registradas'}
               change={summary.realCac > 0 ? '-15.4%' : '0%'}
-              isPositive={true}
+              isPositive={summary.realCac > 0 ? true : null}
               icon={DollarSign}
-              badgeText={!activeTenant ? 'INACTIVO' : 'OPT. METRIC'}
-              accentColor="emerald"
+              badgeText={!activeTenant ? 'INACTIVO' : summary.realCac > 0 ? 'OPT. METRIC' : 'CALIBRANDO'}
+              accentColor={summary.realCac > 0 ? 'emerald' : 'zinc'}
             />
 
             <StatCard
               title="Ingresos Reales Atribuidos"
               value={`$${formatNumber(summary.backendAttributedRevenue ?? 0)} USD`}
-              subvalue={`Gasto: $${formatNumber(summary.totalSpend ?? 0)}`}
+              subvalue={summary.totalSpend > 0 ? `Gasto: $${formatNumber(summary.totalSpend)}` : 'Sin gasto devengado'}
               change={summary.backendAttributedRevenue > 0 ? '+28.0%' : '0%'}
-              isPositive={true}
+              isPositive={summary.backendAttributedRevenue > 0 ? true : null}
               icon={Activity}
-              badgeText={!activeTenant ? 'INACTIVO' : 'VERIFICADO'}
-              accentColor="blue"
+              badgeText={!activeTenant ? 'INACTIVO' : summary.backendAttributedRevenue > 0 ? 'VERIFICADO' : 'EN ESPERA'}
+              accentColor={summary.backendAttributedRevenue > 0 ? 'blue' : 'zinc'}
             />
 
             <StatCard
@@ -1102,10 +1205,10 @@ export const PerformanceDashboard = () => {
               value={`${summary.capiSyncRate ?? 0}%`}
               subvalue={!activeTenant || summary.capiSyncRate === 0 ? 'Sin eventos registrados' : 'Calidad de Registro: 9.8/10'}
               change={summary.capiSyncRate > 0 ? '+1.2%' : '0%'}
-              isPositive={true}
+              isPositive={summary.capiSyncRate > 0 ? true : null}
               icon={ShieldCheck}
-              badgeText={!activeTenant ? 'INACTIVO' : 'EN TIEMPO REAL'}
-              accentColor="amber"
+              badgeText={!activeTenant ? 'INACTIVO' : summary.capiSyncRate > 0 ? 'EN TIEMPO REAL' : 'SIN EVENTOS'}
+              accentColor={summary.capiSyncRate > 0 ? 'amber' : 'zinc'}
             />
           </div>
 
@@ -1298,45 +1401,45 @@ export const PerformanceDashboard = () => {
             <StatCard
               title="Visitas a Micro-Landing"
               value={formatNumber(!activeTenant ? 0 : (mlMetrics.visits ?? 0))}
-              subvalue={!activeTenant ? 'Sin negocio seleccionado' : 'Tráfico de alta intención'}
+              subvalue={!activeTenant ? 'Sin negocio seleccionado' : Number(mlMetrics.visits) > 0 ? 'Tráfico de alta intención' : 'Sin visitas registradas aún'}
               change={Number(mlMetrics.visits) > 0 ? '+24.2%' : '0%'}
-              isPositive={true}
+              isPositive={Number(mlMetrics.visits) > 0 ? true : null}
               icon={Users}
-              badgeText={!activeTenant ? 'INACTIVO' : 'EMBUDO VECTOR'}
-              accentColor="brand"
+              badgeText={!activeTenant ? 'INACTIVO' : Number(mlMetrics.visits) > 0 ? 'EMBUDO VECTOR' : 'EN ESPERA'}
+              accentColor={Number(mlMetrics.visits) > 0 ? 'brand' : 'zinc'}
             />
 
             <StatCard
               title="Conversión a WhatsApp (Chat)"
               value={!activeTenant ? '0.0%' : (mlMetrics.conversionRate || '0.0%')}
-              subvalue={`${!activeTenant ? 0 : (mlMetrics.leadsGenerated ?? 0)} chats iniciados`}
+              subvalue={Number(mlMetrics.leadsGenerated) > 0 ? `${mlMetrics.leadsGenerated} chats iniciados` : 'Esperando prospectos'}
               change={Number(mlMetrics.leadsGenerated) > 0 ? '+13x vs Web' : '0%'}
-              isPositive={true}
+              isPositive={Number(mlMetrics.leadsGenerated) > 0 ? true : null}
               icon={MousePointerClick}
-              badgeText={!activeTenant ? 'INACTIVO' : 'ALTA CONVERSIÓN'}
-              accentColor="emerald"
+              badgeText={!activeTenant ? 'INACTIVO' : Number(mlMetrics.leadsGenerated) > 0 ? 'ALTA CONVERSIÓN' : 'EN ESPERA'}
+              accentColor={Number(mlMetrics.leadsGenerated) > 0 ? 'emerald' : 'zinc'}
             />
 
             <StatCard
               title="Costo por Lead (Micro-Landing)"
               value={!activeTenant ? '$0.00 MXN' : (mlMetrics.costPerLead || '$0.00 MXN')}
-              subvalue={!activeTenant ? 'Sin negocio seleccionado' : 'Costo unitario por conversación'}
+              subvalue={!activeTenant ? 'Sin negocio seleccionado' : Number(mlMetrics.visits) > 0 ? 'Costo unitario por conversación' : 'Sin pauta activa devengada'}
               change={Number(mlMetrics.visits) > 0 ? '-51.3%' : '0%'}
-              isPositive={true}
+              isPositive={Number(mlMetrics.visits) > 0 ? true : null}
               icon={DollarSign}
-              badgeText={!activeTenant ? 'INACTIVO' : 'ÓPTIMO'}
-              accentColor="emerald"
+              badgeText={!activeTenant ? 'INACTIVO' : Number(mlMetrics.visits) > 0 ? 'ÓPTIMO' : 'CALIBRANDO'}
+              accentColor={Number(mlMetrics.visits) > 0 ? 'emerald' : 'zinc'}
             />
 
             <StatCard
               title="Velocidad Móvil & Retención"
               value={!activeTenant ? '0.00s' : (mlMetrics.avgLoadTime || '0.00s')}
-              subvalue={`Rebote de solo ${!activeTenant ? '0.0%' : (mlMetrics.bounceRate || '0.0%')}`}
+              subvalue={Number(mlMetrics.visits) > 0 ? `Rebote de solo ${mlMetrics.bounceRate || '0.0%'}` : 'Embudo ultraligero sin rebote'}
               change={Number(mlMetrics.visits) > 0 ? '-87% vs Web' : '0%'}
-              isPositive={true}
+              isPositive={Number(mlMetrics.visits) > 0 ? true : null}
               icon={TrendingUp}
-              badgeText={!activeTenant ? 'INACTIVO' : '0% FRICCIÓN'}
-              accentColor="blue"
+              badgeText={!activeTenant ? 'INACTIVO' : Number(mlMetrics.visits) > 0 ? '0% FRICCIÓN' : 'OPTIMIZADO'}
+              accentColor={Number(mlMetrics.visits) > 0 ? 'blue' : 'zinc'}
             />
           </div>
 

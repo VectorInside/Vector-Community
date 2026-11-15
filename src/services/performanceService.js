@@ -7,7 +7,7 @@ const LEGACY_MOCK_TENANT_IDS = new Set(['dental', 'polanco', 'urban', 'mex', 'co
 const isInvalidOrMockTenant = (tenantId) => {
   if (!tenantId) return true;
   const clean = String(tenantId).toLowerCase().trim();
-  return !clean || clean === 'undefined' || clean === 'null' || LEGACY_MOCK_TENANT_IDS.has(clean);
+  return !clean || clean === 'undefined' || clean === 'null';
 };
 
 const resolveMetricsKey = (tenantId) => {
