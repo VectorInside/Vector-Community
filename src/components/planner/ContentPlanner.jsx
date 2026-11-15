@@ -1,11 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { contentService } from '@/services/contentService';
 import { tenantService } from '@/services/tenantService';
 import { aiService } from '@/services/aiService';
 import { metaCommentService } from '@/services/metaCommentService';
+import { campaignService } from '@/services/campaignService';
 import {
   LayoutGrid,
   Calendar,
@@ -652,6 +654,44 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
       });
   }, [activeTenant, tenantKey]);
 
+  // Hidratación del Puente Bidireccional Campañas -> Parrilla
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const rawBridge = sessionStorage.getItem('vector_campaign_bridge');
+    if (rawBridge) {
+      try {
+        const campBridge = JSON.parse(rawBridge);
+        sessionStorage.removeItem('vector_campaign_bridge');
+        const mappedNet = campBridge.channel?.toLowerCase().includes('tiktok')
+          ? 'TIKTOK'
+          : campBridge.channel?.toLowerCase().includes('whatsapp')
+          ? 'WHATSAPP'
+          : campBridge.channel?.toLowerCase().includes('facebook')
+          ? 'FACEBOOK'
+          : 'INSTAGRAM';
+
+        setAiGenConfig((prev) => ({
+          ...prev,
+          network: mappedNet,
+          objective: 'LEAD_MAGNET',
+          tone: 'DIRECTO',
+          injectCommercialOffer: true,
+          customTopic: `[Campaña: ${campBridge.campaignName}] Oferta: ${campBridge.offer || ''}. Hipótesis: ${campBridge.hypothesis || ''}. Audiencia: ${campBridge.targetAudience || 'Público Objetivo'}`,
+          volume: 3,
+          linkedCampaignId: campBridge.campaignId,
+          linkedCampaignName: campBridge.campaignName,
+        }));
+        setActiveTab('grid');
+        setShowAiGenModal(true);
+        try {
+          confetti({ particleCount: 40, spread: 50, colors: ['#D4FF00', '#06B6D4', '#10B981'] });
+        } catch (e) {}
+      } catch (e) {
+        console.warn('[Bridge] Error parsing campaign bridge payload', e);
+      }
+    }
+  }, []);
+
   // Persist edits whenever posts or dna or offer change
   const persistPosts = (newPosts) => {
     setPosts(newPosts);
@@ -854,6 +894,33 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
     }
   };
 
+  const handleBoostPostToCampaign = (post) => {
+    if (!tenantKey) return;
+    const result = campaignService.boostPostToCampaign(tenantKey, post);
+    const updated = posts.map((p) =>
+      p.id === post.id
+        ? {
+            ...p,
+            campaignId: result.campaign.id,
+            campaignName: result.campaign.name,
+            boostedCampaignName: result.campaign.name,
+          }
+        : p
+    );
+    persistPosts(updated);
+    try {
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        colors: ['#E7F900', '#10B981', '#06B6D4'],
+      });
+    } catch (e) {}
+    triggerModal(
+      '🚀 Pieza Elevada a Campaña de Pauta (Boost)',
+      `El creativo <b>"${post.title || post.hookText || 'Post'}"</b> fue vinculado como anuncio activo en la campaña <b>"${result.campaign.name}"</b>.<br><br>Presupuesto devengado/asignado: <b>$${result.campaign.budget?.toLocaleString()} MXN</b> con trazabilidad de CPL y métricas de canal.`
+    );
+  };
+
   const handleCopyPostCopy = (postId, text) => {
     if (navigator?.clipboard) {
       navigator.clipboard.writeText(text);
@@ -1014,18 +1081,31 @@ Palabras tabú prohibidas: [${brandDna?.tabooWords || 'ninguna'}].`;
             status: 'PENDIENTE_CLIENTE',
             estimatedReach: targetNet === 'WHATSAPP' ? 'Base de Contactos & Difusión' : '15,000 - 28,000 cuentas',
             aiConfidence: typeof matchScore === 'number' ? matchScore : 97,
+            campaignId: aiGenConfig.linkedCampaignId || null,
+            campaignName: aiGenConfig.linkedCampaignName || null,
           };
 
           const savedPost = await contentService.createPost(newPostData);
-          generatedPostsList.push({
+          const fullSavedPost = {
             ...savedPost,
+            campaignId: aiGenConfig.linkedCampaignId || null,
+            campaignName: aiGenConfig.linkedCampaignName || null,
             formatIcon: POST_TYPE_ICONS[formatInfo.type] || Video,
-          });
+          };
+          generatedPostsList.push(fullSavedPost);
         }
       }
 
       const updated = [...generatedPostsList, ...posts];
       persistPosts(updated);
+
+      // Si venía vinculado de una campaña, registrar los creativos generados en la campaña
+      if (aiGenConfig.linkedCampaignId) {
+        generatedPostsList.forEach((p) => {
+          campaignService.linkPostToCampaign(tenantKey, aiGenConfig.linkedCampaignId, p);
+        });
+      }
+
       setShowAiGenModal(false);
 
       try {
@@ -2274,6 +2354,11 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                       <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-bold">
                         {post.aiConfidence || 97}% Match con ADN
                       </span>
+                      {(post.campaignName || post.boostedCampaignName) && (
+                        <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-neon/15 text-lime-700 dark:text-neon border border-neon/30 font-bold flex items-center gap-1">
+                          ⚡ Pauta: {post.campaignName || post.boostedCampaignName}
+                        </span>
+                      )}
                     </div>
 
                     {/* Hook Text Card con botón de copiado rápido */}
@@ -2388,6 +2473,23 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
 
+                      {/* Pautar / Boost en Campaña */}
+                      <button
+                        type="button"
+                        onClick={() => handleBoostPostToCampaign(post)}
+                        className={`px-2.5 py-1.5 rounded-lg text-xs font-mono border flex items-center gap-1 transition-all ${
+                          post.campaignName || post.boostedCampaignName
+                            ? 'bg-neon/15 text-lime-700 dark:text-neon border-neon/40'
+                            : 'bg-[var(--bg-card-subtle)] hover:bg-neon hover:text-black text-[var(--text-muted)] hover:border-neon border-[var(--border-color)]'
+                        }`}
+                        title="Vincular este creativo publicitario como anuncio en una campaña con presupuesto"
+                      >
+                        <Zap className="w-3.5 h-3.5 text-lime-700 dark:text-neon" />
+                        <span className="text-[10px] font-bold">
+                          {post.campaignName || post.boostedCampaignName ? 'En Pauta ⚡' : 'Pautar 🚀'}
+                        </span>
+                      </button>
+
                       {/* Aprobar / Reabrir */}
                       {isPending ? (
                         <button
@@ -2445,6 +2547,14 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
+              <Link
+                href="/crm?tab=persona_strategy"
+                className="px-3.5 py-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 text-xs font-mono border border-cyan-500/30 flex items-center gap-1.5 transition-colors font-bold"
+                title="Abrir la delimitación canónica del Buyer Persona y Matriz 4Ps"
+              >
+                <span>Buyer Persona & 4Ps (SSOT)</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
               <button
                 type="button"
                 onClick={handleResetToCanonicalDna}

@@ -162,6 +162,25 @@ export const CampanasView = () => {
     }
   };
 
+  // Navegar al Estudio de Contenido (Planner) transfiriendo la Oferta e Hipótesis de la Campaña
+  const handleSendCampaignToPlanner = (camp) => {
+    if (!camp) return;
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem(
+        'vector_campaign_bridge',
+        JSON.stringify({
+          campaignId: camp.id,
+          campaignName: camp.name,
+          offer: camp.offer,
+          hypothesis: camp.hypothesis,
+          channel: camp.channel,
+          audience: camp.audience,
+        })
+      );
+    }
+    router.push(`/planner?fromCampaign=${encodeURIComponent(camp.id)}`);
+  };
+
   // Generador de Campaña Inteligente con IA
   const handleGenerateWithAi = () => {
     if (!tenantId) {
@@ -214,8 +233,8 @@ export const CampanasView = () => {
   };
 
   // Alta de Campaña Manual
-  const handleCreateCampaign = (e) => {
-    e.preventDefault();
+  const handleCreateCampaign = (e, andSendToPlanner = false) => {
+    if (e && e.preventDefault) e.preventDefault();
     if (!newCampaignForm.name.trim()) return;
 
     const todayIso = new Date().toISOString().split('T')[0];
@@ -230,7 +249,8 @@ export const CampanasView = () => {
       budget: Number(newCampaignForm.budget) || tenantMonthlyBudget,
       spend: 0,
       leadsCount: 0,
-      piecesCount: 2,
+      piecesCount: 0,
+      linkedPosts: [],
       status: 'Activa',
       owner: isAdmin ? 'Lobo Vectorial (Agencia)' : 'Equipo de Marca',
       start: todayIso,
@@ -261,6 +281,10 @@ export const CampanasView = () => {
         colors: ['#D4FF00', '#25D366', '#FFFFFF'],
       });
     } catch (err) {}
+
+    if (andSendToPlanner) {
+      handleSendCampaignToPlanner(newCamp);
+    }
   };
 
   const handleAutofillAiForm = () => {
@@ -823,16 +847,34 @@ export const CampanasView = () => {
                       </div>
                     </div>
 
+                    {/* Creativos Vinculados Reales de la Parrilla */}
+                    {Array.isArray(camp.linkedPosts) && camp.linkedPosts.length > 0 && (
+                      <div className="p-2.5 rounded-2xl bg-[var(--bg-card)] border border-neon/20 space-y-1.5 text-xs z-10">
+                        <span className="text-[10px] font-mono text-lime-700 dark:text-neon font-bold flex items-center gap-1 uppercase tracking-wider">
+                          <Sparkles className="w-3 h-3 text-neon" />
+                          Creativos Vinculados ({camp.linkedPosts.length})
+                        </span>
+                        <div className="space-y-1">
+                          {camp.linkedPosts.slice(0, 2).map((lp) => (
+                            <div key={lp.id} className="text-[11px] text-[var(--text-muted)] truncate flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-neon shrink-0" />
+                              <span className="truncate">{lp.title}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Bottom Actions */}
-                    <div className="pt-3 border-t border-[var(--border-color)] flex items-center justify-between gap-2 z-10">
+                    <div className="pt-3 border-t border-[var(--border-color)] flex items-center justify-between gap-2 z-10 flex-wrap">
                       <button
                         type="button"
-                        onClick={() => router.push('/planner')}
-                        className="text-xs text-[var(--text-muted)] hover:text-neon font-mono flex items-center gap-1.5 transition-colors p-1"
-                        title="Abrir piezas en el Estudio de Contenido"
+                        onClick={() => handleSendCampaignToPlanner(camp)}
+                        className="px-2.5 py-1.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 font-mono font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+                        title="Abrir el Estudio de Contenido con la oferta y canal de esta campaña pre-cargados"
                       >
-                        <Layers className="w-3.5 h-3.5 text-blue-400" />
-                        <span>{camp.piecesCount || 0} piezas</span>
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>⚡ Generar Anuncios ({camp.piecesCount || (camp.linkedPosts?.length || 0)})</span>
                       </button>
 
                       <div className="flex items-center gap-1.5">
@@ -1002,7 +1044,7 @@ export const CampanasView = () => {
                 />
               </div>
 
-              <div className="pt-2 flex items-center justify-end gap-2.5 border-t border-[var(--border-color)]">
+              <div className="pt-2 flex items-center justify-end gap-2.5 border-t border-[var(--border-color)] flex-wrap">
                 <button
                   type="button"
                   onClick={() => setIsNewModalOpen(false)}
@@ -1012,9 +1054,17 @@ export const CampanasView = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-neon text-black font-mono font-black uppercase text-xs hover:bg-neon-hover transition-all active:scale-95 shadow-md"
+                  className="px-4 py-2 rounded-xl bg-[var(--bg-card)] border border-neon/40 hover:border-neon text-lime-700 dark:text-neon font-mono font-bold text-xs transition-all active:scale-95"
                 >
-                  Guardar & Activar Campaña
+                  Guardar & Activar
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => handleCreateCampaign(e, true)}
+                  className="px-5 py-2 rounded-xl bg-neon text-black font-mono font-black uppercase text-xs hover:bg-neon-hover transition-all active:scale-95 shadow-md flex items-center gap-1.5"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Guardar & Crear Anuncios ⚡</span>
                 </button>
               </div>
             </form>

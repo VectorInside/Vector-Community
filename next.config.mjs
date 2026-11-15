@@ -8,12 +8,11 @@ const nextConfig = {
     NEXT_PUBLIC_APP_NAME: "Vector Comunity Control Panel",
     NEXT_PUBLIC_ENV: "development",
   },
-  async redirects() {
+  async rewrites() {
     return [
       {
         source: '/brand-profile',
-        destination: '/profile?tab=strategy',
-        permanent: false,
+        destination: '/profile',
       },
     ];
   },
