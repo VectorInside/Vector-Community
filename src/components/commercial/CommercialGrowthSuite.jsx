@@ -150,7 +150,7 @@ export const CommercialGrowthSuite = ({ initialTab = 'kanban' }) => {
             spread: 70,
             colors: ['#E7F900', '#06B6D4', '#10B981'],
           });
-        } catch (e) {}
+        } catch (e) { }
         triggerModal(
           'Buyer Persona & 4 Ps Sincronizados',
           `El Buyer Persona y la Matriz de las 4 Ps de <b>${activeTenant?.name}</b> fueron inferidos con DeepSeek R1 y persistidos exitosamente en el sistema.`
@@ -221,7 +221,7 @@ export const CommercialGrowthSuite = ({ initialTab = 'kanban' }) => {
               spread: 60,
               colors: ['#06B6D4', '#E7F900', '#A855F7'],
             });
-          } catch (e) {}
+          } catch (e) { }
         }
       }
     } catch (err) {
@@ -321,11 +321,10 @@ export const CommercialGrowthSuite = ({ initialTab = 'kanban' }) => {
         <button
           type="button"
           onClick={() => setActiveSuiteTab('kanban')}
-          className={`px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shrink-0 ${
-            activeSuiteTab === 'kanban'
+          className={`px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shrink-0 ${activeSuiteTab === 'kanban'
               ? 'bg-neon text-black shadow-[0_0_15px_var(--neon-glow)]'
               : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)]'
-          }`}
+            }`}
         >
           <Users className="w-4 h-4" />
           <span>1. Embudo Kanban & Prospectos</span>
@@ -334,11 +333,10 @@ export const CommercialGrowthSuite = ({ initialTab = 'kanban' }) => {
         <button
           type="button"
           onClick={() => setActiveSuiteTab('studio')}
-          className={`px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shrink-0 ${
-            activeSuiteTab === 'studio'
+          className={`px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shrink-0 ${activeSuiteTab === 'studio'
               ? 'bg-neon text-black shadow-[0_0_15px_var(--neon-glow)]'
               : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)]'
-          }`}
+            }`}
         >
           <Sparkles className="w-4 h-4" />
           <span>2. Estudio de Contenido Inteligente</span>
@@ -347,11 +345,10 @@ export const CommercialGrowthSuite = ({ initialTab = 'kanban' }) => {
         <button
           type="button"
           onClick={() => setActiveSuiteTab('persona_strategy')}
-          className={`px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shrink-0 ${
-            activeSuiteTab === 'persona_strategy'
+          className={`px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shrink-0 ${activeSuiteTab === 'persona_strategy'
               ? 'bg-neon text-black shadow-[0_0_15px_var(--neon-glow)]'
               : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)]'
-          }`}
+            }`}
         >
           <Target className="w-4 h-4" />
           <span>3. Buyer Persona & Asesor de Giro (4 Ps)</span>
@@ -364,11 +361,10 @@ export const CommercialGrowthSuite = ({ initialTab = 'kanban' }) => {
           {/* Banner de Re-contacto y Automatización Dinámico según Tenant */}
           <div className="py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-500/10 via-[var(--bg-card)] to-emerald-500/10 border border-[var(--border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
             <div className="flex items-center gap-2 min-w-0">
-              <span className={`p-1.5 rounded-lg shrink-0 ${
-                activeTenant?.isAiActive !== false
+              <span className={`p-1.5 rounded-lg shrink-0 ${activeTenant?.isAiActive !== false
                   ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
                   : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-              }`}>
+                }`}>
                 <Clock className="w-3.5 h-3.5" />
               </span>
               <p className="text-[11.5px] text-[var(--text-main)] truncate">
@@ -382,11 +378,10 @@ export const CommercialGrowthSuite = ({ initialTab = 'kanban' }) => {
                 </span>
               </p>
             </div>
-            <span className={`px-2.5 py-0.5 rounded-md font-mono font-bold text-[10px] border shrink-0 self-start sm:self-auto ${
-              activeTenant?.isAiActive !== false
+            <span className={`px-2.5 py-0.5 rounded-md font-mono font-bold text-[10px] border shrink-0 self-start sm:self-auto ${activeTenant?.isAiActive !== false
                 ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
                 : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
-            }`}>
+              }`}>
               {activeTenant?.isAiActive !== false ? 'Automático Activo' : 'Pausado'}
             </span>
           </div>
@@ -438,290 +433,290 @@ export const CommercialGrowthSuite = ({ initialTab = 'kanban' }) => {
             </p>
           </div>
         ) : (
-        <div className="space-y-6 animate-fade-in">
-          {/* Card Destacada del Buyer Persona con Acciones In-Situ */}
-          <div className="p-6 rounded-3xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-5 shadow-sm">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between pb-4 border-b border-[var(--border-color)] gap-3.5">
-              <div className="flex items-center gap-3">
-                <span className="p-3 rounded-2xl bg-gradient-to-br from-pink-500/20 to-purple-500/20 text-pink-400 border border-pink-500/30 text-2xl shrink-0">
-                  🎯
-                </span>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-neon font-bold">
-                      Manual de Identidad & Delimitación de Audiencia
-                    </span>
-                    <span className="px-2 py-0.5 rounded-full bg-neon/10 border border-neon/30 text-[9px] font-mono text-neon font-bold">
-                      SSOT Activo
-                    </span>
+          <div className="space-y-6 animate-fade-in">
+            {/* Card Destacada del Buyer Persona con Acciones In-Situ */}
+            <div className="p-6 rounded-3xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-5 shadow-sm">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between pb-4 border-b border-[var(--border-color)] gap-3.5">
+                <div className="flex items-center gap-3">
+                  <span className="p-3 rounded-2xl bg-gradient-to-br from-pink-500/20 to-purple-500/20 text-pink-400 border border-pink-500/30 text-2xl shrink-0">
+                    🎯
+                  </span>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-neon font-bold">
+                        Manual de Identidad & Delimitación de Audiencia
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-neon/10 border border-neon/30 text-[9px] font-mono text-neon font-bold">
+                        SSOT Activo
+                      </span>
+                    </div>
+                    <h3 className="text-xl font-heading font-black text-[var(--text-main)]">
+                      Buyer Persona Oficial: {buyerPersona.name}
+                    </h3>
+                    <p className="text-xs text-[var(--text-muted)]">
+                      Alimenta directamente los sub-bots de cierre en WhatsApp, los guiones de venta y los ganchos de contenido.
+                    </p>
                   </div>
-                  <h3 className="text-xl font-heading font-black text-[var(--text-main)]">
-                    Buyer Persona Oficial: {buyerPersona.name}
-                  </h3>
-                  <p className="text-xs text-[var(--text-muted)]">
-                    Alimenta directamente los sub-bots de cierre en WhatsApp, los guiones de venta y los ganchos de contenido.
-                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  {/* Botón IA DeepSeek R1 */}
+                  <button
+                    type="button"
+                    onClick={handleAutoInferBuyer}
+                    disabled={isInferringBuyer}
+                    className="px-3 py-1.5 rounded-xl bg-neon text-black font-mono font-bold text-xs flex items-center gap-1.5 hover:shadow-[0_0_15px_var(--neon-glow)] transition-all disabled:opacity-50"
+                    title="Inferir Buyer Persona y 4 Ps basándose en el giro y propósito de marca"
+                  >
+                    {isInferringBuyer ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Analizando con R1...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Autogenerar con IA</span>
+                      </>
+                    )}
+                  </button>
+
+                  {/* Botón Edición Rápida In-Situ */}
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingPersonaModal(true)}
+                    className="px-3 py-1.5 rounded-xl bg-[var(--bg-panel)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] border border-[var(--border-color)] text-xs font-mono font-bold flex items-center gap-1.5 transition-all"
+                  >
+                    <Edit3 className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>Editar In-Situ</span>
+                  </button>
+
+                  {/* Enlace canónico al Perfil de Marca */}
+                  <Link
+                    href="/profile?tab=strategy"
+                    className="px-3 py-1.5 rounded-xl bg-neon/15 hover:bg-neon hover:text-black text-neon border border-neon/40 text-xs font-mono font-bold flex items-center gap-1.5 transition-all shadow-sm"
+                    title="Abrir vista integral en Perfil de Marca"
+                  >
+                    <span>Ajustar en Perfil de Marca</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+
+                  <span className="px-3 py-1.5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs font-mono text-[var(--text-muted)]">
+                    Giro: <strong className="text-[var(--text-main)]">{activeTenant?.giro || activeTenant?.verticalLabel || 'General'}</strong>
+                  </span>
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 shrink-0">
-                {/* Botón IA DeepSeek R1 */}
-                <button
-                  type="button"
-                  onClick={handleAutoInferBuyer}
-                  disabled={isInferringBuyer}
-                  className="px-3 py-1.5 rounded-xl bg-neon text-black font-mono font-bold text-xs flex items-center gap-1.5 hover:shadow-[0_0_15px_var(--neon-glow)] transition-all disabled:opacity-50"
-                  title="Inferir Buyer Persona y 4 Ps basándose en el giro y propósito de marca"
-                >
-                  {isInferringBuyer ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Analizando con R1...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>Autogenerar con IA</span>
-                    </>
-                  )}
-                </button>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+                <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
+                  <span className="text-[10px] text-[var(--text-muted)] font-mono uppercase block">Rango de Edad</span>
+                  <span className="font-bold text-[var(--text-main)] text-sm">{buyerPersona.ageRange}</span>
+                </div>
+                <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
+                  <span className="text-[10px] text-[var(--text-muted)] font-mono uppercase block">Estado Civil & Perfil</span>
+                  <span className="font-bold text-[var(--text-main)] text-sm">{buyerPersona.maritalStatus}</span>
+                </div>
+                <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
+                  <span className="text-[10px] text-[var(--text-muted)] font-mono uppercase block">Geolocalización & Cobertura</span>
+                  <span className="font-bold text-[var(--text-main)] text-sm flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-neon" />
+                    {buyerPersona.location}
+                  </span>
+                </div>
+                <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1 md:col-span-2 lg:col-span-3">
+                  <span className="text-[10px] text-[var(--text-muted)] font-mono uppercase block">Hábitos Digitales & Canales Favoritos</span>
+                  <p className="text-[var(--text-main)] leading-relaxed">{buyerPersona.digitalHabits}</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-1 md:col-span-1 lg:col-span-1.5">
+                  <span className="text-[10px] text-amber-400 font-mono uppercase font-bold block">Dolor Principal (Struggling Moment)</span>
+                  <p className="text-[var(--text-main)] leading-relaxed">{buyerPersona.mainPainPoint}</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 space-y-1 md:col-span-1 lg:col-span-1.5">
+                  <span className="text-[10px] text-emerald-400 font-mono uppercase font-bold block">Disparador de Compra Inmediata</span>
+                  <p className="text-[var(--text-main)] leading-relaxed">{buyerPersona.buyingTrigger}</p>
+                </div>
+              </div>
+            </div>
 
-                {/* Botón Edición Rápida In-Situ */}
+            {/* Marketing Mix: Estructura Operativa de las 4 Ps */}
+            <div className="p-6 rounded-3xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-5 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-[var(--border-color)] gap-3">
+                <div>
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-neon font-bold">
+                    Estructura Estratégica
+                  </span>
+                  <h3 className="text-lg font-heading font-black text-[var(--text-main)]">
+                    Marketing Mix Operativo (4 Ps)
+                  </h3>
+                  <p className="text-xs text-[var(--text-muted)]">
+                    Directrices activas de oferta, monetización y distribución para el equipo comercial y los agentes de IA.
+                  </p>
+                </div>
                 <button
                   type="button"
                   onClick={() => setIsEditingPersonaModal(true)}
-                  className="px-3 py-1.5 rounded-xl bg-[var(--bg-panel)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] border border-[var(--border-color)] text-xs font-mono font-bold flex items-center gap-1.5 transition-all"
+                  className="text-xs font-mono text-cyan-400 hover:underline flex items-center gap-1 self-start sm:self-auto"
                 >
-                  <Edit3 className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>Editar In-Situ</span>
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>Ajustar 4 Ps</span>
                 </button>
+              </div>
 
-                {/* Enlace canónico corregido al Perfil de Marca */}
-                <Link
-                  href="/profile?tab=strategy"
-                  className="px-3 py-1.5 rounded-xl bg-neon/10 hover:bg-neon hover:text-black text-neon border border-neon/40 text-xs font-mono font-bold flex items-center gap-1.5 transition-all shadow-sm"
-                  title="Abrir vista integral en Perfil de Marca"
-                >
-                  <span>Perfil Completo</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1.5">
+                  <div className="flex items-center gap-2 text-neon font-bold font-mono text-[11px]">
+                    <ShoppingBag className="w-4 h-4" />
+                    <span>1. PRODUCTO (Propuesta de Valor)</span>
+                  </div>
+                  <p className="text-[var(--text-muted)] leading-relaxed">{marketingMix.product}</p>
+                </div>
 
-                <span className="px-3 py-1.5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs font-mono text-[var(--text-muted)]">
-                  Giro: <strong className="text-[var(--text-main)]">{activeTenant?.giro || activeTenant?.verticalLabel || 'General'}</strong>
-                </span>
+                <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1.5">
+                  <div className="flex items-center gap-2 text-emerald-400 font-bold font-mono text-[11px]">
+                    <DollarSign className="w-4 h-4" />
+                    <span>2. PRECIO (Esquema Comercial del Cliente)</span>
+                  </div>
+                  <p className="text-[var(--text-muted)] leading-relaxed">{marketingMix.price}</p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1.5">
+                  <div className="flex items-center gap-2 text-blue-400 font-bold font-mono text-[11px]">
+                    <Building className="w-4 h-4" />
+                    <span>3. PLAZA (Distribución Omnicanal)</span>
+                  </div>
+                  <p className="text-[var(--text-muted)] leading-relaxed">{marketingMix.place}</p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1.5">
+                  <div className="flex items-center gap-2 text-purple-400 font-bold font-mono text-[11px]">
+                    <Tag className="w-4 h-4" />
+                    <span>4. PROMOCIÓN (Oferta del Mes Activa)</span>
+                  </div>
+                  <p className="text-[var(--text-muted)] leading-relaxed">{marketingMix.promotion}</p>
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
-              <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
-                <span className="text-[10px] text-[var(--text-muted)] font-mono uppercase block">Rango de Edad</span>
-                <span className="font-bold text-[var(--text-main)] text-sm">{buyerPersona.ageRange}</span>
-              </div>
-              <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
-                <span className="text-[10px] text-[var(--text-muted)] font-mono uppercase block">Estado Civil & Perfil</span>
-                <span className="font-bold text-[var(--text-main)] text-sm">{buyerPersona.maritalStatus}</span>
-              </div>
-              <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
-                <span className="text-[10px] text-[var(--text-muted)] font-mono uppercase block">Geolocalización & Cobertura</span>
-                <span className="font-bold text-[var(--text-main)] text-sm flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-neon" />
-                  {buyerPersona.location}
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1 md:col-span-2 lg:col-span-3">
-                <span className="text-[10px] text-[var(--text-muted)] font-mono uppercase block">Hábitos Digitales & Canales Favoritos</span>
-                <p className="text-[var(--text-main)] leading-relaxed">{buyerPersona.digitalHabits}</p>
-              </div>
-              <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-1 md:col-span-1 lg:col-span-1.5">
-                <span className="text-[10px] text-amber-400 font-mono uppercase font-bold block">Dolor Principal (Struggling Moment)</span>
-                <p className="text-[var(--text-main)] leading-relaxed">{buyerPersona.mainPainPoint}</p>
-              </div>
-              <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 space-y-1 md:col-span-1 lg:col-span-1.5">
-                <span className="text-[10px] text-emerald-400 font-mono uppercase font-bold block">Disparador de Compra Inmediata</span>
-                <p className="text-[var(--text-main)] leading-relaxed">{buyerPersona.buyingTrigger}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Marketing Mix: Estructura Operativa de las 4 Ps */}
-          <div className="p-6 rounded-3xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-5 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-[var(--border-color)] gap-3">
-              <div>
-                <span className="text-[10px] font-mono uppercase tracking-wider text-neon font-bold">
-                  Estructura Estratégica
-                </span>
-                <h3 className="text-lg font-heading font-black text-[var(--text-main)]">
-                  Marketing Mix Operativo (4 Ps)
-                </h3>
-                <p className="text-xs text-[var(--text-muted)]">
-                  Directrices activas de oferta, monetización y distribución para el equipo comercial y los agentes de IA.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsEditingPersonaModal(true)}
-                className="text-xs font-mono text-cyan-400 hover:underline flex items-center gap-1 self-start sm:self-auto"
-              >
-                <Edit3 className="w-3.5 h-3.5" />
-                <span>Ajustar 4 Ps</span>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1.5">
-                <div className="flex items-center gap-2 text-neon font-bold font-mono text-[11px]">
-                  <ShoppingBag className="w-4 h-4" />
-                  <span>1. PRODUCTO (Propuesta de Valor)</span>
-                </div>
-                <p className="text-[var(--text-muted)] leading-relaxed">{marketingMix.product}</p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1.5">
-                <div className="flex items-center gap-2 text-emerald-400 font-bold font-mono text-[11px]">
-                  <DollarSign className="w-4 h-4" />
-                  <span>2. PRECIO (Esquema Comercial del Cliente)</span>
-                </div>
-                <p className="text-[var(--text-muted)] leading-relaxed">{marketingMix.price}</p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1.5">
-                <div className="flex items-center gap-2 text-blue-400 font-bold font-mono text-[11px]">
-                  <Building className="w-4 h-4" />
-                  <span>3. PLAZA (Distribución Omnicanal)</span>
-                </div>
-                <p className="text-[var(--text-muted)] leading-relaxed">{marketingMix.place}</p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1.5">
-                <div className="flex items-center gap-2 text-purple-400 font-bold font-mono text-[11px]">
-                  <Tag className="w-4 h-4" />
-                  <span>4. PROMOCIÓN (Oferta del Mes Activa)</span>
-                </div>
-                <p className="text-[var(--text-muted)] leading-relaxed">{marketingMix.promotion}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Asesor de Giro: Mejora Continua Dinámica con DeepSeek R1 */}
-          <div className="p-6 rounded-3xl bg-gradient-to-r from-neon/10 via-[var(--bg-card)] to-cyan-500/10 border-2 border-neon/40 space-y-4 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5 text-neon font-bold">
-                <Compass className="w-5 h-5 shrink-0" />
-                <div>
-                  <h3 className="text-base font-heading font-black uppercase tracking-wider text-[var(--text-main)]">
-                    Asesor de Mejora Continua: ¿Hacia dónde dirigir el negocio?
-                  </h3>
-                  <p className="text-[11px] text-[var(--text-muted)] font-normal">
-                    Recomendaciones estratégicas generadas por DeepSeek R1 adaptadas al giro de <strong>{activeTenant?.name}</strong>.
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => handleConsultGiroAdvisor(true)}
-                disabled={isGeneratingGiro}
-                className="px-3 py-1.5 rounded-xl bg-[var(--bg-panel)] hover:bg-neon hover:text-black text-neon border border-neon/40 text-xs font-mono font-bold flex items-center gap-1.5 transition-all shrink-0 disabled:opacity-50"
-              >
-                {isGeneratingGiro ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Consultando R1...</span>
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span>Regenerar con IA</span>
-                  </>
-                )}
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 text-xs font-sans">
-              {(giroRecommendations && giroRecommendations.length > 0 ? giroRecommendations : [
-                {
-                  id: 'pricing_1',
-                  title: 'Optimización de Ticket Promedio',
-                  tag: 'Pricing & Cash Flow',
-                  metric: '+38% Cierre Potencial',
-                  source: 'Conversaciones del Embudo',
-                  diagnosis: 'El 64% de los prospectos preguntan por planes a mensualidades o financiamiento.',
-                  action: 'Activar paquetes con financiamiento 12 MSI para aumentar el cierre de tickets superiores en un 38%.',
-                  ctaType: 'pricing',
-                  ctaLabel: 'Ajustar Oferta Comercial',
-                },
-                {
-                  id: 'service_2',
-                  title: 'Nuevo Producto o Servicio en Demanda',
-                  tag: 'Expansión de Catálogo',
-                  metric: '+22% Ingresos Adicionales',
-                  source: 'Demanda Oculta en Citas',
-                  diagnosis: 'Alta demanda no cubierta en consultas y atenciones de fin de semana.',
-                  action: 'Habilitar citas o guardias en sábados tarde para generar ingresos adicionales sin más pauta publicitaria.',
-                  ctaType: 'service',
-                  ctaLabel: 'Planear Nuevo Horario',
-                },
-                {
-                  id: 'content_3',
-                  title: 'Re-orientación de Contenido Publicitario',
-                  tag: 'Conversión de Contenido',
-                  metric: '3x Retención en Feed',
-                  source: 'Estudio de Contenido',
-                  diagnosis: 'La retención es más alta en videos testimoniales cortos de clientes reales antes/después.',
-                  action: 'Priorizar este formato testimonial en el Estudio de Contenido sobre publicaciones estáticas.',
-                  ctaType: 'studio',
-                  ctaLabel: 'Crear en el Estudio →',
-                  studioTopic: 'Casos reales y testimonios antes/después',
-                },
-              ]).map((rec) => (
-                <div
-                  key={rec.id}
-                  className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] hover:border-neon/40 transition-all flex flex-col justify-between gap-3 shadow-sm group"
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between gap-1.5 flex-wrap">
-                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                        {rec.metric || '+25% Impacto'}
-                      </span>
-                      <span className="text-[10px] text-[var(--text-muted)] font-mono truncate">
-                        {rec.source}
-                      </span>
-                    </div>
-                    <span className="font-bold text-[var(--text-main)] text-sm block flex items-center gap-1.5">
-                      <Lightbulb className="w-4 h-4 text-amber-400 shrink-0" />
-                      {rec.title}
-                    </span>
-                    <p className="text-[var(--text-muted)] text-[11px] leading-relaxed">
-                      {rec.action || rec.diagnosis}
+            {/* Asesor de Giro: Mejora Continua Dinámica con DeepSeek R1 */}
+            <div className="p-6 rounded-3xl bg-gradient-to-r from-neon/10 via-[var(--bg-card)] to-cyan-500/10 border-2 border-neon/40 space-y-4 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 text-neon font-bold">
+                  <Compass className="w-5 h-5 shrink-0" />
+                  <div>
+                    <h3 className="text-base font-heading font-black uppercase tracking-wider text-[var(--text-main)]">
+                      Asesor de Mejora Continua: ¿Hacia dónde dirigir el negocio?
+                    </h3>
+                    <p className="text-[11px] text-[var(--text-muted)] font-normal">
+                      Recomendaciones estratégicas generadas por DeepSeek R1 adaptadas al giro de <strong>{activeTenant?.name}</strong>.
                     </p>
                   </div>
-
-                  <div className="pt-2 border-t border-[var(--border-color)] flex items-center gap-2">
-                    {rec.ctaType === 'studio' ? (
-                      <button
-                        type="button"
-                        onClick={() => setActiveSuiteTab('studio')}
-                        className="w-full py-1.5 px-3 rounded-xl bg-neon text-black font-bold text-xs flex items-center justify-center gap-1.5 hover:shadow-[0_0_12px_var(--neon-glow)] transition-all font-mono"
-                      >
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span>{rec.ctaLabel || 'Crear en el Estudio →'}</span>
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setIsEditingPersonaModal(true)}
-                        className="w-full py-1.5 px-3 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] border border-[var(--border-color)] font-bold text-xs flex items-center justify-center gap-1.5 transition-all font-mono"
-                      >
-                        <Zap className="w-3.5 h-3.5 text-neon" />
-                        <span>{rec.ctaLabel || 'Aplicar al Negocio'}</span>
-                      </button>
-                    )}
-                  </div>
                 </div>
-              ))}
+
+                <button
+                  type="button"
+                  onClick={() => handleConsultGiroAdvisor(true)}
+                  disabled={isGeneratingGiro}
+                  className="px-3 py-1.5 rounded-xl bg-[var(--bg-panel)] hover:bg-neon hover:text-black text-neon border border-neon/40 text-xs font-mono font-bold flex items-center gap-1.5 transition-all shrink-0 disabled:opacity-50"
+                >
+                  {isGeneratingGiro ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Consultando R1...</span>
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>Regenerar con IA</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 text-xs font-sans">
+                {(giroRecommendations && giroRecommendations.length > 0 ? giroRecommendations : [
+                  {
+                    id: 'pricing_1',
+                    title: 'Optimización de Ticket Promedio',
+                    tag: 'Pricing & Cash Flow',
+                    metric: '+38% Cierre Potencial',
+                    source: 'Conversaciones del Embudo',
+                    diagnosis: 'El 64% de los prospectos preguntan por planes a mensualidades o financiamiento.',
+                    action: 'Activar paquetes con financiamiento 12 MSI para aumentar el cierre de tickets superiores en un 38%.',
+                    ctaType: 'pricing',
+                    ctaLabel: 'Ajustar Oferta Comercial',
+                  },
+                  {
+                    id: 'service_2',
+                    title: 'Nuevo Producto o Servicio en Demanda',
+                    tag: 'Expansión de Catálogo',
+                    metric: '+22% Ingresos Adicionales',
+                    source: 'Demanda Oculta en Citas',
+                    diagnosis: 'Alta demanda no cubierta en consultas y atenciones de fin de semana.',
+                    action: 'Habilitar citas o guardias en sábados tarde para generar ingresos adicionales sin más pauta publicitaria.',
+                    ctaType: 'service',
+                    ctaLabel: 'Planear Nuevo Horario',
+                  },
+                  {
+                    id: 'content_3',
+                    title: 'Re-orientación de Contenido Publicitario',
+                    tag: 'Conversión de Contenido',
+                    metric: '3x Retención en Feed',
+                    source: 'Estudio de Contenido',
+                    diagnosis: 'La retención es más alta en videos testimoniales cortos de clientes reales antes/después.',
+                    action: 'Priorizar este formato testimonial en el Estudio de Contenido sobre publicaciones estáticas.',
+                    ctaType: 'studio',
+                    ctaLabel: 'Crear en el Estudio →',
+                    studioTopic: 'Casos reales y testimonios antes/después',
+                  },
+                ]).map((rec) => (
+                  <div
+                    key={rec.id}
+                    className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] hover:border-neon/40 transition-all flex flex-col justify-between gap-3 shadow-sm group"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-1.5 flex-wrap">
+                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                          {rec.metric || '+25% Impacto'}
+                        </span>
+                        <span className="text-[10px] text-[var(--text-muted)] font-mono truncate">
+                          {rec.source}
+                        </span>
+                      </div>
+                      <span className="font-bold text-[var(--text-main)] text-sm block flex items-center gap-1.5">
+                        <Lightbulb className="w-4 h-4 text-amber-400 shrink-0" />
+                        {rec.title}
+                      </span>
+                      <p className="text-[var(--text-muted)] text-[11px] leading-relaxed">
+                        {rec.action || rec.diagnosis}
+                      </p>
+                    </div>
+
+                    <div className="pt-2 border-t border-[var(--border-color)] flex items-center gap-2">
+                      {rec.ctaType === 'studio' ? (
+                        <button
+                          type="button"
+                          onClick={() => setActiveSuiteTab('studio')}
+                          className="w-full py-1.5 px-3 rounded-xl bg-neon text-black font-bold text-xs flex items-center justify-center gap-1.5 hover:shadow-[0_0_12px_var(--neon-glow)] transition-all font-mono"
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                          <span>{rec.ctaLabel || 'Crear en el Estudio →'}</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setIsEditingPersonaModal(true)}
+                          className="w-full py-1.5 px-3 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] border border-[var(--border-color)] font-bold text-xs flex items-center justify-center gap-1.5 transition-all font-mono"
+                        >
+                          <Zap className="w-3.5 h-3.5 text-neon" />
+                          <span>{rec.ctaLabel || 'Aplicar al Negocio'}</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
         )
       )}
 
@@ -891,8 +886,8 @@ export const CommercialGrowthSuite = ({ initialTab = 'kanban' }) => {
           </div>
         </div>
       )}
-        )
-      )}
+      )
+      )
     </div>
   );
 };
