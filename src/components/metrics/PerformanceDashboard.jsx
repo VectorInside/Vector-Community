@@ -281,12 +281,15 @@ export const PerformanceDashboard = () => {
     if (channelHealth?.meta?.status === 'CONNECTED' || metaConf.status === 'connected') {
       metaStatus = 'connected';
       metaLastSync = 'Graph API v21.0';
-    } else if (activeTenant?.metaPixelId || activeTenant?.metaAccessToken || metaConf.enabled) {
+    } else if (channelHealth?.meta?.status === 'PENDING' || metaConf.status === 'pending') {
       metaStatus = 'pending';
-      metaLastSync = 'Esperando eventos del pixel';
+      metaLastSync = 'Esperando validación del webhook';
     } else if (socialLinks.instagram || socialLinks.facebook) {
       metaStatus = 'configured';
-      metaLastSync = 'Perfil vinculado en negocio';
+      metaLastSync = 'Perfil vinculado (Sin webhook)';
+    } else if (activeTenant?.metaPixelId || activeTenant?.metaAccessToken || metaConf.enabled) {
+      metaStatus = 'configured';
+      metaLastSync = 'Pixel registrado (Sin webhook)';
     }
 
     if (metaCat) {
@@ -620,7 +623,9 @@ export const PerformanceDashboard = () => {
                     Salud de Canales Oficiales & Atribución
                   </h3>
                   <span className="px-2 py-0.5 rounded-full bg-neon/10 text-neon font-mono text-[10px] font-bold border border-neon/20">
-                    {activeChannelsList.length} Canales Activos
+                    {activeChannelsList.filter(c => c.tenantConfig?.status === 'connected').length > 0
+                      ? `${activeChannelsList.filter(c => c.tenantConfig?.status === 'connected').length} Canales Activos`
+                      : `${activeChannelsList.length} Canales en Seguimiento`}
                   </span>
                 </div>
                 <p className="text-xs text-[var(--text-muted)] mt-0.5">
@@ -892,9 +897,9 @@ export const PerformanceDashboard = () => {
                             <span>{ch.tenantConfig?.latencyMs ? `${ch.tenantConfig.latencyMs}ms` : 'En línea'}</span>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[10px] font-mono shrink-0 whitespace-nowrap">
-                            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shrink-0" />
-                            <span>Configurado</span>
+                          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-mono shrink-0 whitespace-nowrap">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
+                            <span>{ch.tenantConfig?.lastSync?.includes('Perfil') ? 'Perfil Vinculado' : 'Configurado'}</span>
                           </div>
                         )}
                       </div>
@@ -951,7 +956,15 @@ export const PerformanceDashboard = () => {
 
                     <div className="pt-2 border-t border-[var(--border-color)]/60 flex items-center justify-between text-[10px] font-mono text-[var(--text-muted)]">
                       <span>Sincronización API:</span>
-                      <span className="text-[var(--text-main)] font-semibold">{ch.tenantConfig?.lastSync || 'En tiempo real'}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[var(--text-main)] font-semibold">{ch.tenantConfig?.lastSync || 'En tiempo real'}</span>
+                        {status === 'configured' && (
+                          <Link href="/config?tab=channels" className="text-neon hover:underline font-bold flex items-center gap-0.5 text-[9px]">
+                            <span>Conectar Webhook</span>
+                            <ExternalLink className="w-2.5 h-2.5" />
+                          </Link>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );

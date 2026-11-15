@@ -188,19 +188,32 @@ export default function MicroLandingPage() {
     return () => window.removeEventListener('message', handleMessage);
   }, [baseTenant.id]);
 
-  // Inject Meta Pixel & GA4 scripts dynamically on the Micro-Landing
+  // Inject Meta Pixel & GA4 scripts dynamically on the Micro-Landing (solo en visitas públicas reales, nunca en preview / iframe del dashboard)
   useEffect(() => {
-    if (customData.metaPixelId && typeof window !== 'undefined') {
+    if (typeof window === 'undefined') return;
+
+    const isIframeOrPreview =
+      window.self !== window.top || new URLSearchParams(window.location.search).get('preview') === 'true';
+    if (isIframeOrPreview) return;
+
+    if (customData.metaPixelId) {
       if (!window.fbq) {
-        (function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-        n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
-        n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
-        t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)})(window,
-        document,'script','https://connect.facebook.net/en_US/fbevents.js');
+        try {
+          (function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+          n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+          n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+          t.onerror = () => {
+            // Manejo silencioso si el bloqueador de anuncios detiene la carga
+          };
+          t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)})(window,
+          document,'script','https://connect.facebook.net/en_US/fbevents.js');
+        } catch (e) {}
       }
       try {
-        window.fbq('init', customData.metaPixelId);
-        window.fbq('track', 'PageView');
+        if (window.fbq) {
+          window.fbq('init', customData.metaPixelId);
+          window.fbq('track', 'PageView');
+        }
       } catch (err) {}
     }
 
