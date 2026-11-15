@@ -346,7 +346,7 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
     if (activeTab !== 'qr' || !tenant || !qrCanvasRef.current) return;
 
     const canvas = qrCanvasRef.current;
-    const prodUrl = `https://app.vectorinside.com/m/${tenant.id}`;
+    const prodUrl = `https://app.vectorinside.com/m/${tenant.microLandingSlug || tenant.id}?utm_source=qr`;
 
     QRCode.toCanvas(
       canvas,
@@ -624,7 +624,7 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
             {/* Embedded Iframe of the MicroLanding */}
             <iframe
               ref={iframeRef}
-              src={`/m/${tenant.id}?preview=true`}
+              src={`/m/${tenant.microLandingSlug || tenant.id}?preview=true`}
               title="MicroLanding Live Preview"
               className="w-full flex-1 border-0 rounded-[40px] bg-[#07090D]"
             />

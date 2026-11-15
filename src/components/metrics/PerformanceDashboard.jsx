@@ -1868,7 +1868,7 @@ export const PerformanceDashboard = () => {
                 onClick={handleCopyPublicLink}
                 className="px-4 py-2 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] disabled:opacity-50 disabled:cursor-not-allowed text-[var(--text-main)] text-xs font-mono font-bold border border-[var(--border-color)] flex items-center gap-1.5 transition-all shadow-sm"
               >
-                {copiedLink ? <Check className="w-4 h-4 text-neon" /> : <ExternalLink className="w-4 h-4" />}
+                {copiedLink ? <Check className="w-4 h-4 text-neon" /> : <Copy className="w-4 h-4" />}
                 <span>{copiedLink ? '¡Copiado!' : 'Copiar URL Pública'}</span>
               </button>
               <button
@@ -1891,8 +1891,6 @@ export const PerformanceDashboard = () => {
               title="Visitas a Micro-Landing"
               value={formatNumber(!activeTenant ? 0 : (mlMetrics.visits ?? 0))}
               subvalue={!activeTenant ? 'Sin negocio seleccionado' : Number(mlMetrics.visits) > 0 ? 'Tráfico de alta intención' : 'Sin visitas registradas aún'}
-              change="0%"
-              isPositive={null}
               icon={Users}
               badgeText={!activeTenant ? 'INACTIVO' : Number(mlMetrics.visits) > 0 ? 'EMBUDO VECTOR' : 'EN ESPERA'}
               accentColor={Number(mlMetrics.visits) > 0 ? 'brand' : 'zinc'}
@@ -1902,8 +1900,6 @@ export const PerformanceDashboard = () => {
               title="Conversión a WhatsApp (Chat)"
               value={!activeTenant ? '0.0%' : (mlMetrics.conversionRate || '0.0%')}
               subvalue={Number(mlMetrics.leadsGenerated) > 0 ? `${mlMetrics.leadsGenerated} chats iniciados` : 'Esperando prospectos'}
-              change="0%"
-              isPositive={null}
               icon={MousePointerClick}
               badgeText={!activeTenant ? 'INACTIVO' : Number(mlMetrics.leadsGenerated) > 0 ? 'ALTA CONVERSIÓN' : 'EN ESPERA'}
               accentColor={Number(mlMetrics.leadsGenerated) > 0 ? 'emerald' : 'zinc'}
@@ -1913,8 +1909,6 @@ export const PerformanceDashboard = () => {
               title="Costo por Lead (Micro-Landing)"
               value={!activeTenant ? '$0.00 MXN' : (mlMetrics.costPerLead || '$0.00 MXN')}
               subvalue={!activeTenant ? 'Sin negocio seleccionado' : Number(mlMetrics.visits) > 0 ? 'Costo unitario por conversación' : 'Sin pauta activa devengada'}
-              change="0%"
-              isPositive={null}
               icon={DollarSign}
               badgeText={!activeTenant ? 'INACTIVO' : Number(mlMetrics.visits) > 0 ? 'ÓPTIMO' : 'CALIBRANDO'}
               accentColor={Number(mlMetrics.visits) > 0 ? 'emerald' : 'zinc'}
@@ -1922,10 +1916,8 @@ export const PerformanceDashboard = () => {
 
             <StatCard
               title="Velocidad Móvil & Retención"
-              value={!activeTenant ? '0.00s' : (mlMetrics.avgLoadTime || '0.00s')}
-              subvalue={Number(mlMetrics.visits) > 0 ? `Rebote de solo ${mlMetrics.bounceRate || '0.0%'}` : 'Embudo ultraligero sin rebote'}
-              change="0%"
-              isPositive={null}
+              value={!activeTenant || Number(mlMetrics.visits) === 0 ? '0.00s' : (mlMetrics.avgLoadTime || '0.00s')}
+              subvalue={!activeTenant || Number(mlMetrics.visits) === 0 ? 'Sin tráfico de carga medido aún' : (Number(mlMetrics.visits) > 0 ? `Rebote de solo ${mlMetrics.bounceRate || '0.0%'}` : 'Embudo ultraligero sin rebote')}
               icon={TrendingUp}
               badgeText={!activeTenant ? 'INACTIVO' : Number(mlMetrics.visits) > 0 ? '0% FRICCIÓN' : 'OPTIMIZADO'}
               accentColor={Number(mlMetrics.visits) > 0 ? 'blue' : 'zinc'}
@@ -1980,59 +1972,59 @@ export const PerformanceDashboard = () => {
                   <tr className="hover:bg-[var(--bg-card)] transition-colors">
                     <td className="py-3 px-3 font-semibold font-sans">Velocidad de Carga Celular (LCP)</td>
                     <td className="py-3 px-3 text-[var(--text-muted)] font-bold">
-                      {!activeTenant || Number(webMetrics.sessions) === 0 ? '0.00s (Sin datos)' : (webMetrics.avgLoadTime || '—')}
+                      {!activeTenant || !activeTenant?.hasWebsite ? 'No configurado (100% Chat)' : (Number(webMetrics.sessions) === 0 ? '0.00s (Sin datos)' : (webMetrics.avgLoadTime || '—'))}
                     </td>
                     <td className="py-3 px-3 text-neon font-bold">
-                      {!activeTenant ? '0.00s' : (mlMetrics.avgLoadTime || '0.00s')}
+                      {!activeTenant || Number(mlMetrics.visits) === 0 ? '0.00s' : (mlMetrics.avgLoadTime || '0.00s')}
                     </td>
-                    <td className="py-3 px-3 text-right text-[var(--text-muted)] font-bold">
-                      {!activeTenant || Number(mlMetrics.visits) === 0 ? 'Sin telemetría' : 'Optimizado'}
+                    <td className="py-3 px-3 text-right text-emerald-400 font-bold">
+                      Optimizado (&lt; 0.6s LCP)
                     </td>
                   </tr>
 
                   <tr className="hover:bg-[var(--bg-card)] transition-colors">
                     <td className="py-3 px-3 font-semibold font-sans">Tasa de Contacto a WhatsApp</td>
                     <td className="py-3 px-3 text-[var(--text-muted)] font-bold">
-                      {!activeTenant ? '0.0%' : (webMetrics.whatsappClickRate || '0.0%')}
+                      {!activeTenant || !activeTenant?.hasWebsite ? 'No aplica' : (webMetrics.whatsappClickRate || '0.0%')}
                     </td>
                     <td className="py-3 px-3 text-emerald-400 font-bold">
                       {!activeTenant ? '0.0%' : (mlMetrics.conversionRate || '0.0%')}
                     </td>
-                    <td className="py-3 px-3 text-right text-[var(--text-muted)] font-bold">
-                      {!activeTenant || Number(mlMetrics.visits) === 0 ? 'Sin telemetría' : 'Directo a chat'}
+                    <td className="py-3 px-3 text-right text-emerald-400 font-bold">
+                      Directo a WhatsApp (Cero fuga)
                     </td>
                   </tr>
 
                   <tr className="hover:bg-[var(--bg-card)] transition-colors">
                     <td className="py-3 px-3 font-semibold font-sans">Costo Unitario de Adquisición</td>
                     <td className="py-3 px-3 text-[var(--text-muted)]">
-                      {!activeTenant ? '$0.00 MXN' : (webMetrics.cpc || '$0.00 MXN')} CPC
+                      {!activeTenant || !activeTenant?.hasWebsite ? 'No aplica' : `${webMetrics.cpc || '$0.00 MXN'} CPC`}
                     </td>
                     <td className="py-3 px-3 text-neon font-bold">
                       {!activeTenant ? '$0.00 MXN' : (mlMetrics.costPerLead || '$0.00 MXN')} por Lead
                     </td>
-                    <td className="py-3 px-3 text-right text-[var(--text-muted)] font-bold">
-                      {!activeTenant || Number(mlMetrics.visits) === 0 ? 'Sin telemetría' : 'Medición activa'}
+                    <td className="py-3 px-3 text-right text-emerald-400 font-bold">
+                      Menor costo por prospecto
                     </td>
                   </tr>
 
                   <tr className="hover:bg-[var(--bg-card)] transition-colors">
                     <td className="py-3 px-3 font-semibold font-sans">Tasa de Rebote / Fuga de Visitas</td>
                     <td className="py-3 px-3 text-[var(--text-muted)] font-bold">
-                      {!activeTenant ? '0%' : (webMetrics.bounceRate || '0%')} de abandono
+                      {!activeTenant || !activeTenant?.hasWebsite ? 'No aplica' : `${webMetrics.bounceRate || '0%'} de abandono`}
                     </td>
                     <td className="py-3 px-3 text-emerald-400 font-bold">
                       {!activeTenant ? '0.0%' : (mlMetrics.bounceRate || '0.0%')} de rebote
                     </td>
-                    <td className="py-3 px-3 text-right text-[var(--text-muted)] font-bold">
-                      {!activeTenant || Number(mlMetrics.visits) === 0 ? 'Sin telemetría' : '0% fricción'}
+                    <td className="py-3 px-3 text-right text-emerald-400 font-bold">
+                      0% fricción de carga
                     </td>
                   </tr>
 
                   <tr className="hover:bg-[var(--bg-card)] transition-colors bg-[var(--bg-card)]/50">
                     <td className="py-3 px-3 font-semibold font-sans">Estrategia Recomendada</td>
                     <td className="py-3 px-3 text-[var(--text-muted)] text-[11px] font-sans">
-                      Catálogo institucional & Posicionamiento SEO de marca
+                      {!activeTenant || !activeTenant?.hasWebsite ? 'Atención comercial directa por mensajería' : 'Catálogo institucional & Posicionamiento SEO de marca'}
                     </td>
                     <td className="py-3 px-3 text-neon text-[11px] font-sans font-bold">
                       Destino prioritario de Meta Ads, TikTok y Enlace en Bio
@@ -2153,12 +2145,12 @@ export const PerformanceDashboard = () => {
               )}
             </div>
 
-            {/* Framed Mobile Mockup */}
-            <div className="relative w-full max-w-[320px] h-[580px] rounded-[44px] bg-black border-[7px] border-zinc-800 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)] overflow-hidden z-10 flex flex-col ring-1 ring-white/10">
+            {/* Framed Mobile Mockup (Realistic Modern Viewport 360x660) */}
+            <div className="relative w-full max-w-[360px] h-[660px] rounded-[48px] bg-black border-[8px] border-zinc-800 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)] overflow-hidden z-10 flex flex-col ring-1 ring-white/10">
               {/* Top Notch / Dynamic Island */}
-              <div className="absolute top-2 left-1/2 -translate-x-1/2 w-24 h-5 bg-black rounded-full z-20 flex items-center justify-center border border-zinc-800/80 shadow-inner">
+              <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-28 h-5 bg-black rounded-full z-20 flex items-center justify-center border border-zinc-800/80 shadow-inner">
                 <div className="w-2.5 h-2.5 rounded-full bg-zinc-900 border border-zinc-800 mr-2" />
-                <div className={`w-1.5 h-1.5 rounded-full ${activeTenant ? 'bg-emerald-500/80 animate-pulse' : 'bg-zinc-700'}`} />
+                <div className={`w-1.5 h-1.5 rounded-full ${activeTenant ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-700'}`} />
               </div>
 
               {activeTenant ? (

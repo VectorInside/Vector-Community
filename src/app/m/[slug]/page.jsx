@@ -183,7 +183,9 @@ export default function MicroLandingPage() {
       typeof window !== 'undefined' &&
       (window.self !== window.top || new URLSearchParams(window.location.search).get('preview') === 'true');
     if (baseTenant?.id && !isIframeOrPreview) {
-      performanceService.trackTelemetryEvent(baseTenant.id, 'VISIT').catch(() => {});
+      const searchParams = new URLSearchParams(window.location.search);
+      const isQr = searchParams.get('utm_source') === 'qr';
+      performanceService.trackTelemetryEvent(baseTenant.id, isQr ? 'QR_SCAN' : 'VISIT').catch(() => {});
     }
     return () => window.removeEventListener('message', handleMessage);
   }, [baseTenant.id]);
@@ -246,6 +248,13 @@ export default function MicroLandingPage() {
     } catch (e) {}
   };
 
+  const handleWhatsAppClick = (eventName = 'Contact') => {
+    trackConversion(eventName);
+    if (baseTenant?.id && !isPreviewMode) {
+      performanceService.trackTelemetryEvent(baseTenant.id, 'CTA_CLICK').catch(() => {});
+    }
+  };
+
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [bookingName, setBookingName] = useState('');
   const [bookingPhone, setBookingPhone] = useState('');
@@ -253,6 +262,7 @@ export default function MicroLandingPage() {
     return (DEFAULT_LEAD_FORMS[baseTenant.id] || DEFAULT_GENERIC_LEAD_FORM).options?.[0] || 'Información General';
   });
   const [bookedSuccess, setBookedSuccess] = useState(false);
+  const [bookingError, setBookingError] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
 
   useEffect(() => {
@@ -320,9 +330,10 @@ export default function MicroLandingPage() {
 
   const handleQuickLeadSubmit = (e) => {
     e.preventDefault();
+    setBookingError('');
     const cleanBookingPhone = normalizePhone10(bookingPhone);
     if (cleanBookingPhone.length !== 10) {
-      alert('Por favor ingresa tu número de WhatsApp a 10 dígitos (ej. 55 1234 5678).');
+      setBookingError('Por favor ingresa tu número de WhatsApp a 10 dígitos (ej. 55 1234 5678).');
       return;
     }
     trackConversion('Lead');
@@ -577,7 +588,7 @@ export default function MicroLandingPage() {
                   <span className="ml-1 font-bold text-white">{baseTheme.rating}</span>
                 </div>
                 <span>•</span>
-                <span>{baseTheme.reviewsCount} opiniones</span>
+                <span>{baseTheme.reviewsCount === 'Verificado' ? 'Negocio Verificado' : `${baseTheme.reviewsCount} opiniones`}</span>
                 <span>•</span>
                 <span className="text-[#D4FF00] font-bold">{baseTenant.giro || 'Salud'}</span>
               </div>
@@ -590,7 +601,7 @@ export default function MicroLandingPage() {
           href={primaryWaUrl}
           target="_blank"
           rel="noopener noreferrer"
-          onClick={() => trackConversion('Contact')}
+          onClick={() => handleWhatsAppClick('Contact')}
           className="group relative block w-full p-3.5 rounded-2xl bg-gradient-to-r from-[#25D366] via-[#22c55e] to-[#16a34a] text-black shadow-[0_8px_25px_rgba(37,211,102,0.4)] transition-all active:scale-[0.98] overflow-hidden"
         >
           <div className="absolute top-0 right-0 -mt-2 -mr-2 w-20 h-20 bg-white/20 rounded-full blur-xl pointer-events-none group-hover:scale-125 transition-transform" />
@@ -635,6 +646,7 @@ export default function MicroLandingPage() {
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => handleWhatsAppClick('Service_Inquiry')}
                 className="group p-3 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800/90 border border-white/5 hover:border-[#D4FF00]/40 transition-all flex items-center justify-between gap-2.5 block active:scale-[0.99]"
               >
                 <div className="flex-1 min-w-0 space-y-1">
@@ -697,7 +709,7 @@ export default function MicroLandingPage() {
                   placeholder="ej. Carlos Mendoza"
                   value={bookingName}
                   onChange={(e) => setBookingName(e.target.value)}
-                  className="w-full p-2 rounded-xl bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-500 focus:border-[#D4FF00] outline-none text-xs transition-colors"
+                  className="w-full p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-500 focus:border-[#D4FF00] outline-none text-sm font-sans transition-colors"
                 />
               </div>
 
@@ -711,9 +723,18 @@ export default function MicroLandingPage() {
                   required
                   placeholder="ej. 55 1234 5678"
                   value={bookingPhone}
-                  onChange={(e) => setBookingPhone(e.target.value)}
-                  className="w-full p-2 rounded-xl bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-500 focus:border-[#D4FF00] outline-none text-xs font-mono transition-colors"
+                  onChange={(e) => {
+                    setBookingPhone(e.target.value);
+                    if (bookingError) setBookingError('');
+                  }}
+                  className="w-full p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-500 focus:border-[#D4FF00] outline-none text-sm font-mono transition-colors"
                 />
+                {bookingError && (
+                  <p className="text-rose-400 text-[11px] font-mono mt-1 flex items-center gap-1">
+                    <span>⚠️</span>
+                    <span>{bookingError}</span>
+                  </p>
+                )}
               </div>
 
               {/* Dynamic Customizable Lead Form Chips */}
@@ -857,6 +878,7 @@ export default function MicroLandingPage() {
             href={primaryWaUrl}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => handleWhatsAppClick('Contact_Floating')}
             className="flex-1 py-2.5 px-3 rounded-xl bg-[#25D366] hover:bg-[#20bd59] text-black font-black text-xs flex items-center justify-center gap-1.5 shadow-lg transition-transform active:scale-95"
           >
             <MessageCircle className="w-4 h-4 fill-black shrink-0" />

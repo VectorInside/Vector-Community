@@ -39,12 +39,12 @@ export const StatCard = ({
           <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
             {title}
           </p>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl lg:text-3xl font-bold tracking-tight text-[var(--text-main)] font-mono">
+          <div className="mt-2 flex flex-col">
+            <span className="text-2xl lg:text-3xl font-bold tracking-tight text-[var(--text-main)] font-mono leading-tight">
               {value}
             </span>
             {subvalue && (
-              <span className="text-xs text-[var(--text-muted)] font-mono">
+              <span className="text-xs text-[var(--text-muted)] font-mono mt-1">
                 {subvalue}
               </span>
             )}
