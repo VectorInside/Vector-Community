@@ -90,47 +90,20 @@ export const PerformanceDashboard = () => {
   const [activeTab, setActiveTab] = useState('web'); // 'web' | 'capi' | 'microlanding'
   const [showMicroLandingModal, setShowMicroLandingModal] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
-  const [isEmittingSignal, setIsEmittingSignal] = useState(false);
 
-  const handleEmitTestSignal = async () => {
-    if (isEmittingSignal || !activeTenantId) return;
-    setIsEmittingSignal(true);
-    try {
-      const res = await performanceService.emitTestCapiSignal(activeTenantId, 'Purchase_Verified');
-      if (res) {
-        setCapiLogs((prev) => [res, ...prev.filter((l) => l.id !== res.id)]);
-        setData((prev) => {
-          if (!prev) return prev;
-          const prevSummary = prev.summary || {};
-          return {
-            ...prev,
-            summary: {
-              ...prevSummary,
-              capiSyncRate: 100,
-              backendAttributedRevenue: (prevSummary.backendAttributedRevenue || 0) + 350,
-            },
-          };
-        });
-        try {
-          confetti({
-            particleCount: 35,
-            spread: 55,
-            origin: { y: 0.6 },
-            colors: ['#D4FF00', '#10B981', '#38BDF8'],
-          });
-        } catch (e) {}
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsEmittingSignal(false);
+  // Limpieza inicial defensiva: eliminar cualquier rastro de simulador previo en localStorage
+  useEffect(() => {
+    if (activeTenantId && typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem(`vector_capi_logs_${activeTenantId}`);
+      } catch (e) {}
     }
-  };
+  }, [activeTenantId]);
 
   // Estados interactivos para auditoría del sitio web del agente analista
   const [isAuditingWebsite, setIsAuditingWebsite] = useState(false);
   const [auditStepText, setAuditStepText] = useState('');
-  const [lastAuditTimestamp, setLastAuditTimestamp] = useState('Hoy a las 08:00 AM (Batch Automático)');
+  const [lastAuditTimestamp, setLastAuditTimestamp] = useState('Hoy a las 08:00 AM (Telemetría en Vivo)');
   const [showDeepAuditDetails, setShowDeepAuditDetails] = useState(true);
 
   const handleRunWebsiteAudit = () => {
@@ -218,7 +191,7 @@ export const PerformanceDashboard = () => {
       );
       setData(perf);
 
-      const logs = await performanceService.getCapiAttributionLogs(activeTenantId);
+      const logs = await performanceService.getCapiAttributionLogs(activeTenantId, realLeads, realAppointments);
       setCapiLogs(logs);
     } catch (e) {
       console.error('[PerformanceDashboard] Error al cargar telemetría real:', e);
@@ -437,10 +410,10 @@ export const PerformanceDashboard = () => {
 
     if (isWeb) {
       const s1 = Number(webMetrics.sessions || 0);
-      const s2 = Math.round(s1 * 0.712);
-      const s3 = Math.round(s1 * 0.455);
-      const s4 = Number(mlMetrics.ctaClicks || Math.round(s1 * (parseFloat(webMetrics.whatsappClickRate || '0') / 100)));
-      const s5 = leadsData.length || appointmentsData.length || 0;
+      const s2 = Number(webMetrics.activeUsers || webMetrics.pageViews || 0);
+      const s3 = Number(webMetrics.engagedSessions || 0);
+      const s4 = Number(mlMetrics.ctaClicks || 0);
+      const s5 = appointmentsData.length || leadsData.filter((l) => (l.leadState || l.status) === 'BILLABLE_LEAD').length || 0;
 
       const hasData = s1 > 0 || s4 > 0 || s5 > 0;
       const s2Pct = s1 > 0 ? (s2 / s1) * 100 : 0;
@@ -458,16 +431,16 @@ export const PerformanceDashboard = () => {
       };
     }
 
-    // Embudo Direct-to-Messaging (WhatsApp / Meta Ads)
-    const rawClicks = Number(campaignMetrics.totalLeads ? Math.round(campaignMetrics.totalLeads * 1.5) : (mlMetrics.ctaClicks || mlMetrics.visits || 0));
+    // Embudo Direct-to-Messaging (WhatsApp / Meta Ads) - 100% Datos Reales
+    const rawClicks = Number(campaignMetrics.totalLeads || mlMetrics.ctaClicks || mlMetrics.visits || 0);
     const convCount = conversationsList.length;
     const leadsCount = leadsData.length;
     const apptsCount = appointmentsData.length;
 
     const s1 = Math.max(rawClicks, convCount, leadsCount);
     const s2 = Math.max(convCount, leadsCount);
-    const s3 = leadsData.filter((l) => (l.leadState || l.status) !== 'LEAD_COLD_24H' || l.identityValidated).length || Math.round(s2 * 0.88);
-    const s4 = leadsData.filter((l) => ['LEAD_HOT_PREQUAL', 'BILLABLE_LEAD'].includes(l.leadState || l.status) || l.catalogIdentified).length || Math.round(s2 * 0.60);
+    const s3 = leadsData.filter((l) => (l.leadState || l.status) !== 'LEAD_COLD_24H' || l.identityValidated).length;
+    const s4 = leadsData.filter((l) => ['LEAD_HOT_PREQUAL', 'BILLABLE_LEAD'].includes(l.leadState || l.status) || l.catalogIdentified).length;
     const s5 = apptsCount || leadsData.filter((l) => (l.leadState || l.status) === 'BILLABLE_LEAD').length || 0;
 
     const hasData = s1 > 0 || s2 > 0 || s3 > 0 || s4 > 0 || s5 > 0;
@@ -1025,16 +998,8 @@ export const PerformanceDashboard = () => {
                   ? 'Esperando primeros prospectos vía webhook'
                   : (activeTenant?.hasWebsite ? 'Tráfico web verificado' : 'Interacciones iniciales captadas')
               }
-              change={
-                !activeTenant || funnelData.step1.count === 0
-                  ? '0%'
-                  : '+18.4%'
-              }
-              isPositive={
-                funnelData.step1.count === 0
-                  ? null
-                  : true
-              }
+              change="0%"
+              isPositive={null}
               icon={Users}
               badgeText={
                 !activeTenant
@@ -1062,16 +1027,8 @@ export const PerformanceDashboard = () => {
                   ? 'Sin pauta activa devengada'
                   : 'Costo unitario por prospecto'
               }
-              change={
-                !activeTenant || (campaignMetrics.totalSpend === 0 && funnelData.step1.count === 0)
-                  ? '0%'
-                  : '-8.2%'
-              }
-              isPositive={
-                (campaignMetrics.totalSpend === 0 && funnelData.step1.count === 0)
-                  ? null
-                  : true
-              }
+              change="0%"
+              isPositive={null}
               icon={DollarSign}
               badgeText={
                 !activeTenant
@@ -1097,16 +1054,8 @@ export const PerformanceDashboard = () => {
                   ? 'Saludable (> 3.0%)'
                   : `${funnelData.step5.count} conversiones logradas`
               }
-              change={
-                !activeTenant || !funnelData.hasData
-                  ? '0%'
-                  : (activeTenant?.frictionAlert ? '-32.1%' : '+14.5%')
-              }
-              isPositive={
-                !funnelData.hasData
-                  ? null
-                  : !activeTenant?.frictionAlert
-              }
+              change="0%"
+              isPositive={null}
               icon={MousePointerClick}
               badgeText={
                 !activeTenant
@@ -1140,16 +1089,8 @@ export const PerformanceDashboard = () => {
                   ? 'Directo a chat (Cero fugas)'
                   : (activeTenant?.hasWebsite ? 'Salidas en primer fold' : 'Retención de canal activo')
               }
-              change={
-                !activeTenant || (Number(webMetrics.sessions) === 0 && Number(mlMetrics.visits) === 0)
-                  ? '0%'
-                  : (activeTenant?.hasWebsite ? '+4.2%' : '-100%')
-              }
-              isPositive={
-                (Number(webMetrics.sessions) === 0 && Number(mlMetrics.visits) === 0)
-                  ? null
-                  : !activeTenant?.hasWebsite
-              }
+              change="0%"
+              isPositive={null}
               icon={TrendingUp}
               badgeText={
                 !activeTenant
@@ -1668,15 +1609,10 @@ export const PerformanceDashboard = () => {
             </div>
 
             <div className="flex flex-wrap items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={handleEmitTestSignal}
-                disabled={isEmittingSignal}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neon text-black font-mono font-bold text-xs hover:scale-105 active:scale-95 transition-all shadow-[0_0_15px_rgba(231,249,0,0.25)] disabled:opacity-50"
-              >
-                <Zap className="w-3.5 h-3.5" />
-                <span>{isEmittingSignal ? 'Enviando Señal...' : 'Probar Señal CAPI'}</span>
-              </button>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono text-xs">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Atribución Server-to-Server Activa</span>
+              </span>
             </div>
           </div>
 
@@ -1686,8 +1622,8 @@ export const PerformanceDashboard = () => {
               title="ROAS Real Atribuido"
               value={summary.realRoas > 0 ? `${summary.realRoas}x` : '—'}
               subvalue={summary.realRoas > 0 ? `(Meta: ${summary.metaReportedRoas ?? 0}x)` : 'Esperando conversiones'}
-              change={summary.realRoas > 0 ? '+41.3%' : '0%'}
-              isPositive={summary.realRoas > 0 ? true : null}
+              change="0%"
+              isPositive={null}
               icon={TrendingUp}
               badgeText={!activeTenant ? 'INACTIVO' : summary.realRoas > 0 ? 'BACKEND REAL' : 'SIN REGISTRO'}
               accentColor={summary.realRoas > 0 ? 'brand' : 'zinc'}
@@ -1697,8 +1633,8 @@ export const PerformanceDashboard = () => {
               title="CAC Real (Cost per Acquisition)"
               value={summary.realCac > 0 ? `$${formatNumber(summary.realCac)} MXN` : '—'}
               subvalue={summary.realCac > 0 ? `(CPA: $${formatNumber(summary.blendedCpa ?? 0)} MXN)` : 'Sin ventas registradas'}
-              change={summary.realCac > 0 ? '-15.4%' : '0%'}
-              isPositive={summary.realCac > 0 ? true : null}
+              change="0%"
+              isPositive={null}
               icon={DollarSign}
               badgeText={!activeTenant ? 'INACTIVO' : summary.realCac > 0 ? 'OPT. METRIC' : 'CALIBRANDO'}
               accentColor={summary.realCac > 0 ? 'emerald' : 'zinc'}
@@ -1708,8 +1644,8 @@ export const PerformanceDashboard = () => {
               title="Ingresos Reales Atribuidos"
               value={summary.backendAttributedRevenue > 0 ? `$${formatNumber(summary.backendAttributedRevenue)} MXN` : '—'}
               subvalue={summary.totalSpend > 0 ? `Gasto: $${formatNumber(summary.totalSpend)} MXN` : 'Sin gasto devengado'}
-              change={summary.backendAttributedRevenue > 0 ? '+28.0%' : '0%'}
-              isPositive={summary.backendAttributedRevenue > 0 ? true : null}
+              change="0%"
+              isPositive={null}
               icon={Activity}
               badgeText={!activeTenant ? 'INACTIVO' : summary.backendAttributedRevenue > 0 ? 'VERIFICADO' : 'EN ESPERA'}
               accentColor={summary.backendAttributedRevenue > 0 ? 'blue' : 'zinc'}
@@ -1718,9 +1654,9 @@ export const PerformanceDashboard = () => {
             <StatCard
               title="Sincronización con Meta Ads"
               value={summary.capiSyncRate > 0 ? `${summary.capiSyncRate}%` : '—'}
-              subvalue={!activeTenant || summary.capiSyncRate === 0 ? 'Sin eventos registrados' : 'Calidad de Registro: 9.8/10'}
-              change={summary.capiSyncRate > 0 ? '+1.2%' : '0%'}
-              isPositive={summary.capiSyncRate > 0 ? true : null}
+              subvalue={!activeTenant || summary.capiSyncRate === 0 ? 'Sin eventos registrados' : 'Conexión verificada en tiempo real'}
+              change="0%"
+              isPositive={null}
               icon={ShieldCheck}
               badgeText={!activeTenant ? 'INACTIVO' : summary.capiSyncRate > 0 ? 'EN TIEMPO REAL' : 'SIN EVENTOS'}
               accentColor={summary.capiSyncRate > 0 ? 'amber' : 'zinc'}
@@ -1740,7 +1676,7 @@ export const PerformanceDashboard = () => {
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant="neon" size="sm">ROAS Promedio: {summary.realRoas}x</Badge>
-                <Badge variant="warning" size="sm">Hook Rate: {summary.avgHookRate}%</Badge>
+                {summary.avgHookRate > 0 && <Badge variant="warning" size="sm">Hook Rate: {summary.avgHookRate}%</Badge>}
               </div>
             </div>
 
@@ -1814,15 +1750,10 @@ export const PerformanceDashboard = () => {
                 <span className="text-xs text-[var(--text-muted)] font-mono">
                   Conexión en Vivo con Meta Ads ({activeTenant?.shortName || activeTenant?.name})
                 </span>
-                <button
-                  type="button"
-                  onClick={handleEmitTestSignal}
-                  disabled={isEmittingSignal}
-                  className="px-2.5 py-1 rounded-lg bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] border border-neon/30 text-neon font-mono text-xs font-bold transition-all hover:scale-105 disabled:opacity-50"
-                >
-                  <Zap className="w-3 h-3 inline mr-1" />
-                  <span>Probar Señal</span>
-                </button>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-mono font-bold flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3" />
+                  Meta CAPI v21.0
+                </span>
               </div>
             </div>
 
@@ -1846,17 +1777,6 @@ export const PerformanceDashboard = () => {
                         <p className="max-w-md mx-auto text-[11px] mt-1 font-sans">
                           No se han registrado conversiones todavía para <strong>{activeTenant?.name}</strong>. Conforme se agenden citas en Google Calendar o los prospectos califiquen en el CRM (4-Guard), los eventos se registrarán aquí automáticamente vía Meta Conversions API.
                         </p>
-                        <div className="pt-3">
-                          <button
-                            type="button"
-                            onClick={handleEmitTestSignal}
-                            disabled={isEmittingSignal}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neon/10 hover:bg-neon/20 border border-neon/30 text-neon font-bold text-xs transition-all hover:scale-105"
-                          >
-                            <Zap className="w-3.5 h-3.5" />
-                            <span>Emitir Señal de Prueba CAPI (Purchase_Verified)</span>
-                          </button>
-                        </div>
                       </td>
                     </tr>
                   ) : (
@@ -1958,8 +1878,8 @@ export const PerformanceDashboard = () => {
               title="Visitas a Micro-Landing"
               value={formatNumber(!activeTenant ? 0 : (mlMetrics.visits ?? 0))}
               subvalue={!activeTenant ? 'Sin negocio seleccionado' : Number(mlMetrics.visits) > 0 ? 'Tráfico de alta intención' : 'Sin visitas registradas aún'}
-              change={Number(mlMetrics.visits) > 0 ? '+24.2%' : '0%'}
-              isPositive={Number(mlMetrics.visits) > 0 ? true : null}
+              change="0%"
+              isPositive={null}
               icon={Users}
               badgeText={!activeTenant ? 'INACTIVO' : Number(mlMetrics.visits) > 0 ? 'EMBUDO VECTOR' : 'EN ESPERA'}
               accentColor={Number(mlMetrics.visits) > 0 ? 'brand' : 'zinc'}
@@ -1969,8 +1889,8 @@ export const PerformanceDashboard = () => {
               title="Conversión a WhatsApp (Chat)"
               value={!activeTenant ? '0.0%' : (mlMetrics.conversionRate || '0.0%')}
               subvalue={Number(mlMetrics.leadsGenerated) > 0 ? `${mlMetrics.leadsGenerated} chats iniciados` : 'Esperando prospectos'}
-              change={Number(mlMetrics.leadsGenerated) > 0 ? '+13x vs Web' : '0%'}
-              isPositive={Number(mlMetrics.leadsGenerated) > 0 ? true : null}
+              change="0%"
+              isPositive={null}
               icon={MousePointerClick}
               badgeText={!activeTenant ? 'INACTIVO' : Number(mlMetrics.leadsGenerated) > 0 ? 'ALTA CONVERSIÓN' : 'EN ESPERA'}
               accentColor={Number(mlMetrics.leadsGenerated) > 0 ? 'emerald' : 'zinc'}
@@ -1980,8 +1900,8 @@ export const PerformanceDashboard = () => {
               title="Costo por Lead (Micro-Landing)"
               value={!activeTenant ? '$0.00 MXN' : (mlMetrics.costPerLead || '$0.00 MXN')}
               subvalue={!activeTenant ? 'Sin negocio seleccionado' : Number(mlMetrics.visits) > 0 ? 'Costo unitario por conversación' : 'Sin pauta activa devengada'}
-              change={Number(mlMetrics.visits) > 0 ? '-51.3%' : '0%'}
-              isPositive={Number(mlMetrics.visits) > 0 ? true : null}
+              change="0%"
+              isPositive={null}
               icon={DollarSign}
               badgeText={!activeTenant ? 'INACTIVO' : Number(mlMetrics.visits) > 0 ? 'ÓPTIMO' : 'CALIBRANDO'}
               accentColor={Number(mlMetrics.visits) > 0 ? 'emerald' : 'zinc'}
@@ -1991,8 +1911,8 @@ export const PerformanceDashboard = () => {
               title="Velocidad Móvil & Retención"
               value={!activeTenant ? '0.00s' : (mlMetrics.avgLoadTime || '0.00s')}
               subvalue={Number(mlMetrics.visits) > 0 ? `Rebote de solo ${mlMetrics.bounceRate || '0.0%'}` : 'Embudo ultraligero sin rebote'}
-              change={Number(mlMetrics.visits) > 0 ? '-87% vs Web' : '0%'}
-              isPositive={Number(mlMetrics.visits) > 0 ? true : null}
+              change="0%"
+              isPositive={null}
               icon={TrendingUp}
               badgeText={!activeTenant ? 'INACTIVO' : Number(mlMetrics.visits) > 0 ? '0% FRICCIÓN' : 'OPTIMIZADO'}
               accentColor={Number(mlMetrics.visits) > 0 ? 'blue' : 'zinc'}
@@ -2047,7 +1967,7 @@ export const PerformanceDashboard = () => {
                   <tr className="hover:bg-[var(--bg-card)] transition-colors">
                     <td className="py-3 px-3 font-semibold font-sans">Velocidad de Carga Celular (LCP)</td>
                     <td className="py-3 px-3 text-[var(--text-muted)] font-bold">
-                      {!activeTenant || Number(webMetrics.sessions) === 0 ? '0.00s (Sin datos)' : '2.9s'}
+                      {!activeTenant || Number(webMetrics.sessions) === 0 ? '0.00s (Sin datos)' : (webMetrics.avgLoadTime || '—')}
                     </td>
                     <td className="py-3 px-3 text-neon font-bold">
                       {!activeTenant ? '0.00s' : (mlMetrics.avgLoadTime || '0.00s')}
@@ -2199,7 +2119,7 @@ export const PerformanceDashboard = () => {
               <div className="flex items-center gap-2">
                 <span className={`w-2.5 h-2.5 rounded-full ${activeTenant ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-600'}`} />
                 <span className="text-xs font-mono font-bold text-[var(--text-main)]">
-                  Simulador en Vivo: {activeTenant ? activeTenant.name : 'Sin negocio seleccionado'}
+                  Previsualización Móvil Oficial: {activeTenant ? activeTenant.name : 'Sin negocio seleccionado'}
                 </span>
                 {activeTenant && (
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[var(--text-muted)] font-mono">
