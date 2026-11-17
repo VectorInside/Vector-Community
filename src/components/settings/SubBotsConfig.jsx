@@ -578,7 +578,7 @@ export const SubBotsConfig = () => {
     setSaving(true);
     try {
       // 1. Guardar configuración de negocio y citas (sin llaves en texto plano en la tabla pública)
-      await tenantService.updateVerticalConfig(tenantId, {
+      const verticalConfigPromise = tenantService.updateVerticalConfig(tenantId, {
         activeModel: config.activeModel,
         temperature: config.temperature,
         systemPrompt: config.systemPrompt,
@@ -598,9 +598,10 @@ export const SubBotsConfig = () => {
       const currentKey = config.apiKeys?.[activeProviderKey]?.trim();
       const backendProvider = activeModelObj?.provider?.toUpperCase() || 'DEEPSEEK';
 
+      let aiConfigPromise = Promise.resolve();
       if (['DEEPSEEK', 'GROQ', 'OPENAI'].includes(backendProvider)) {
         if (currentKey && currentKey.length > 0 && !currentKey.startsWith('••••')) {
-          await aiService.saveConfig(tenantId, {
+          aiConfigPromise = aiService.saveConfig(tenantId, {
             provider: backendProvider,
             apiKey: currentKey,
             model: activeModelObj?.technicalModel || 'deepseek-chat',
@@ -608,16 +609,18 @@ export const SubBotsConfig = () => {
           }).catch((err) => console.warn('[SubBotsConfig] Error al guardar config de IA:', err));
         } else if (!currentKey) {
           // Si el usuario limpió la clave, restablecer en backend al pool global oficial
-          await aiService.deleteConfig(tenantId).catch(() => {});
+          aiConfigPromise = aiService.deleteConfig(tenantId).catch(() => {});
         } else {
           // Clave existente enmascarada: solo actualizar el modelo técnico sin sobreescribir la clave
-          await aiService.saveConfig(tenantId, {
+          aiConfigPromise = aiService.saveConfig(tenantId, {
             provider: backendProvider,
             model: activeModelObj?.technicalModel || 'deepseek-chat',
             allowFallbackToGlobal: true,
           }).catch((err) => console.warn('[SubBotsConfig] Error al actualizar modelo de IA:', err));
         }
       }
+
+      await Promise.all([verticalConfigPromise, aiConfigPromise]);
 
       if (typeof window !== 'undefined' && tenantId) {
         try {

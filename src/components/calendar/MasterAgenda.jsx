@@ -497,6 +497,28 @@ function VariablePill({ tag, sampleVal, onInsert, isRecentlyInserted }) {
   );
 }
 
+const LiveClock = React.memo(function LiveClock() {
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNow(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <span suppressHydrationWarning>
+      {now.toLocaleTimeString('es-MX', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      })}
+    </span>
+  );
+});
+
 export const MasterAgenda = () => {
   const { activeTenant: authActiveTenant, activeTenantKey, tenantsData, updateTenantPolicy } = useAuth();
   const { activeTenant: zustandActiveTenant, activeTenantId: zustandTenantId } = useTenant();
@@ -528,7 +550,7 @@ export const MasterAgenda = () => {
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState(null);
   const [viewMode, setViewMode] = useState('month'); // 'month' (Mes Completo) | 'grid' (Zoom Día / Horas) | 'week_table' (Semana) | 'list'
-  const [liveNow, setLiveNow] = useState(() => new Date());
+  const [todayIsoStr, setTodayIsoStr] = useState(() => toIsoDateStr(new Date()));
   const [currentCalendarMonth, setCurrentCalendarMonth] = useState(() => {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() };
@@ -675,14 +697,6 @@ export const MasterAgenda = () => {
     setTimeout(() => setLastInsertedVar(null), 1800);
   };
 
-  // Reloj en tiempo real (sincronizado segundo a segundo con la hora local/CDMX)
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setLiveNow(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
   // Sincronizar si cambia el tenant activo y cargar citas desde base de datos / cache local
   useEffect(() => {
     const resolved = resolveCalendarConfig(activeTenant);
@@ -747,7 +761,7 @@ export const MasterAgenda = () => {
   const handleGoToToday = () => {
     const now = new Date();
     const isoToday = toIsoDateStr(now);
-    setLiveNow(now);
+    setTodayIsoStr(isoToday);
     setCurrentCalendarMonth({ year: now.getFullYear(), month: now.getMonth() });
     setSelectedMonthDate(isoToday);
     setSelectedDay(DAY_IDS_BY_JS_DAY[now.getDay()]);
@@ -884,19 +898,12 @@ export const MasterAgenda = () => {
     setTimeout(() => setTestEmailSent(false), 3500);
   };
 
-  const todayIsoStr = toIsoDateStr(liveNow);
   const dynamicWeekDays = buildWeekDaysForDate(selectedMonthDate);
   const currentWeekNumber = getIsoWeekNumber(selectedMonthDate);
   const weekStartLabel = dynamicWeekDays[0]?.dateStr || '';
   const weekEndLabel = dynamicWeekDays[6]?.dateStr || '';
   const activeMonthName = MONTH_NAMES_ES[currentCalendarMonth.month] || '';
   const activeYear = currentCalendarMonth.year;
-  const liveTimeFormatted = liveNow.toLocaleTimeString('es-MX', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  });
 
   // Cálculo dinámico de días del mes seleccionado (Calendario Gregoriano Real)
   const firstDayOfMonth = new Date(activeYear, currentCalendarMonth.month, 1);
@@ -1065,7 +1072,7 @@ export const MasterAgenda = () => {
                 className="px-2 py-0.5 rounded-full bg-neon/10 text-lime-700 dark:text-neon border border-neon/30 text-[10px] font-mono font-bold flex items-center gap-1.5"
               >
                 <Clock className="w-3 h-3" />
-                Tiempo Real CDMX: {liveTimeFormatted} hrs • {todayIsoStr}
+                Tiempo Real CDMX: <LiveClock /> hrs • {todayIsoStr}
               </span>
             </div>
             <p className="text-xs text-[var(--text-muted)] mt-0.5 flex flex-wrap items-center gap-1.5 sm:gap-2 font-mono">
@@ -1225,7 +1232,7 @@ export const MasterAgenda = () => {
                         suppressHydrationWarning
                         className="text-[10px] sm:text-[11px] font-mono font-normal px-2 py-0.5 rounded-full bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-muted)]"
                       >
-                        {daysInMonth} Días • Tiempo Real ({liveTimeFormatted} hrs)
+                        {daysInMonth} Días • Tiempo Real (<LiveClock /> hrs)
                       </span>
                     </h3>
                     <p className="text-[11px] sm:text-xs text-[var(--text-muted)] font-mono mt-0.5">
@@ -1586,7 +1593,7 @@ export const MasterAgenda = () => {
                   suppressHydrationWarning
                   className="px-2 py-0.5 rounded bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[11px] text-[var(--text-muted)] font-mono"
                 >
-                  CDMX (GMT-6) • {liveTimeFormatted} hrs
+                  CDMX (GMT-6) • <LiveClock /> hrs
                 </span>
               </div>
 
@@ -1802,7 +1809,7 @@ export const MasterAgenda = () => {
                 <span>Agenda Semanal de Citas & Disponibilidad: <strong>{activeTenant?.name || 'Sin negocio seleccionado'}</strong></span>
               </h3>
               <p suppressHydrationWarning className="text-xs text-[var(--text-muted)] font-mono mt-0.5">
-                Semana {currentWeekNumber} • {weekStartLabel} al {weekEndLabel} {activeYear} • Tiempo Real ({liveTimeFormatted} hrs)
+                Semana {currentWeekNumber} • {weekStartLabel} al {weekEndLabel} {activeYear} • Tiempo Real (<LiveClock /> hrs)
               </p>
             </div>
 

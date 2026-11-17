@@ -4,22 +4,6 @@
  */
 
 /**
- * Escapa caracteres HTML especiales para texto plano.
- * @param {string} str - Cadena de texto a escapar
- * @returns {string} Cadena sanitizada
- */
-export function escapeHtml(str) {
-  if (str === null || str === undefined) return '';
-  const stringVal = String(str);
-  return stringVal
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-/**
  * Sanitiza fragmentos de HTML para renderizado seguro en modales o tooltips.
  * Elimina scripts, iframes, svgs, imágenes maliciosas y manejadores inline (on*).
  * @param {string} html - Fragmento HTML enriquecido

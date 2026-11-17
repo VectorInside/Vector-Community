@@ -1528,19 +1528,19 @@ Devuelve un JSON estrictamente estructurado con:
             },
           ];
 
-          const newlyCreated = [];
-          for (const p of generatedPostsToSave) {
-            try {
-              const res = await contentService.createPost(p);
-              newlyCreated.push({ ...res, formatIcon: Video });
-            } catch (err) {
-              newlyCreated.push({
-                ...p,
-                id: `post-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
-                formatIcon: Video,
-              });
+          const results = await Promise.allSettled(
+            generatedPostsToSave.map((p) => contentService.createPost(p))
+          );
+          const newlyCreated = results.map((result, idx) => {
+            if (result.status === 'fulfilled') {
+              return { ...result.value, formatIcon: Video };
             }
-          }
+            return {
+              ...generatedPostsToSave[idx],
+              id: `post-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+              formatIcon: Video,
+            };
+          });
 
           const updated = [...newlyCreated, ...posts];
           persistPosts(updated);

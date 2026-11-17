@@ -10,10 +10,6 @@ export const formatNumber = (val) => {
   return new Intl.NumberFormat('es-MX').format(val);
 };
 
-export const formatPercentage = (val) => {
-  return `${Number(val).toFixed(1)}%`;
-};
-
 export const formatDateTime = (dateString) => {
   try {
     const d = new Date(dateString);
@@ -223,37 +219,6 @@ export const getEmailDomainTypoSuggestion = (email) => {
 
 /**
  * Validador estricto de correo electrónico (exige usuario, @, dominio y extensión >= 2 caracteres)
- * y comprueba adicionalmente que no contenga errores de dedo en dominios populares.
- * @param {string} email
- * @returns {{ isValid: boolean, error?: string, suggestion?: string, suggestedDomain?: string }}
- */
-export const validateEmailStrict = (email) => {
-  if (!email || typeof email !== 'string' || !email.trim()) {
-    return { isValid: false, error: 'El correo electrónico es requerido.' };
-  }
-
-  const clean = email.trim().toLowerCase();
-  const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-  if (!re.test(clean)) {
-    return { isValid: false, error: 'Ingresa un correo electrónico válido con dominio (ej. usuario@dominio.com).' };
-  }
-
-  const typo = getEmailDomainTypoSuggestion(clean);
-  if (typo) {
-    return {
-      isValid: false,
-      typoDetected: true,
-      suggestion: typo.suggestedEmail,
-      suggestedDomain: typo.suggestedDomain,
-      error: `¿Quisiste decir @${typo.suggestedDomain}? El dominio parece contener un error de dedo.`,
-    };
-  }
-
-  return { isValid: true, normalized: clean };
-};
-
-/**
- * Validador estricto de correo electrónico (exige usuario, @, dominio y extensión >= 2 caracteres)
  * Ej: usuario@empresa.com, contacto@vectorinside.mx
  */
 export const isValidEmail = (email) => {
@@ -275,13 +240,6 @@ export const normalizePhone10 = (rawPhone) => {
     digits = digits.slice(2);
   }
   return digits.slice(0, 10);
-};
-
-/**
- * Verifica si un teléfono tiene exactamente 10 dígitos numéricos válidos.
- */
-export const isValidPhone10 = (phone) => {
-  return normalizePhone10(phone).length === 10;
 };
 
 /**
