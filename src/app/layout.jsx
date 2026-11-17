@@ -31,11 +31,11 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="es" className={`dark ${inter.variable} ${montserrat.variable} ${jetbrainsMono.variable}`}>
+    <html lang="es" className={`light ${inter.variable} ${montserrat.variable} ${jetbrainsMono.variable}`}>
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('vector_theme');if(t==='light'){document.documentElement.classList.remove('dark');document.documentElement.classList.add('light');}else if(t==='dark'){document.documentElement.classList.remove('light');document.documentElement.classList.add('dark');}}catch(e){}})()`,
+            __html: `(function(){try{var t=localStorage.getItem('vector_theme');if(t==='dark'){document.documentElement.classList.remove('light');document.documentElement.classList.add('dark');}else{document.documentElement.classList.remove('dark');document.documentElement.classList.add('light');}}catch(e){}})()`,
           }}
         />
       </head>
