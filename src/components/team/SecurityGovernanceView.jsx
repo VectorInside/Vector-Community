@@ -480,7 +480,7 @@ export const SecurityGovernanceView = () => {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 block animate-fade-in space-y-6 max-w-7xl mx-auto font-sans">
+    <div className="w-full px-4 sm:px-6 lg:px-8 py-4 block animate-fade-in space-y-6 font-sans">
       {/* Header Contextual */}
       <header className="flex flex-col lg:flex-row justify-between items-start lg:items-end border-b border-[var(--border-color)] pb-4 gap-4">
         <div>

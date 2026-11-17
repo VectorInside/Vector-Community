@@ -474,7 +474,7 @@ export const CuentasAccesosView = () => {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 block animate-fade-in space-y-6 max-w-7xl mx-auto font-sans">
+    <div className="w-full px-4 sm:px-6 lg:px-8 py-4 block animate-fade-in space-y-6 font-sans">
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-950 border border-neon/50 text-white text-xs font-mono shadow-[0_0_20px_rgba(195,244,0,0.25)] animate-fade-in">

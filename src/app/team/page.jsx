@@ -60,11 +60,11 @@ function TeamPageContent() {
   return (
     <div className="min-h-screen pb-16 animate-fade-in font-sans">
       {/* Navigation Tabs Bar con diseño premium Vector Inside */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2">
+      <div className="w-full px-4 sm:px-6 lg:px-8 pt-6 pb-2">
         <div
           role="tablist"
           aria-label="Consola de Administración de Equipo y Accesos"
-          className="flex flex-wrap items-center gap-2 p-1.5 bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-2xl w-fit shadow-inner"
+          className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1"
         >
           {/* Tab 1: Clientes (Dueños de Negocio) */}
           <button
@@ -74,10 +74,10 @@ function TeamPageContent() {
             aria-selected={activeTab === 'accounts'}
             aria-controls="panel-accounts"
             onClick={() => setActiveTab('accounts')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-mono text-xs font-bold transition-all min-h-[44px] ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-mono text-xs font-bold transition-all min-h-[44px] whitespace-nowrap ${
               activeTab === 'accounts'
                 ? 'bg-neon text-black shadow-[0_0_15px_rgba(195,244,0,0.35)]'
-                : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)]'
+                : 'bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)] hover:border-neon/40'
             }`}
           >
             <KeyRound className="w-4 h-4 shrink-0" />
@@ -95,10 +95,10 @@ function TeamPageContent() {
                 aria-selected={activeTab === 'staff'}
                 aria-controls="panel-staff"
                 onClick={() => setActiveTab('staff')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-mono text-xs font-bold transition-all min-h-[44px] ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-mono text-xs font-bold transition-all min-h-[44px] whitespace-nowrap ${
                   activeTab === 'staff'
                     ? 'bg-neon text-black shadow-[0_0_15px_rgba(195,244,0,0.35)]'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)]'
+                    : 'bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)] hover:border-neon/40'
                 }`}
               >
                 <Users className="w-4 h-4 shrink-0" />
@@ -113,10 +113,10 @@ function TeamPageContent() {
                 aria-selected={activeTab === 'governance'}
                 aria-controls="panel-governance"
                 onClick={() => setActiveTab('governance')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-mono text-xs font-bold transition-all min-h-[44px] ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-mono text-xs font-bold transition-all min-h-[44px] whitespace-nowrap ${
                   activeTab === 'governance'
                     ? 'bg-neon text-black shadow-[0_0_15px_rgba(195,244,0,0.35)]'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)]'
+                    : 'bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)] hover:border-neon/40'
                 }`}
               >
                 <ShieldCheck className="w-4 h-4 shrink-0" />
