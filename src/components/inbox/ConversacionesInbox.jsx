@@ -356,14 +356,27 @@ export const ConversacionesInbox = () => {
     });
   }, [threads, filterMode, channelFilter, searchQuery]);
 
-  // Handle Send Reply (Simulation with local state)
+  // Handle Send Reply (Real Cloud API + local state)
   const handleSendReply = () => {
     if (!draftReply.trim() || !activeThread) return;
+
+    const currentThread = activeThread;
+    const replyText = draftReply;
+
+    if (activeTenant?.id) {
+      api
+        .post(`/webhooks/whatsapp/conversations/${activeTenant.id}/send`, {
+          conversationId: currentThread.id,
+          recipientPhone: currentThread.phone,
+          messageText: replyText.trim(),
+        })
+        .catch(() => {});
+    }
 
     const newMsg = {
       id: `m-${Date.now()}`,
       direction: 'out',
-      text: draftReply.trim(),
+      text: replyText.trim(),
       time: 'Ahora',
     };
 
@@ -373,7 +386,7 @@ export const ConversacionesInbox = () => {
           ...t,
           contacted: true,
           slaMinutesRemaining: null,
-          messages: [...t.messages, newMsg],
+          messages: [...(t.messages || []), newMsg],
         };
       }
       return t;
@@ -386,12 +399,23 @@ export const ConversacionesInbox = () => {
   // Toggle qualification check
   const handleToggleRequirement = (key) => {
     if (!activeThread) return;
+    const currentThread = activeThread;
+    const updatedQual = {
+      ...currentThread.qualification,
+      [key]: !currentThread.qualification?.[key],
+    };
+    const nextCriteria = {
+      identityValidated: Boolean(updatedQual.contactValid),
+      catalogIdentified: Boolean(updatedQual.productIdentified),
+      financialClarified: Boolean(updatedQual.doubtsResolved),
+      consentOrBooked: Boolean(updatedQual.ctaAccepted),
+    };
+    leadService
+      .updateLeadCriteria(currentThread.leadId || currentThread.id, nextCriteria)
+      .catch(() => {});
+
     const updated = threads.map((t) => {
       if (t.id === activeThread.id) {
-        const updatedQual = {
-          ...t.qualification,
-          [key]: !t.qualification[key],
-        };
         const allFourTrue = Object.values(updatedQual).every(Boolean);
         return {
           ...t,

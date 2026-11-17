@@ -8,6 +8,52 @@ import { userService } from '@/services/userService';
 
 const AuthContext = createContext(null);
 
+const SECRET_TOKEN_FIELDS = ['accessToken', 'apiSecret', 'clientSecret', 'bearerToken', 'botToken'];
+
+const maskSecretToken = (val) => {
+  if (!val || typeof val !== 'string') return val;
+  const trimmed = val.trim();
+  if (!trimmed || trimmed.startsWith('••••')) return trimmed;
+  return trimmed.length > 4 ? `••••••••${trimmed.slice(-4)}` : '••••••••';
+};
+
+const sanitizeTenantSecrets = (tenant) => {
+  if (!tenant || typeof tenant !== 'object') return tenant;
+  const copy = { ...tenant };
+  SECRET_TOKEN_FIELDS.forEach((key) => {
+    if (typeof copy[key] === 'string' && copy[key]) {
+      copy[key] = maskSecretToken(copy[key]);
+    }
+  });
+  if (copy.connectedChannels && typeof copy.connectedChannels === 'object') {
+    const cleanChannels = {};
+    Object.entries(copy.connectedChannels).forEach(([chanId, chanCfg]) => {
+      if (chanCfg && typeof chanCfg === 'object') {
+        const cleanChan = { ...chanCfg };
+        SECRET_TOKEN_FIELDS.forEach((key) => {
+          if (typeof cleanChan[key] === 'string' && cleanChan[key]) {
+            cleanChan[key] = maskSecretToken(cleanChan[key]);
+          }
+        });
+        cleanChannels[chanId] = cleanChan;
+      } else {
+        cleanChannels[chanId] = chanCfg;
+      }
+    });
+    copy.connectedChannels = cleanChannels;
+  }
+  return copy;
+};
+
+const sanitizeTenantsMapForStorage = (tenantsMap) => {
+  if (!tenantsMap || typeof tenantsMap !== 'object') return {};
+  const result = {};
+  Object.entries(tenantsMap).forEach(([k, v]) => {
+    result[k] = sanitizeTenantSecrets(v);
+  });
+  return result;
+};
+
 const DEFAULT_ADMIN_USER = {
   id: 'usr-admin-01',
   name: 'Edgar Lobo Vectorial',
@@ -342,11 +388,14 @@ export const AuthProvider = ({ children }) => {
     [currentUser]
   );
 
-  // Keep localStorage synchronized
+  // Keep localStorage synchronized (with secret tokens masked)
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem('vector_tenants_data', JSON.stringify(tenantsData));
+        localStorage.setItem(
+          'vector_tenants_data',
+          JSON.stringify(sanitizeTenantsMapForStorage(tenantsData))
+        );
       } catch (e) {}
     }
   }, [tenantsData]);
@@ -399,7 +448,7 @@ export const AuthProvider = ({ children }) => {
         try {
           const raw = localStorage.getItem('vector_tenants_data');
           const parsed = raw ? JSON.parse(raw) : {};
-          parsed[tenantKey] = updatedSnapshot;
+          parsed[tenantKey] = sanitizeTenantSecrets(updatedSnapshot);
           localStorage.setItem('vector_tenants_data', JSON.stringify(parsed));
         } catch (e) {}
       }
@@ -477,7 +526,7 @@ export const AuthProvider = ({ children }) => {
         try {
           const raw = localStorage.getItem('vector_tenants_data');
           const parsed = raw ? JSON.parse(raw) : {};
-          parsed[newTenant.id] = newTenant;
+          parsed[newTenant.id] = sanitizeTenantSecrets(newTenant);
           localStorage.setItem('vector_tenants_data', JSON.stringify(parsed));
         } catch (e) {}
       }

@@ -76,12 +76,32 @@ export const WhatsAppConnectModal = ({
       return;
     }
 
+    if (activeTenant?.id) {
+      api
+        .post(`/webhooks/whatsapp/connect/${activeTenant.id}`, {
+          phoneNumberId: phoneNumberId.trim(),
+          wabaId: wabaId.trim(),
+          accessToken: accessToken.trim(),
+          verifyToken,
+        })
+        .catch(() => {});
+    }
+
+    const rawToken = accessToken.trim();
+    const maskedToken = rawToken
+      ? rawToken.startsWith('••••')
+        ? rawToken
+        : rawToken.length > 4
+        ? `••••••••${rawToken.slice(-4)}`
+        : '••••••••'
+      : '';
+
     const updatedConfig = {
       enabled: true,
       status: 'connected',
       phoneNumberId: phoneNumberId.trim(),
       wabaId: wabaId.trim(),
-      accessToken: accessToken.trim(),
+      accessToken: maskedToken,
       displayPhoneNumber: displayPhone.trim() || activeTenant?.phone || '+52 55 0000 0000',
       lastSync: 'Recién configurado',
       latencyMs: 82,

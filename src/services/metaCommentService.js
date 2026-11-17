@@ -129,4 +129,8 @@ export const metaCommentService = {
     });
     return unwrapApiData(response);
   },
+
+  async connectAccount(tenantId, payload) {
+    return this.connectInstagram(tenantId, payload);
+  },
 };

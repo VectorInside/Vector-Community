@@ -517,42 +517,46 @@ export const SubBotsConfig = () => {
     }));
 
     const startMs = performance.now();
-    try {
-      if (providerKey === 'deepseek') {
-        const res = await aiService.testConnection(tenantId);
-        const elapsedMs = Math.round(performance.now() - startMs);
-        setPingStatus((prev) => ({
-          ...prev,
-          [providerKey]: {
-            loading: false,
-            result: res?.connected !== false ? 'connected' : 'error',
-            latency: `${elapsedMs} ms`,
-            status: res?.connected !== false ? 200 : 401,
-          },
-        }));
-        return;
-      }
-    } catch (err) {}
+    const configuredKey = config?.apiKeys?.[providerKey]?.trim();
 
-    // Fallback de medición
-    setTimeout(() => {
-      const simulatedLatencies = {
-        deepseek: '138 ms',
-        openai: '240 ms',
-        anthropic: '260 ms',
-        groq: '110 ms',
-      };
-
+    if (providerKey !== 'deepseek' && !configuredKey) {
       setPingStatus((prev) => ({
         ...prev,
         [providerKey]: {
           loading: false,
-          result: 'connected',
-          latency: simulatedLatencies[providerKey] || '150 ms',
-          status: 200,
+          result: 'error',
+          latency: null,
+          status: 401,
         },
       }));
-    }, 600);
+      return;
+    }
+
+    try {
+      const res = await aiService.testConnection(tenantId);
+      const elapsedMs = Math.round(performance.now() - startMs);
+      const isOk = Boolean(res && res.connected !== false && res.success !== false);
+      setPingStatus((prev) => ({
+        ...prev,
+        [providerKey]: {
+          loading: false,
+          result: isOk ? 'connected' : 'error',
+          latency: isOk ? `${elapsedMs} ms` : null,
+          status: isOk ? 200 : res?.status || 401,
+        },
+      }));
+    } catch (err) {
+      const statusCode = err?.response?.status || 503;
+      setPingStatus((prev) => ({
+        ...prev,
+        [providerKey]: {
+          loading: false,
+          result: 'error',
+          latency: null,
+          status: statusCode,
+        },
+      }));
+    }
   };
 
   // Helper para restablecer una clave al pool oficial con un solo clic
@@ -689,44 +693,80 @@ export const SubBotsConfig = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [config, currentTenant, tenantId]);
 
-  // Enviar mensaje en Sandbox
-  const handleSendSandboxMessage = (e) => {
+  // Enviar mensaje en Sandbox conectado a aiService.chat real
+  const handleSendSandboxMessage = async (e) => {
     e?.preventDefault();
     if (!sandboxInput.trim()) return;
 
-    const userMsg = {
+    const currentInput = sandboxInput.trim();
+    const userMsgObj = {
       sender: 'user',
-      text: sandboxInput,
+      text: currentInput,
       time: 'Ahora',
     };
 
-    setSandboxMessages((prev) => [...prev, userMsg]);
-    const currentInput = sandboxInput;
+    const historySnapshot = sandboxMessages.map((m) => ({
+      role: m.sender === 'user' ? 'user' : 'assistant',
+      content: m.text,
+    }));
+
+    setSandboxMessages((prev) => [...prev, userMsgObj]);
     setSandboxInput('');
 
-    setTimeout(() => {
-      let botReply = '';
-      const isAppointment =
-        currentInput.toLowerCase().includes('cita') ||
-        currentInput.toLowerCase().includes('horario') ||
-        currentInput.toLowerCase().includes('precio');
+    const activeTenant = currentTenant || authActiveTenant;
+    const isAppointment =
+      currentInput.toLowerCase().includes('cita') ||
+      currentInput.toLowerCase().includes('horario') ||
+      currentInput.toLowerCase().includes('precio');
 
-      if (isAppointment) {
-        botReply = `Consultando la disponibilidad de Google Calendar de ${currentTenant.name} (${config?.calendar?.slotDurationMin || 60} min por cita):\n\n• Horario disponible sugerido: Jueves a las 11:00 hrs o Viernes a las 16:00 hrs.\n\n¿Te aparto alguno de estos espacios comerciales?`;
-      } else {
-        botReply = `Gracias por tu mensaje. ${config?.systemPrompt?.slice(0, 120)}...\n\n¿Te gustaría coordinar una fecha de atención directa?`;
+    try {
+      const aiResponse = await aiService.chat({
+        tenantId: activeTenant?.id,
+        message: currentInput,
+        conversationHistory: historySnapshot,
+      });
+
+      const replyText =
+        aiResponse?.reply ||
+        aiResponse?.response ||
+        aiResponse?.message ||
+        aiResponse?.content ||
+        (typeof aiResponse === 'string' ? aiResponse : null);
+
+      if (replyText) {
+        setSandboxMessages((prev) => [
+          ...prev,
+          {
+            sender: 'bot',
+            text: replyText,
+            time: 'Ahora',
+            toolCalled:
+              aiResponse?.toolCalled ||
+              (isAppointment ? 'consultar_disponibilidad_google_calendar()' : null),
+          },
+        ]);
+        return;
       }
+    } catch (err) {
+      // Fallback a simulación local si el backend no está disponible
+    }
 
-      setSandboxMessages((prev) => [
-        ...prev,
-        {
-          sender: 'bot',
-          text: botReply,
-          time: 'Ahora',
-          toolCalled: isAppointment ? 'consultar_disponibilidad_google_calendar()' : null,
-        },
-      ]);
-    }, 600);
+    let botReply = '';
+    if (isAppointment) {
+      botReply = `Consultando la disponibilidad de Google Calendar de ${currentTenant.name} (${config?.calendar?.slotDurationMin || 60} min por cita):\n\n• Horario disponible sugerido: Jueves a las 11:00 hrs o Viernes a las 16:00 hrs.\n\n¿Te aparto alguno de estos espacios comerciales?`;
+    } else {
+      botReply = `Gracias por tu mensaje. ${config?.systemPrompt?.slice(0, 120)}...\n\n¿Te gustaría coordinar una fecha de atención directa?`;
+    }
+
+    setSandboxMessages((prev) => [
+      ...prev,
+      {
+        sender: 'bot',
+        text: botReply,
+        time: 'Ahora',
+        toolCalled: isAppointment ? 'consultar_disponibilidad_google_calendar()' : null,
+      },
+    ]);
   };
 
   if (!currentTenant) {
@@ -1332,6 +1372,11 @@ export const SubBotsConfig = () => {
                             {ping.result === 'connected' && (
                               <span className="text-emerald-400 font-bold flex items-center gap-1">
                                 <Check className="w-3 h-3" /> {ping.latency}
+                              </span>
+                            )}
+                            {ping.result === 'error' && (
+                              <span className="text-red-400 font-bold flex items-center gap-1">
+                                <AlertCircle className="w-3 h-3" /> Error ({ping.status || 401})
                               </span>
                             )}
                             <button

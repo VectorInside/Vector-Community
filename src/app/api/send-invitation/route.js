@@ -7,6 +7,29 @@ const RESEND_FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'Vector Inside <onboa
 const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
 
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function sanitizeLoginUrl(rawUrl) {
+  const defaultUrl = 'https://vector-community.vercel.app/login';
+  if (!rawUrl || typeof rawUrl !== 'string') return defaultUrl;
+  const trimmed = rawUrl.trim();
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      return escapeHtml(parsed.toString());
+    }
+  } catch (e) {}
+  return defaultUrl;
+}
+
 export async function POST(request) {
   try {
     const body = await request.json();
@@ -35,10 +58,12 @@ export async function POST(request) {
       );
     }
 
-    const fallbackLogin = loginUrl || 'https://vector-community.vercel.app/login';
-    const cleanRole = roleLabel || 'Colaborador Autorizado';
-    const cleanAssigned = assignedSummary || 'Todos los Negocios';
-    const cleanPassword = tempPassword || 'Vec#Auth2026!';
+    const fallbackLogin = sanitizeLoginUrl(loginUrl);
+    const safeName = escapeHtml(name || 'Colaborador');
+    const safeEmail = escapeHtml(email);
+    const cleanRole = escapeHtml(roleLabel || 'Colaborador Autorizado');
+    const cleanAssigned = escapeHtml(assignedSummary || 'Todos los Negocios');
+    const cleanPassword = escapeHtml(tempPassword || 'Vec#Auth2026!');
 
     const emailHtml = `
 <!DOCTYPE html>
@@ -75,7 +100,7 @@ export async function POST(request) {
       <p class="subtitle">Despacho de Credenciales Corporativas</p>
     </div>
     <div class="content">
-      <div class="greeting">Hola, ${name || 'Colaborador'}:</div>
+      <div class="greeting">Hola, ${safeName}:</div>
       <p class="intro">
         Has sido dado de alta en la plataforma de <strong>Vector Inside OS</strong>. Tu cuenta se encuentra configurada y lista para iniciar operaciones.
       </p>
@@ -91,7 +116,7 @@ export async function POST(request) {
         </div>
         <div class="cred-row">
           <span class="cred-label">Usuario / Correo:</span>
-          <span class="cred-val" style="color: #38bdf8;">${email}</span>
+          <span class="cred-val" style="color: #38bdf8;">${safeEmail}</span>
         </div>
         <div class="cred-row">
           <span class="cred-label">Contraseña Temporal:</span>

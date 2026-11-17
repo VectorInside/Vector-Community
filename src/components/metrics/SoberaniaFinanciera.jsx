@@ -275,17 +275,43 @@ export const SoberaniaFinanciera = () => {
           targetNetwork: 'INSTAGRAM',
         });
 
-        if (aiRes && aiRes.generatedRawJson) {
+        if (aiRes && (aiRes.generatedRawJson || aiRes.hookText || aiRes.copy)) {
           try {
-            const parsed = typeof aiRes.generatedRawJson === 'string'
-              ? JSON.parse(aiRes.generatedRawJson)
-              : aiRes.generatedRawJson;
-            if (parsed?.hook || parsed?.scriptHook) {
+            const parsed = aiRes.generatedRawJson
+              ? typeof aiRes.generatedRawJson === 'string'
+                ? JSON.parse(aiRes.generatedRawJson)
+                : aiRes.generatedRawJson
+              : aiRes;
+            const resolvedHook = parsed?.hook || parsed?.scriptHook || parsed?.hookText;
+            if (resolvedHook || parsed?.copy) {
+              const copySegments = String(parsed?.copy || '')
+                .split(/\n+/)
+                .map((s) => s.trim())
+                .filter(Boolean);
               finalScript = {
-                scriptHook: parsed.hook || parsed.scriptHook,
-                scriptDemo: parsed.problem || parsed.demo || parsed.scriptDemo,
-                scriptOffer: parsed.solution || parsed.offer || parsed.scriptOffer,
-                scriptCta: parsed.cta || parsed.scriptCta,
+                scriptHook:
+                  resolvedHook ||
+                  copySegments[0] ||
+                  `¿Sabías que puedes multiplicar resultados en ${activeTenant.name || 'tu negocio'}?`,
+                scriptDemo:
+                  parsed?.problem ||
+                  parsed?.demo ||
+                  parsed?.scriptDemo ||
+                  copySegments[0] ||
+                  parsed?.copy ||
+                  'Demostración práctica del servicio en acción.',
+                scriptOffer:
+                  parsed?.solution ||
+                  parsed?.offer ||
+                  parsed?.scriptOffer ||
+                  copySegments[1] ||
+                  parsed?.title ||
+                  'Diagnóstico y atención prioritaria garantizada.',
+                scriptCta:
+                  parsed?.cta ||
+                  parsed?.scriptCta ||
+                  copySegments[2] ||
+                  'Envía un mensaje directo a nuestro WhatsApp oficial para agendar hoy.',
                 targetFormat: `DeepSeek R1 Generativo • ${resolveTenantIndustry(activeTenant) || 'Negocio'}`,
               };
             }

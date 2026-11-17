@@ -555,8 +555,8 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
             platform: 'Instagram Reel',
             title: mp.caption ? (mp.caption.length > 65 ? `${mp.caption.slice(0, 65)}...` : mp.caption) : `Reel Insignia #${idx + 1}`,
             views: mp.reach ? `${(mp.reach / 1000).toFixed(1)}k` : `${(idx * 4.2 + 12.8).toFixed(1)}k`,
-            hookRate: mp.hookRateAvg != null ? `${mp.hookRateAvg}%` : `${(27.5 + idx * 2.3).toFixed(1)}%`,
-            dmsGenerated: mp.intentLeads != null ? `${mp.intentLeads}` : `${(idx + 1) * 4}`,
+            hookRate: (mp.hookRatePercentage ?? mp.hookRateAvg) != null ? `${mp.hookRatePercentage ?? mp.hookRateAvg}%` : `${(27.5 + idx * 2.3).toFixed(1)}%`,
+            dmsGenerated: (mp.dmsTriggered ?? mp.intentLeads) != null ? `${mp.dmsTriggered ?? mp.intentLeads}` : `${(idx + 1) * 4}`,
             whyItWorked: mp.caption
               ? `Apertura directa sobre ${activeTenant?.giro || 'la propuesta de valor'}, generando retención alta en los primeros 3 segundos.`
               : 'Interrupción de patrón en 0-3s combinada con llamado a la acción claro.',
@@ -601,7 +601,7 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
     metaCommentService
       .getBrandAudit(tenantKey)
       .then((auditRes) => {
-        const score = auditRes?.score || 92;
+        const score = auditRes?.brandAlignmentScore ?? auditRes?.score ?? 92;
         const igHandle = activeTenant?.socialLinks?.instagram
           ? `@${activeTenant.socialLinks.instagram.replace(/.*instagram\.com\//, '').replace(/\/$/, '')}`
           : `@${activeTenant?.shortName?.toLowerCase() || 'vector_inside'}`;
@@ -1400,6 +1400,8 @@ Devuelve un JSON estrictamente estructurado con:
           parsed = typeof aiRes.generatedRawJson === 'string' ? JSON.parse(aiRes.generatedRawJson) : aiRes.generatedRawJson;
         } else if (aiRes?.content) {
           parsed = typeof aiRes.content === 'string' ? JSON.parse(aiRes.content) : aiRes.content;
+        } else if (aiRes?.hookText || aiRes?.copy || aiRes?.title) {
+          parsed = aiRes;
         }
       } catch (err) {
         console.warn('Fallback de análisis local:', err);
@@ -1407,7 +1409,33 @@ Devuelve un JSON estrictamente estructurado con:
 
       const snippet = rawText || rawUrl;
       const titleCandidate = parsed?.title || (snippet ? (snippet.length > 50 ? `${snippet.slice(0, 50)}...` : snippet) : 'Reel Outlier Deconstruido');
-      const fallbackHook = rawText || `¿Por qué tu competencia no quiere que descubras esto en ${tenantGiro}?`;
+      const fallbackHook = parsed?.hookText || rawText || `¿Por qué tu competencia no quiere que descubras esto en ${tenantGiro}?`;
+
+      let extractedFormula = parsed?.deconstructedFormula;
+      if (!extractedFormula && (parsed?.hookText || parsed?.copy)) {
+        try {
+          const inner = typeof parsed.copy === 'string' && parsed.copy.trim().startsWith('{') ? JSON.parse(parsed.copy) : null;
+          if (inner?.deconstructedFormula) {
+            extractedFormula = inner.deconstructedFormula;
+          }
+        } catch (e) {}
+        if (!extractedFormula) {
+          const copyParts = String(parsed.copy || '')
+            .split(/\n+/)
+            .map((line) => line.trim())
+            .filter(Boolean);
+          extractedFormula = {
+            hook0to3s: parsed.hookText || copyParts[0] || fallbackHook,
+            retention3to15s:
+              copyParts[1] ||
+              copyParts[0] ||
+              'Demostración de contraste: proceso tradicional fallido vs nuevo estándar de alta velocidad.',
+            cta15to30s:
+              copyParts[2] ||
+              `${commercialOffer?.cta || 'Envía MENSAJE para obtener la guía paso a paso.'}`,
+          };
+        }
+      }
 
       const newReel = {
         id: `external-${Date.now()}`,
@@ -1418,11 +1446,11 @@ Devuelve un JSON estrictamente estructurado con:
         dmsGenerated: parsed?.dmsGenerated || '215',
         visualHook: parsed?.visualHook || 'Interrupción de patrón visual en 0-3s con movimiento rápido y subtítulos cinemáticos',
         psychologicalTrigger: parsed?.psychologicalTrigger || 'Curiosidad Ineludible & Reencuadre de Realidad',
-        whyItWorked: parsed?.whyItWorked || `Aprovecha el patrón de ruptura inmediata para retener más del 38% de la audiencia en los primeros 3 segundos.`,
+        whyItWorked: parsed?.whyItWorked || parsed?.copy || `Aprovecha el patrón de ruptura inmediata para retener más del 38% de la audiencia en los primeros 3 segundos.`,
         isExternal: true,
         externalUrl: rawUrl || null,
         badge: 'Competidor / Tendencia Externa',
-        deconstructedFormula: parsed?.deconstructedFormula || {
+        deconstructedFormula: extractedFormula || {
           hook0to3s: fallbackHook,
           retention3to15s: 'Demostración de contraste: proceso tradicional fallido vs nuevo estándar de alta velocidad.',
           cta15to30s: `${commercialOffer?.cta || 'Envía MENSAJE para obtener la guía paso a paso.'}`,
@@ -1579,8 +1607,8 @@ Devuelve un JSON estrictamente estructurado con:
           platform: 'Instagram Reel',
           title: mp.caption ? (mp.caption.length > 65 ? `${mp.caption.slice(0, 65)}...` : mp.caption) : `Reel Insignia #${idx + 1}`,
           views: mp.reach ? `${(mp.reach / 1000).toFixed(1)}k` : `${(idx * 4.2 + 12.8).toFixed(1)}k`,
-          hookRate: mp.hookRateAvg != null ? `${mp.hookRateAvg}%` : `${(27.5 + idx * 2.3).toFixed(1)}%`,
-          dmsGenerated: mp.intentLeads != null ? `${mp.intentLeads}` : `${(idx + 1) * 4}`,
+          hookRate: (mp.hookRatePercentage ?? mp.hookRateAvg) != null ? `${mp.hookRatePercentage ?? mp.hookRateAvg}%` : `${(27.5 + idx * 2.3).toFixed(1)}%`,
+          dmsGenerated: (mp.dmsTriggered ?? mp.intentLeads) != null ? `${mp.dmsTriggered ?? mp.intentLeads}` : `${(idx + 1) * 4}`,
           whyItWorked: mp.caption
             ? `Apertura directa sobre ${activeTenant?.giro || 'la propuesta de valor'}, generando retención alta en los primeros 3 segundos.`
             : 'Interrupción de patrón en 0-3s combinada con llamado a la acción claro.',
@@ -1677,12 +1705,54 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
           topicPrompt: promptDirective,
         });
 
+        let raw = null;
         if (aiRes?.generatedRawJson) {
-          const raw = typeof aiRes.generatedRawJson === 'string' ? JSON.parse(aiRes.generatedRawJson) : aiRes.generatedRawJson;
-          parsedBios = raw?.bios;
+          raw = typeof aiRes.generatedRawJson === 'string' ? JSON.parse(aiRes.generatedRawJson) : aiRes.generatedRawJson;
         } else if (aiRes?.content) {
-          const raw = typeof aiRes.content === 'string' ? JSON.parse(aiRes.content) : aiRes.content;
-          parsedBios = raw?.bios;
+          raw = typeof aiRes.content === 'string' ? JSON.parse(aiRes.content) : aiRes.content;
+        } else if (aiRes?.hookText || aiRes?.copy || aiRes?.title) {
+          raw = aiRes;
+        }
+
+        if (Array.isArray(raw?.bios)) {
+          parsedBios = raw.bios;
+        } else if (raw?.copy || raw?.hookText) {
+          try {
+            const inner = typeof raw.copy === 'string' && raw.copy.trim().startsWith('{') ? JSON.parse(raw.copy) : null;
+            if (Array.isArray(inner?.bios)) {
+              parsedBios = inner.bios;
+            }
+          } catch (e) {}
+
+          if (!parsedBios) {
+            const kw = waKeyword || 'AUDITORIA';
+            const rawLines = String(raw.copy || '')
+              .split(/\n+/)
+              .map((l) => l.trim())
+              .filter(Boolean);
+            const baseHook = (raw.hookText || effectiveHook).slice(0, 65);
+            const baseCopy = (rawLines[0] || `Soluciones en ${tenantGiro}`).slice(0, 65);
+            parsedBios = [
+              {
+                id: 'bio-ai-1',
+                style: 'Autoridad & Dolor BANT',
+                text: `${baseHook}\n${baseCopy}\nDiagnóstico sin costo 👇`.slice(0, 148),
+                keyword: kw,
+              },
+              {
+                id: 'bio-ai-2',
+                style: 'Oferta Activa del Mes',
+                text: `${(raw.title || activeTenant?.name || 'Especialistas').slice(0, 45)}\n${(rawLines[1] || baseHook).slice(0, 60)}\nEnvía ${kw} al WhatsApp 👇`.slice(0, 148),
+                keyword: kw,
+              },
+              {
+                id: 'bio-ai-3',
+                style: 'Minimalista & Enrutador WhatsApp',
+                text: `${baseCopy}\nAtención prioritaria 24/7.\nAparta tu lugar aquí 👇`.slice(0, 148),
+                keyword: kw,
+              },
+            ];
+          }
         }
       } catch (err) {
         console.warn('Fallback de generación de bios:', err);

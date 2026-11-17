@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { OMNICHANNEL_API_CATALOG } from '@/utils/constants';
+import api from '@/services/api';
+import { metaCommentService } from '@/services/metaCommentService';
 import {
   Globe,
   Instagram,
@@ -132,21 +134,68 @@ export const ChannelConnectionsManager = () => {
 
   const handleSaveAll = () => {
     if (updateTenantPolicy && activeTenant?.id) {
-      const consolidated = { ...channelsState };
-      Object.keys(consolidated).forEach((chanId) => {
-        const chanObj = { ...consolidated[chanId] };
+      const SECRET_TOKEN_KEYS = ['accessToken', 'apiSecret', 'clientSecret', 'bearerToken', 'botToken'];
+      const maskSecret = (val) => {
+        if (!val || typeof val !== 'string') return val;
+        const trimmed = val.trim();
+        if (!trimmed || trimmed.startsWith('••••')) return trimmed;
+        return trimmed.length > 4 ? `••••••••${trimmed.slice(-4)}` : '••••••••';
+      };
+
+      const rawConsolidated = { ...channelsState };
+      const sanitizedConsolidated = { ...channelsState };
+
+      Object.keys(rawConsolidated).forEach((chanId) => {
+        const rawChanObj = { ...rawConsolidated[chanId] };
+        const cleanChanObj = { ...sanitizedConsolidated[chanId] };
         Object.keys(formFields).forEach((formKey) => {
           if (formKey.startsWith(`${chanId}_`)) {
             const rawProp = formKey.replace(`${chanId}_`, '');
-            chanObj[rawProp] = formFields[formKey];
+            rawChanObj[rawProp] = formFields[formKey];
+            cleanChanObj[rawProp] = SECRET_TOKEN_KEYS.includes(rawProp)
+              ? maskSecret(formFields[formKey])
+              : formFields[formKey];
           }
         });
-        consolidated[chanId] = chanObj;
+        SECRET_TOKEN_KEYS.forEach((secKey) => {
+          if (cleanChanObj[secKey]) {
+            cleanChanObj[secKey] = maskSecret(cleanChanObj[secKey]);
+          }
+        });
+        rawConsolidated[chanId] = rawChanObj;
+        sanitizedConsolidated[chanId] = cleanChanObj;
       });
 
+      const waRaw = rawConsolidated.whatsapp;
+      if (waRaw && (waRaw.phoneNumberId || waRaw.accessToken || waRaw.wabaId)) {
+        api
+          .post(`/webhooks/whatsapp/connect/${activeTenant.id}`, {
+            phoneNumberId: waRaw.phoneNumberId || '',
+            wabaId: waRaw.wabaId || '',
+            accessToken: waRaw.accessToken || '',
+            verifyToken: waRaw.verifyToken || 'VectorInsideSecureWebhookToken2026',
+          })
+          .catch(() => {});
+      }
+
+      const metaRaw = rawConsolidated.meta;
+      if (metaRaw && (metaRaw.pixelId || metaRaw.accessToken || metaRaw.instagramAccountId)) {
+        const connectFn = metaCommentService.connectAccount || metaCommentService.connectInstagram;
+        if (typeof connectFn === 'function') {
+          connectFn
+            .call(metaCommentService, activeTenant.id, {
+              instagramAccountId: metaRaw.instagramAccountId || metaRaw.pixelId || '',
+              accountHandle: metaRaw.accountHandle || activeTenant?.shortName || '',
+              accessToken: metaRaw.accessToken || '',
+              webhookVerifyToken: metaRaw.verifyToken || 'VectorInsideMetaWebhook2026',
+            })
+            .catch(() => {});
+        }
+      }
+
       updateTenantPolicy(activeTenant.id, {
-        connectedChannels: consolidated,
-        whatsappNumberId: consolidated?.whatsapp?.phoneNumberId || activeTenant?.whatsappNumberId,
+        connectedChannels: sanitizedConsolidated,
+        whatsappNumberId: sanitizedConsolidated?.whatsapp?.phoneNumberId || activeTenant?.whatsappNumberId,
       });
     }
     setIsSaved(true);

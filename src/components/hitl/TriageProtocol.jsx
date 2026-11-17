@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { leadService } from '@/services/leadService';
+import api from '@/services/api';
 import {
   MessageSquareWarning,
   Send,
@@ -202,20 +203,24 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
       })
       .catch((err) => console.warn('[TriageProtocol] Error consultando posts Meta:', err));
 
-    // Carga de Comentarios Reales desde Backend
-    metaCommentService
-      .getComments(tenantId, commentSentimentFilter)
-      .then((comments) => {
-        if (Array.isArray(comments)) setMetaComments(comments);
-      })
-      .catch((err) => console.warn('[TriageProtocol] Error consultando comentarios Meta:', err));
-
     // Carga de Auditoría de Marca (Brand DNA)
     metaCommentService
       .getBrandAudit(tenantId)
       .then((audit) => setBrandAudit(audit))
       .catch((err) => console.warn('[TriageProtocol] Error auditoría de marca:', err));
-  }, [activeTenant?.id, commentSentimentFilter, loadReengagementQueue]);
+  }, [activeTenant?.id, loadReengagementQueue]);
+
+  // Efecto dedicado exclusivamente a comentarios Meta y su filtro de sentimiento
+  useEffect(() => {
+    const tenantId = activeTenant?.id;
+    if (!tenantId) return;
+    metaCommentService
+      .getComments(tenantId, commentSentimentFilter)
+      .then((comments) => {
+        if (Array.isArray(comments)) setMetaComments(comments);
+      })
+      .catch((err) => console.warn('[TriageProtocol] Error filtrando comentarios Meta:', err));
+  }, [activeTenant?.id, commentSentimentFilter]);
 
   // Handlers reales de Meta Graph API v21.0
   const handleTriggerDirectDm = async (comment) => {
@@ -414,11 +419,16 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
     if (!tenantId) return;
 
     const convId = item.conversationId || item.id;
-    const finalCopy = editedCopies[convId] || item.vacaPurpuraMessage;
+    const customCopyOverride =
+      editedCopies[convId] !== undefined && editedCopies[convId] !== item.vacaPurpuraMessage
+        ? editedCopies[convId]
+        : null;
+    const finalCopy = customCopyOverride || item.vacaPurpuraMessage;
 
     setIsTriggeringSingle((prev) => ({ ...prev, [convId]: true }));
     try {
-      const updated = await reengagementService.triggerSingle(tenantId, convId, finalCopy);
+      const updated = await reengagementService.triggerSingle(tenantId, convId, customCopyOverride);
+      const deliveredCopy = updated?.vacaPurpuraMessage || finalCopy;
       
       setReengagementList((prev) =>
         prev.map((c) => {
@@ -428,7 +438,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
               ...c,
               status: 'FOLLOWUP_SENT',
               timeRemaining: 'DESPACHADO',
-              vacaPurpuraMessage: finalCopy,
+              vacaPurpuraMessage: deliveredCopy,
             };
           }
           return c;
@@ -511,7 +521,17 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
 
   const handleSendMessage = (e) => {
     e.preventDefault();
-    if (!inputMessage.trim()) return;
+    if (!inputMessage.trim() || !currentChat) return;
+
+    if (activeTenant?.id) {
+      api
+        .post(`/webhooks/whatsapp/conversations/${activeTenant.id}/send`, {
+          conversationId: currentChat.id,
+          recipientPhone: currentChat.phone,
+          messageText: inputMessage.trim(),
+        })
+        .catch(() => {});
+    }
 
     const newMsg = {
       id: Date.now(),
@@ -521,11 +541,12 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
       time: 'Justo ahora',
     };
 
+    const targetKey = activeContact || currentChat.id;
     setThreads((prev) => ({
       ...prev,
-      [activeContact]: {
-        ...prev[activeContact],
-        messages: [...prev[activeContact].messages, newMsg],
+      [targetKey]: {
+        ...prev[targetKey],
+        messages: [...(prev[targetKey]?.messages || currentChat.messages || []), newMsg],
       },
     }));
 
@@ -588,7 +609,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
         criteriaAudit: allGuards,
         capiEventId: prev[leadKey].capiEventId || `lead_${Date.now()}_sha256`,
         messages: [
-          ...prev[leadKey].messages,
+          ...(prev[leadKey]?.messages || []),
           {
             id: Date.now(),
             sender: 'Google Calendar API & Meta CAPI',
@@ -900,7 +921,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
               } rounded-xl bg-zinc-50 dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800/80 text-zinc-700 dark:text-zinc-300 font-sans italic relative`}
           >
             <p className="line-clamp-2 leading-relaxed">
-              "{item.messages[item.messages.length - 1]?.text}"
+              "{(item.messages || [])[(item.messages || []).length - 1]?.text || item.notes || 'Sin mensajes recientes'}"
             </p>
           </div>
         </div>
@@ -1476,7 +1497,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
                     </div>
 
                     <p className="text-[11px] text-zinc-600 dark:text-zinc-400 truncate font-sans">
-                      {item.messages[item.messages.length - 1]?.text}
+                      {(item.messages || [])[(item.messages || []).length - 1]?.text || item.notes || 'Sin mensajes recientes'}
                     </p>
 
                     <div className="flex items-center justify-between text-[10px] font-mono pt-1 text-zinc-500 border-t border-zinc-200 dark:border-zinc-800/60">
@@ -1626,7 +1647,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
 
                   {/* Mensajes del Hilo */}
                   <div className="flex-1 overflow-y-auto space-y-3 p-3 bg-zinc-50/70 dark:bg-black/40 border border-zinc-200 dark:border-zinc-800/80 rounded-xl mb-3 text-xs scrollbar-thin">
-                    {currentChat.messages.map((msg) => (
+                    {(currentChat.messages || []).map((msg) => (
                       <div
                         key={msg.id}
                         className={`p-3.5 rounded-xl max-w-[85%] leading-relaxed ${msg.isUser
