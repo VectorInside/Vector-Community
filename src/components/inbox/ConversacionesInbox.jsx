@@ -430,7 +430,7 @@ export const ConversacionesInbox = () => {
 
   const pendingCount = threads.filter((t) => !t.contacted).length;
 
-  // DeepSeek R1 AI Prompt Suggestions tailored to tenant
+  // Static quick-reply templates tailored to tenant
   const tenantSuggestions = useMemo(() => {
     if (!activeTenant || !activeThread) return [];
     const bizName = activeTenant?.name || 'nuestro negocio';
@@ -941,11 +941,11 @@ export const ConversacionesInbox = () => {
                 ))}
               </div>
 
-              {/* Quick AI Suggestions Bar (DeepSeek R1 Prompt Assistant) */}
+              {/* Quick Replies Bar (Respuestas Rápidas) */}
               <div className="p-2 border-t border-[var(--border-color)] bg-[var(--bg-card)]/40 flex items-center gap-1.5 overflow-x-auto text-[11px] font-mono no-scrollbar">
                 <span className="text-[10px] text-[var(--text-faint)] flex items-center gap-1 shrink-0 px-1 font-bold">
                   <Sparkles className="w-3 h-3 text-lime-400" />
-                  Sugerencias IA:
+                  Respuestas Rápidas:
                 </span>
                 {tenantSuggestions.map((sug, i) => (
                   <button

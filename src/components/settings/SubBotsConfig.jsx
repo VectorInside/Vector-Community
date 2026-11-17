@@ -748,23 +748,16 @@ export const SubBotsConfig = () => {
         return;
       }
     } catch (err) {
-      // Fallback a simulación local si el backend no está disponible
-    }
-
-    let botReply = '';
-    if (isAppointment) {
-      botReply = `Consultando la disponibilidad de Google Calendar de ${currentTenant.name} (${config?.calendar?.slotDurationMin || 60} min por cita):\n\n• Horario disponible sugerido: Jueves a las 11:00 hrs o Viernes a las 16:00 hrs.\n\n¿Te aparto alguno de estos espacios comerciales?`;
-    } else {
-      botReply = `Gracias por tu mensaje. ${config?.systemPrompt?.slice(0, 120)}...\n\n¿Te gustaría coordinar una fecha de atención directa?`;
+      console.error('Error en Sandbox DeepSeek R1:', err);
     }
 
     setSandboxMessages((prev) => [
       ...prev,
       {
         sender: 'bot',
-        text: botReply,
+        text: '⚠️ Sin respuesta de DeepSeek R1. Verifica tu API Key configurada o la conexión con el backend.',
         time: 'Ahora',
-        toolCalled: isAppointment ? 'consultar_disponibilidad_google_calendar()' : null,
+        isError: true,
       },
     ]);
   };

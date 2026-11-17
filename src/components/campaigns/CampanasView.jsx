@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { campaignService } from '@/services/campaignService';
+import { aiService } from '@/services/aiService';
 
 export const CampanasView = () => {
   const router = useRouter();
@@ -46,6 +47,7 @@ export const CampanasView = () => {
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [aiSuccessToast, setAiSuccessToast] = useState(false);
+  const [aiErrorToast, setAiErrorToast] = useState('');
 
   useEffect(() => {
     const activeId = activeTenant?.id;
@@ -181,42 +183,87 @@ export const CampanasView = () => {
     router.push(`/planner?fromCampaign=${encodeURIComponent(camp.id)}`);
   };
 
-  // Generador de Campaña Inteligente con IA
-  const handleGenerateWithAi = () => {
+  // Generador de Campaña Inteligente con IA (DeepSeek R1)
+  const handleGenerateWithAi = async () => {
     if (!tenantId) {
-      alert('Selecciona un negocio activo antes de generar una campaña con IA.');
+      setAiErrorToast('Selecciona un negocio activo antes de generar una campaña con IA.');
+      setTimeout(() => setAiErrorToast(''), 4000);
       return;
     }
     setIsGeneratingAi(true);
+    setAiErrorToast('');
 
-    setTimeout(() => {
+    try {
+      const tenantGiro = activeTenant?.giro || activeTenant?.verticalLabel || 'Servicios';
+      const topicPrompt = `Diseña una campaña estratégica de pauta digital en Meta Ads para el negocio "${activeTenant?.name || 'Mi Negocio'}" (Giro: ${tenantGiro}, Servicio principal: ${activeTenant?.coreService || 'Servicios profesionales'}, Presupuesto mensual: $${tenantMonthlyBudget}).
+Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
+{
+  "name": "Nombre estratégico de la campaña",
+  "offer": "Oferta comercial irresistible enfocada en conversión por WhatsApp",
+  "objective": "Objetivo principal (ej. Citas & Conversaciones Calificadas)",
+  "audience": "Segmentación detallada del público objetivo ideal",
+  "hypothesis": "Hipótesis medible de conversión y reducción de CPL"
+}`;
+
+      const aiRes = await aiService.generateContent({
+        tenantId: activeTenant?.id,
+        topicPrompt,
+        postType: 'Campaign Strategy',
+        targetNetwork: 'META',
+      });
+
+      let parsed = null;
+      if (aiRes?.generatedRawJson) {
+        parsed =
+          typeof aiRes.generatedRawJson === 'string'
+            ? JSON.parse(aiRes.generatedRawJson)
+            : aiRes.generatedRawJson;
+      } else if (aiRes?.content) {
+        parsed =
+          typeof aiRes.content === 'string' ? JSON.parse(aiRes.content) : aiRes.content;
+      } else if (aiRes && typeof aiRes === 'object') {
+        parsed = aiRes;
+      }
+
+      if (parsed?.copy && typeof parsed.copy === 'string' && parsed.copy.trim().startsWith('{')) {
+        try {
+          parsed = JSON.parse(parsed.copy);
+        } catch (e) {}
+      }
+
+      const name = parsed?.name || parsed?.title;
+      const offer = parsed?.offer || parsed?.hookText;
+      const objective = parsed?.objective;
+      const audience = parsed?.audience;
+      const hypothesis = parsed?.hypothesis || parsed?.copy;
+
+      if (!name && !offer && !hypothesis) {
+        throw new Error('La respuesta de DeepSeek R1 no contiene una estrategia de campaña válida.');
+      }
+
       const todayIso = new Date().toISOString().split('T')[0];
       const nextMonth = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
       const aiCamp = {
         id: `camp-ai-${Date.now()}`,
-        name: `Campaña Estratégica — ${activeTenant?.name || 'Mi Negocio'}`,
-        offer: activeTenant?.coreService
-          ? `Promoción destacada en ${activeTenant.coreService} con atención prioritaria en WhatsApp.`
-          : 'Diagnóstico y atención personalizada inmediata en canales de mensajería.',
-        objective: 'Citas & Conversaciones Calificadas',
-        audience: `Público objetivo calificado interesado en ${activeTenant?.giro || 'servicios de alto valor'}`,
+        name: name || `Campaña Estratégica — ${activeTenant?.name || 'Mi Negocio'}`,
+        offer: offer || `Oferta comercial para ${activeTenant?.name || 'tu negocio'}.`,
+        objective: objective || 'Citas & Conversaciones Calificadas',
+        audience: audience || `Público objetivo en ${tenantGiro}`,
         channel: 'Meta Ads (Instagram & FB)',
         budget: tenantMonthlyBudget,
         spend: 0,
         leadsCount: 0,
         piecesCount: 3,
         status: 'Activa',
-        owner: 'Copilot IA Vector',
+        owner: 'DeepSeek R1 Vector',
         start: todayIso,
         end: nextMonth,
-        hypothesis:
-          'Enrutar tráfico directo a WhatsApp con respuesta < 1 min por agente IA incrementa la tasa de conversión en un 38%.',
+        hypothesis: hypothesis || 'Conversión directa a WhatsApp con calificación automatizada.',
         roas: '0.0x',
         cpl: 0,
       };
 
       saveCampaigns([aiCamp, ...campaigns]);
-      setIsGeneratingAi(false);
       setAiSuccessToast(true);
 
       try {
@@ -229,7 +276,15 @@ export const CampanasView = () => {
       } catch (e) {}
 
       setTimeout(() => setAiSuccessToast(false), 3500);
-    }, 1000);
+    } catch (err) {
+      console.error('Error generando campaña con DeepSeek R1:', err);
+      setAiErrorToast(
+        'No se pudo conectar con DeepSeek R1 para generar la campaña. Verifica tu API Key de IA en Conexiones.'
+      );
+      setTimeout(() => setAiErrorToast(''), 4500);
+    } finally {
+      setIsGeneratingAi(false);
+    }
   };
 
   // Alta de Campaña Manual
@@ -314,6 +369,19 @@ export const CampanasView = () => {
             <p className="text-[11px] text-zinc-300">
               La hipótesis comercial y los parámetros de pauta han sido persistidos.
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Toast de Error de IA */}
+      {aiErrorToast && (
+        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-2xl bg-zinc-900 border border-red-500/50 text-white shadow-2xl flex items-center gap-3 animate-slide-up max-w-md">
+          <span className="p-2 rounded-xl bg-red-500/20 text-red-400">
+            <X className="w-5 h-5" />
+          </span>
+          <div>
+            <h4 className="font-bold text-xs text-red-400">Error de DeepSeek R1</h4>
+            <p className="text-[11px] text-zinc-300">{aiErrorToast}</p>
           </div>
         </div>
       )}

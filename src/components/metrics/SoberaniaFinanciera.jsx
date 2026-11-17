@@ -40,63 +40,8 @@ import { campaignService } from '@/services/campaignService';
 import { aiService } from '@/services/aiService';
 import { ExecutiveMonthlyReportModal } from './ExecutiveMonthlyReportModal';
 
-// Generador de guiones virales de alta conversión por industria
 const resolveTenantIndustry = (tenant) =>
   tenant?.industry || tenant?.verticalLabel || tenant?.giro || tenant?.vertical || '';
-
-const generateIndustryViralScript = (tenant) => {
-  const name = tenant?.name || 'nuestro negocio';
-  const industry = resolveTenantIndustry(tenant).toLowerCase();
-
-  if (industry.includes('odont') || industry.includes('salud') || industry.includes('medic') || industry.includes('clinic')) {
-    return {
-      scriptHook: '¿Sabías que postergar esa molestia dental puede costarte hasta 3 veces más en unos meses?',
-      scriptDemo: `En ${name}, diagnosticamos y resolvemos tu caso con especialistas certificados y tecnología digital sin dolor.`,
-      scriptOffer: 'Por apertura de agenda este mes, tu valoración y plan de tratamiento personalizado están incluidos al 100%.',
-      scriptCta: 'Toca el botón y confirma tu horario directo por WhatsApp en menos de 2 minutos.',
-      targetFormat: 'Reel / TikTok 9:16 (30s) — Clínicas & Salud',
-    };
-  }
-
-  if (industry.includes('inmobil') || industry.includes('bienes') || industry.includes('real estate')) {
-    return {
-      scriptHook: 'La mayoría piensa que comprar o invertir en propiedades requiere meses de trámites imposibles y millones de enganche.',
-      scriptDemo: `En ${name}, filtramos propiedades con plusvalía garantizada superior al 14% anual y facilidades de pago directo.`,
-      scriptOffer: 'Accede hoy a nuestro catálogo exclusivo de preventas con condiciones preferenciales de lanzamiento.',
-      scriptCta: 'Escríbenos por WhatsApp ahora mismo y te enviamos la ficha técnica con números reales.',
-      targetFormat: 'Reel / TikTok 9:16 (30s) — Real Estate & Inversión',
-    };
-  }
-
-  if (industry.includes('restauran') || industry.includes('comida') || industry.includes('gastron') || industry.includes('bar')) {
-    return {
-      scriptHook: 'Si estás buscando el lugar perfecto para cenar o celebrar este fin de semana, tienes que probar esto.',
-      scriptDemo: `En ${name}, combinamos ingredientes de primera calidad con una atmósfera pensada para disfrutar de verdad.`,
-      scriptOffer: 'Al reservar tu mesa hoy por nuestro chat oficial, recibes una cortesía especial de la casa.',
-      scriptCta: 'Mándanos un WhatsApp para apartar tu mesa en segundos antes de que se llenen los turnos.',
-      targetFormat: 'Reel / TikTok 9:16 (30s) — Gastronomía & Experiencias',
-    };
-  }
-
-  if (industry.includes('fit') || industry.includes('gimnas') || industry.includes('belleza') || industry.includes('spa')) {
-    return {
-      scriptHook: '¿Cuánto tiempo más vas a esperar para dar el paso hacia la versión de ti con la energía que mereces?',
-      scriptDemo: `En ${name}, diseñamos planes con metodología probada y acompañamiento real que se adaptan a tu ritmo de vida.`,
-      scriptOffer: 'Agenda tu primera sesión de evaluación personalizada y llévate tu diagnóstico inicial sin costo.',
-      scriptCta: 'Escríbenos por WhatsApp para activar tu cortesía hoy mismo.',
-      targetFormat: 'Reel / TikTok 9:16 (30s) — Fitness & Wellness',
-    };
-  }
-
-  // Giro Predeterminado: B2B, Agencias de Marketing, Software SaaS, Consultoría
-  return {
-    scriptHook: 'El 73% de las empresas pierden ventas no por falta de clientes, sino por tardar más de 15 minutos en atenderlos.',
-    scriptDemo: `Con ${name}, automatizamos la atención, calificación comercial BANT y seguimiento de prospectos 24/7 sin fricción.`,
-    scriptOffer: 'Solicita una auditoría comercial gratuita donde te mostramos dónde se están fugando tus prospectos.',
-    scriptCta: 'Toca el enlace y mándanos un WhatsApp para ver una demostración en vivo con tu negocio.',
-    targetFormat: 'Reel / TikTok 9:16 (30s) — B2B & Software',
-  };
-};
 
 export const SoberaniaFinanciera = () => {
   const router = useRouter();
@@ -114,6 +59,7 @@ export const SoberaniaFinanciera = () => {
   const [showScriptModal, setShowScriptModal] = useState(false);
   const [isGeneratingScript, setIsGeneratingScript] = useState(false);
   const [generatedScriptData, setGeneratedScriptData] = useState(null);
+  const [scriptError, setScriptError] = useState(null);
 
   // Carga de datos multi-fuente en paralelo (Leads, Citas, Campañas, Telemetría)
   useEffect(() => {
@@ -261,73 +207,83 @@ export const SoberaniaFinanciera = () => {
     );
   };
 
-  // Generación interactiva de Guion Viral con DeepSeek R1 / AI Service
+  // Generación interactiva de Guion Viral con DeepSeek R1 / AI Service (100% real, cero plantillas fijas)
   const handleGenerateScript = async () => {
+    if (!activeTenant?.id) {
+      setScriptError('Selecciona un negocio activo antes de generar un guion con DeepSeek R1.');
+      return;
+    }
+
+    setScriptError(null);
     setIsGeneratingScript(true);
     let finalScript = null;
 
-    if (activeTenant?.id) {
-      try {
-        const aiRes = await aiService.generateContent({
-          tenantId: activeTenant.id,
-          topicPrompt: `Guion viral de 30 segundos (Reels/TikTok) para ${activeTenant.name || 'nuestro negocio'} enfocado en el giro ${resolveTenantIndustry(activeTenant) || 'servicios'}. Debe incluir gancho de 0-3s, problema/demostración de 4-15s, oferta de 16-25s y llamado a la acción directo a WhatsApp de 26-30s.`,
-          postType: 'Reel 9:16',
-          targetNetwork: 'INSTAGRAM',
-        });
+    try {
+      const aiRes = await aiService.generateContent({
+        tenantId: activeTenant.id,
+        topicPrompt: `Guion viral de 30 segundos (Reels/TikTok) para ${activeTenant.name || 'nuestro negocio'} enfocado en el giro ${resolveTenantIndustry(activeTenant) || 'servicios'}. Debe incluir gancho de 0-3s, problema/demostración de 4-15s, oferta de 16-25s y llamado a la acción directo a WhatsApp de 26-30s.`,
+        postType: 'Reel 9:16',
+        targetNetwork: 'INSTAGRAM',
+      });
 
-        if (aiRes && (aiRes.generatedRawJson || aiRes.hookText || aiRes.copy)) {
-          try {
-            const parsed = aiRes.generatedRawJson
-              ? typeof aiRes.generatedRawJson === 'string'
-                ? JSON.parse(aiRes.generatedRawJson)
-                : aiRes.generatedRawJson
-              : aiRes;
-            const resolvedHook = parsed?.hook || parsed?.scriptHook || parsed?.hookText;
-            if (resolvedHook || parsed?.copy) {
-              const copySegments = String(parsed?.copy || '')
-                .split(/\n+/)
-                .map((s) => s.trim())
-                .filter(Boolean);
-              finalScript = {
-                scriptHook:
-                  resolvedHook ||
-                  copySegments[0] ||
-                  `¿Sabías que puedes multiplicar resultados en ${activeTenant.name || 'tu negocio'}?`,
-                scriptDemo:
-                  parsed?.problem ||
-                  parsed?.demo ||
-                  parsed?.scriptDemo ||
-                  copySegments[0] ||
-                  parsed?.copy ||
-                  'Demostración práctica del servicio en acción.',
-                scriptOffer:
-                  parsed?.solution ||
-                  parsed?.offer ||
-                  parsed?.scriptOffer ||
-                  copySegments[1] ||
-                  parsed?.title ||
-                  'Diagnóstico y atención prioritaria garantizada.',
-                scriptCta:
-                  parsed?.cta ||
-                  parsed?.scriptCta ||
-                  copySegments[2] ||
-                  'Envía un mensaje directo a nuestro WhatsApp oficial para agendar hoy.',
-                targetFormat: `DeepSeek R1 Generativo • ${resolveTenantIndustry(activeTenant) || 'Negocio'}`,
-              };
-            }
-          } catch (e) {}
-        }
-      } catch (err) {
-        // En caso de que el backend esté en arranque o sin red, recurre a generador industrial
+      if (aiRes && (aiRes.generatedRawJson || aiRes.hookText || aiRes.copy)) {
+        try {
+          const parsed = aiRes.generatedRawJson
+            ? typeof aiRes.generatedRawJson === 'string'
+              ? JSON.parse(aiRes.generatedRawJson)
+              : aiRes.generatedRawJson
+            : aiRes;
+          const resolvedHook = parsed?.hook || parsed?.scriptHook || parsed?.hookText;
+          if (resolvedHook || parsed?.copy) {
+            const copySegments = String(parsed?.copy || '')
+              .split(/\n+/)
+              .map((s) => s.trim())
+              .filter(Boolean);
+            finalScript = {
+              scriptHook:
+                resolvedHook ||
+                copySegments[0] ||
+                '',
+              scriptDemo:
+                parsed?.problem ||
+                parsed?.demo ||
+                parsed?.scriptDemo ||
+                copySegments[0] ||
+                parsed?.copy ||
+                '',
+              scriptOffer:
+                parsed?.solution ||
+                parsed?.offer ||
+                parsed?.scriptOffer ||
+                copySegments[1] ||
+                parsed?.title ||
+                '',
+              scriptCta:
+                parsed?.cta ||
+                parsed?.scriptCta ||
+                copySegments[2] ||
+                'Escríbenos por WhatsApp para más información.',
+              targetFormat: `DeepSeek R1 Generativo • ${resolveTenantIndustry(activeTenant) || 'Negocio'}`,
+            };
+          }
+        } catch (e) {}
       }
+    } catch (err) {
+      setScriptError(
+        err?.response?.data?.message ||
+        'No se pudo conectar con DeepSeek R1. Verifica tu API Key en Conexiones o intenta nuevamente.'
+      );
     }
 
+    setIsGeneratingScript(false);
     if (!finalScript) {
-      finalScript = generateIndustryViralScript(activeTenant);
+      setScriptError((prev) =>
+        prev || 'DeepSeek R1 no devolvió un guion válido. Verifica tu API Key de IA en Conexiones.'
+      );
+      return;
     }
 
     setGeneratedScriptData(finalScript);
-    setIsGeneratingScript(false);
     setShowScriptModal(true);
   };
 
@@ -712,6 +668,22 @@ export const SoberaniaFinanciera = () => {
                 </div>
               </div>
             </div>
+
+            {scriptError && (
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-[11px] font-mono space-y-1.5">
+                <p className="flex items-start gap-1.5">
+                  <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0 mt-0.5" />
+                  <span>{scriptError}</span>
+                </p>
+                <button
+                  type="button"
+                  onClick={() => router.push('/connections?tab=ai')}
+                  className="text-[10px] text-neon underline font-bold hover:opacity-80"
+                >
+                  Configurar API Key IA →
+                </button>
+              </div>
+            )}
 
             <button
               type="button"

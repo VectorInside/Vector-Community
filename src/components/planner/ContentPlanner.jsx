@@ -1386,30 +1386,29 @@ Devuelve un JSON estrictamente estructurado con:
   }
 }`;
 
-      let parsed = null;
-      try {
-        const aiRes = await aiService.generateContent({
-          tenantId: tenantKey,
-          targetNetwork: 'INSTAGRAM',
-          postType: 'Reel 9:16',
-          tone: 'Deconstrucción algorítmica viral',
-          topicPrompt: promptDirective,
-        });
+      const aiRes = await aiService.generateContent({
+        tenantId: tenantKey,
+        targetNetwork: 'INSTAGRAM',
+        postType: 'Reel 9:16',
+        tone: 'Deconstrucción algorítmica viral',
+        topicPrompt: promptDirective,
+      });
 
-        if (aiRes?.generatedRawJson) {
-          parsed = typeof aiRes.generatedRawJson === 'string' ? JSON.parse(aiRes.generatedRawJson) : aiRes.generatedRawJson;
-        } else if (aiRes?.content) {
-          parsed = typeof aiRes.content === 'string' ? JSON.parse(aiRes.content) : aiRes.content;
-        } else if (aiRes?.hookText || aiRes?.copy || aiRes?.title) {
-          parsed = aiRes;
-        }
-      } catch (err) {
-        console.warn('Fallback de análisis local:', err);
+      let parsed = null;
+      if (aiRes?.generatedRawJson) {
+        parsed = typeof aiRes.generatedRawJson === 'string' ? JSON.parse(aiRes.generatedRawJson) : aiRes.generatedRawJson;
+      } else if (aiRes?.content) {
+        parsed = typeof aiRes.content === 'string' ? JSON.parse(aiRes.content) : aiRes.content;
+      } else if (aiRes?.hookText || aiRes?.copy || aiRes?.title) {
+        parsed = aiRes;
+      }
+
+      if (!parsed || (!parsed.deconstructedFormula && !parsed.title && !parsed.hookText && !parsed.copy)) {
+        throw new Error('DeepSeek R1 no devolvió un análisis válido para el video.');
       }
 
       const snippet = rawText || rawUrl;
       const titleCandidate = parsed?.title || (snippet ? (snippet.length > 50 ? `${snippet.slice(0, 50)}...` : snippet) : 'Reel Outlier Deconstruido');
-      const fallbackHook = parsed?.hookText || rawText || `¿Por qué tu competencia no quiere que descubras esto en ${tenantGiro}?`;
 
       let extractedFormula = parsed?.deconstructedFormula;
       if (!extractedFormula && (parsed?.hookText || parsed?.copy)) {
@@ -1424,37 +1423,34 @@ Devuelve un JSON estrictamente estructurado con:
             .split(/\n+/)
             .map((line) => line.trim())
             .filter(Boolean);
-          extractedFormula = {
-            hook0to3s: parsed.hookText || copyParts[0] || fallbackHook,
-            retention3to15s:
-              copyParts[1] ||
-              copyParts[0] ||
-              'Demostración de contraste: proceso tradicional fallido vs nuevo estándar de alta velocidad.',
-            cta15to30s:
-              copyParts[2] ||
-              `${commercialOffer?.cta || 'Envía MENSAJE para obtener la guía paso a paso.'}`,
-          };
+          if (parsed.hookText || copyParts.length > 0) {
+            extractedFormula = {
+              hook0to3s: parsed.hookText || copyParts[0],
+              retention3to15s: copyParts[1] || copyParts[0] || '',
+              cta15to30s: copyParts[2] || commercialOffer?.cta || '',
+            };
+          }
         }
+      }
+
+      if (!extractedFormula || !extractedFormula.hook0to3s) {
+        throw new Error('DeepSeek R1 no pudo extraer la fórmula de retención del video.');
       }
 
       const newReel = {
         id: `external-${Date.now()}`,
         platform: externalReelInput.platform,
         title: titleCandidate,
-        views: parsed?.views || '168.4k',
-        hookRate: parsed?.hookRate || '41.5%',
-        dmsGenerated: parsed?.dmsGenerated || '215',
-        visualHook: parsed?.visualHook || 'Interrupción de patrón visual en 0-3s con movimiento rápido y subtítulos cinemáticos',
-        psychologicalTrigger: parsed?.psychologicalTrigger || 'Curiosidad Ineludible & Reencuadre de Realidad',
-        whyItWorked: parsed?.whyItWorked || parsed?.copy || `Aprovecha el patrón de ruptura inmediata para retener más del 38% de la audiencia en los primeros 3 segundos.`,
+        views: parsed?.views || 'N/D',
+        hookRate: parsed?.hookRate || 'N/D',
+        dmsGenerated: parsed?.dmsGenerated || 'N/D',
+        visualHook: parsed?.visualHook || 'Analizado por DeepSeek R1',
+        psychologicalTrigger: parsed?.psychologicalTrigger || 'Detectado por DeepSeek R1',
+        whyItWorked: parsed?.whyItWorked || parsed?.copy || '',
         isExternal: true,
         externalUrl: rawUrl || null,
         badge: 'Competidor / Tendencia Externa',
-        deconstructedFormula: extractedFormula || {
-          hook0to3s: fallbackHook,
-          retention3to15s: 'Demostración de contraste: proceso tradicional fallido vs nuevo estándar de alta velocidad.',
-          cta15to30s: `${commercialOffer?.cta || 'Envía MENSAJE para obtener la guía paso a paso.'}`,
-        },
+        deconstructedFormula: extractedFormula,
       };
 
       const updated = [newReel, ...viralReels];
@@ -1477,122 +1473,165 @@ Devuelve un JSON estrictamente estructurado con:
       );
     } catch (err) {
       console.error('Error al deconstruir reel externo:', err);
+      triggerModal(
+        '⚠️ Error de Análisis DeepSeek R1',
+        'No se pudo conectar con DeepSeek R1 para analizar el video. Verifica tu API Key de IA en Conexiones.'
+      );
     } finally {
       setIsAnalyzingExternalReel(false);
     }
   };
 
-  const handleReplicateViralReel = (reel) => {
+  const handleReplicateViralReel = async (reel) => {
     const tenantGiro = activeTenant?.giro || activeTenant?.verticalLabel || 'Servicios';
     const effectiveHook = commercialOffer?.hook || brandDna?.leadMagnetHook || 'nuestra propuesta de valor';
     const effectiveCta = commercialOffer?.cta || brandDna?.leadMagnetCta || 'Envía un mensaje para más información.';
-
     const formula = reel.deconstructedFormula || {};
-    const hook1 = formula.hook0to3s || `¿Por qué el 80% en ${tenantGiro} comete este error antes de elegir una opción profesional?`;
-    const hook2 = `Cómo logramos resultados de alto impacto en ${activeTenant?.name} sin los dolores típicos del mercado.`;
-    const hook3 = `¿Buscas ${effectiveHook}? Esto es exactamente lo que incluye nuestra propuesta para este mes.`;
 
-    const variantsDisplay = [
-      `1. <b>Variante Curiosidad & Error:</b> "${hook1}"`,
-      `2. <b>Variante Caso de Éxito / Autoridad:</b> "${hook2}"`,
-      `3. <b>Variante Oferta Irresistible:</b> "${hook3}"`,
-    ];
+    try {
+      const promptDirective = `Replica mediante ingeniería inversa la fórmula viral del Reel "${reel.title}" para el negocio "${activeTenant?.name}" (${tenantGiro}).
+Disparador psicológico original: ${reel.psychologicalTrigger || 'Curiosidad y Autoridad'}
+Gancho original (0-3s): ${formula.hook0to3s || 'No especificado'}
+Retención original (3-15s): ${formula.retention3to15s || 'No especificado'}
+CTA original (15-30s): ${formula.cta15to30s || 'No especificado'}
+Oferta activa del negocio: ${effectiveHook}
+CTA del negocio: ${effectiveCta}
 
-    triggerModal(
-      `Ingeniería Inversa Viral: ${reel.title}`,
-      `<b>Fórmula Psicológica Detectada (DeepSeek R1):</b><br>
-      • <b>Disparador:</b> ${reel.psychologicalTrigger || 'Curiosidad y Autoridad'}<br>
-      • <b>Hook Rate:</b> ${reel.hookRate || '36.4%'} (Benchmark: 25%)<br>
-      • <b>Estímulo Visual:</b> ${reel.visualHook || 'Interrupción de patrón en 0-3s'}<br><br>
+Genera exactamente 3 variantes de guion para Instagram Reels 9:16 en JSON estricto:
+{
+  "variants": [
+    {
+      "variantName": "Variante Curiosidad & Error",
+      "title": "Título del Reel 1",
+      "hookText": "Gancho exacto 0-3s",
+      "copy": "Guion completo con retención y CTA",
+      "hashtags": "#Tag1 #Tag2 #Reels",
+      "publishDate": "Próx. Lunes · 19:00 hrs"
+    },
+    {
+      "variantName": "Variante Caso de Éxito / Autoridad",
+      "title": "Título del Reel 2",
+      "hookText": "Gancho exacto 0-3s",
+      "copy": "Guion completo con retención y CTA",
+      "hashtags": "#Tag1 #Tag2 #Reels",
+      "publishDate": "Próx. Miércoles · 19:00 hrs"
+    },
+    {
+      "variantName": "Variante Oferta Irresistible",
+      "title": "Título del Reel 3",
+      "hookText": "Gancho exacto 0-3s",
+      "copy": "Guion completo con retención y CTA",
+      "hashtags": "#Tag1 #Tag2 #Reels",
+      "publishDate": "Próx. Viernes · 19:00 hrs"
+    }
+  ]
+}`;
+
+      const aiRes = await aiService.generateContent({
+        tenantId: tenantKey,
+        targetNetwork: 'INSTAGRAM',
+        postType: 'Reel 9:16',
+        tone: 'Ingeniería inversa viral, alta retención',
+        topicPrompt: promptDirective,
+      });
+
+      let parsed = null;
+      if (aiRes?.generatedRawJson) {
+        parsed = typeof aiRes.generatedRawJson === 'string' ? JSON.parse(aiRes.generatedRawJson) : aiRes.generatedRawJson;
+      } else if (aiRes?.content) {
+        parsed = typeof aiRes.content === 'string' ? JSON.parse(aiRes.content) : aiRes.content;
+      } else if (aiRes && typeof aiRes === 'object') {
+        parsed = aiRes;
+      }
+
+      if (parsed?.copy && typeof parsed.copy === 'string' && parsed.copy.trim().startsWith('{')) {
+        try {
+          parsed = JSON.parse(parsed.copy);
+        } catch (e) {}
+      }
+
+      const variants = Array.isArray(parsed?.variants) ? parsed.variants.filter((v) => v?.hookText || v?.copy) : [];
+      if (variants.length === 0) {
+        throw new Error('DeepSeek R1 no devolvió variantes de guion válidas.');
+      }
+
+      const variantsDisplay = variants.map(
+        (v, idx) => `${idx + 1}. <b>${v.variantName || `Variante ${idx + 1}`}:</b> "${v.hookText || v.title}"`
+      );
+
+      triggerModal(
+        `Ingeniería Inversa Viral: ${reel.title}`,
+        `<b>Fórmula Psicológica Detectada (DeepSeek R1):</b><br>
+      • <b>Disparador:</b> ${reel.psychologicalTrigger || 'Analizado por DeepSeek R1'}<br>
+      • <b>Hook Rate:</b> ${reel.hookRate || 'N/D'}<br>
+      • <b>Estímulo Visual:</b> ${reel.visualHook || 'Analizado por DeepSeek R1'}<br><br>
       <div style="background:#0D0F12; padding:12px; border-radius:12px; border:1px solid #1F242D; font-family:monospace; font-size:11px;">
-        <span style="color:#D4FF00; font-weight:bold;">🎬 3 VARIANTES ADAPTADAS A ${activeTenant?.name?.toUpperCase() || 'TU NEGOCIO'}:</span><br><br>
+        <span style="color:#D4FF00; font-weight:bold;">🎬 ${variants.length} VARIANTES ADAPTADAS A ${activeTenant?.name?.toUpperCase() || 'TU NEGOCIO'}:</span><br><br>
         ${variantsDisplay.join('<br>')}
       </div>
-      <p style="margin-top:10px; font-size:11px; color:#94A3B8;">Al confirmar, se insertarán automáticamente estas 3 publicaciones en la <b>Parrilla Multiplataforma</b> en estado <b>Pendiente Cliente</b> para su revisión.</p>`,
-      async () => {
-        try {
-          const generatedPostsToSave = [
-            {
-              tenantId: tenantKey,
-              network: 'INSTAGRAM',
-              type: 'Reel 9:16',
-              channel: 'Instagram Reels & Feed',
-              publishDate: 'Próx. Lunes · 19:00 hrs',
-              title: `Reel Viral: Error Común en ${tenantGiro}`,
-              hookText: hook1,
-              copy: `El mayor error al buscar soluciones en ${tenantGiro} es improvisar sin método ni estructura. En ${activeTenant?.name} diseñamos la ruta paso a paso para garantizar certeza y retorno medible. ${effectiveCta}`,
-              hashtags: `#${(activeTenant?.shortName || activeTenant?.name || 'Vector').replace(/\s+/g, '')} #${tenantGiro.replace(/\s+/g, '')} #ReelsViral #Estrategia`,
-              status: 'PENDIENTE_CLIENTE',
-              estimatedReach: '22,000 - 38,000 cuentas',
-              aiConfidence: 98,
-            },
-            {
-              tenantId: tenantKey,
-              network: 'INSTAGRAM',
-              type: 'Reel 9:16',
-              channel: 'Instagram Reels & Feed',
-              publishDate: 'Próx. Miércoles · 19:00 hrs',
-              title: `Reel Viral: Caso de Éxito en ${activeTenant?.name}`,
-              hookText: hook2,
-              copy: `Analizamos el caso real de cómo convertimos el desorden operativo en un sistema de demanda predecible. Disparador clave: ${reel.psychologicalTrigger || 'Autoridad Técnica'}. ${effectiveCta}`,
-              hashtags: `#${(activeTenant?.shortName || activeTenant?.name || 'Vector').replace(/\s+/g, '')} #CasoDeExito #Crecimiento #Metodo`,
-              status: 'PENDIENTE_CLIENTE',
-              estimatedReach: '18,000 - 32,000 cuentas',
-              aiConfidence: 97,
-            },
-            {
-              tenantId: tenantKey,
-              network: 'INSTAGRAM',
-              type: 'Reel 9:16',
-              channel: 'Instagram Reels & Feed',
-              publishDate: 'Próx. Viernes · 19:00 hrs',
-              title: `Reel Viral: Oferta Activa (${commercialOffer?.docName || 'Del Mes'})`,
-              hookText: hook3,
-              copy: `Atención: durante esta ventana comercial, activamos nuestra propuesta más sólida para ${tenantGiro}. ${effectiveHook}. Vigencia: ${commercialOffer?.validity || 'Mes en curso'}. ${effectiveCta}`,
-              hashtags: `#${(activeTenant?.shortName || activeTenant?.name || 'Vector').replace(/\s+/g, '')} #OfertaEspecial #ActivacionComercial`,
-              status: 'PENDIENTE_CLIENTE',
-              estimatedReach: '28,000 - 52,000 cuentas',
-              aiConfidence: 99,
-            },
-          ];
-
-          const results = await Promise.allSettled(
-            generatedPostsToSave.map((p) => contentService.createPost(p))
-          );
-          const newlyCreated = results.map((result, idx) => {
-            if (result.status === 'fulfilled') {
-              return { ...result.value, formatIcon: Video };
-            }
-            return {
-              ...generatedPostsToSave[idx],
-              id: `post-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
-              formatIcon: Video,
-            };
-          });
-
-          const updated = [...newlyCreated, ...posts];
-          persistPosts(updated);
-          setActiveTab('grid');
-
+      <p style="margin-top:10px; font-size:11px; color:#94A3B8;">Al confirmar, se insertarán automáticamente estas ${variants.length} publicaciones en la <b>Parrilla Multiplataforma</b> en estado <b>Pendiente Cliente</b> para su revisión.</p>`,
+        async () => {
           try {
-            confetti({
-              particleCount: 50,
-              spread: 70,
-              origin: { y: 0.6 },
-              colors: ['#D4FF00', '#10B981'],
-            });
-          } catch (e) {}
+            const defaultDates = ['Próx. Lunes · 19:00 hrs', 'Próx. Miércoles · 19:00 hrs', 'Próx. Viernes · 19:00 hrs'];
+            const generatedPostsToSave = variants.map((v, idx) => ({
+              tenantId: tenantKey,
+              network: 'INSTAGRAM',
+              type: 'Reel 9:16',
+              channel: 'Instagram Reels & Feed',
+              publishDate: v.publishDate || defaultDates[idx] || 'Próx. Semana · 19:00 hrs',
+              title: v.title || `Reel Viral ${idx + 1}: ${reel.title}`,
+              hookText: v.hookText || '',
+              copy: v.copy || '',
+              hashtags: v.hashtags || `#${(activeTenant?.shortName || activeTenant?.name || 'Vector').replace(/\s+/g, '')} #ReelsViral`,
+              status: 'PENDIENTE_CLIENTE',
+              estimatedReach: v.estimatedReach || 'Por definir',
+              aiConfidence: 98,
+            }));
 
-          triggerModal(
-            '🧬 3 Guiones Inyectados en la Parrilla',
-            `Se han insertado exitosamente las 3 variantes inspiradas en la fórmula de <b>"${reel.title}"</b> en la <b>Parrilla Multiplataforma</b>. Ya puedes revisarlas, editarlas o aprobarlas en Human-in-the-Loop.`
-          );
-        } catch (err) {
-          console.error('Error insertando variantes:', err);
-        }
-      },
-      'Insertar Variantes en la Parrilla'
-    );
+            const results = await Promise.allSettled(
+              generatedPostsToSave.map((p) => contentService.createPost(p))
+            );
+            const newlyCreated = results.map((result, idx) => {
+              if (result.status === 'fulfilled') {
+                return { ...result.value, formatIcon: Video };
+              }
+              return {
+                ...generatedPostsToSave[idx],
+                id: `post-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+                formatIcon: Video,
+              };
+            });
+
+            const updated = [...newlyCreated, ...posts];
+            persistPosts(updated);
+            setActiveTab('grid');
+
+            try {
+              confetti({
+                particleCount: 50,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#D4FF00', '#10B981'],
+              });
+            } catch (e) {}
+
+            triggerModal(
+              `🧬 ${newlyCreated.length} Guiones Inyectados en la Parrilla`,
+              `Se han insertado exitosamente las variantes generadas por DeepSeek R1 para <b>"${reel.title}"</b> en la <b>Parrilla Multiplataforma</b>.`
+            );
+          } catch (err) {
+            console.error('Error insertando variantes:', err);
+          }
+        },
+        'Insertar Variantes en la Parrilla'
+      );
+    } catch (err) {
+      console.error('Error replicando reel viral con DeepSeek R1:', err);
+      triggerModal(
+        '⚠️ Error de Replicación DeepSeek R1',
+        'No se pudo conectar con DeepSeek R1 para replicar la fórmula viral. Verifica tu API Key de IA en Conexiones.'
+      );
+    }
   };
 
   const handleSyncMetaPosts = async () => {
@@ -1695,96 +1734,48 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
   ]
 }`;
 
+      const aiRes = await aiService.generateContent({
+        tenantId: tenantKey,
+        targetNetwork: 'INSTAGRAM',
+        postType: 'Bio Instagram',
+        tone: 'Persuasivo, conciso, BANT',
+        topicPrompt: promptDirective,
+      });
+
+      let raw = null;
+      if (aiRes?.generatedRawJson) {
+        raw = typeof aiRes.generatedRawJson === 'string' ? JSON.parse(aiRes.generatedRawJson) : aiRes.generatedRawJson;
+      } else if (aiRes?.content) {
+        raw = typeof aiRes.content === 'string' ? JSON.parse(aiRes.content) : aiRes.content;
+      } else if (aiRes?.hookText || aiRes?.copy || aiRes?.title) {
+        raw = aiRes;
+      }
+
       let parsedBios = null;
-      try {
-        const aiRes = await aiService.generateContent({
-          tenantId: tenantKey,
-          targetNetwork: 'INSTAGRAM',
-          postType: 'Bio Instagram',
-          tone: 'Persuasivo, conciso, BANT',
-          topicPrompt: promptDirective,
-        });
-
-        let raw = null;
-        if (aiRes?.generatedRawJson) {
-          raw = typeof aiRes.generatedRawJson === 'string' ? JSON.parse(aiRes.generatedRawJson) : aiRes.generatedRawJson;
-        } else if (aiRes?.content) {
-          raw = typeof aiRes.content === 'string' ? JSON.parse(aiRes.content) : aiRes.content;
-        } else if (aiRes?.hookText || aiRes?.copy || aiRes?.title) {
-          raw = aiRes;
-        }
-
-        if (Array.isArray(raw?.bios)) {
-          parsedBios = raw.bios;
-        } else if (raw?.copy || raw?.hookText) {
-          try {
-            const inner = typeof raw.copy === 'string' && raw.copy.trim().startsWith('{') ? JSON.parse(raw.copy) : null;
-            if (Array.isArray(inner?.bios)) {
-              parsedBios = inner.bios;
-            }
-          } catch (e) {}
-
-          if (!parsedBios) {
-            const kw = waKeyword || 'AUDITORIA';
-            const rawLines = String(raw.copy || '')
-              .split(/\n+/)
-              .map((l) => l.trim())
-              .filter(Boolean);
-            const baseHook = (raw.hookText || effectiveHook).slice(0, 65);
-            const baseCopy = (rawLines[0] || `Soluciones en ${tenantGiro}`).slice(0, 65);
-            parsedBios = [
-              {
-                id: 'bio-ai-1',
-                style: 'Autoridad & Dolor BANT',
-                text: `${baseHook}\n${baseCopy}\nDiagnóstico sin costo 👇`.slice(0, 148),
-                keyword: kw,
-              },
-              {
-                id: 'bio-ai-2',
-                style: 'Oferta Activa del Mes',
-                text: `${(raw.title || activeTenant?.name || 'Especialistas').slice(0, 45)}\n${(rawLines[1] || baseHook).slice(0, 60)}\nEnvía ${kw} al WhatsApp 👇`.slice(0, 148),
-                keyword: kw,
-              },
-              {
-                id: 'bio-ai-3',
-                style: 'Minimalista & Enrutador WhatsApp',
-                text: `${baseCopy}\nAtención prioritaria 24/7.\nAparta tu lugar aquí 👇`.slice(0, 148),
-                keyword: kw,
-              },
-            ];
+      if (Array.isArray(raw?.bios)) {
+        parsedBios = raw.bios;
+      } else if (raw?.copy || raw?.hookText) {
+        try {
+          const inner = typeof raw.copy === 'string' && raw.copy.trim().startsWith('{') ? JSON.parse(raw.copy) : null;
+          if (Array.isArray(inner?.bios)) {
+            parsedBios = inner.bios;
           }
-        }
-      } catch (err) {
-        console.warn('Fallback de generación de bios:', err);
+        } catch (e) {}
       }
 
       if (Array.isArray(parsedBios) && parsedBios.length > 0) {
         setGeneratedBios(parsedBios);
       } else {
-        const kw = waKeyword || 'AUDITORIA';
-        setGeneratedBios([
-          {
-            id: 'bio-fallback-1',
-            style: 'Autoridad & Dolor BANT',
-            text: `Estructura comercial para ${activeTenant?.name || 'empresas'}.\nMenos caos manual, más ventas predecibles.\nSolicita diagnóstico aquí 👇`,
-            keyword: kw,
-          },
-          {
-            id: 'bio-fallback-2',
-            style: 'Oferta Comercial del Mes',
-            text: `Convertimos visión en demanda real.\n${(commercialOffer?.hook || 'Diagnóstico de Conversión').slice(0, 42)}.\nEnvía ${kw} al WhatsApp 👇`,
-            keyword: kw,
-          },
-          {
-            id: 'bio-fallback-3',
-            style: 'Minimalista & Enrutador Rápido',
-            text: `Infraestructura & Crecimiento Medible.\nAtención inmediata 24/7 con IA.\nAcceso prioritario 👇`,
-            keyword: kw,
-          },
-        ]);
+        throw new Error('DeepSeek R1 no devolvió biografías válidas.');
       }
     } catch (e) {
-      console.error('Error generando bios:', e);
+      console.error('Error generando bios con DeepSeek R1:', e);
+      setGeneratedBios([]);
+      setShowBioGeneratorModal(false);
+      triggerModal(
+        '⚠️ Error de Generación DeepSeek R1',
+        'No se pudo conectar con DeepSeek R1 para generar las biografías. Verifica tu API Key de IA en Conexiones.'
+      );
     } finally {
       setIsGeneratingBios(false);
     }

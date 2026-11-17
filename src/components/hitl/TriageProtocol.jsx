@@ -66,7 +66,6 @@ import {
   KANBAN_COLUMNS_CONFIG,
   QUALIFIED_LEAD_CRITERIA,
 } from '@/utils/constants';
-import { REENGAGEMENT_QUEUE_MOCK } from '@/utils/mockData';
 import { PreCitaDrawer } from './PreCitaDrawer';
 import { WhatsAppConnectModal } from '@/components/inbox/WhatsAppConnectModal';
 import { MetaConnectModal } from '@/components/inbox/MetaConnectModal';
