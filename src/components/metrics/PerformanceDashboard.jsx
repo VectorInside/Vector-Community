@@ -489,7 +489,7 @@ export const PerformanceDashboard = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] font-mono text-xs shadow-sm">
+          <div id="tour-contactability-capi-badge" className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] font-mono text-xs shadow-sm">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
             <span className="text-[var(--text-muted)]">Meta CAPI:</span>
             <span className="font-bold text-emerald-500">
@@ -498,6 +498,7 @@ export const PerformanceDashboard = () => {
           </div>
 
           <button
+            id="tour-contactability-microlanding-btn"
             type="button"
             disabled={!activeTenant}
             onClick={() => setShowMicroLandingModal(true)}
@@ -510,7 +511,7 @@ export const PerformanceDashboard = () => {
       </header>
 
       {/* Navigation Sub-Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-[var(--border-color)] font-sans">
+      <div id="tour-contactability-tabs" className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-[var(--border-color)] font-sans">
         <button
           type="button"
           onClick={() => setActiveTab('web')}
@@ -650,32 +651,40 @@ export const PerformanceDashboard = () => {
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {/* Instagram */}
-                {(activeTenant?.socialLinks?.instagram || activeTenant?.connectedSocialNetworks?.includes('INSTAGRAM')) && (
-                  <a
-                    href={activeTenant?.socialLinks?.instagram ? (activeTenant.socialLinks.instagram.startsWith('http') ? activeTenant.socialLinks.instagram : `https://instagram.com/${activeTenant.socialLinks.instagram.replace('@', '')}`) : '#'}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-pink-500/10 border border-pink-500/30 text-pink-400 hover:bg-pink-500/20 transition-colors"
-                  >
-                    <Instagram className="w-3.5 h-3.5" />
-                    <span>Instagram: {activeTenant?.socialLinks?.instagram || 'Vinculado'}</span>
-                    <ExternalLink className="w-3 h-3 opacity-60" />
-                  </a>
-                )}
+                {(activeTenant?.socialLinks?.instagram || activeTenant?.connectedSocialNetworks?.includes('INSTAGRAM')) && (() => {
+                  const igUrl = activeTenant?.socialLinks?.instagram
+                    ? (activeTenant.socialLinks.instagram.startsWith('http') ? activeTenant.socialLinks.instagram : `https://instagram.com/${activeTenant.socialLinks.instagram.replace('@', '')}`)
+                    : null;
+                  return (
+                    <a
+                      href={igUrl || undefined}
+                      target={igUrl ? '_blank' : undefined}
+                      rel={igUrl ? 'noopener noreferrer' : undefined}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-pink-500/10 border border-pink-500/30 text-pink-400 transition-colors ${igUrl ? 'hover:bg-pink-500/20 cursor-pointer' : 'opacity-80 cursor-default'}`}
+                    >
+                      <Instagram className="w-3.5 h-3.5" />
+                      <span>Instagram: {activeTenant?.socialLinks?.instagram || 'Vinculado'}</span>
+                      {igUrl && <ExternalLink className="w-3 h-3 opacity-60" />}
+                    </a>
+                  );
+                })()}
 
                 {/* Facebook */}
-                {(activeTenant?.socialLinks?.facebook || activeTenant?.connectedSocialNetworks?.includes('FACEBOOK')) && (
-                  <a
-                    href={activeTenant?.socialLinks?.facebook || '#'}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-400 hover:bg-blue-500/20 transition-colors"
-                  >
-                    <Facebook className="w-3.5 h-3.5" />
-                    <span>Facebook: {activeTenant?.socialLinks?.facebook || 'Vinculado'}</span>
-                    <ExternalLink className="w-3 h-3 opacity-60" />
-                  </a>
-                )}
+                {(activeTenant?.socialLinks?.facebook || activeTenant?.connectedSocialNetworks?.includes('FACEBOOK')) && (() => {
+                  const fbUrl = activeTenant?.socialLinks?.facebook || null;
+                  return (
+                    <a
+                      href={fbUrl || undefined}
+                      target={fbUrl ? '_blank' : undefined}
+                      rel={fbUrl ? 'noopener noreferrer' : undefined}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-400 transition-colors ${fbUrl ? 'hover:bg-blue-500/20 cursor-pointer' : 'opacity-80 cursor-default'}`}
+                    >
+                      <Facebook className="w-3.5 h-3.5" />
+                      <span>Facebook: {fbUrl || 'Vinculado'}</span>
+                      {fbUrl && <ExternalLink className="w-3 h-3 opacity-60" />}
+                    </a>
+                  );
+                })()}
 
                 {/* WhatsApp */}
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
@@ -684,46 +693,55 @@ export const PerformanceDashboard = () => {
                 </span>
 
                 {/* TikTok */}
-                {(activeTenant?.socialLinks?.tiktok || activeTenant?.connectedSocialNetworks?.includes('TIKTOK')) && (
-                  <a
-                    href={activeTenant?.socialLinks?.tiktok || '#'}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-800 border border-cyan-500/30 text-cyan-400 hover:bg-zinc-700 transition-colors"
-                  >
-                    <Video className="w-3.5 h-3.5" />
-                    <span>TikTok: {activeTenant?.socialLinks?.tiktok || 'Vinculado'}</span>
-                    <ExternalLink className="w-3 h-3 opacity-60" />
-                  </a>
-                )}
+                {(activeTenant?.socialLinks?.tiktok || activeTenant?.connectedSocialNetworks?.includes('TIKTOK')) && (() => {
+                  const ttUrl = activeTenant?.socialLinks?.tiktok || null;
+                  return (
+                    <a
+                      href={ttUrl || undefined}
+                      target={ttUrl ? '_blank' : undefined}
+                      rel={ttUrl ? 'noopener noreferrer' : undefined}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-800 border border-cyan-500/30 text-cyan-400 transition-colors ${ttUrl ? 'hover:bg-zinc-700 cursor-pointer' : 'opacity-80 cursor-default'}`}
+                    >
+                      <Video className="w-3.5 h-3.5" />
+                      <span>TikTok: {ttUrl || 'Vinculado'}</span>
+                      {ttUrl && <ExternalLink className="w-3 h-3 opacity-60" />}
+                    </a>
+                  );
+                })()}
 
                 {/* LinkedIn */}
-                {(activeTenant?.socialLinks?.linkedin || activeTenant?.connectedSocialNetworks?.includes('LINKEDIN')) && (
-                  <a
-                    href={activeTenant?.socialLinks?.linkedin || '#'}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-600/10 border border-sky-500/30 text-sky-400 hover:bg-sky-600/20 transition-colors"
-                  >
-                    <Linkedin className="w-3.5 h-3.5" />
-                    <span>LinkedIn: {activeTenant?.socialLinks?.linkedin || 'Vinculado'}</span>
-                    <ExternalLink className="w-3 h-3 opacity-60" />
-                  </a>
-                )}
+                {(activeTenant?.socialLinks?.linkedin || activeTenant?.connectedSocialNetworks?.includes('LINKEDIN')) && (() => {
+                  const liUrl = activeTenant?.socialLinks?.linkedin || null;
+                  return (
+                    <a
+                      href={liUrl || undefined}
+                      target={liUrl ? '_blank' : undefined}
+                      rel={liUrl ? 'noopener noreferrer' : undefined}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-600/10 border border-sky-500/30 text-sky-400 transition-colors ${liUrl ? 'hover:bg-sky-600/20 cursor-pointer' : 'opacity-80 cursor-default'}`}
+                    >
+                      <Linkedin className="w-3.5 h-3.5" />
+                      <span>LinkedIn: {liUrl || 'Vinculado'}</span>
+                      {liUrl && <ExternalLink className="w-3 h-3 opacity-60" />}
+                    </a>
+                  );
+                })()}
 
                 {/* YouTube */}
-                {(activeTenant?.socialLinks?.youtube || activeTenant?.connectedSocialNetworks?.includes('YOUTUBE')) && (
-                  <a
-                    href={activeTenant?.socialLinks?.youtube || '#'}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-colors"
-                  >
-                    <Play className="w-3.5 h-3.5" />
-                    <span>YouTube: {activeTenant?.socialLinks?.youtube || 'Vinculado'}</span>
-                    <ExternalLink className="w-3 h-3 opacity-60" />
-                  </a>
-                )}
+                {(activeTenant?.socialLinks?.youtube || activeTenant?.connectedSocialNetworks?.includes('YOUTUBE')) && (() => {
+                  const ytUrl = activeTenant?.socialLinks?.youtube || null;
+                  return (
+                    <a
+                      href={ytUrl || undefined}
+                      target={ytUrl ? '_blank' : undefined}
+                      rel={ytUrl ? 'noopener noreferrer' : undefined}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 transition-colors ${ytUrl ? 'hover:bg-red-500/20 cursor-pointer' : 'opacity-80 cursor-default'}`}
+                    >
+                      <Play className="w-3.5 h-3.5" />
+                      <span>YouTube: {ytUrl || 'Vinculado'}</span>
+                      {ytUrl && <ExternalLink className="w-3 h-3 opacity-60" />}
+                    </a>
+                  );
+                })()}
               </div>
             </div>
 

@@ -41,9 +41,12 @@ import { aiService } from '@/services/aiService';
 import { ExecutiveMonthlyReportModal } from './ExecutiveMonthlyReportModal';
 
 // Generador de guiones virales de alta conversión por industria
+const resolveTenantIndustry = (tenant) =>
+  tenant?.industry || tenant?.verticalLabel || tenant?.giro || tenant?.vertical || '';
+
 const generateIndustryViralScript = (tenant) => {
   const name = tenant?.name || 'nuestro negocio';
-  const industry = (tenant?.industry || '').toLowerCase();
+  const industry = resolveTenantIndustry(tenant).toLowerCase();
 
   if (industry.includes('odont') || industry.includes('salud') || industry.includes('medic') || industry.includes('clinic')) {
     return {
@@ -223,8 +226,8 @@ export const SoberaniaFinanciera = () => {
       ? (ltvNum / cacNum).toFixed(1)
       : null;
 
-    // Conteo de conversiones / citas
-    const totalConversions = activeTenant?.citas ?? closedCount;
+    // Conteo de conversiones / citas reales
+    const totalConversions = closedCount;
 
     // Verificación de fatiga creativa en campañas de Meta Ads
     const fatiguedCampaign = campaigns.find((c) => Number(c.frequency || 0) > 3.2);
@@ -267,7 +270,7 @@ export const SoberaniaFinanciera = () => {
       try {
         const aiRes = await aiService.generateContent({
           tenantId: activeTenant.id,
-          topicPrompt: `Guion viral de 30 segundos (Reels/TikTok) para ${activeTenant.name || 'nuestro negocio'} enfocado en el giro ${activeTenant.industry || 'servicios'}. Debe incluir gancho de 0-3s, problema/demostración de 4-15s, oferta de 16-25s y llamado a la acción directo a WhatsApp de 26-30s.`,
+          topicPrompt: `Guion viral de 30 segundos (Reels/TikTok) para ${activeTenant.name || 'nuestro negocio'} enfocado en el giro ${resolveTenantIndustry(activeTenant) || 'servicios'}. Debe incluir gancho de 0-3s, problema/demostración de 4-15s, oferta de 16-25s y llamado a la acción directo a WhatsApp de 26-30s.`,
           postType: 'Reel 9:16',
           targetNetwork: 'INSTAGRAM',
         });
@@ -283,7 +286,7 @@ export const SoberaniaFinanciera = () => {
                 scriptDemo: parsed.problem || parsed.demo || parsed.scriptDemo,
                 scriptOffer: parsed.solution || parsed.offer || parsed.scriptOffer,
                 scriptCta: parsed.cta || parsed.scriptCta,
-                targetFormat: `DeepSeek R1 Generativo • ${activeTenant.industry || 'Negocio'}`,
+                targetFormat: `DeepSeek R1 Generativo • ${resolveTenantIndustry(activeTenant) || 'Negocio'}`,
               };
             }
           } catch (e) {}
@@ -369,6 +372,7 @@ export const SoberaniaFinanciera = () => {
         </div>
         <div className="flex items-center gap-3">
           <button
+            id="tour-results-report-btn"
             type="button"
             onClick={() => setShowReportModal(true)}
             className="bg-neon text-black text-xs font-sans font-bold px-4 py-2.5 rounded-xl hover:bg-[var(--neon-hover)] transition-all shadow-sm flex items-center gap-2 active:scale-95"
@@ -384,7 +388,7 @@ export const SoberaniaFinanciera = () => {
       </header>
 
       {/* SÍNTESIS EJECUTIVA DE UNIT ECONOMICS & SALUD DE CAPITAL */}
-      <div className="mb-8 p-5 rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 font-sans">
+      <div id="tour-results-unit-economics" className="mb-8 p-5 rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 font-sans">
         <div className="flex items-center gap-3.5">
           <div className="p-3 rounded-2xl bg-neon/10 text-neon border border-neon/30 shrink-0">
             <TrendingUp className="w-5 h-5" />
@@ -431,7 +435,7 @@ export const SoberaniaFinanciera = () => {
       </div>
 
       {/* KPI Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8 font-sans">
+      <div id="tour-results-financial-kpis" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8 font-sans">
         <div className="vector-bg-panel vector-border p-5 rounded-2xl shadow-sm space-y-1">
           <div className="flex items-center justify-between">
             <p className="text-[11px] font-sans font-semibold text-[var(--text-muted)] uppercase tracking-wider">
@@ -510,7 +514,7 @@ export const SoberaniaFinanciera = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Pipeline Financiero de Cierre */}
         <div className="lg:col-span-2 flex flex-col gap-8">
-          <div className="vector-bg-card vector-border rounded-2xl overflow-hidden flex flex-col shadow-sm">
+          <div id="tour-results-pipeline" className="vector-bg-card vector-border rounded-2xl overflow-hidden flex flex-col shadow-sm">
             <div className="p-5 border-b border-[var(--border-color)] bg-[var(--bg-panel)] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
                 <h3 className="text-sm font-bold uppercase tracking-wider flex items-center gap-2 text-[var(--text-main)]">
@@ -622,7 +626,7 @@ export const SoberaniaFinanciera = () => {
 
         {/* Right Column: Reporte Creativo IA (DeepSeek Analista) */}
         <div className="lg:col-span-1">
-          <div className="bg-gradient-to-b from-purple-950/20 via-zinc-950/70 to-zinc-950 border border-purple-500/30 dark:border-[#a855f7]/50 p-6 rounded-2xl relative shadow-[0_0_20px_rgba(168,85,247,0.12)] h-full flex flex-col justify-between space-y-4">
+          <div id="tour-results-creative-ai" className="bg-gradient-to-b from-purple-950/20 via-zinc-950/70 to-zinc-950 border border-purple-500/30 dark:border-[#a855f7]/50 p-6 rounded-2xl relative shadow-[0_0_20px_rgba(168,85,247,0.12)] h-full flex flex-col justify-between space-y-4">
             <div>
               <div className="flex items-center gap-3 mb-4">
                 <div className="p-2.5 bg-purple-500/20 rounded-xl border border-purple-500/30">
@@ -675,8 +679,8 @@ export const SoberaniaFinanciera = () => {
                   <p className="text-xs text-purple-950 dark:text-[#d8b4fe] leading-relaxed">
                     {!activeTenant
                       ? 'Sin recomendaciones estratégicas activas sin un contexto de negocio.'
-                      : (activeTenant.industry
-                          ? `Para el giro de ${activeTenant.industry}, intensificar ganchos orientados a resolver objeciones de confianza y dirigir tráfico prioritario hacia WhatsApp Directo.`
+                      : (resolveTenantIndustry(activeTenant)
+                          ? `Para el giro de ${resolveTenantIndustry(activeTenant)}, intensificar ganchos orientados a resolver objeciones de confianza y dirigir tráfico prioritario hacia WhatsApp Directo.`
                           : 'Mantener la rotación regular de copies y creativos visuales para sostener la tasa de conversión.')}
                   </p>
                 </div>

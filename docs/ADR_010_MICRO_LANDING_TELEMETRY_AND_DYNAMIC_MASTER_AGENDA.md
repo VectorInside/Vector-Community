@@ -45,10 +45,10 @@ graph TD
    Al dar de alta un tenant, se aprovisiona una ruta pública SSR optimizada en Next.js 14 App Router: `src/app/m/[slug]/page.jsx`.
 2. **Telemetría Dual Siempre Activa:**  
    Incluso en la opción *"SIN Página Web"*, los campos de `GA4 Measurement ID` y `Meta Pixel ID` permanecen **visibles, activos y configurables** en el Onboarding y en el Modal de Personalización.
-3. **Disparo de Eventos Estándar:**
-   - `PageView` al abrir la micro-landing.
-   - `Contact` / `click_whatsapp` al presionar cualquier botón de contacto o llamada.
-   - `Lead` al completar el formulario de pre-agendamiento en 1 tap.
+3. **Disparo de Eventos Estándar (Frontend + Backend PostgreSQL):**
+   - **Píxel del Cliente (Meta Pixel / GA4):** `PageView` al abrir la micro-landing, `Contact` / `click_whatsapp` al presionar cualquier botón de contacto o llamada, y `Lead` al completar el pre-agendamiento.
+   - **Guardián de Preview / Iframe:** Cuando `window.self !== window.top` o `?preview=true`, se omite la inyección de `fbevents.js` y `gtag` para evitar errores `ERR_BLOCKED_BY_CLIENT` y no contaminar métricas reales desde el panel administrativo.
+   - **Telemetría Real en Backend (`POST /api/v1/analytics/track`):** Registra `VISIT` (visita pública), `QR_SCAN` (al detectar `?utm_source=qr`), `CTA_CLICK` (en Hero, tarjetas de servicio y barra flotante vía `handleWhatsAppClick`) y `LEAD_GENERATED`.
 4. **Branding Vector Inside:**  
    Al pie de toda micro-landing se incluye el sello oficial *"Potenciado por Vector Inside — La infraestructura de IA y Adquisición Digital (https://vectorinside.com)"*, sirviendo como motor de referidos orgánicos.
 

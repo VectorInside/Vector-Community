@@ -430,7 +430,7 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
 
   if (!isOpen || !tenant) return null;
 
-  const prodUrl = `https://app.vectorinside.com/m/${tenant.id}`;
+  const prodUrl = `https://app.vectorinside.com/m/${tenant.microLandingSlug || tenant.id}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(prodUrl);
@@ -1134,7 +1134,7 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
                       {/* Banner Preview */}
                       <div className="w-full h-24 rounded-xl bg-zinc-950 border border-[var(--border-color)] overflow-hidden relative group">
                         <Image
-                          src={customData.cover || DEFAULT_COVERS[tenant?.id] || DEFAULT_COVERS.dental}
+                          src={customData.cover || DEFAULT_COVERS[tenant?.id] || DEFAULT_COVERS.default}
                           alt="Cover Banner"
                           width={400}
                           height={100}

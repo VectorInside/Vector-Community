@@ -12,7 +12,6 @@ export const StatCard = ({
   isPositive,
   icon: Icon,
   badgeText,
-  badgeVariant = 'neon',
   accentColor = 'brand',
   className = '',
 }) => {

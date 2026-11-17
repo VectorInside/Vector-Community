@@ -754,7 +754,7 @@ export const ROUTE_OPERATIONAL_TOURS = {
 
   '/crm': [
     {
-      element: '#tariffInput',
+      element: '#tour-crm-tariff',
       popover: {
         title: '💰 Valor Unitario del Lead Calificado',
         description: 'Define cuánto vale cada prospecto calificado en este negocio para calcular el valor total del pipeline en tiempo real.',
@@ -870,19 +870,67 @@ export const ROUTE_OPERATIONAL_TOURS = {
     {
       element: '#tour-contactability-tabs',
       popover: {
-        title: '🌐 Telemetría Dual & Salud Web',
-        description: 'Audita el tráfico web tradicional (GA4), la Atribución Publicitaria (ROAS Real con Meta CAPI) y la conversión de la Micro-Landing.',
+        title: '🌐 Las 3 Pestañas de Contactabilidad',
+        description: 'Alterna entre: 1. Salud de Canales & Direct-to-Chat (WhatsApp/Meta sin verificación infinita), 2. Atribución Publicitaria (ROAS Real sin simuladores) y 3. Micro-Landing & Captación.',
         side: 'bottom',
+      },
+    },
+    {
+      element: '#tour-contactability-capi-badge',
+      popover: {
+        title: '📡 Estado en Vivo de Meta CAPI',
+        description: 'Muestra la tasa real de conciliación de eventos Server-to-Server (100% cuando existen citas o leads calificados en PostgreSQL).',
+        side: 'bottom',
+      },
+    },
+    {
+      element: '#tour-contactability-microlanding-btn',
+      popover: {
+        title: '📱 Previsualización & Código QR Oficial',
+        description: 'Abre el simulador móvil interactivo, personaliza tu embudo y descarga el código QR con rastreo automático (?utm_source=qr).',
+        side: 'left',
       },
     },
   ],
 
   '/results': [
     {
+      element: '#tour-results-unit-economics',
+      popover: {
+        title: '⚖️ Salud Comercial & Ratio LTV:CAC',
+        description: 'Diagnóstico ejecutivo en tiempo real de la eficiencia de capital, valor total en cartera y enlace rápido al embudo publicitario.',
+        side: 'bottom',
+      },
+    },
+    {
       element: '#tour-results-financial-kpis',
       popover: {
-        title: '📈 Soberanía Financiera (MER, CAC & LTV)',
-        description: 'Métricas de rentabilidad real sobre gasto publicitario y radar de prospectos auditados para reportes a clientes.',
+        title: '📈 Soberanía Financiera (MER, CAC, LTV & Citas)',
+        description: 'Unit Economics calculados directamente de campañas, citas en agenda y leads calificados en PostgreSQL.',
+        side: 'bottom',
+      },
+    },
+    {
+      element: '#tour-results-pipeline',
+      popover: {
+        title: '💼 Pipeline Financiero de Cierre',
+        description: 'Oportunidades calificadas con su Ticket Estimado ($ MXN), scoring BANT, dictamen financiero y salto directo a Inbox.',
+        side: 'top',
+      },
+    },
+    {
+      element: '#tour-results-creative-ai',
+      popover: {
+        title: '🎬 DeepSeek R1 Analista & Guion Viral (30s)',
+        description: 'Audita la fatiga creativa de Meta Ads y genera guiones de 30s (Gancho, Demo, Oferta y CTA a WhatsApp) adaptados al giro del negocio.',
+        side: 'left',
+      },
+    },
+    {
+      element: '#tour-results-report-btn',
+      popover: {
+        title: '📄 Reporte Ejecutivo Mensual C-Level',
+        description: 'Compila todas las métricas reales del negocio en un informe PDF imprimible o listo para copiar y enviar por WhatsApp.',
         side: 'bottom',
       },
     },
@@ -893,7 +941,7 @@ export const ROUTE_OPERATIONAL_TOURS = {
       element: '#tour-lab-view-toggle',
       popover: {
         title: '🧪 Grafo LangGraph & Sub-Agentes IA',
-        description: 'Visualiza el flujo entre el Supervisor Lobo Vectorial y los 3 Sub-Agentes especializados (Closer, Reengagement y Analyst).',
+        description: 'Visualiza el flujo entre el Supervisor Lobo Vectorial y los 4 Sub-Agentes especializados y su política de costo $0 USD.',
         side: 'bottom',
       },
     },

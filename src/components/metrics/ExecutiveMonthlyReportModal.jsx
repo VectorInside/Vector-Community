@@ -61,7 +61,8 @@ export const ExecutiveMonthlyReportModal = ({
 
   const metrics = reportData || zeroMetrics;
 
-  const reportId = `REP-${new Date().getFullYear()}-09-VI-${(currentTenant.id || 'GEN').toUpperCase()}`;
+  const currentMonthCode = String(new Date().getMonth() + 1).padStart(2, '0');
+  const reportId = `REP-${new Date().getFullYear()}-${currentMonthCode}-VI-${(currentTenant.id || 'GEN').toUpperCase()}`;
   const shaHash = `0x9f8b4c${Date.now().toString(16).slice(-6)}e2a1`;
 
   const handlePrint = () => {
@@ -305,7 +306,7 @@ export const ExecutiveMonthlyReportModal = ({
               <span>Certificado SHA-256: <code>{shaHash}</code></span>
             </div>
             <div>
-              <span>Infraestructura Vector Inside • Conexión Meta Graph API v20.0</span>
+              <span>Infraestructura Vector Inside • Conexión Meta Graph API v21.0</span>
             </div>
           </div>
         </div>

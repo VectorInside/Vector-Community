@@ -3,7 +3,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useTenant } from '@/hooks/useTenant';
-import { INITIAL_BUSINESS_ACCOUNTS } from '@/utils/mockAccounts';
 import {
   UserPlus,
   KeyRound,
@@ -528,7 +527,7 @@ export const CuentasAccesosView = () => {
           }`}
           title={
             availableTenantsWithoutAccount.length === 0
-              ? 'Todos los negocios (5/5) ya cuentan con su usuario asignado (Límite 1:1)'
+              ? `Todos los negocios (${accounts.length}/${tenantsList.length}) ya cuentan con su usuario asignado (Límite 1:1)`
               : 'Asignar cuenta al negocio disponible'
           }
         >

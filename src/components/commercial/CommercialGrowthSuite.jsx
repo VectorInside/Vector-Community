@@ -271,7 +271,7 @@ export const CommercialGrowthSuite = ({ initialTab = 'kanban' }) => {
 
         {/* Tarifa Dinámica por Lead & Acciones */}
         <div className="flex flex-wrap items-center gap-3 shrink-0">
-          <div className="p-2.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-3 shadow-sm font-mono text-xs">
+          <div id="tour-crm-tariff" className="p-2.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-3 shadow-sm font-mono text-xs">
             <div>
               <span className="text-[9px] text-[var(--text-muted)] uppercase block">Tarifa por Prospecto</span>
               {isEditingTariff ? (
@@ -317,7 +317,7 @@ export const CommercialGrowthSuite = ({ initialTab = 'kanban' }) => {
       </header>
 
       {/* Navegación por Pestañas de la Suite */}
-      <div className="flex items-center gap-2 border-b border-[var(--border-color)] pb-2 overflow-x-auto font-sans text-xs">
+      <div id="tour-crm-tabs" className="flex items-center gap-2 border-b border-[var(--border-color)] pb-2 overflow-x-auto font-sans text-xs">
         <button
           type="button"
           onClick={() => setActiveSuiteTab('kanban')}
