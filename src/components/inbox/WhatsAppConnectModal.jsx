@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import {
   MessageSquare,
   ShieldCheck,
+  ShieldAlert,
   CheckCircle2,
   AlertCircle,
   Copy,
@@ -128,39 +129,63 @@ export const WhatsAppConnectModal = ({
       return;
     }
 
+    const tenantId = activeTenant?.id;
+    if (!tenantId) {
+      setTestResult({
+        success: false,
+        phoneId: phoneNumberId.trim(),
+        hasToken: Boolean(accessToken.trim()),
+        timestamp: new Date().toLocaleTimeString(),
+        status: 'NO_TENANT',
+        error: 'Selecciona un negocio activo antes de probar la conexión contra el backend.',
+      });
+      return;
+    }
+
     setIsTesting(true);
     setTestResult(null);
 
     const hasToken = Boolean(accessToken.trim());
-    const tenantId = activeTenant?.id || 'dental';
+    const startedAt = performance.now();
 
     try {
       const res = await api.get(`/webhooks/whatsapp/health/${tenantId}`);
       const data = unwrapApiData(res);
+      const isOk = Boolean(data?.isConfigured && data?.status === 'CONNECTED');
+      const measuredMs = data?.latencyMs ?? Math.round(performance.now() - startedAt);
       setTestResult({
-        success: true,
-        phoneId: phoneNumberId.trim(),
-        hasToken: hasToken,
-        latencyMs: data?.latencyMs || 42,
+        success: isOk,
+        phoneId: data?.phoneNumberId || phoneNumberId.trim(),
+        hasToken: hasToken || Boolean(data?.details?.hasAccessToken),
+        latencyMs: measuredMs,
         timestamp: new Date().toLocaleTimeString(),
-        status: data?.status || 'CONNECTED',
+        status: data?.status || 'NOT_CONFIGURED',
         metaApiVersion: data?.metaApiVersion || 'v21.0',
+        error: isOk
+          ? null
+          : 'El canal WhatsApp aún no está guardado/configurado en PostgreSQL para este negocio. Guarda las credenciales primero.',
       });
-    } catch {
+      if (isOk) {
+        try {
+          confetti({ particleCount: 25, spread: 50, colors: ['#22C55E', '#10B981'] });
+        } catch (e) {}
+      }
+    } catch (err) {
       setTestResult({
-        success: true,
+        success: false,
         phoneId: phoneNumberId.trim(),
-        hasToken: hasToken,
-        latencyMs: Math.floor(Math.random() * 30) + 45,
+        hasToken,
+        latencyMs: Math.round(performance.now() - startedAt),
         timestamp: new Date().toLocaleTimeString(),
-        status: 'VERIFICADO_LOCAL',
+        status: 'ERROR_CONEXION',
         metaApiVersion: 'v21.0',
+        error:
+          err?.response?.data?.message ||
+          err?.message ||
+          'No se pudo validar la salud del canal contra el servidor backend.',
       });
     } finally {
       setIsTesting(false);
-      try {
-        confetti({ particleCount: 25, spread: 50, colors: ['#22C55E', '#10B981'] });
-      } catch (e) {}
     }
   };
 
@@ -385,17 +410,43 @@ export const WhatsAppConnectModal = ({
 
         {/* Diagnóstico Ping Feedback */}
         {testResult && (
-          <div className="p-3.5 rounded-xl bg-[var(--bg-panel)] border border-emerald-500/30 text-xs font-mono space-y-1.5 animate-fadeIn">
+          <div
+            className={`p-3.5 rounded-xl bg-[var(--bg-panel)] border text-xs font-mono space-y-1.5 animate-fadeIn ${
+              testResult.success ? 'border-emerald-500/30' : 'border-red-500/40'
+            }`}
+          >
             <div className="flex items-center justify-between">
-              <span className="text-emerald-400 font-bold flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4" />
-                Handshake Local Validado (200 OK)
+              <span
+                className={`font-bold flex items-center gap-1.5 ${
+                  testResult.success ? 'text-emerald-400' : 'text-red-400'
+                }`}
+              >
+                {testResult.success ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Canal Verificado en Backend ({testResult.status})</span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldAlert className="w-4 h-4" />
+                    <span>Fallo en Verificación ({testResult.status})</span>
+                  </>
+                )}
               </span>
-              <span className="text-[10px] text-[var(--text-muted)]">Latencia: {testResult.latencyMs}ms • {testResult.timestamp}</span>
+              <span className="text-[10px] text-[var(--text-muted)]">
+                {testResult.latencyMs != null ? `Latencia: ${testResult.latencyMs}ms • ` : ''}
+                {testResult.timestamp}
+              </span>
             </div>
-            <p className="text-[11px] text-[var(--text-muted)]">
-              Phone ID: <strong className="text-[var(--text-main)]">{testResult.phoneId}</strong> verificado. Token permanente detectado ({testResult.hasToken ? 'Cargado ✓' : 'Pendiente'}).
-            </p>
+            {testResult.success ? (
+              <p className="text-[11px] text-[var(--text-muted)]">
+                Phone ID: <strong className="text-[var(--text-main)]">{testResult.phoneId}</strong> verificado en PostgreSQL. Token permanente detectado ({testResult.hasToken ? 'Cargado ✓' : 'Pendiente'}).
+              </p>
+            ) : (
+              <p className="text-[11px] text-red-400/90 leading-relaxed">
+                {testResult.error || 'No se pudo verificar la conexión de WhatsApp en el servidor.'}
+              </p>
+            )}
           </div>
         )}
 

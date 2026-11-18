@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import {
   Network,
@@ -29,6 +29,7 @@ import {
   X,
   HelpCircle,
   FileText,
+  AlertTriangle,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Portal } from '@/components/common/Portal';
@@ -36,8 +37,50 @@ import {
   SUB_AGENTS_CONFIG,
   MARKETING_FRAMEWORKS_REGISTRY,
 } from '@/utils/constants';
-import { SUB_AGENTS_METRICS_MOCK } from '@/utils/mockData';
+import { aiService } from '@/services/aiService';
+import { reengagementService } from '@/services/reengagementService';
+import { performanceService } from '@/services/performanceService';
 import { AgentOrchestrationReportModal } from './AgentOrchestrationReportModal';
+
+const buildAgentProbePrompt = (agentKey, tenant, realContext = {}) => {
+  const tenantName = tenant?.name || 'Negocio';
+  const offer =
+    tenant?.commercialOffer?.hook ||
+    tenant?.marketingMix4P?.product ||
+    tenant?.verticalLabel ||
+    'servicios principales';
+
+  if (agentKey === 'supervisor') {
+    return (
+      `[PRUEBA DE ENRUTAMIENTO SUPERVISOR] ` +
+      `Mensaje entrante simulado de prospecto para "${tenantName}": "Hola, me interesa saber el precio y disponibilidad de ${offer}". ` +
+      `Responde ÚNICAMENTE con un objeto JSON válido que siga tu esquema: ` +
+      `{"tenant_id":"${tenant?.id}","target_agent":"SubAgente_Moderador_Closer | Triage_Humano | SubAgente_Reengagement | SubAgente_Agendamiento_Calendar","intent_category":"SALUDO | PRECIO | OBJECION_FINANCIAMIENTO | RECLAMO | AGENDAMIENTO","confidence_score":0.0,"routing_reason":"breve explicación"}`
+    );
+  }
+
+  if (agentKey === 'closer') {
+    return (
+      `[PRUEBA EN VIVO CLOSER] ` +
+      `Un prospecto pregunta por WhatsApp a "${tenantName}": "Hola, ¿qué incluye ${offer} y cuánto cuesta? ¿Tienen horarios esta semana?". ` +
+      `Responde como el Sub-Bot Moderador & Closer aplicando el tono y oferta real del Brand DNA en máximo 3 párrafos cortos listos para WhatsApp.`
+    );
+  }
+
+  if (agentKey === 'reengagement') {
+    return (
+      `[PRUEBA EN VIVO RE-ENGAGEMENT 24H] ` +
+      `Redacta un único mensaje de seguimiento para WhatsApp para un prospecto de "${tenantName}" que preguntó por "${offer}" hace 24 horas y no respondió. ` +
+      `Aplica estrictamente la fórmula Vaca Púrpura (dato o ángulo de valor + micro-CTA sin fricción) en menos de 40 palabras. Devuelve solo el mensaje.`
+    );
+  }
+
+  return (
+    `[PRUEBA EN VIVO ANALISTA] ` +
+    `Analiza estas métricas reales del backend de "${tenantName}": ${JSON.stringify(realContext)}. ` +
+    `Emite un diagnóstico ejecutivo breve (máximo 3 puntos) sobre eficiencia de tokens, conversión y recomendación de pauta.`
+  );
+};
 
 export const OrchestrationView = () => {
   const { activeTenant, triggerModal } = useAuth();
@@ -46,22 +89,55 @@ export const OrchestrationView = () => {
   const [copiedCode, setCopiedCode] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulationOutput, setSimulationOutput] = useState(null);
+  const [simulationError, setSimulationError] = useState(null);
   const [activeViewMode, setActiveViewMode] = useState('graph'); // 'graph' | 'matrix'
   const [showReportModal, setShowReportModal] = useState(false);
+  const [liveStats, setLiveStats] = useState({
+    aiUsage: null,
+    reengagementQueue: null,
+    telemetry: null,
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    const tenantId = activeTenant?.id;
+    if (!tenantId) {
+      setLiveStats({ aiUsage: null, reengagementQueue: null, telemetry: null });
+      return undefined;
+    }
+
+    Promise.allSettled([
+      aiService.getUsage(tenantId),
+      reengagementService.getReengagementQueue(tenantId),
+      performanceService.getDualTelemetry(tenantId),
+    ]).then(([usageRes, queueRes, telemetryRes]) => {
+      if (cancelled) return;
+      setLiveStats({
+        aiUsage: usageRes.status === 'fulfilled' ? usageRes.value : null,
+        reengagementQueue: queueRes.status === 'fulfilled' ? queueRes.value : null,
+        telemetry: telemetryRes.status === 'fulfilled' ? telemetryRes.value : null,
+      });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTenant?.id]);
 
   const selectedAgent = selectedAgentKey ? SUB_AGENTS_CONFIG[selectedAgentKey] : null;
-  const metrics = selectedAgentKey ? SUB_AGENTS_METRICS_MOCK[selectedAgentKey] : null;
 
   const handleOpenInspector = (key) => {
     setSelectedAgentKey(key);
     setActiveInspectorTab('prompt');
     setSimulationOutput(null);
+    setSimulationError(null);
     setIsSimulating(false);
   };
 
   const handleCloseInspector = () => {
     setSelectedAgentKey(null);
     setSimulationOutput(null);
+    setSimulationError(null);
   };
 
   const handleCopyCode = (text) => {
@@ -70,83 +146,106 @@ export const OrchestrationView = () => {
     setTimeout(() => setCopiedCode(false), 2000);
   };
 
-  const handleRunSimulation = (agentKey) => {
+  const handleRunSimulation = async (agentKey) => {
+    const tenantId = activeTenant?.id;
+    if (!tenantId) {
+      setSimulationError(
+        'Selecciona o registra un negocio en el selector superior para ejecutar una prueba real contra el backend.'
+      );
+      setSimulationOutput(null);
+      return;
+    }
+
     setIsSimulating(true);
     setSimulationOutput(null);
+    setSimulationError(null);
+    const startedAt = performance.now();
 
-    const tenantId = activeTenant?.id;
-    const tenantName = activeTenant?.name || 'Tu Negocio';
-    const coreService =
-      activeTenant?.commercialOffer?.hook ||
-      activeTenant?.marketingMix4P?.product ||
-      activeTenant?.verticalLabel ||
-      'nuestros servicios especializados';
-    const brandPurpose =
-      activeTenant?.brandPurpose ||
-      'brindar la máxima calidad y satisfacción a cada cliente';
-    const closingCta =
-      activeTenant?.commercialOffer?.cta ||
-      '¿Te gustaría agendar una sesión de valoración de 30 minutos sin costo o prefieres que un asesor te llame?';
-
-    setTimeout(() => {
-      setIsSimulating(false);
-      if (!tenantId) {
-        setSimulationOutput({
-          status: 'ZERO_STATE',
-          message: 'Selecciona o registra un negocio en el selector superior para probar la orquestación de agentes con su Brand DNA propio.',
-        });
-        return;
+    try {
+      let realContext = {};
+      if (agentKey === 'reengagement') {
+        const queue = await reengagementService.getReengagementQueue(tenantId);
+        realContext = {
+          pendingInQueue: queue?.pendingCount ?? 0,
+          dispatchedCount: queue?.dispatchedCount ?? 0,
+          totalInQueue: queue?.totalInQueue ?? 0,
+        };
+      } else if (agentKey === 'analyst') {
+        const [usageRes, telemetryRes] = await Promise.allSettled([
+          aiService.getUsage(tenantId),
+          performanceService.getDualTelemetry(tenantId),
+        ]);
+        const usage = usageRes.status === 'fulfilled' ? usageRes.value : null;
+        const telemetry = telemetryRes.status === 'fulfilled' ? telemetryRes.value : null;
+        realContext = {
+          totalAiRequests30d: usage?.totalRequests ?? 0,
+          totalTokens30d: usage?.totalTokens ?? 0,
+          estimatedCostUsd30d: usage?.totalCostUsd ?? 0,
+          microLandingVisits: telemetry?.microLandingMetrics?.visits ?? 0,
+          microLandingLeads: telemetry?.microLandingMetrics?.leadsGenerated ?? 0,
+          webSessions: telemetry?.webTrafficMetrics?.sessions ?? 0,
+        };
       }
+
+      const probePrompt = buildAgentProbePrompt(agentKey, activeTenant, realContext);
+      const aiResult = await aiService.chat({
+        tenantId,
+        message: probePrompt,
+        conversationHistory: [],
+      });
+
+      const elapsedMs = Math.round(performance.now() - startedAt);
+      const rawText = String(aiResult?.response || '').trim();
+
+      let parsedJson = null;
+      if (agentKey === 'supervisor') {
+        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          try {
+            parsedJson = JSON.parse(jsonMatch[0]);
+          } catch {
+            parsedJson = null;
+          }
+        }
+      }
+
+      const baseMetadata = {
+        source: 'LIVE_BACKEND_AI',
+        tenant_id: aiResult?.tenantId || tenantId,
+        provider: aiResult?.provider || 'DEEPSEEK',
+        model: aiResult?.model || 'deepseek-chat',
+        total_tokens: aiResult?.totalTokens ?? 0,
+        estimated_cost_usd: aiResult?.estimatedCostUsd ?? 0,
+        execution_time_ms: elapsedMs,
+      };
+
       if (agentKey === 'supervisor') {
         setSimulationOutput({
-          tenant_id: tenantId,
-          target_agent: 'SubAgente_Moderador_Closer',
-          intent_category: 'PRECIO',
-          confidence_score: 0.985,
-          execution_time_ms: 12,
-          caching_hit: true,
-          token_cost_usd: '$0.0000 (Prompt Caching 100%)',
-          routing_reason: `Enrutamiento dinámico activo para ${tenantName} con aislamiento Multi-Tenant RLS verificado.`,
+          ...baseMetadata,
+          ...(parsedJson || { raw_routing_output: rawText }),
         });
       } else if (agentKey === 'closer') {
         setSimulationOutput({
-          tenant_id: tenantId,
-          message_response: `¡Hola! Bienvenido a ${tenantName}. Con el compromiso de ${brandPurpose}, estamos listos para atenderte respecto a ${coreService}. ${closingCta}`,
-          lead_qualification_status: {
-            req_1_contact_valid: true,
-            req_2_product_identified: true,
-            req_3_doubts_resolved: true,
-            req_4_cta_accepted: false,
-          },
-          current_lead_temperature: 'WARM_FINANCING',
-          is_billable_lead: false,
-          execution_time_ms: 280,
-          framework_applied: 'Círculo Dorado + JTBD + Validación 4/4 Requisitos',
+          ...baseMetadata,
+          message_response: rawText,
+          framework_applied: 'Brand DNA + Oferta Real (PostgreSQL)',
         });
       } else if (agentKey === 'reengagement') {
+        const words = rawText ? rawText.split(/\s+/).filter(Boolean).length : 0;
         setSimulationOutput({
-          tenant_id: tenantId,
-          followup_message: `Hola, en ${tenantName} seguimos a tu disposición por si deseas confirmar tu consulta sobre ${coreService}. ¿Pudiste revisar la información o prefieres que reservemos un espacio esta semana?`,
-          scheduled_time: '24h_trigger',
-          new_status: 'FOLLOWUP_SENT',
-          word_count: 27,
-          rule_compliance: 'Vaca Púrpura < 40 palabras con micro-CTA sin fricción (Regla 95/5)',
+          ...baseMetadata,
+          followup_message: rawText,
+          word_count: words,
+          postgres_queue_snapshot: realContext,
         });
-      } else if (agentKey === 'analyst') {
-        const hasWeb = Boolean(activeTenant?.hasWebsite || activeTenant?.websiteUrl);
+      } else {
         setSimulationOutput({
-          tenant_id: tenantId,
-          roas_real_backend: 4.25,
-          cac_real_backend: 12.50,
-          creative_fatigue_detected: false,
-          fatigued_ad_ids: [],
-          web_friction_alert: false,
-          friction_diagnosis: hasWeb
-            ? 'Monitoreo GA4 + Meta CAPI sincronizado: Tasa Click-to-WhatsApp en rango óptimo (> 4.8%).'
-            : 'Modo Direct-to-Messaging activo: Atribución 100% directa en WhatsApp Cloud API sin rebote web.',
-          recommended_action: 'Mantener pauta activa; no se detecta fatiga creativa en creativos de los últimos 7 días.',
+          ...baseMetadata,
+          postgres_metrics_snapshot: realContext,
+          ai_diagnosis: rawText,
         });
       }
+
       try {
         confetti({
           particleCount: 30,
@@ -155,7 +254,15 @@ export const OrchestrationView = () => {
           colors: ['#E7F900', '#10B981', '#38BDF8'],
         });
       } catch (e) {}
-    }, 600);
+    } catch (error) {
+      const serverMsg =
+        error?.response?.data?.message ||
+        error?.message ||
+        'No se pudo ejecutar la prueba real contra el backend.';
+      setSimulationError(serverMsg);
+    } finally {
+      setIsSimulating(false);
+    }
   };
 
   // Replace template variables for live preview
@@ -313,7 +420,9 @@ export const OrchestrationView = () => {
             </p>
 
             <div className="mt-4 pt-3 border-t border-[var(--border-color)] flex items-center justify-between text-[11px] font-mono text-[var(--text-muted)]">
-              <span className="text-emerald-600 dark:text-emerald-400 font-bold">● {SUB_AGENTS_METRICS_MOCK?.supervisor?.status || 'Activo'}</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                ● {liveStats.aiUsage ? `${liveStats.aiUsage.totalRequests ?? 0} ejecuciones (30d)` : 'Conectado al Motor IA'}
+              </span>
               <span className="group-hover:text-lime-700 dark:group-hover:text-neon transition-colors font-bold">
                 Auditar Prompt XML & Schema →
               </span>
@@ -444,14 +553,18 @@ export const OrchestrationView = () => {
                     <strong className="text-[var(--text-main)]">Regla 95/5 / Vaca Púrpura</strong>
                   </div>
                   <div className="flex justify-between">
-                    <span>Cola Redis:</span>
-                    <strong className="text-purple-600 dark:text-purple-400 font-bold">{SUB_AGENTS_METRICS_MOCK?.reengagement?.active24hQueueCount ?? 0} leads en espera</strong>
+                    <span>Cola Activa 24h:</span>
+                    <strong className="text-purple-600 dark:text-purple-400 font-bold">
+                      {liveStats.reengagementQueue?.pendingCount ?? 0} leads en espera
+                    </strong>
                   </div>
                 </div>
               </div>
 
               <div className="mt-4 pt-3 border-t border-[var(--border-color)] flex items-center justify-between text-[11px] font-mono text-[var(--text-muted)] group-hover:text-purple-500 dark:group-hover:text-purple-400 transition-colors">
-                <span>0.0% Tasa Reactivación</span>
+                <span>
+                  {liveStats.reengagementQueue?.dispatchedCount ?? 0} enviados ({liveStats.reengagementQueue?.totalInQueue ?? 0} total)
+                </span>
                 <span className="font-bold">Ver Prompt →</span>
               </div>
             </div>
@@ -495,7 +608,9 @@ export const OrchestrationView = () => {
               </div>
 
               <div className="mt-4 pt-3 border-t border-[var(--border-color)] flex items-center justify-between text-[11px] font-mono text-[var(--text-muted)] group-hover:text-cyan-500 dark:group-hover:text-cyan-400 transition-colors">
-                <span>ROAS Real: 0.0x</span>
+                <span>
+                  {liveStats.telemetry?.microLandingMetrics?.leadsGenerated ?? 0} leads • {liveStats.telemetry?.webTrafficMetrics?.sessions ?? 0} sesiones
+                </span>
                 <span className="font-bold">Ver Prompt →</span>
               </div>
             </div>
@@ -691,7 +806,7 @@ export const OrchestrationView = () => {
                     : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-main)]'
                 }`}
               >
-                ⚡ Simulación en Memoria
+                ⚡ Prueba en Vivo (Backend IA)
               </button>
             </div>
 
@@ -771,16 +886,16 @@ export const OrchestrationView = () => {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)]">
                     <div>
                       <h4 className="font-bold text-[var(--text-main)] text-sm">
-                        Simulación en Memoria (Buffer Local)
+                        Prueba en Vivo contra Backend (PostgreSQL + DeepSeek)
                       </h4>
                       <p className="text-[var(--text-muted)] text-xs mt-0.5">
                         {activeTenant ? (
                           <>
-                            Ejecuta un ciclo de prueba en buffer con los datos de <strong>{activeTenant.name}</strong>.
+                            Ejecuta una llamada real al motor IA con el Brand DNA de <strong>{activeTenant.name}</strong> y telemetría real del servidor.
                           </>
                         ) : (
                           <span className="text-amber-500 font-semibold">
-                            ⚠️ Selecciona un negocio en la barra superior para habilitar la simulación con su Brand DNA.
+                            ⚠️ Selecciona un negocio en la barra superior para habilitar la prueba real con su Brand DNA.
                           </span>
                         )}
                       </p>
@@ -795,12 +910,22 @@ export const OrchestrationView = () => {
                           ? 'bg-zinc-800 text-zinc-500 border border-zinc-700 cursor-not-allowed opacity-60'
                           : 'bg-neon text-black shadow-[0_0_15px_var(--neon-glow)] hover:scale-105 active:scale-95'
                       }`}
-                      title={!activeTenant ? 'Selecciona un negocio para simular' : 'Ejecutar prueba en buffer local'}
+                      title={!activeTenant ? 'Selecciona un negocio para probar' : 'Ejecutar prueba real en backend'}
                     >
                       <Play className="w-3.5 h-3.5 fill-current" />
-                      <span>{isSimulating ? 'Simulando...' : 'Ejecutar Prueba'}</span>
+                      <span>{isSimulating ? 'Consultando IA...' : 'Ejecutar Prueba'}</span>
                     </button>
                   </div>
+
+                  {simulationError && (
+                    <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/40 text-red-500 dark:text-red-400 space-y-1.5 animate-fade-in">
+                      <div className="flex items-center gap-2 font-bold text-xs uppercase font-mono">
+                        <AlertTriangle className="w-4 h-4 shrink-0" />
+                        <span>Error en Ejecución Real (Sin Fallback Simulado)</span>
+                      </div>
+                      <p className="text-xs font-sans leading-relaxed">{simulationError}</p>
+                    </div>
+                  )}
 
                   {simulationOutput ? (
                     <div className="space-y-3 animate-fade-in">
@@ -809,17 +934,20 @@ export const OrchestrationView = () => {
                         <div className="p-4 rounded-2xl bg-[#0b141a] border border-emerald-500/30 text-white space-y-2">
                           <div className="flex items-center justify-between text-[10px] font-mono text-emerald-400">
                             <span className="font-bold flex items-center gap-1.5">
-                              💬 Previsualización WhatsApp (Burbuja Simulada):
+                              💬 Respuesta Real de WhatsApp (DeepSeek + Brand DNA):
                             </span>
-                            <span>{simulationOutput.execution_time_ms ? `${simulationOutput.execution_time_ms}ms` : 'Automático'}</span>
+                            <span>
+                              {simulationOutput.execution_time_ms ? `${simulationOutput.execution_time_ms}ms` : 'En vivo'}
+                              {simulationOutput.total_tokens ? ` • ${simulationOutput.total_tokens} tokens` : ''}
+                            </span>
                           </div>
-                          <div className="p-3 rounded-xl bg-[#005c4b]/30 border border-[#00a884]/40 text-emerald-100 text-xs leading-relaxed font-sans">
+                          <div className="p-3 rounded-xl bg-[#005c4b]/30 border border-[#00a884]/40 text-emerald-100 text-xs leading-relaxed font-sans whitespace-pre-wrap">
                             {simulationOutput.message_response || simulationOutput.followup_message}
                           </div>
                           {simulationOutput.framework_applied && (
                             <div className="text-[10px] font-mono text-zinc-400 flex items-center justify-between pt-1 border-t border-zinc-800">
-                              <span>Marco: <strong>{simulationOutput.framework_applied}</strong></span>
-                              <span>Calificación: <strong>4/4 Criterios</strong></span>
+                              <span>Origen: <strong>{simulationOutput.framework_applied}</strong></span>
+                              <span>Modelo: <strong>{simulationOutput.model}</strong></span>
                             </div>
                           )}
                         </div>
@@ -827,24 +955,24 @@ export const OrchestrationView = () => {
 
                       <div className="space-y-1.5">
                         <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase block font-mono">
-                          Resultado de Simulación (JSON Schema Validado):
+                          Respuesta Real del Backend (PostgreSQL + DeepSeek):
                         </span>
                         <pre className="p-4 rounded-2xl bg-[var(--bg-base)] border border-emerald-500/40 text-emerald-600 dark:text-emerald-300 font-mono text-xs leading-relaxed overflow-x-auto whitespace-pre-wrap">
                           {JSON.stringify(simulationOutput, null, 2)}
                         </pre>
                       </div>
                     </div>
-                  ) : (
+                  ) : !simulationError && (
                     <div className="p-8 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)]/60 text-center space-y-3">
                       <div className="w-12 h-12 rounded-2xl bg-neon/10 text-lime-700 dark:text-neon border border-neon/20 mx-auto flex items-center justify-center">
                         <Play className="w-5 h-5 ml-0.5" />
                       </div>
                       <div className="space-y-1">
                         <p className="font-bold text-sm text-[var(--text-main)] font-sans">
-                          Prueba en Buffer de Memoria Lista
+                          Prueba en Vivo Lista (Sin Datos Simulados)
                         </p>
                         <p className="text-xs text-[var(--text-muted)] font-sans max-w-md mx-auto">
-                          Haz clic en &quot;Ejecutar Prueba&quot; para enviar un estímulo de prueba al agente y validar su tiempo de respuesta, esquema JSON y previsualización conversacional.
+                          Haz clic en &quot;Ejecutar Prueba&quot; para enviar un estímulo real al backend (`POST /api/v1/ai/chat`), medir la latencia real, tokens consumidos y validar la respuesta de DeepSeek con PostgreSQL.
                         </p>
                       </div>
                     </div>

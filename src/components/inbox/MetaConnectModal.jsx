@@ -24,6 +24,7 @@ import {
   Smartphone,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { metaCommentService } from '@/services/metaCommentService';
 
 export const MetaConnectModal = ({
   isOpen,
@@ -119,23 +120,38 @@ export const MetaConnectModal = ({
       return;
     }
 
-    // Diagnóstico local de credenciales
-    setTimeout(() => {
+    if (!activeTenant?.id) {
       setIsTesting(false);
-      if (instagramAccountId && (accessToken || instagramAccountId.length > 8)) {
-        setTestResult({
-          success: true,
-          message: 'Canal verificado. Meta Graph API v21.0 respondiendo con handshake válido.',
-          latency: '204ms',
-          account: accountHandle ? `@${accountHandle.replace('@', '')}` : 'Instagram Professional',
-        });
-      } else {
-        setTestResult({
-          success: false,
-          message: 'Falta configurar el Token permanente o el Instagram Business Account ID.',
-        });
-      }
-    }, 1100);
+      setTestResult({
+        success: false,
+        message: 'Selecciona un negocio activo para validar las credenciales contra el backend.',
+      });
+      return;
+    }
+
+    const startedAt = performance.now();
+    try {
+      const health = await metaCommentService.getHealthAndConfig(activeTenant.id);
+      const elapsedMs = Math.round(performance.now() - startedAt);
+      const isOk = Boolean(health?.isConfigured || health?.status === 'CONNECTED');
+      setTestResult({
+        success: isOk,
+        message: isOk
+          ? `Canal verificado en backend (${health?.status || 'CONNECTED'}). Meta Graph API v21.0 activa.`
+          : 'El canal Meta/Instagram aún no está configurado en PostgreSQL para este negocio.',
+        latency: `${elapsedMs}ms`,
+        account:
+          health?.accountHandle ||
+          (accountHandle ? `@${accountHandle.replace('@', '')}` : 'Instagram Professional'),
+      });
+    } catch (err) {
+      setTestResult({
+        success: false,
+        message: err?.response?.data?.message || err?.message || 'Error validando canal Meta contra el backend.',
+      });
+    } finally {
+      setIsTesting(false);
+    }
   };
 
   return (
