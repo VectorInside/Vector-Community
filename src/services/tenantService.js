@@ -1,6 +1,5 @@
 import api, { isBackendAvailable, unwrapApiData } from './api';
 import { INITIAL_TENANTS, INITIAL_TENANTS_DATA, BUSINESS_POLICY_THRESHOLDS } from '@/utils/constants';
-import { INITIAL_VERTICAL_CONFIGS } from '@/utils/mockData';
 
 const buildShiftHours = (startStr, endStr, slotDurationMin = 60) => {
   if (!startStr || !endStr) return ['09:00', '10:00', '11:00', '12:00', '13:00'];
@@ -254,25 +253,15 @@ export const tenantService = {
   },
 
   async createTenant(tenantData) {
-      try {
-        const payload = serializeTenantToApi(tenantData);
-        const response = await api.post('/tenants', payload);
-        return normalizeTenantFromApi(unwrapApiData(response));
-      } catch (error) {
-        console.warn('[tenantService.createTenant] Fallback to local state:', error?.message);
-        return tenantData;
-      }
+      const payload = serializeTenantToApi(tenantData);
+      const response = await api.post('/tenants', payload);
+      return normalizeTenantFromApi(unwrapApiData(response));
     },
 
   async updateTenant(id, tenantData) {
-      try {
-        const payload = serializeTenantToApi({ ...tenantData, id });
-        const response = await api.put(`/tenants/${id}`, payload);
-        return normalizeTenantFromApi(unwrapApiData(response));
-      } catch (error) {
-        console.warn(`[tenantService.updateTenant] Fallback for ${id}:`, error?.message);
-        return tenantData;
-      }
+      const payload = serializeTenantToApi({ ...tenantData, id });
+      const response = await api.put(`/tenants/${id}`, payload);
+      return normalizeTenantFromApi(unwrapApiData(response));
     },
 
   async updateBrandDna(id, brandDna) {
@@ -296,64 +285,77 @@ export const tenantService = {
     },
 
   async getVerticalConfig(tenantId) {
-      if (!isBackendAvailable) {
-        return INITIAL_VERTICAL_CONFIGS[tenantId] || INITIAL_VERTICAL_CONFIGS['tenant-mex-001'];
+      if (!isBackendAvailable || !tenantId) {
+        return null;
       }
       try {
         const tenant = await this.getTenantById(tenantId);
-        return tenant?.calendarConfig || INITIAL_VERTICAL_CONFIGS[tenantId] || INITIAL_VERTICAL_CONFIGS['tenant-mex-001'];
+        return tenant?.calendarConfig || null;
       } catch (error) {
-        return INITIAL_VERTICAL_CONFIGS[tenantId] || INITIAL_VERTICAL_CONFIGS['tenant-mex-001'];
+        return null;
       }
     },
 
   async updateVerticalConfig(tenantId, config) {
-      try {
-        const existing = await this.getTenantById(tenantId);
-        // HARDENING DEFENSIVO: No persistir apiKeys en texto plano en la tabla pública de tenants.
-        // Las credenciales de IA deben gestionarse exclusivamente a través de aiService con cifrado AES-256-GCM.
-        const sanitizedConfig = { ...config };
-        delete sanitizedConfig.apiKeys;
+      const existing = await this.getTenantById(tenantId);
+      // HARDENING DEFENSIVO: No persistir apiKeys en texto plano en la tabla pública de tenants.
+      // Las credenciales de IA deben gestionarse exclusivamente a través de aiService con cifrado AES-256-GCM.
+      const sanitizedConfig = { ...config };
+      delete sanitizedConfig.apiKeys;
 
-        const updated = await this.updateTenant(tenantId, {
-          ...existing,
-          calendarConfig: sanitizedConfig,
-        });
-        return { success: true, updatedConfig: updated?.calendarConfig || sanitizedConfig };
-      } catch (error) {
-        return { success: true, updatedConfig: config };
-      }
+      const updated = await this.updateTenant(tenantId, {
+        ...existing,
+        calendarConfig: sanitizedConfig,
+      });
+      return { success: true, updatedConfig: updated?.calendarConfig || sanitizedConfig };
     },
 
   async deleteTenant(id) {
-      try {
-        await api.delete(`/tenants/${id}`);
-        return { success: true };
-      } catch (error) {
-        console.warn(`[tenantService.deleteTenant] Fallback para ${id}:`, error?.message);
-        return { success: true, localOnly: true };
-      }
+      await api.delete(`/tenants/${id}`);
+      return { success: true };
     },
 
-  async checkWebhooksHealth() {
-      try {
-        const response = await api.get('/health');
-        const data = unwrapApiData(response);
+  async checkWebhooksHealth(tenantId) {
+      const targetTenantId =
+        tenantId ||
+        (typeof window !== 'undefined'
+          ? localStorage.getItem('vector_active_tenant_key') || localStorage.getItem('vector_active_tenant_id')
+          : null);
+
+      if (!targetTenantId) {
         return {
-          meta: data?.status === 'UP' ? 'HEALTHY' : 'DEGRADED',
-          whatsapp: 'HEALTHY',
-          googleCalendar: 'HEALTHY',
-          latencyMs: 28,
-          lastSync: data?.timestamp || new Date().toISOString(),
-        };
-      } catch (error) {
-        return {
-          meta: 'HEALTHY',
-          whatsapp: 'HEALTHY',
-          googleCalendar: 'HEALTHY',
-          latencyMs: 42,
+          meta: 'UNKNOWN',
+          whatsapp: 'UNKNOWN',
+          latencyMs: null,
           lastSync: new Date().toISOString(),
         };
       }
+
+      const startTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
+      const [waRes, metaRes] = await Promise.allSettled([
+        api.get(`/webhooks/whatsapp/health/${targetTenantId}`),
+        api.get(`/meta/health/${targetTenantId}`),
+      ]);
+      const endTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
+      const measuredLatencyMs = Math.round(endTime - startTime);
+
+      const waData = waRes.status === 'fulfilled' ? unwrapApiData(waRes.value) : null;
+      const metaData = metaRes.status === 'fulfilled' ? unwrapApiData(metaRes.value) : null;
+
+      const resolveStatus = (res, data) => {
+        if (res.status !== 'fulfilled') return 'DOWN';
+        const raw = data?.status || data?.health || (data?.connected ? 'HEALTHY' : null);
+        if (raw) return String(raw).toUpperCase();
+        return res.value?.status >= 200 && res.value?.status < 300 ? 'HEALTHY' : 'DEGRADED';
+      };
+
+      return {
+        whatsapp: resolveStatus(waRes, waData),
+        meta: resolveStatus(metaRes, metaData),
+        whatsappDetails: waData,
+        metaDetails: metaData,
+        latencyMs: waData?.latencyMs ?? metaData?.latencyMs ?? measuredLatencyMs,
+        lastSync: waData?.lastSync || metaData?.lastSync || new Date().toISOString(),
+      };
     },
   };

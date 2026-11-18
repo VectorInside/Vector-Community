@@ -32,6 +32,11 @@ import {
 } from 'lucide-react';
 import { MicroLandingPreviewModal } from '@/components/common/MicroLandingPreviewModal';
 import { MeasurementGuideModal } from '@/components/common/MeasurementGuideModal';
+import { leadService } from '@/services/leadService';
+import { calendarService } from '@/services/calendarService';
+import { contentService } from '@/services/contentService';
+import { campaignService } from '@/services/campaignService';
+import { performanceService } from '@/services/performanceService';
 
 const formatNumber = (num) => {
   if (num === null || num === undefined || isNaN(num)) return '0';
@@ -70,6 +75,124 @@ export const CentroDeMando = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'active' | 'paused' | 'alerts'
   const [categoryFilter, setCategoryFilter] = useState('all');
+
+  // Real data state for Client View (isClient === true)
+  const [clientData, setClientData] = useState({
+    loading: false,
+    leads: [],
+    appointments: [],
+    posts: [],
+    campaigns: [],
+    telemetry: null,
+  });
+
+  useEffect(() => {
+    if (!isClient || !activeTenant?.id) {
+      setClientData({
+        loading: false,
+        leads: [],
+        appointments: [],
+        posts: [],
+        campaigns: [],
+        telemetry: null,
+      });
+      return;
+    }
+
+    let cancelled = false;
+    setClientData((prev) => ({ ...prev, loading: true }));
+
+    Promise.allSettled([
+      leadService.getLeadsByTenant(activeTenant.id),
+      calendarService.getAppointments(activeTenant.id),
+      contentService.getPostsByTenant(activeTenant.id),
+      campaignService.getCampaigns(activeTenant.id),
+      performanceService.getDualTelemetry(activeTenant.id),
+    ]).then(([leadsRes, apptsRes, postsRes, campsRes, telemRes]) => {
+      if (cancelled) return;
+      setClientData({
+        loading: false,
+        leads: leadsRes.status === 'fulfilled' && Array.isArray(leadsRes.value) ? leadsRes.value : [],
+        appointments: apptsRes.status === 'fulfilled' && Array.isArray(apptsRes.value) ? apptsRes.value : [],
+        posts: postsRes.status === 'fulfilled' && Array.isArray(postsRes.value) ? postsRes.value : [],
+        campaigns: campsRes.status === 'fulfilled' && Array.isArray(campsRes.value) ? campsRes.value : [],
+        telemetry: telemRes.status === 'fulfilled' ? telemRes.value : null,
+      });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isClient, activeTenant?.id]);
+
+  const clientMetrics = useMemo(() => {
+    const leads = clientData.leads || [];
+    const appointments = clientData.appointments || [];
+    const posts = clientData.posts || [];
+    const campaigns = clientData.campaigns || [];
+
+    const qualifiedLeads = leads.filter(
+      (l) => l.leadState === 'BILLABLE_LEAD' || l.leadState === 'LEAD_HOT_PREQUAL' || l.status === 'Calificado'
+    );
+
+    const confirmedAppts = appointments.filter((a) => {
+      const st = String(a.status || '').toUpperCase();
+      return st !== 'CANCELLED' && st !== 'CANCELADA' && st !== 'NO_SHOW';
+    });
+    const attendanceRate =
+      appointments.length > 0 ? Math.round((confirmedAppts.length / appointments.length) * 100) : 0;
+
+    const totalSpend = campaigns.reduce((acc, c) => acc + (Number(c.spend) || 0), 0);
+    const campaignLeadsSum = campaigns.reduce((acc, c) => acc + (Number(c.leadsCount) || 0), 0);
+    const totalLeadsCount = campaignLeadsSum > 0 ? campaignLeadsSum : leads.length;
+    const activeCampaignsCount = campaigns.filter(
+      (c) => String(c.status || '').toUpperCase() === 'ACTIVA' || String(c.status || '').toUpperCase() === 'ACTIVE'
+    ).length;
+
+    const apptsRevenue = appointments.reduce(
+      (acc, a) => acc + (Number(a.ticketValue || a.price || a.estimatedValue) || 0),
+      0
+    );
+    const leadsRevenue = qualifiedLeads.reduce((acc, l) => acc + (Number(l.estimatedValue) || 0), 0);
+    const attributedRevenue = apptsRevenue + leadsRevenue;
+    const realRoas = totalSpend > 0 && attributedRevenue > 0 ? (attributedRevenue / totalSpend).toFixed(2) : '0.0';
+    const costPerLead = totalLeadsCount > 0 && totalSpend > 0 ? Math.round(totalSpend / totalLeadsCount) : 0;
+
+    const channelCounts = leads.reduce((acc, l) => {
+      const rawCh = String(l.channel || '').trim();
+      const label = rawCh || 'WhatsApp Direct';
+      acc[label] = (acc[label] || 0) + 1;
+      return acc;
+    }, {});
+    const topChannelEntry = Object.entries(channelCounts).sort((a, b) => b[1] - a[1])[0];
+    const topChannel = topChannelEntry ? topChannelEntry[0] : 'Sin registros';
+
+    const conversionRate =
+      leads.length > 0 ? ((appointments.length / leads.length) * 100).toFixed(1) : '0.0';
+
+    const scheduledPostsCount = posts.filter((p) => {
+      const st = String(p.status || '').toUpperCase();
+      return st === 'SCHEDULED' || st === 'PROGRAMADA' || st === 'PUBLISHED' || st === 'PUBLICADA' || st === 'APPROVED';
+    }).length;
+
+    return {
+      leads,
+      qualifiedLeads,
+      appointments,
+      confirmedAppts,
+      attendanceRate,
+      posts,
+      scheduledPostsCount,
+      campaigns,
+      activeCampaignsCount,
+      totalSpend,
+      totalLeadsCount,
+      realRoas,
+      costPerLead,
+      topChannel,
+      conversionRate,
+    };
+  }, [clientData]);
 
   // Tenants List & Totals
   const tenantsList = useMemo(() => Object.values(tenantsData || {}), [tenantsData]);
@@ -346,11 +469,11 @@ export const CentroDeMando = () => {
           </p>
         </div>
 
-        {/* KPI 4: SLA & Velocidad de Respuesta */}
+        {/* KPI 4: Operación de Respuesta & Centinela */}
         <div className="p-4 sm:p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2 shadow-sm relative group hover:border-[var(--border-color-hover)] transition-all">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-sans text-[var(--text-muted)] uppercase tracking-wider font-semibold">
-              SLA & Velocidad de Respuesta
+              Operación & Respuesta IA
             </span>
             <button
               type="button"
@@ -363,9 +486,25 @@ export const CentroDeMando = () => {
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl sm:text-3xl font-heading font-black text-cyan-400">
-              &lt; 5 min
+              {isClient
+                ? clientData.loading
+                  ? '...'
+                  : `${clientMetrics.leads.length} leads`
+                : tenantsList.length === 0
+                ? 'Sin datos'
+                : activeAiCount > 0
+                ? 'En vivo'
+                : 'En pausa'}
             </span>
-            <span className="text-xs font-mono text-emerald-500 font-bold">SLA Óptimo</span>
+            <span className="text-xs font-mono text-emerald-500 font-bold">
+              {isClient
+                ? activeTenant?.isAiActive
+                  ? 'En vivo'
+                  : 'Manual'
+                : tenantsList.length > 0
+                ? `${activeAiCount}/${tenantsList.length} IA activa`
+                : 'En espera'}
+            </span>
           </div>
           {crisisCount > 0 ? (
             <p className="text-xs font-mono text-red-500 font-bold flex items-center gap-1.5 pt-0.5 animate-pulse">
@@ -416,19 +555,86 @@ export const CentroDeMando = () => {
                 </div>
 
                 <div className="space-y-2.5 mt-3">
-                  <div className="p-8 rounded-xl bg-[var(--bg-card)] border border-dashed border-[var(--border-color)] text-center font-mono text-xs text-[var(--text-muted)] space-y-1">
-                    <Users className="w-8 h-8 opacity-30 mx-auto mb-1" />
-                    <p className="font-bold">Sin prospectos registrados aún</p>
-                    <p className="text-[10px] text-[var(--text-faint)]">
-                      Los prospectos capturados por el motor omnicanal aparecerán aquí de inmediato.
-                    </p>
-                  </div>
+                  {clientData.loading ? (
+                    <div className="p-8 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-center font-mono text-xs text-[var(--text-muted)]">
+                      Cargando citas y prospectos reales...
+                    </div>
+                  ) : clientMetrics.appointments.length === 0 && clientMetrics.leads.length === 0 ? (
+                    <div className="p-8 rounded-xl bg-[var(--bg-card)] border border-dashed border-[var(--border-color)] text-center font-mono text-xs text-[var(--text-muted)] space-y-1">
+                      <Users className="w-8 h-8 opacity-30 mx-auto mb-1" />
+                      <p className="font-bold">Sin prospectos ni citas registradas aún</p>
+                      <p className="text-[10px] text-[var(--text-faint)]">
+                        Los prospectos capturados por el motor omnicanal aparecerán aquí de inmediato.
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-3 gap-2 font-mono text-center">
+                        <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
+                          <span className="text-[10px] text-[var(--text-muted)] uppercase block">Citas</span>
+                          <span className="text-base font-bold text-neon">{clientMetrics.appointments.length}</span>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
+                          <span className="text-[10px] text-[var(--text-muted)] uppercase block">Leads</span>
+                          <span className="text-base font-bold text-[var(--text-main)]">{clientMetrics.leads.length}</span>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
+                          <span className="text-[10px] text-[var(--text-muted)] uppercase block">Calificados</span>
+                          <span className="text-base font-bold text-emerald-500">{clientMetrics.qualifiedLeads.length}</span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        {clientMetrics.appointments.slice(0, 2).map((appt, idx) => (
+                          <div
+                            key={appt.id || `appt-${idx}`}
+                            className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-between gap-2 text-xs"
+                          >
+                            <div className="min-w-0">
+                              <p className="font-bold text-[var(--text-main)] truncate">
+                                {appt.patientName || appt.clientName || appt.title || 'Cita programada'}
+                              </p>
+                              <p className="text-[10px] font-mono text-[var(--text-muted)] truncate">
+                                {appt.date || ''} {appt.time || ''} · {appt.service || 'Consulta'}
+                              </p>
+                            </div>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-neon/15 text-neon border border-neon/30 shrink-0">
+                              {appt.status || 'Agendada'}
+                            </span>
+                          </div>
+                        ))}
+
+                        {clientMetrics.leads.slice(0, Math.max(1, 3 - Math.min(2, clientMetrics.appointments.length))).map((lead, idx) => (
+                          <div
+                            key={lead.id || `lead-${idx}`}
+                            className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-between gap-2 text-xs"
+                          >
+                            <div className="min-w-0">
+                              <p className="font-bold text-[var(--text-main)] truncate">
+                                {lead.name || 'Prospecto Comercial'}
+                              </p>
+                              <p className="text-[10px] font-mono text-[var(--text-muted)] truncate">
+                                {lead.channel || 'WhatsApp'} · {lead.phone || 'Sin teléfono'}
+                              </p>
+                            </div>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 shrink-0">
+                              {lead.status || lead.leadState || 'Activo'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
               <div className="pt-2 border-t border-[var(--border-color)] flex items-center justify-between text-xs font-mono">
                 <span className="text-[var(--text-muted)]">Tasa de Asistencia Pre-Cita:</span>
-                <span className="font-bold text-emerald-500">100% (Garantía Activa)</span>
+                <span className={`font-bold ${clientMetrics.attendanceRate > 0 ? 'text-emerald-500' : 'text-[var(--text-muted)]'}`}>
+                  {clientMetrics.appointments.length > 0
+                    ? `${clientMetrics.attendanceRate}% (${clientMetrics.confirmedAppts.length}/${clientMetrics.appointments.length} citas)`
+                    : '0% (Sin citas registradas)'}
+                </span>
               </div>
             </div>
 
@@ -460,19 +666,63 @@ export const CentroDeMando = () => {
                 </div>
 
                 <div className="space-y-2.5 mt-3">
-                  <div className="p-8 rounded-xl bg-[var(--bg-card)] border border-dashed border-[var(--border-color)] text-center font-mono text-xs text-[var(--text-muted)] space-y-1">
-                    <CalendarDays className="w-8 h-8 opacity-30 mx-auto mb-1" />
-                    <p className="font-bold">Sin publicaciones pendientes</p>
-                    <p className="text-[10px] text-[var(--text-faint)]">
-                      Genera nuevas piezas editoriales con IA o programa tu contenido en el calendario.
-                    </p>
-                  </div>
+                  {clientData.loading ? (
+                    <div className="p-8 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-center font-mono text-xs text-[var(--text-muted)]">
+                      Cargando parrilla editorial...
+                    </div>
+                  ) : clientMetrics.posts.length === 0 ? (
+                    <div className="p-8 rounded-xl bg-[var(--bg-card)] border border-dashed border-[var(--border-color)] text-center font-mono text-xs text-[var(--text-muted)] space-y-1">
+                      <CalendarDays className="w-8 h-8 opacity-30 mx-auto mb-1" />
+                      <p className="font-bold">Sin publicaciones pendientes</p>
+                      <p className="text-[10px] text-[var(--text-faint)]">
+                        Genera nuevas piezas editoriales con IA o programa tu contenido en el calendario.
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-2 gap-2 font-mono text-center">
+                        <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
+                          <span className="text-[10px] text-[var(--text-muted)] uppercase block">Piezas Totales</span>
+                          <span className="text-base font-bold text-[var(--text-main)]">{clientMetrics.posts.length}</span>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
+                          <span className="text-[10px] text-[var(--text-muted)] uppercase block">Programadas / Listas</span>
+                          <span className="text-base font-bold text-purple-400">{clientMetrics.scheduledPostsCount}</span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        {clientMetrics.posts.slice(0, 3).map((post, idx) => (
+                          <div
+                            key={post.id || `post-${idx}`}
+                            className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-between gap-2 text-xs"
+                          >
+                            <div className="min-w-0">
+                              <p className="font-bold text-[var(--text-main)] truncate">
+                                {post.title || post.hook || post.topic || 'Publicación'}
+                              </p>
+                              <p className="text-[10px] font-mono text-[var(--text-muted)] truncate">
+                                {post.network || post.channel || 'Redes'} · {post.format || post.postType || 'Post'}
+                              </p>
+                            </div>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-purple-500/15 text-purple-400 border border-purple-500/30 shrink-0">
+                              {post.status || 'Borrador'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
               <div className="pt-2 border-t border-[var(--border-color)] flex items-center justify-between text-xs font-mono">
                 <span className="text-[var(--text-muted)]">Frecuencia Editorial Semanal:</span>
-                <span className="font-bold text-[var(--text-main)]">Parrilla lista</span>
+                <span className="font-bold text-[var(--text-main)]">
+                  {clientMetrics.posts.length > 0
+                    ? `${clientMetrics.posts.length} pieza(s) (${clientMetrics.scheduledPostsCount} activas)`
+                    : '0 piezas registradas'}
+                </span>
               </div>
             </div>
           </div>
@@ -489,7 +739,7 @@ export const CentroDeMando = () => {
                     Campañas de Publicidad Activas ({activeTenant?.name})
                   </h3>
                   <p className="text-[11px] text-[var(--text-muted)] font-mono">
-                    Meta Ads & Google CAPI · Presupuesto y Captación en tiempo real
+                    Meta Ads & Google CAPI · {clientMetrics.activeCampaignsCount} activa(s) de {clientMetrics.campaigns.length}
                   </p>
                 </div>
               </div>
@@ -507,20 +757,28 @@ export const CentroDeMando = () => {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono">
               <div className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1">
                 <span className="text-[10px] text-[var(--text-muted)] uppercase">Inversión Devengada Mes</span>
-                <p className="text-xl font-bold text-[var(--text-main)]">$0 MXN</p>
-                <span className="text-[10px] text-emerald-500 font-bold">ROAS Estimado: 0.0x</span>
+                <p className="text-xl font-bold text-[var(--text-main)]" suppressHydrationWarning>
+                  ${formatNumber(clientMetrics.totalSpend)} MXN
+                </p>
+                <span className="text-[10px] text-emerald-500 font-bold">
+                  ROAS Real: {clientMetrics.realRoas}x
+                </span>
               </div>
 
               <div className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1">
                 <span className="text-[10px] text-[var(--text-muted)] uppercase">Contactos Directos Captados</span>
-                <p className="text-xl font-bold text-neon">0 Leads</p>
-                <span className="text-[10px] text-[var(--text-muted)]">Costo por Lead: $0 MXN</span>
+                <p className="text-xl font-bold text-neon">{clientMetrics.totalLeadsCount} Leads</p>
+                <span className="text-[10px] text-[var(--text-muted)]" suppressHydrationWarning>
+                  Costo por Lead: ${formatNumber(clientMetrics.costPerLead)} MXN
+                </span>
               </div>
 
               <div className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1">
                 <span className="text-[10px] text-[var(--text-muted)] uppercase">Canal Más Efectivo</span>
-                <p className="text-xl font-bold text-cyan-400">WhatsApp Direct</p>
-                <span className="text-[10px] text-[var(--text-muted)]">0% de conversiones a cita</span>
+                <p className="text-xl font-bold text-cyan-400 truncate">{clientMetrics.topChannel}</p>
+                <span className="text-[10px] text-[var(--text-muted)]">
+                  {clientMetrics.conversionRate}% de conversiones a cita
+                </span>
               </div>
             </div>
           </div>
@@ -922,7 +1180,7 @@ export const CentroDeMando = () => {
                           )}
 
                           <span className="px-1.5 py-0.5 bg-[var(--bg-card)] text-[var(--text-muted)] border border-[var(--border-color)] rounded font-medium">
-                            MER {t.mer || '5.2x'}
+                            MER {t.mer || 'N/D'}
                           </span>
 
                           {t.frictionAlert && (

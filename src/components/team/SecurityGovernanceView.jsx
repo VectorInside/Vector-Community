@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { INITIAL_AUDIT_LOGS } from '@/utils/mockAccounts';
-import { auditService, normalizeAuditLog } from '@/services/auditService';
+import { auditService } from '@/services/auditService';
 import { userService } from '@/services/userService';
 import {
   ShieldCheck,
@@ -195,9 +194,7 @@ const isPendingInvitationUser = (u) => {
 };
 
 export const SecurityGovernanceView = () => {
-  const [logs, setLogs] = useState(() =>
-    Array.isArray(INITIAL_AUDIT_LOGS) ? INITIAL_AUDIT_LOGS.map(normalizeAuditLog).filter(Boolean) : []
-  );
+  const [logs, setLogs] = useState([]);
   const [staffList, setStaffList] = useState([]);
   const [ownersList, setOwnersList] = useState([]);
   const [loadingData, setLoadingData] = useState(true);

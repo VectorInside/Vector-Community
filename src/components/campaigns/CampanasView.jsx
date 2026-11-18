@@ -46,8 +46,14 @@ export const CampanasView = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
+  const [isAutofillingAi, setIsAutofillingAi] = useState(false);
   const [aiSuccessToast, setAiSuccessToast] = useState(false);
   const [aiErrorToast, setAiErrorToast] = useState('');
+
+  const showError = (message) => {
+    setAiErrorToast(message);
+    setTimeout(() => setAiErrorToast(''), 4500);
+  };
 
   useEffect(() => {
     const activeId = activeTenant?.id;
@@ -60,17 +66,15 @@ export const CampanasView = () => {
       .then((data) => {
         setCampaigns(Array.isArray(data) ? data : []);
       })
-      .catch(() => {
+      .catch((err) => {
         setCampaigns([]);
+        showError(
+          err?.response?.data?.message ||
+            err?.message ||
+            'No se pudieron cargar las campañas desde el servidor.'
+        );
       });
   }, [activeTenant?.id]);
-
-  const saveCampaigns = (newCampaigns) => {
-    setCampaigns(newCampaigns || []);
-    if (tenantId) {
-      campaignService.saveCampaigns(tenantId, newCampaigns || []);
-    }
-  };
 
   const tenantMonthlyBudget =
     Number(activeTenant?.monthlyAdBudget) > 0 ? Number(activeTenant.monthlyAdBudget) : 15000;
@@ -144,23 +148,38 @@ export const CampanasView = () => {
   const avgCpl = totalLeads > 0 ? Math.round(totalSpend / totalLeads) : 0;
   const executionPct = totalBudget > 0 ? Math.round((totalSpend / totalBudget) * 100) : 0;
 
-  // Toggle campaign status (Activa / Pausada)
-  const handleToggleStatus = (id) => {
-    const next = campaigns.map((c) => {
-      if (c.id === id) {
-        const nextStatus = c.status === 'Activa' ? 'Pausada' : 'Activa';
-        return { ...c, status: nextStatus };
-      }
-      return c;
-    });
-    saveCampaigns(next);
+  // Toggle campaign status (Activa / Pausada) en PostgreSQL
+  const handleToggleStatus = async (id) => {
+    const target = campaigns.find((c) => c.id === id);
+    if (!target) return;
+    const nextStatus = target.status === 'Activa' ? 'Pausada' : 'Activa';
+    try {
+      const updated = await campaignService.toggleCampaignStatus(id, nextStatus, tenantId);
+      const resolvedStatus = updated?.status || nextStatus;
+      setCampaigns((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, status: resolvedStatus } : c))
+      );
+    } catch (err) {
+      showError(
+        err?.response?.data?.message ||
+          err?.message ||
+          'No se pudo actualizar el estado de la campaña.'
+      );
+    }
   };
 
-  // Delete campaign
-  const handleDeleteCampaign = (id) => {
-    if (confirm('¿Deseas eliminar esta campaña de la estrategia?')) {
-      const next = campaigns.filter((c) => c.id !== id);
-      saveCampaigns(next);
+  // Delete campaign en PostgreSQL
+  const handleDeleteCampaign = async (id) => {
+    if (!confirm('¿Deseas eliminar esta campaña de la estrategia?')) return;
+    try {
+      await campaignService.deleteCampaign(id, tenantId);
+      setCampaigns((prev) => prev.filter((c) => c.id !== id));
+    } catch (err) {
+      showError(
+        err?.response?.data?.message ||
+          err?.message ||
+          'No se pudo eliminar la campaña en el servidor.'
+      );
     }
   };
 
@@ -183,19 +202,46 @@ export const CampanasView = () => {
     router.push(`/planner?fromCampaign=${encodeURIComponent(camp.id)}`);
   };
 
-  // Generador de Campaña Inteligente con IA (DeepSeek R1)
-  const handleGenerateWithAi = async () => {
-    if (!tenantId) {
-      setAiErrorToast('Selecciona un negocio activo antes de generar una campaña con IA.');
-      setTimeout(() => setAiErrorToast(''), 4000);
-      return;
+  const parseAiCampaignPayload = (aiRes) => {
+    let parsed = null;
+    if (aiRes?.generatedRawJson) {
+      parsed =
+        typeof aiRes.generatedRawJson === 'string'
+          ? JSON.parse(aiRes.generatedRawJson)
+          : aiRes.generatedRawJson;
+    } else if (aiRes?.content) {
+      parsed =
+        typeof aiRes.content === 'string' ? JSON.parse(aiRes.content) : aiRes.content;
+    } else if (aiRes && typeof aiRes === 'object') {
+      parsed = aiRes;
     }
-    setIsGeneratingAi(true);
-    setAiErrorToast('');
 
-    try {
-      const tenantGiro = activeTenant?.giro || activeTenant?.verticalLabel || 'Servicios';
-      const topicPrompt = `Diseña una campaña estratégica de pauta digital en Meta Ads para el negocio "${activeTenant?.name || 'Mi Negocio'}" (Giro: ${tenantGiro}, Servicio principal: ${activeTenant?.coreService || 'Servicios profesionales'}, Presupuesto mensual: $${tenantMonthlyBudget}).
+    if (parsed?.copy && typeof parsed.copy === 'string' && parsed.copy.trim().startsWith('{')) {
+      try {
+        parsed = JSON.parse(parsed.copy);
+      } catch (e) {}
+    }
+
+    const name = parsed?.name || parsed?.title;
+    const offer = parsed?.offer || parsed?.hookText;
+    const objective = parsed?.objective;
+    const audience = parsed?.audience;
+    const hypothesis = parsed?.hypothesis || parsed?.copy;
+
+    if (!name && !offer && !hypothesis) {
+      throw new Error('La respuesta de DeepSeek R1 no contiene una estrategia de campaña válida.');
+    }
+
+    return { name, offer, objective, audience, hypothesis };
+  };
+
+  const buildAiCampaignPrompt = () => {
+    const tenantGiro = activeTenant?.giro || activeTenant?.verticalLabel || 'Servicios';
+    const dnaSummary = activeTenant?.brandDna
+      ? `Tono: ${activeTenant.brandDna.tone || 'Profesional'}, Arquetipo: ${activeTenant.brandDna.archetype || 'Autoridad'}, Dolor ICP: ${activeTenant.brandDna.painPoints || 'Calidad y confianza'}`
+      : `Tono: ${activeTenant?.brandTone || 'Profesional y persuasivo'}`;
+
+    return `Diseña una campaña estratégica de pauta digital en Meta Ads para el negocio "${activeTenant?.name || 'Mi Negocio'}" (Giro: ${tenantGiro}, Servicio principal: ${activeTenant?.coreService || 'Servicios profesionales'}, Presupuesto mensual: $${tenantMonthlyBudget}, Brand DNA: ${dnaSummary}).
 Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
 {
   "name": "Nombre estratégico de la campaña",
@@ -204,47 +250,32 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
   "audience": "Segmentación detallada del público objetivo ideal",
   "hypothesis": "Hipótesis medible de conversión y reducción de CPL"
 }`;
+  };
 
+  // Generador de Campaña Inteligente con IA (DeepSeek R1)
+  const handleGenerateWithAi = async () => {
+    if (!tenantId) {
+      showError('Selecciona un negocio activo antes de generar una campaña con IA.');
+      return;
+    }
+    setIsGeneratingAi(true);
+    setAiErrorToast('');
+
+    try {
+      const tenantGiro = activeTenant?.giro || activeTenant?.verticalLabel || 'Servicios';
       const aiRes = await aiService.generateContent({
         tenantId: activeTenant?.id,
-        topicPrompt,
+        topicPrompt: buildAiCampaignPrompt(),
         postType: 'Campaign Strategy',
         targetNetwork: 'META',
       });
 
-      let parsed = null;
-      if (aiRes?.generatedRawJson) {
-        parsed =
-          typeof aiRes.generatedRawJson === 'string'
-            ? JSON.parse(aiRes.generatedRawJson)
-            : aiRes.generatedRawJson;
-      } else if (aiRes?.content) {
-        parsed =
-          typeof aiRes.content === 'string' ? JSON.parse(aiRes.content) : aiRes.content;
-      } else if (aiRes && typeof aiRes === 'object') {
-        parsed = aiRes;
-      }
-
-      if (parsed?.copy && typeof parsed.copy === 'string' && parsed.copy.trim().startsWith('{')) {
-        try {
-          parsed = JSON.parse(parsed.copy);
-        } catch (e) {}
-      }
-
-      const name = parsed?.name || parsed?.title;
-      const offer = parsed?.offer || parsed?.hookText;
-      const objective = parsed?.objective;
-      const audience = parsed?.audience;
-      const hypothesis = parsed?.hypothesis || parsed?.copy;
-
-      if (!name && !offer && !hypothesis) {
-        throw new Error('La respuesta de DeepSeek R1 no contiene una estrategia de campaña válida.');
-      }
+      const { name, offer, objective, audience, hypothesis } = parseAiCampaignPayload(aiRes);
 
       const todayIso = new Date().toISOString().split('T')[0];
       const nextMonth = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
       const aiCamp = {
-        id: `camp-ai-${Date.now()}`,
+        tenantId,
         name: name || `Campaña Estratégica — ${activeTenant?.name || 'Mi Negocio'}`,
         offer: offer || `Oferta comercial para ${activeTenant?.name || 'tu negocio'}.`,
         objective: objective || 'Citas & Conversaciones Calificadas',
@@ -263,7 +294,8 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
         cpl: 0,
       };
 
-      saveCampaigns([aiCamp, ...campaigns]);
+      const created = await campaignService.createCampaign(aiCamp, tenantId);
+      setCampaigns((prev) => [created, ...prev]);
       setAiSuccessToast(true);
 
       try {
@@ -278,24 +310,29 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
       setTimeout(() => setAiSuccessToast(false), 3500);
     } catch (err) {
       console.error('Error generando campaña con DeepSeek R1:', err);
-      setAiErrorToast(
-        'No se pudo conectar con DeepSeek R1 para generar la campaña. Verifica tu API Key de IA en Conexiones.'
+      showError(
+        err?.response?.data?.message ||
+          err?.message ||
+          'No se pudo conectar con DeepSeek R1 para generar la campaña. Verifica tu API Key de IA en Conexiones.'
       );
-      setTimeout(() => setAiErrorToast(''), 4500);
     } finally {
       setIsGeneratingAi(false);
     }
   };
 
-  // Alta de Campaña Manual
-  const handleCreateCampaign = (e, andSendToPlanner = false) => {
+  // Alta de Campaña Manual en PostgreSQL
+  const handleCreateCampaign = async (e, andSendToPlanner = false) => {
     if (e && e.preventDefault) e.preventDefault();
     if (!newCampaignForm.name.trim()) return;
+    if (!tenantId) {
+      showError('Selecciona un negocio activo antes de crear una campaña.');
+      return;
+    }
 
     const todayIso = new Date().toISOString().split('T')[0];
     const nextMonth = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
     const newCamp = {
-      id: `camp-${Date.now()}`,
+      tenantId,
       name: newCampaignForm.name,
       offer: newCampaignForm.offer || 'Oferta de servicio especializado',
       objective: newCampaignForm.objective,
@@ -316,44 +353,79 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
       cpl: 0,
     };
 
-    saveCampaigns([newCamp, ...campaigns]);
-    setIsNewModalOpen(false);
-    setNewCampaignForm({
-      name: '',
-      offer: '',
-      objective: 'Citas & Conversaciones Calificadas',
-      channel: 'Meta Ads (Instagram & FB)',
-      budget: tenantMonthlyBudget,
-      audience: '',
-      hypothesis: '',
-    });
-
     try {
-      confetti({
-        particleCount: 35,
-        spread: 50,
-        origin: { y: 0.6 },
-        colors: ['#D4FF00', '#25D366', '#FFFFFF'],
+      const created = await campaignService.createCampaign(newCamp, tenantId);
+      setCampaigns((prev) => [created, ...prev]);
+      setIsNewModalOpen(false);
+      setNewCampaignForm({
+        name: '',
+        offer: '',
+        objective: 'Citas & Conversaciones Calificadas',
+        channel: 'Meta Ads (Instagram & FB)',
+        budget: tenantMonthlyBudget,
+        audience: '',
+        hypothesis: '',
       });
-    } catch (err) {}
 
-    if (andSendToPlanner) {
-      handleSendCampaignToPlanner(newCamp);
+      try {
+        confetti({
+          particleCount: 35,
+          spread: 50,
+          origin: { y: 0.6 },
+          colors: ['#D4FF00', '#25D366', '#FFFFFF'],
+        });
+      } catch (err) {}
+
+      if (andSendToPlanner) {
+        handleSendCampaignToPlanner(created);
+      }
+    } catch (err) {
+      showError(
+        err?.response?.data?.message ||
+          err?.message ||
+          'No se pudo guardar la campaña en el servidor.'
+      );
     }
   };
 
-  const handleAutofillAiForm = () => {
-    setNewCampaignForm({
-      name: `Captación Directa — ${activeTenant?.name || 'Mi Negocio'}`,
-      offer: activeTenant?.coreService
-        ? `Atención preferencial en ${activeTenant.coreService} reservando por WhatsApp.`
-        : 'Valoración inicial sin costo para nuevos prospectos vía WhatsApp.',
-      objective: 'Citas & Conversaciones Calificadas',
-      channel: 'Meta Ads (Instagram & FB)',
-      budget: tenantMonthlyBudget,
-      audience: `Personas de 25-50 años interesadas en ${activeTenant?.giro || 'soluciones de valor'}`,
-      hypothesis: 'Un gancho con diagnóstico de bajo riesgo reduce el CAC en más de un 40%.',
-    });
+  const handleAutofillAiForm = async () => {
+    if (!tenantId) {
+      showError('Selecciona un negocio activo antes de autocompletar con IA.');
+      return;
+    }
+    setIsAutofillingAi(true);
+    setAiErrorToast('');
+
+    try {
+      const aiRes = await aiService.generateContent({
+        tenantId: activeTenant?.id,
+        topicPrompt: buildAiCampaignPrompt(),
+        postType: 'Campaign Strategy',
+        targetNetwork: 'META',
+      });
+
+      const { name, offer, objective, audience, hypothesis } = parseAiCampaignPayload(aiRes);
+
+      setNewCampaignForm((prev) => ({
+        ...prev,
+        name: name || prev.name,
+        offer: offer || prev.offer,
+        objective: objective || prev.objective,
+        channel: 'Meta Ads (Instagram & FB)',
+        budget: tenantMonthlyBudget,
+        audience: audience || prev.audience,
+        hypothesis: hypothesis || prev.hypothesis,
+      }));
+    } catch (err) {
+      console.error('Error autocompletando campaña con IA:', err);
+      showError(
+        err?.response?.data?.message ||
+          err?.message ||
+          'No se pudo obtener sugerencias de IA. Verifica tu conexión con DeepSeek R1.'
+      );
+    } finally {
+      setIsAutofillingAi(false);
+    }
   };
 
   return (
@@ -1007,9 +1079,17 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
               <button
                 type="button"
                 onClick={handleAutofillAiForm}
-                className="py-1 px-3 rounded-xl bg-neon text-black font-mono font-bold text-xs hover:bg-neon-hover transition-all shrink-0 active:scale-95 shadow-sm"
+                disabled={isAutofillingAi}
+                className="py-1 px-3 rounded-xl bg-neon text-black font-mono font-bold text-xs hover:bg-neon-hover transition-all shrink-0 active:scale-95 shadow-sm disabled:opacity-60 flex items-center gap-1.5"
               >
-                ✨ Autocompletar con IA
+                {isAutofillingAi ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    Generando con IA...
+                  </>
+                ) : (
+                  '✨ Autocompletar con IA'
+                )}
               </button>
             </div>
 

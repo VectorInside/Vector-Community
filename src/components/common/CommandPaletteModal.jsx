@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Portal } from '@/components/common/Portal';
 import { getNavigationForRole } from '@/utils/modulesRegistry';
+import { leadService } from '@/services/leadService';
+import { campaignService } from '@/services/campaignService';
 import {
   Search,
   Zap,
@@ -27,12 +29,6 @@ import {
   Building,
 } from 'lucide-react';
 
-// ============================================================================
-// CANONICAL TENANT DATA FOR QUICK SEARCH (STRICT MULTI-TENANT ISOLATION)
-// ============================================================================
-const TENANT_CONTACTS_INDEX = {};
-const TENANT_CAMPAIGNS_INDEX = {};
-
 export const CommandPaletteModal = ({ isOpen, onClose }) => {
   const router = useRouter();
   const {
@@ -48,10 +44,35 @@ export const CommandPaletteModal = ({ isOpen, onClose }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [copiedActionId, setCopiedActionId] = useState(null);
+  const [leads, setLeads] = useState([]);
+  const [campaigns, setCampaigns] = useState([]);
   const inputRef = useRef(null);
   const listRef = useRef(null);
 
   const tenantKey = activeTenantKey || activeTenant?.id || null;
+
+  // Load real leads and campaigns from PostgreSQL when modal opens
+  useEffect(() => {
+    if (!isOpen || !tenantKey) {
+      setLeads([]);
+      setCampaigns([]);
+      return;
+    }
+
+    let cancelled = false;
+    Promise.all([
+      leadService.getLeadsByTenant(tenantKey).catch(() => []),
+      campaignService.getCampaigns(tenantKey).catch(() => []),
+    ]).then(([fetchedLeads, fetchedCampaigns]) => {
+      if (cancelled) return;
+      setLeads(Array.isArray(fetchedLeads) ? fetchedLeads : []);
+      setCampaigns(Array.isArray(fetchedCampaigns) ? fetchedCampaigns : []);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, tenantKey]);
 
   // Auto-focus input on open
   useEffect(() => {
@@ -150,37 +171,43 @@ export const CommandPaletteModal = ({ isOpen, onClose }) => {
 
   // 2. Contacts / Leads (Strictly isolated by tenant)
   const tenantContacts = useMemo(() => {
-    const rawList = (tenantKey && TENANT_CONTACTS_INDEX[tenantKey]) || [];
-    return rawList.map((contact) => ({
-      id: `contact-${contact.id}`,
-      category: 'PROSPECTOS & CONVERSACIONES',
-      title: `${contact.name} — ${contact.need}`,
-      subtitle: `${contact.channel} • ${contact.phone} • ${contact.tag}`,
-      icon: MessageSquare,
-      iconColor: 'text-emerald-400',
-      action: () => {
-        router.push(`/inbox?threadId=${contact.id}`);
-        onClose();
-      },
-    }));
-  }, [tenantKey, router, onClose]);
+    return leads.map((contact) => {
+      const need = contact.customerNeeds || contact.notes || contact.status || 'Prospecto';
+      const tag = contact.status || contact.leadState || '';
+      return {
+        id: `contact-${contact.id}`,
+        category: 'PROSPECTOS & CONVERSACIONES',
+        title: `${contact.name} — ${need}`,
+        subtitle: `${contact.channel || 'WHATSAPP'} • ${contact.phone || 'Sin teléfono'}${tag ? ` • ${tag}` : ''}`,
+        icon: MessageSquare,
+        iconColor: 'text-emerald-400',
+        action: () => {
+          router.push(`/inbox?threadId=${contact.id}`);
+          onClose();
+        },
+      };
+    });
+  }, [leads, router, onClose]);
 
   // 3. Campaigns (Strictly isolated by tenant)
   const tenantCampaigns = useMemo(() => {
-    const rawList = (tenantKey && TENANT_CAMPAIGNS_INDEX[tenantKey]) || [];
-    return rawList.map((camp) => ({
-      id: `camp-${camp.id}`,
-      category: 'CAMPAÑAS ACTIVAS',
-      title: camp.name,
-      subtitle: `${camp.channel} • Presupuesto: ${camp.budget} • ${camp.status}`,
-      icon: Megaphone,
-      iconColor: 'text-pink-400',
-      action: () => {
-        router.push('/campaigns');
-        onClose();
-      },
-    }));
-  }, [tenantKey, router, onClose]);
+    return campaigns.map((camp) => {
+      const channel = camp.channel || camp.platform || 'Meta Ads';
+      const budget = camp.budget || (camp.dailyBudget != null ? `$${camp.dailyBudget}/día` : 'N/A');
+      return {
+        id: `camp-${camp.id}`,
+        category: 'CAMPAÑAS ACTIVAS',
+        title: camp.name || 'Campaña sin nombre',
+        subtitle: `${channel} • Presupuesto: ${budget} • ${camp.status || 'ACTIVE'}`,
+        icon: Megaphone,
+        iconColor: 'text-pink-400',
+        action: () => {
+          router.push('/campaigns');
+          onClose();
+        },
+      };
+    });
+  }, [campaigns, router, onClose]);
 
   // 4. Navigation (Strictly filtered by RBAC)
   const navigationModules = useMemo(() => {

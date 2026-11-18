@@ -41,7 +41,7 @@ const DEFAULT_GENERIC_THEME = {
   address: 'Atención Omnicanal',
   hoursWeek: 'Lun–Vie: 09:00 a 19:00 hrs',
   hoursWeekend: 'Sáb: 09:00 a 14:00 hrs',
-  rating: '5.0',
+  rating: 'Verificado',
   reviewsCount: 'Verificado',
   services: [],
 };
@@ -75,33 +75,60 @@ export default function MicroLandingPage() {
 
     const applyResolvedTenant = (found) => {
       if (!found || !isMounted) return;
+      const dbConfig =
+        found.microLandingConfig && typeof found.microLandingConfig === 'object'
+          ? found.microLandingConfig
+          : null;
+
       const nextTenant = {
         id: found.id || slug,
         name: found.name || 'Negocio',
         shortName: found.shortName || found.name,
         phone: found.phone || '+525512345678',
+        giro: found.giro || found.verticalLabel || '',
         microLandingSlug: found.microLandingSlug || slug,
         microLandingEnabled: found.microLandingEnabled !== false,
+        microLandingConfig: dbConfig,
         metaPixelId: found.metaPixelId || '',
         ga4MeasurementId: found.ga4MeasurementId || '',
       };
       setActiveTenantData(nextTenant);
       setCustomData((prev) => ({
         ...prev,
-        name: prev.name === 'Negocio' || !prev.name ? nextTenant.name : prev.name,
-        phone: nextTenant.phone || prev.phone,
-        metaPixelId: prev.metaPixelId || nextTenant.metaPixelId || '',
-        ga4MeasurementId: prev.ga4MeasurementId || nextTenant.ga4MeasurementId || '',
+        ...(dbConfig || {}),
+        name: dbConfig?.name || (prev.name === 'Negocio' || !prev.name ? nextTenant.name : prev.name),
+        phone: dbConfig?.phone || nextTenant.phone || prev.phone,
+        metaPixelId: dbConfig?.metaPixelId || nextTenant.metaPixelId || prev.metaPixelId || '',
+        ga4MeasurementId: dbConfig?.ga4MeasurementId || nextTenant.ga4MeasurementId || prev.ga4MeasurementId || '',
       }));
     };
 
     const checkTenantState = async () => {
-      let localFound = null;
+      // 1. Priorizar datos reales de PostgreSQL (tenant.microLandingConfig)
+      let remoteTenant = null;
+      try {
+        remoteTenant = await tenantService.getTenantById(slug);
+        if (!remoteTenant) {
+          const allTenants = await tenantService.getTenants();
+          remoteTenant = (allTenants || []).find(
+            (t) =>
+              t.id === slug ||
+              t.microLandingSlug === slug ||
+              (t.name && t.name.toLowerCase().replace(/[^a-z0-9]/g, '-') === slug)
+          );
+        }
+        if (remoteTenant) {
+          applyResolvedTenant(remoteTenant);
+          return;
+        }
+      } catch (err) {}
+
+      // 2. Respaldo local únicamente si el backend no devolvió el tenant
       try {
         const savedTenants = localStorage.getItem('vector_tenants_data');
         if (savedTenants) {
           const parsed = JSON.parse(savedTenants);
-          localFound =
+          const localFound =
             parsed[slug] ||
             Object.values(parsed).find(
               (t) =>
@@ -114,23 +141,6 @@ export default function MicroLandingPage() {
           }
         }
       } catch (e) {}
-
-      // Consultar backend real para visitantes públicos externos (Meta Ads / Google)
-      try {
-        let remoteTenant = await tenantService.getTenantById(slug);
-        if (!remoteTenant) {
-          const allTenants = await tenantService.getTenants();
-          remoteTenant = (allTenants || []).find(
-            (t) =>
-              t.id === slug ||
-              t.microLandingSlug === slug ||
-              (t.name && t.name.toLowerCase().replace(/[^a-z0-9]/g, '-') === slug)
-          );
-        }
-        if (remoteTenant) {
-          applyResolvedTenant(remoteTenant);
-        }
-      } catch (err) {}
     };
 
     checkTenantState();
@@ -161,15 +171,21 @@ export default function MicroLandingPage() {
     leadForm: baseDefaultLead,
   });
 
-  // Load from localStorage or sync with parent window message events
+  // Load from localStorage únicamente en vista previa del editor; en visitas públicas prioriza BD
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(`vector_microlanding_${baseTenant.id}`);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        setCustomData((prev) => ({ ...prev, ...parsed }));
-      }
-    } catch (e) {}
+    const isIframeOrPreview =
+      typeof window !== 'undefined' &&
+      (window.self !== window.top || new URLSearchParams(window.location.search).get('preview') === 'true');
+
+    if (isIframeOrPreview) {
+      try {
+        const saved = localStorage.getItem(`vector_microlanding_${baseTenant.id}`);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          setCustomData((prev) => ({ ...prev, ...parsed }));
+        }
+      } catch (e) {}
+    }
 
     const handleMessage = (e) => {
       if (e.data && e.data.type === 'VECTOR_MICROLANDING_UPDATE' && e.data.tenantId === baseTenant.id) {
@@ -179,9 +195,6 @@ export default function MicroLandingPage() {
 
     window.addEventListener('message', handleMessage);
     // Track Micro-Landing Visit in Backend Telemetry (only on real public visits, never in preview iframe)
-    const isIframeOrPreview =
-      typeof window !== 'undefined' &&
-      (window.self !== window.top || new URLSearchParams(window.location.search).get('preview') === 'true');
     if (baseTenant?.id && !isIframeOrPreview) {
       const searchParams = new URLSearchParams(window.location.search);
       const isQr = searchParams.get('utm_source') === 'qr';
@@ -585,7 +598,7 @@ export default function MicroLandingPage() {
               <div className="flex items-center gap-1.5 pt-1.5 text-[10.5px] font-mono text-zinc-400 flex-wrap">
                 <div className="flex items-center text-amber-400">
                   <Star className="w-3.5 h-3.5 fill-amber-400" />
-                  <span className="ml-1 font-bold text-white">{baseTheme.rating}</span>
+                  <span className="ml-1 font-bold text-white">{customData.rating || baseTheme.rating || 'Verificado'}</span>
                 </div>
                 <span>•</span>
                 <span>{baseTheme.reviewsCount === 'Verificado' ? 'Negocio Verificado' : `${baseTheme.reviewsCount} opiniones`}</span>

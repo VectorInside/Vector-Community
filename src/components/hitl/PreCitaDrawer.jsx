@@ -27,11 +27,14 @@ import { LEAD_STATUS_ENUM } from '@/utils/constants';
 export const PreCitaDrawer = ({ isOpen, onClose, lead, onApproveAppointment, onOpenChat }) => {
   const [isApproving, setIsApproving] = useState(false);
   const [approvedSuccess, setApprovedSuccess] = useState(false);
+  const [approveError, setApproveError] = useState(null);
   const [manualOverride, setManualOverride] = useState(false);
   const [overrideEmail, setOverrideEmail] = useState('');
 
   useEffect(() => {
     if (!isOpen) return;
+    setApproveError(null);
+    setApprovedSuccess(false);
     document.body.style.overflow = 'hidden';
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') onClose();
@@ -86,11 +89,17 @@ export const PreCitaDrawer = ({ isOpen, onClose, lead, onApproveAppointment, onO
   // Un lead está "amarrado" cuando es Billable, cumple los 4 criterios con email o se activa override manual
   const isFullyAmarrado = approvedSuccess || (isBillable && hasValidEmail) || (completedCriteriaCount === 4 && hasValidEmail) || (manualOverride && hasValidEmail);
 
-  const handleApprove = () => {
-    if (!isFullyAmarrado) return;
+  const handleApprove = async () => {
+    if (!isFullyAmarrado || isApproving) return;
     setIsApproving(true);
-    setTimeout(() => {
-      setIsApproving(false);
+    setApproveError(null);
+    try {
+      if (onApproveAppointment) {
+        await onApproveAppointment({
+          ...lead,
+          email: rawEmail || lead.email,
+        });
+      }
       setApprovedSuccess(true);
       try {
         confetti({
@@ -100,14 +109,13 @@ export const PreCitaDrawer = ({ isOpen, onClose, lead, onApproveAppointment, onO
           colors: ['#E7F900', '#10B981', '#38BDF8', '#FFFFFF'],
         });
       } catch (e) {}
-
-      if (onApproveAppointment) {
-        onApproveAppointment({
-          ...lead,
-          email: rawEmail || lead.email,
-        });
-      }
-    }, 700);
+    } catch (err) {
+      setApproveError(
+        err?.response?.data?.message || err?.message || 'Error al guardar la cita en PostgreSQL.'
+      );
+    } finally {
+      setIsApproving(false);
+    }
   };
 
   return (
@@ -357,6 +365,12 @@ export const PreCitaDrawer = ({ isOpen, onClose, lead, onApproveAppointment, onO
 
           {/* Footer Sticky con Acción Inteligente */}
           <div className="p-6 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/90 flex flex-col gap-3">
+            {approveError && (
+              <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{approveError}</span>
+              </div>
+            )}
             {isFullyAmarrado ? (
               /* CASO A: Lead Calificado / Amarrado -> Botón de Agendamiento Activo */
               <button
@@ -371,17 +385,17 @@ export const PreCitaDrawer = ({ isOpen, onClose, lead, onApproveAppointment, onO
                 {isApproving ? (
                   <>
                     <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                    <span>Sincronizando con Google Calendar API...</span>
+                    <span>Guardando cita en Agenda PostgreSQL...</span>
                   </>
                 ) : approvedSuccess ? (
                   <>
                     <CheckCircle2 className="w-5 h-5 text-white" />
-                    <span>✅ Cita Aprobada & Google Calendar Sincronizado</span>
+                    <span>✅ Cita Aprobada & Guardada en Agenda</span>
                   </>
                 ) : (
                   <>
                     <CalendarCheck className="w-5 h-5" />
-                    <span>✅ Aprobar, Agendar Google & Enviar Gmail</span>
+                    <span>✅ Aprobar & Agendar Cita</span>
                   </>
                 )}
               </button>

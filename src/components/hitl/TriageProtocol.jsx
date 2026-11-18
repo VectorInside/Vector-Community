@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { leadService } from '@/services/leadService';
+import { calendarService } from '@/services/calendarService';
 import api from '@/services/api';
 import {
   MessageSquareWarning,
@@ -518,18 +519,26 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
     (t) => t.leadState === LEAD_STATUS_ENUM.BILLABLE_LEAD
   ).length;
 
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!inputMessage.trim() || !currentChat) return;
 
     if (activeTenant?.id) {
-      api
-        .post(`/webhooks/whatsapp/conversations/${activeTenant.id}/send`, {
+      try {
+        await api.post(`/webhooks/whatsapp/conversations/${activeTenant.id}/send`, {
           conversationId: currentChat.id,
           recipientPhone: currentChat.phone,
           messageText: inputMessage.trim(),
-        })
-        .catch(() => {});
+        });
+      } catch (err) {
+        triggerModal(
+          'Error al Enviar Mensaje',
+          err?.response?.data?.message ||
+            err?.message ||
+            'No se pudo despachar el mensaje vía WhatsApp Cloud API.'
+        );
+        return;
+      }
     }
 
     const newMsg = {
@@ -563,11 +572,30 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
     );
   };
 
-  const handleAssumeControl = () => {
-    setIsBotPaused(!isBotPaused);
+  const handleAssumeControl = async () => {
+    const nextPaused = !isBotPaused;
+    const conversationId = currentChat?.conversationId || currentChat?.id;
+
+    if (conversationId) {
+      try {
+        await api.patch(`/webhooks/whatsapp/conversations/${conversationId}/ai-pause`, {
+          paused: nextPaused,
+        });
+      } catch (err) {
+        triggerModal(
+          'Error al Cambiar Estado de IA',
+          err?.response?.data?.message ||
+            err?.message ||
+            'No se pudo persistir el estado de pausa de IA en el backend.'
+        );
+        return;
+      }
+    }
+
+    setIsBotPaused(nextPaused);
     triggerModal(
-      isBotPaused ? 'Automatización Reactivada' : 'Sutura Arcángel Activada (Soberanía Humana)',
-      isBotPaused
+      !nextPaused ? 'Automatización Reactivada' : 'Sutura Arcángel Activada (Soberanía Humana)',
+      !nextPaused
         ? 'El Lobo Vectorial ha reanudado la supervisión autónoma del chat.'
         : 'Has tomado el control manual ininterrumpido de este chat. El Lobo Vectorial pausó el bot para que intervengas quirúrgicamente.',
       () => {
@@ -584,7 +612,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
     setDrawerLead(target);
   };
 
-  const handleApproveDrawerAppointment = (targetLead) => {
+  const handleApproveDrawerAppointment = async (targetLead) => {
     const leadKey = Object.keys(threads).find((k) => threads[k].id === targetLead.id) || activeContact;
     const allGuards = {
       identityValidated: true,
@@ -593,9 +621,25 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
       consentOrBooked: true,
     };
     const currentLeadPrice = Math.max(350, Number(activeTenant?.leadPriceMXN || 350));
+    const todayIso = new Date().toISOString().split('T')[0];
+
+    await calendarService.createAppointment({
+      tenantId: activeTenant?.id,
+      clientName: targetLead?.name || 'Prospecto',
+      clientEmail: targetLead?.email || '',
+      phone: targetLead?.phone || '',
+      serviceName: targetLead?.customerNeeds?.intent || 'Cita de Valoración',
+      estimatedValue: targetLead?.estimatedValue || currentLeadPrice,
+      appointmentDate: todayIso,
+      hour: '10:00',
+      status: 'CONFIRMED',
+      details: 'Cita aprobada desde Triage Protocol (HITL)',
+    });
+
     if (targetLead?.id) {
-      leadService.updateLeadCriteria(targetLead.id, allGuards).catch(() => { });
+      await leadService.updateLeadCriteria(targetLead.id, allGuards);
     }
+
     setThreads((prev) => ({
       ...prev,
       [leadKey]: {
@@ -611,8 +655,8 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
           ...(prev[leadKey]?.messages || []),
           {
             id: Date.now(),
-            sender: 'Google Calendar API & Meta CAPI',
-            text: '✅ Cita formal aprobada y sincronizada en Google Calendar. Evento Schedule transmitido vía Meta CAPI (SHA-256). Confirmación enviada al WhatsApp del cliente.',
+            sender: 'Agenda PostgreSQL (Sistema)',
+            text: '✅ Cita formal aprobada y guardada en la Agenda PostgreSQL del sistema. Criterios de calificación actualizados.',
             isWarning: true,
             time: 'Justo ahora',
           },
@@ -620,8 +664,8 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
       },
     }));
     triggerModal(
-      'Cita Confirmada & Atribuida en Google Calendar',
-      `La cita con <strong>${targetLead.name}</strong> ha sido agendada con éxito en Google Calendar. Se emitió el evento a Meta CAPI y se registró la partida en <code>billing_ledger</code> ($${currentLeadPrice} MXN).`
+      'Cita Guardada en Agenda PostgreSQL',
+      `La cita con <strong>${targetLead.name}</strong> ha sido guardada en la Agenda PostgreSQL del sistema y se actualizó su calificación ($${currentLeadPrice} MXN).`
     );
   };
 

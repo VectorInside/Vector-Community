@@ -43,6 +43,7 @@ import { PreCitaDrawer } from '@/components/hitl/PreCitaDrawer';
 import { formatNumber } from '@/utils/formatters';
 import { MeasurementGuideModal } from '@/components/common/MeasurementGuideModal';
 import { leadService } from '@/services/leadService';
+import { calendarService } from '@/services/calendarService';
 import api, { unwrapApiData } from '@/services/api';
 import { WhatsAppConnectModal } from './WhatsAppConnectModal';
 
@@ -357,20 +358,29 @@ export const ConversacionesInbox = () => {
   }, [threads, filterMode, channelFilter, searchQuery]);
 
   // Handle Send Reply (Real Cloud API + local state)
-  const handleSendReply = () => {
+  const handleSendReply = async () => {
     if (!draftReply.trim() || !activeThread) return;
 
     const currentThread = activeThread;
     const replyText = draftReply;
 
     if (activeTenant?.id) {
-      api
-        .post(`/webhooks/whatsapp/conversations/${activeTenant.id}/send`, {
+      try {
+        await api.post(`/webhooks/whatsapp/conversations/${activeTenant.id}/send`, {
           conversationId: currentThread.id,
           recipientPhone: currentThread.phone,
           messageText: replyText.trim(),
-        })
-        .catch(() => {});
+        });
+      } catch (err) {
+        const errMsg =
+          err?.response?.data?.message ||
+          err?.message ||
+          'No se pudo enviar el mensaje vía WhatsApp Cloud API.';
+        if (triggerModal) {
+          triggerModal('Error al Enviar Mensaje', errMsg);
+        }
+        return;
+      }
     }
 
     const newMsg = {
@@ -397,7 +407,7 @@ export const ConversacionesInbox = () => {
   };
 
   // Toggle qualification check
-  const handleToggleRequirement = (key) => {
+  const handleToggleRequirement = async (key) => {
     if (!activeThread) return;
     const currentThread = activeThread;
     const updatedQual = {
@@ -410,9 +420,19 @@ export const ConversacionesInbox = () => {
       financialClarified: Boolean(updatedQual.doubtsResolved),
       consentOrBooked: Boolean(updatedQual.ctaAccepted),
     };
-    leadService
-      .updateLeadCriteria(currentThread.leadId || currentThread.id, nextCriteria)
-      .catch(() => {});
+
+    try {
+      await leadService.updateLeadCriteria(currentThread.leadId || currentThread.id, nextCriteria);
+    } catch (err) {
+      const errMsg =
+        err?.response?.data?.message ||
+        err?.message ||
+        'No se pudieron guardar los criterios de calificación en PostgreSQL.';
+      if (triggerModal) {
+        triggerModal('Error al Actualizar Criterios', errMsg);
+      }
+      return;
+    }
 
     const updated = threads.map((t) => {
       if (t.id === activeThread.id) {
@@ -426,6 +446,70 @@ export const ConversacionesInbox = () => {
       return t;
     });
     persistThreads(updated);
+  };
+
+  // Aprobación real de Pre-Cita desde Bandeja Omnicanal -> Agenda PostgreSQL + Criterios Lead
+  const handleApproveDrawerAppointment = async (targetLead) => {
+    if (!activeThread) return;
+    const todayIso = new Date().toISOString().split('T')[0];
+
+    await calendarService.createAppointment({
+      tenantId: activeTenant?.id,
+      clientName: targetLead?.name || activeThread.name || 'Prospecto',
+      clientEmail: targetLead?.email || activeThread.email || '',
+      phone: targetLead?.phone || activeThread.phone || '',
+      serviceName: targetLead?.customerNeeds?.intent || activeThread.need || 'Cita de Valoración',
+      estimatedValue: targetLead?.estimatedValue || activeThread.potentialTicket || 0,
+      appointmentDate: todayIso,
+      hour: '10:00',
+      status: 'CONFIRMED',
+      details: `Cita aprobada desde Bandeja de Conversaciones (${activeThread.channel || 'WhatsApp'})`,
+    });
+
+    const allGuards = {
+      identityValidated: true,
+      catalogIdentified: true,
+      financialClarified: true,
+      consentOrBooked: true,
+    };
+    const targetLeadId = activeThread.leadId || targetLead?.id || activeThread.id;
+    if (targetLeadId) {
+      await leadService.updateLeadCriteria(targetLeadId, allGuards);
+    }
+
+    const updated = threads.map((t) => {
+      if (t.id === activeThread.id) {
+        return {
+          ...t,
+          contacted: true,
+          stage: 'Calificado',
+          qualification: {
+            contactValid: true,
+            productIdentified: true,
+            doubtsResolved: true,
+            ctaAccepted: true,
+          },
+          messages: [
+            ...(t.messages || []),
+            {
+              id: `m-${Date.now()}`,
+              direction: 'out',
+              text: '✅ Cita aprobada y guardada en la Agenda PostgreSQL del sistema. Criterios del prospecto actualizados.',
+              time: 'Ahora',
+            },
+          ],
+        };
+      }
+      return t;
+    });
+    persistThreads(updated);
+
+    if (triggerModal) {
+      triggerModal(
+        'Cita Guardada en Agenda PostgreSQL',
+        `La cita con <b>${targetLead?.name || activeThread.name}</b> quedó registrada en PostgreSQL y su expediente fue actualizado a Calificado.`
+      );
+    }
   };
 
   const pendingCount = threads.filter((t) => !t.contacted).length;
@@ -1131,6 +1215,7 @@ export const ConversacionesInbox = () => {
       <PreCitaDrawer
         isOpen={isPreCitaDrawerOpen}
         onClose={() => setIsPreCitaDrawerOpen(false)}
+        onApproveAppointment={handleApproveDrawerAppointment}
         lead={{
           id: activeThread?.id || 'lead-001',
           name: activeThread?.name || 'Prospecto',

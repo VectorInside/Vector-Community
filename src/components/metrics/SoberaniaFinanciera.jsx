@@ -305,6 +305,23 @@ export const SoberaniaFinanciera = () => {
   // Datos consolidados para el Reporte Ejecutivo Mensual Formal
   const currentMonthName = new Intl.DateTimeFormat('es-MX', { month: 'long', year: 'numeric' }).format(new Date());
   const executiveReportData = useMemo(() => {
+    const totalLeadsCount = leads.length;
+    const waLeadsCount = leads.filter((l) => (l.channel || '').toLowerCase().includes('what')).length;
+    const igLeadsCount = leads.filter((l) => {
+      const ch = (l.channel || '').toLowerCase();
+      return ch.includes('insta') || ch.includes('meta');
+    }).length;
+
+    const waShareNum = totalLeadsCount > 0 ? (waLeadsCount / totalLeadsCount) * 100 : 0;
+    const igShareNum = totalLeadsCount > 0 ? (igLeadsCount / totalLeadsCount) * 100 : 0;
+
+    const topChannelLabel =
+      totalLeadsCount === 0
+        ? 'Sin canal activo'
+        : igLeadsCount > waLeadsCount
+        ? 'Instagram Direct / Meta Ads'
+        : 'WhatsApp Business Cloud API';
+
     return {
       period: currentMonthName.charAt(0).toUpperCase() + currentMonthName.slice(1),
       adSpend: `$${unitEconomics.totalSpend.toLocaleString()} MXN`,
@@ -318,22 +335,22 @@ export const SoberaniaFinanciera = () => {
       capiMatchRate: unitEconomics.totalSpend > 0 || unitEconomics.totalConversions > 0 ? '100.0%' : 'En espera de eventos',
       humanHoursSaved: `${Math.max(14, Math.round((leads.length + appointments.length) * 1.8))} hrs`,
       messagesProcessed: `${Math.max(leads.length * 6, 28)} mensajes`,
-      topChannel: 'WhatsApp Business Cloud API',
+      topChannel: topChannelLabel,
       deepSeekSummary: unitEconomics.totalSpend > 0 && unitEconomics.realRevenue > 0
         ? `El ecosistema comercial de ${activeTenant?.name || 'la empresa'} muestra un retorno MER de ${unitEconomics.merDisplay} con un CAC de $${unitEconomics.cacNum.toLocaleString()} MXN. El embudo directo a WhatsApp pre-califica la intención del prospecto, reduciendo el ciclo de venta a menos de 48 horas.`
         : `Ecosistema comercial en proceso de consolidación para ${activeTenant?.name || 'la empresa'}. Se recomienda sostener la captación omnicanal con enlaces en bio y activar pauta publicitaria en Meta Ads para registrar los primeros retornos sobre inversión.`,
       channelBreakdown: [
         {
           channel: 'WhatsApp Business Cloud API',
-          leads: leads.filter((l) => (l.channel || '').toLowerCase().includes('what')).length || leads.length || 0,
-          revenue: `$${Math.round(unitEconomics.realRevenue * 0.85).toLocaleString()} MXN`,
-          share: '85.0%',
+          leads: waLeadsCount,
+          revenue: `$${Math.round(unitEconomics.realRevenue * (waShareNum / 100)).toLocaleString()} MXN`,
+          share: `${waShareNum.toFixed(1)}%`,
         },
         {
           channel: 'Instagram Direct / Meta Ads',
-          leads: leads.filter((l) => (l.channel || '').toLowerCase().includes('insta')).length || 0,
-          revenue: `$${Math.round(unitEconomics.realRevenue * 0.15).toLocaleString()} MXN`,
-          share: '15.0%',
+          leads: igLeadsCount,
+          revenue: `$${Math.round(unitEconomics.realRevenue * (igShareNum / 100)).toLocaleString()} MXN`,
+          share: `${igShareNum.toFixed(1)}%`,
         },
       ],
     };

@@ -269,53 +269,37 @@ export const calendarService = {
   },
 
   async approveAndSyncAppointment(appointmentId) {
-    try {
-      const response = await api.patch(`/appointments/${appointmentId}/status`, { status: 'CONFIRMED' });
-      const updated = normalizeAppointmentFromApi(unwrapApiData(response));
-      return {
-        success: true,
-        appointmentId,
-        appointment: updated,
-        status: 'CONFIRMED',
-        syncedAt: new Date().toISOString(),
-      };
-    } catch (error) {
-      return {
-        success: true,
-        appointmentId,
-        status: 'CONFIRMED',
-        syncedAt: new Date().toISOString(),
-      };
+    if (!isBackendAvailable) {
+      throw new Error('Backend no disponible para confirmar la cita en PostgreSQL.');
     }
+    const response = await api.patch(`/appointments/${appointmentId}/status`, { status: 'CONFIRMED' });
+    const updated = normalizeAppointmentFromApi(unwrapApiData(response));
+    return {
+      success: true,
+      appointmentId,
+      appointment: updated,
+      status: updated?.status || 'CONFIRMED',
+      syncedAt: new Date().toISOString(),
+    };
   },
 
   async updateAppointmentStatus(appointmentId, status) {
-    try {
-      const response = await api.patch(`/appointments/${appointmentId}/status`, { status });
-      return normalizeAppointmentFromApi(unwrapApiData(response));
-    } catch (e) {
-      return { id: appointmentId, status };
+    if (!isBackendAvailable) {
+      throw new Error('Backend no disponible para actualizar el estado de la cita.');
     }
+    const response = await api.patch(`/appointments/${appointmentId}/status`, { status });
+    return normalizeAppointmentFromApi(unwrapApiData(response));
   },
 
   async triggerGoogleCalendarSync(tenantId) {
-    try {
-      const appointments = await this.getAppointments(tenantId);
-      return {
-        success: true,
-        syncedEventsCount: Array.isArray(appointments) ? appointments.length : 0,
-        appointments,
-        syncedAt: new Date().toISOString(),
-        message: 'Master Agenda sincronizada con Google Calendar API y base de datos local.',
-      };
-    } catch (error) {
-      return {
-        success: true,
-        syncedEventsCount: 0,
-        syncedAt: new Date().toISOString(),
-        message: 'Sincronización local completada.',
-      };
-    }
+    const appointments = await this.getAppointments(tenantId);
+    return {
+      success: true,
+      syncedEventsCount: Array.isArray(appointments) ? appointments.length : 0,
+      appointments,
+      syncedAt: new Date().toISOString(),
+      message: 'Master Agenda sincronizada con la Agenda PostgreSQL.',
+    };
   },
 
   async createAppointment(appointmentData) {
@@ -328,7 +312,23 @@ export const calendarService = {
       createdAt: new Date().toISOString(),
     });
 
-    // Guardar inmediatamente en capa local offline-first
+    if (isBackendAvailable) {
+      const response = await api.post('/appointments', payload);
+      const saved = normalizeAppointmentFromApi(unwrapApiData(response)) || fullNormalized;
+      if (typeof window !== 'undefined' && tenantId) {
+        try {
+          const raw = localStorage.getItem(`vector_appointments_${tenantId}`);
+          const currentList = raw ? JSON.parse(raw) : [];
+          const filtered = currentList.filter((a) => a.id !== saved.id && a.id !== fullNormalized.id);
+          filtered.push(saved);
+          localStorage.setItem(`vector_appointments_${tenantId}`, JSON.stringify(filtered));
+          window.dispatchEvent(new CustomEvent('vector_appointment_saved', { detail: saved }));
+        } catch (e) {}
+      }
+      return saved;
+    }
+
+    // Guardar en capa local cuando no hay backend configurado
     if (typeof window !== 'undefined' && tenantId) {
       try {
         const raw = localStorage.getItem(`vector_appointments_${tenantId}`);
@@ -341,28 +341,13 @@ export const calendarService = {
       } catch (e) {}
     }
 
-    if (isBackendAvailable) {
-      try {
-        const response = await api.post('/appointments', payload);
-        const saved = normalizeAppointmentFromApi(unwrapApiData(response));
-        if (saved && typeof window !== 'undefined' && tenantId) {
-          try {
-            const raw = localStorage.getItem(`vector_appointments_${tenantId}`);
-            const currentList = raw ? JSON.parse(raw) : [];
-            const updated = currentList.map((a) => (a.id === fullNormalized.id ? saved : a));
-            localStorage.setItem(`vector_appointments_${tenantId}`, JSON.stringify(updated));
-          } catch (e) {}
-        }
-        return saved || fullNormalized;
-      } catch (err) {
-        console.warn('[calendarService.createAppointment] Persistido en almacenamiento local offline-first:', err?.message);
-      }
-    }
-
     return fullNormalized;
   },
 
   async deleteAppointment(appointmentId, tenantId) {
+    if (isBackendAvailable) {
+      await api.delete(`/appointments/${appointmentId}`);
+    }
     if (typeof window !== 'undefined' && tenantId) {
       try {
         const raw = localStorage.getItem(`vector_appointments_${tenantId}`);
@@ -370,11 +355,6 @@ export const calendarService = {
           const list = JSON.parse(raw).filter((a) => a.id !== appointmentId);
           localStorage.setItem(`vector_appointments_${tenantId}`, JSON.stringify(list));
         }
-      } catch (e) {}
-    }
-    if (isBackendAvailable) {
-      try {
-        await api.delete(`/appointments/${appointmentId}`);
       } catch (e) {}
     }
     return { success: true };

@@ -133,7 +133,7 @@ export const MetaConnectModal = ({
     try {
       const health = await metaCommentService.getHealthAndConfig(activeTenant.id);
       const elapsedMs = Math.round(performance.now() - startedAt);
-      const isOk = Boolean(health?.isConfigured || health?.status === 'CONNECTED');
+      const isOk = Boolean(health?.connected || health?.isConfigured || health?.status === 'CONNECTED');
       setTestResult({
         success: isOk,
         message: isOk

@@ -8,21 +8,18 @@ export const campaignService = {
 
     // 1. Intentar Backend si está habilitado
     if (isBackendAvailable) {
-      try {
-        const response = await api.get('/campaigns', { params: { tenantId } });
-        const data = unwrapApiData(response);
-        if (Array.isArray(data) && data.length > 0) {
-          if (typeof window !== 'undefined') {
-            localStorage.setItem(getStorageKey(tenantId), JSON.stringify(data));
-          }
-          return data;
-        }
-      } catch (error) {
-        // Fallback a localStorage
+      const response = await api.get('/campaigns', { params: { tenantId } });
+      const data = unwrapApiData(response);
+      const list = Array.isArray(data) ? data : [];
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem(getStorageKey(tenantId), JSON.stringify(list));
+        } catch (e) {}
       }
+      return list;
     }
 
-    // 2. Respaldo multi-tenant en localStorage
+    // 2. Respaldo multi-tenant en localStorage solo cuando el backend está deshabilitado
     if (typeof window !== 'undefined') {
       try {
         const local = localStorage.getItem(getStorageKey(tenantId));
@@ -49,63 +46,128 @@ export const campaignService = {
 
   async createCampaign(campaignData, tenantId) {
     const targetTenant = tenantId || campaignData?.tenantId;
-    if (typeof window !== 'undefined' && targetTenant) {
-      try {
-        const current = await this.getCampaigns(targetTenant);
-        const updated = [campaignData, ...current];
-        await this.saveCampaigns(targetTenant, updated);
-      } catch (e) {}
-    }
+    const payload = targetTenant ? { ...campaignData, tenantId: targetTenant } : campaignData;
 
     if (isBackendAvailable) {
-      try {
-        const response = await api.post('/campaigns', campaignData);
-        return unwrapApiData(response) || campaignData;
-      } catch (error) {
-        return campaignData;
+      const response = await api.post(
+        '/campaigns',
+        payload,
+        targetTenant ? { params: { tenantId: targetTenant } } : undefined
+      );
+      const created = unwrapApiData(response) || payload;
+
+      if (typeof window !== 'undefined' && targetTenant) {
+        try {
+          const local = localStorage.getItem(getStorageKey(targetTenant));
+          const current = local ? JSON.parse(local) : [];
+          const list = Array.isArray(current) ? current : [];
+          await this.saveCampaigns(targetTenant, [created, ...list.filter((c) => c.id !== created.id)]);
+        } catch (e) {}
       }
+
+      return created;
     }
-    return campaignData;
+
+    if (typeof window !== 'undefined' && targetTenant) {
+      const current = await this.getCampaigns(targetTenant);
+      await this.saveCampaigns(targetTenant, [payload, ...current]);
+    }
+    return payload;
+  },
+
+  async updateCampaign(id, updates, tenantId) {
+    if (isBackendAvailable) {
+      const response = await api.put(
+        `/campaigns/${id}`,
+        updates,
+        tenantId ? { params: { tenantId } } : undefined
+      );
+      const updatedItem = unwrapApiData(response) || { id, ...updates };
+
+      if (typeof window !== 'undefined' && tenantId) {
+        try {
+          const local = localStorage.getItem(getStorageKey(tenantId));
+          const current = local ? JSON.parse(local) : [];
+          if (Array.isArray(current)) {
+            await this.saveCampaigns(
+              tenantId,
+              current.map((c) => (c.id === id ? { ...c, ...updatedItem } : c))
+            );
+          }
+        } catch (e) {}
+      }
+
+      return updatedItem;
+    }
+
+    if (typeof window !== 'undefined' && tenantId) {
+      const current = await this.getCampaigns(tenantId);
+      const updated = current.map((c) => (c.id === id ? { ...c, ...updates } : c));
+      await this.saveCampaigns(tenantId, updated);
+    }
+    return { id, ...updates };
   },
 
   async toggleCampaignStatus(id, newStatus, tenantId) {
-    if (typeof window !== 'undefined' && tenantId) {
-      try {
-        const current = await this.getCampaigns(tenantId);
-        const updated = current.map((c) => (c.id === id ? { ...c, status: newStatus } : c));
-        await this.saveCampaigns(tenantId, updated);
-      } catch (e) {}
+    if (isBackendAvailable) {
+      const response = await api.patch(
+        `/campaigns/${id}/status`,
+        { status: newStatus },
+        tenantId ? { params: { tenantId } } : undefined
+      );
+      const result = unwrapApiData(response) || { id, status: newStatus };
+
+      if (typeof window !== 'undefined' && tenantId) {
+        try {
+          const local = localStorage.getItem(getStorageKey(tenantId));
+          const current = local ? JSON.parse(local) : [];
+          if (Array.isArray(current)) {
+            await this.saveCampaigns(
+              tenantId,
+              current.map((c) => (c.id === id ? { ...c, status: result.status || newStatus } : c))
+            );
+          }
+        } catch (e) {}
+      }
+
+      return result;
     }
 
-    if (isBackendAvailable) {
-      try {
-        const response = await api.patch(`/campaigns/${id}/status`, { status: newStatus });
-        return unwrapApiData(response);
-      } catch (error) {
-        return { id, status: newStatus };
-      }
+    if (typeof window !== 'undefined' && tenantId) {
+      const current = await this.getCampaigns(tenantId);
+      const updated = current.map((c) => (c.id === id ? { ...c, status: newStatus } : c));
+      await this.saveCampaigns(tenantId, updated);
     }
     return { id, status: newStatus };
   },
 
   async deleteCampaign(id, tenantId) {
-    if (typeof window !== 'undefined' && tenantId) {
-      try {
-        const current = await this.getCampaigns(tenantId);
-        const updated = current.filter((c) => c.id !== id);
-        await this.saveCampaigns(tenantId, updated);
-      } catch (e) {}
+    if (isBackendAvailable) {
+      const response = await api.delete(`/campaigns/${id}`);
+      const result = unwrapApiData(response) || { id, deleted: true };
+
+      if (typeof window !== 'undefined' && tenantId) {
+        try {
+          const local = localStorage.getItem(getStorageKey(tenantId));
+          const current = local ? JSON.parse(local) : [];
+          if (Array.isArray(current)) {
+            await this.saveCampaigns(
+              tenantId,
+              current.filter((c) => c.id !== id)
+            );
+          }
+        } catch (e) {}
+      }
+
+      return result;
     }
 
-    if (isBackendAvailable) {
-      try {
-        await api.delete(`/campaigns/${id}`);
-        return { success: true };
-      } catch (error) {
-        return { success: true };
-      }
+    if (typeof window !== 'undefined' && tenantId) {
+      const current = await this.getCampaigns(tenantId);
+      const updated = current.filter((c) => c.id !== id);
+      await this.saveCampaigns(tenantId, updated);
     }
-    return { success: true };
+    return { id, deleted: true };
   },
 
   /**
@@ -113,24 +175,46 @@ export const campaignService = {
    */
   async linkPostToCampaign(tenantId, campaignId, postSummary) {
     if (!tenantId || !campaignId || !postSummary) return null;
+
+    const postPayload = {
+      id: postSummary.id,
+      title: postSummary.title || 'Creativo de Pauta',
+      hookText: postSummary.hookText || postSummary.title || '',
+      network: postSummary.network || 'INSTAGRAM',
+      type: postSummary.type || 'Reel 9:16',
+    };
+
+    if (isBackendAvailable) {
+      const response = await api.patch(
+        `/campaigns/${campaignId}/link`,
+        { post: postPayload },
+        { params: { tenantId } }
+      );
+      const updatedCampaign = unwrapApiData(response);
+
+      if (typeof window !== 'undefined') {
+        try {
+          const local = localStorage.getItem(getStorageKey(tenantId));
+          const current = local ? JSON.parse(local) : [];
+          if (Array.isArray(current) && updatedCampaign) {
+            await this.saveCampaigns(
+              tenantId,
+              current.map((c) => (c.id === campaignId ? updatedCampaign : c))
+            );
+          }
+        } catch (e) {}
+      }
+
+      return updatedCampaign;
+    }
+
     const current = await this.getCampaigns(tenantId);
     let matched = null;
     const updated = current.map((c) => {
       if (c.id === campaignId) {
         const linked = Array.isArray(c.linkedPosts) ? c.linkedPosts : [];
-        const alreadyLinked = linked.some((p) => p.id === postSummary.id);
-        const nextLinked = alreadyLinked
-          ? linked
-          : [
-              {
-                id: postSummary.id,
-                title: postSummary.title || 'Creativo de Pauta',
-                hookText: postSummary.hookText || postSummary.title || '',
-                network: postSummary.network || 'INSTAGRAM',
-                type: postSummary.type || 'Reel 9:16',
-              },
-              ...linked,
-            ];
+        const alreadyLinked = linked.some((p) => p.id === postPayload.id);
+        const nextLinked = alreadyLinked ? linked : [postPayload, ...linked];
         matched = {
           ...c,
           piecesCount: nextLinked.length,
@@ -154,11 +238,10 @@ export const campaignService = {
       return await this.linkPostToCampaign(tenantId, targetCampaignId, post);
     }
 
-    const current = await this.getCampaigns(tenantId);
     const todayIso = new Date().toISOString().split('T')[0];
     const nextMonth = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
     const boostedCamp = {
-      id: `camp-boost-${Date.now()}`,
+      tenantId,
       name: `Boost Pauta: ${post.title || 'Reel Ganador'}`,
       offer: post.hookText || post.title || 'Oferta Comercial Validada',
       objective: 'Citas & Conversaciones Calificadas',
@@ -186,9 +269,7 @@ export const campaignService = {
       cpl: 0,
     };
 
-    const updated = [boostedCamp, ...current];
-    await this.saveCampaigns(tenantId, updated);
-    return boostedCamp;
+    return await this.createCampaign(boostedCamp, tenantId);
   },
 };
 

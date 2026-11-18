@@ -6,6 +6,7 @@ import { performanceService, ZERO_PERFORMANCE_METRICS } from '@/services/perform
 import { campaignService } from '@/services/campaignService';
 import { leadService } from '@/services/leadService';
 import { calendarService } from '@/services/calendarService';
+import { aiService } from '@/services/aiService';
 import api, { unwrapApiData } from '@/services/api';
 import { StatCard } from '@/components/common/StatCard';
 import { Button } from '@/components/common/Button';
@@ -103,28 +104,49 @@ export const PerformanceDashboard = () => {
   // Estados interactivos para auditoría del sitio web del agente analista
   const [isAuditingWebsite, setIsAuditingWebsite] = useState(false);
   const [auditStepText, setAuditStepText] = useState('');
-  const [lastAuditTimestamp, setLastAuditTimestamp] = useState('Hoy a las 08:00 AM (Telemetría en Vivo)');
+  const [auditResult, setAuditResult] = useState(null);
+  const [auditError, setAuditError] = useState(null);
+  const [lastAuditTimestamp, setLastAuditTimestamp] = useState('Telemetría en Vivo (Sin auditoría manual)');
   const [showDeepAuditDetails, setShowDeepAuditDetails] = useState(true);
 
-  const handleRunWebsiteAudit = () => {
-    if (isAuditingWebsite) return;
+  const handleRunWebsiteAudit = async () => {
+    if (isAuditingWebsite || !activeTenantId) return;
     setIsAuditingWebsite(true);
-    setAuditStepText('Conectando con URL oficial y analizando Core Web Vitals (LCP, TTFB)...');
+    setAuditError(null);
+    setAuditStepText('Consultando telemetría real en PostgreSQL y evaluando con Agente IA...');
 
-    setTimeout(() => {
-      setAuditStepText('Evaluando visibilidad, contraste de botón WhatsApp (WCAG AA) y eventos DOM...');
-    }, 600);
+    try {
+      const realTelemetry = await performanceService.getDualTelemetry(activeTenantId);
+      const webStats = realTelemetry?.webTrafficMetrics || {};
+      const microStats = realTelemetry?.microLandingMetrics || {};
+      const targetUrl = activeTenant?.websiteUrl || 'Sin URL oficial configurada';
 
-    setTimeout(() => {
-      setAuditStepText('Verificando consistencia de píxeles Meta CAPI y GA4 Measurement Protocol...');
-    }, 1200);
+      const prompt = [
+        `Realiza una auditoría breve de conversión y fricción web para el negocio "${activeTenant?.name || activeTenantId}".`,
+        `URL analizada: ${targetUrl}.`,
+        `Telemetría real: Sesiones web=${webStats.sessions ?? 0}, Click-to-WhatsApp=${webStats.whatsappClickRate || '0.0%'}, Rebote web=${webStats.bounceRate || '0%'},`,
+        `Visitas Micro-Landing=${microStats.visits ?? 0}, Leads=${microStats.leadsGenerated ?? 0}, Conversión=${microStats.conversionRate || '0.0%'}, Tiempo carga=${microStats.avgLoadTime || '0.00s'}.`,
+        `CAPI Sync Rate=${data?.summary?.capiSyncRate ?? 0}%.`,
+        `Entrega un diagnóstico conciso (máximo 3 líneas) y 2 acciones prioritarias basadas exclusivamente en estos datos.`,
+      ].join(' ');
 
-    setTimeout(() => {
-      setAuditStepText('Sub-Bot Analista: Diagnóstico algorítmico completado con éxito.');
-      setIsAuditingWebsite(false);
+      const aiRes = await aiService.chat({
+        tenantId: activeTenantId,
+        message: prompt,
+      });
+
+      const replyText = aiRes?.reply || aiRes?.message || aiRes?.content || aiRes?.response || '';
+      if (!replyText) {
+        throw new Error('El agente analista no devolvió un diagnóstico válido.');
+      }
+
+      setAuditResult(replyText);
+      setData((prev) => (prev ? { ...prev, dualTelemetry: realTelemetry } : prev));
+      setAuditStepText('Diagnóstico completado con telemetría real.');
+
       const now = new Date();
       const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      setLastAuditTimestamp(`Hoy a las ${timeStr} (Auditoría Manual con Agente IA)`);
+      setLastAuditTimestamp(`Hoy a las ${timeStr} (Auditoría Real con Agente IA)`);
       try {
         confetti({
           particleCount: 30,
@@ -133,7 +155,16 @@ export const PerformanceDashboard = () => {
           colors: ['#E7F900', '#06B6D4', '#10B981'],
         });
       } catch (e) {}
-    }, 1800);
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
+        'No se pudo ejecutar la auditoría real contra el Agente IA.';
+      setAuditError(msg);
+      setAuditStepText('');
+    } finally {
+      setIsAuditingWebsite(false);
+    }
   };
 
   const loadData = useCallback(async () => {
@@ -251,7 +282,7 @@ export const PerformanceDashboard = () => {
 
     if (channelHealth?.whatsapp?.status === 'CONNECTED' || waConf.status === 'connected') {
       waStatus = 'connected';
-      waLatency = channelHealth?.whatsapp?.latencyMs || waConf.latencyMs || 28;
+      waLatency = channelHealth?.whatsapp?.latencyMs || waConf.latencyMs || null;
       waLastSync = 'Verificado vía Cloud API v21.0';
     } else if (channelHealth?.whatsapp?.isConfigured || activeTenant?.whatsappNumberId || waConf.enabled) {
       waStatus = 'pending';
@@ -959,14 +990,24 @@ export const PerformanceDashboard = () => {
                             Frecuencia de Anuncio:
                           </span>
                           <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded border bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
-                            {chInteractions > 0 ? '1.2x (Saludable)' : '— (En espera)'}
+                            {ch.tenantConfig?.adFrequency
+                              ? `${ch.tenantConfig.adFrequency}x`
+                              : isMeta && channelHealth?.meta?.frequency
+                              ? `${Number(channelHealth.meta.frequency).toFixed(1)}x`
+                              : 'Sin medición'}
                           </span>
                         </div>
 
                         <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)] font-mono">
                           <span>Retención de Audiencia:</span>
                           <span className={`font-bold ${chInteractions > 0 ? 'text-neon' : 'text-[var(--text-muted)]'}`}>
-                            {chInteractions > 0 ? '98.5%' : '—'}
+                            {ch.tenantConfig?.retentionRate
+                              ? `${ch.tenantConfig.retentionRate}`
+                              : data?.summary?.avgHookRate > 0
+                              ? `${data.summary.avgHookRate}%`
+                              : chInteractions > 0 && chBounce !== '0.0%' && !isNaN(parseFloat(chBounce))
+                              ? `${Math.max(0, 100 - parseFloat(chBounce)).toFixed(1)}%`
+                              : 'Sin medición'}
                           </span>
                         </div>
                       </div>
@@ -1218,7 +1259,7 @@ export const PerformanceDashboard = () => {
                 </div>
               </div>
 
-              {/* Banner de Ejecución del Agente en Tiempo Real */}
+              {/* Banner de Ejecución o Error del Agente en Tiempo Real */}
               {isAuditingWebsite && (
                 <div className="p-3.5 rounded-xl bg-cyan-500/15 border border-cyan-500/40 flex items-center gap-3 animate-pulse text-xs font-mono text-cyan-600 dark:text-cyan-300">
                   <div className="w-4 h-4 rounded-full border-2 border-cyan-400 border-t-transparent animate-spin shrink-0" />
@@ -1232,6 +1273,16 @@ export const PerformanceDashboard = () => {
                 </div>
               )}
 
+              {auditError && (
+                <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 flex items-start gap-2.5 text-xs font-mono text-red-400">
+                  <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold">Error en Auditoría IA:</p>
+                    <p className="text-[11px] mt-0.5">{auditError}</p>
+                  </div>
+                </div>
+              )}
+
               {/* Diagnóstico Resumido del Lobo Vectorial */}
               <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs">
                 <div className="flex items-start gap-2.5">
@@ -1240,9 +1291,10 @@ export const PerformanceDashboard = () => {
                     <span className="font-bold text-[var(--text-main)] block font-mono text-xs">
                       Diagnóstico del Asesor:
                     </span>
-                    <p className="text-[var(--text-muted)] leading-relaxed">
-                      {activeTenant?.frictionDiagnosis ||
-                        'El tráfico de pago llega al sitio con buen costo unitario, pero la conversión hacia WhatsApp se encuentra por debajo del umbral mínimo del 3.0%.'}
+                    <p className="text-[var(--text-muted)] leading-relaxed whitespace-pre-line">
+                      {auditResult ||
+                        activeTenant?.frictionDiagnosis ||
+                        'Ejecuta "Re-Auditar con IA" para obtener un diagnóstico en vivo basado en la telemetría real de tu sitio y micro-landing.'}
                     </p>
                   </div>
                 </div>
@@ -1273,11 +1325,14 @@ export const PerformanceDashboard = () => {
                           Velocidad Móvil (LCP)
                         </span>
                         <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-500 font-bold border border-amber-500/20">
-                          2.9s (Lento)
+                          {data?.dualTelemetry?.microLandingMetrics?.avgLoadTime &&
+                          data.dualTelemetry.microLandingMetrics.avgLoadTime !== '0.00s'
+                            ? data.dualTelemetry.microLandingMetrics.avgLoadTime
+                            : 'Sin medición'}
                         </span>
                       </div>
                       <p className="text-xs text-[var(--text-muted)] leading-snug">
-                        El tiempo de carga en 4G excede los 2.2s recomendados por imágenes pesadas en el banner.
+                        Tiempo promedio de carga registrado en telemetría real (umbral recomendado: &lt; 2.2s).
                       </p>
                     </div>
 
@@ -1289,11 +1344,13 @@ export const PerformanceDashboard = () => {
                           Botón de WhatsApp
                         </span>
                         <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-red-500/15 text-red-500 font-bold border border-red-500/20">
-                          Contraste 2.9:1
+                          {activeTenant?.whatsappContrastRatio ||
+                            data?.dualTelemetry?.rawTelemetry?.whatsappContrastRatio ||
+                            'Sin medición'}
                         </span>
                       </div>
                       <p className="text-xs text-[var(--text-muted)] leading-snug">
-                        Botón al fondo de página sin fijación flotante en móvil. Fuga a más del 98% de visitantes.
+                        Visibilidad y contraste WCAG AA del punto de contacto directo a WhatsApp en móvil.
                       </p>
                     </div>
 
@@ -1305,7 +1362,7 @@ export const PerformanceDashboard = () => {
                           Click-to-Chat
                         </span>
                         <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-500 font-bold border border-cyan-500/20">
-                          {webMetrics.whatsappClickRate}
+                          {webMetrics.whatsappClickRate || 'N/D'}
                         </span>
                       </div>
                       <p className="text-xs text-[var(--text-muted)] leading-snug">
@@ -1321,7 +1378,11 @@ export const PerformanceDashboard = () => {
                           Meta CAPI & GA4
                         </span>
                         <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-500 font-bold border border-emerald-500/20">
-                          99.4% Emparejado
+                          {data?.summary?.capiSyncRate > 0
+                            ? `${data.summary.capiSyncRate}% Emparejado`
+                            : channelHealth?.meta?.status === 'CONNECTED'
+                            ? 'Conectado (0 eventos)'
+                            : 'Sin medición'}
                         </span>
                       </div>
                       <p className="text-xs text-[var(--text-muted)] leading-snug">

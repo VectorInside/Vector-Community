@@ -8,32 +8,34 @@ import {
   Calendar,
   CheckCircle2,
   Copy,
+  Download,
   ExternalLink,
   QrCode,
-  Share2,
   MessageCircle,
-  ShieldCheck,
   Zap,
-  Info,
+  AlertCircle,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { VectorInsideLogo } from '@/components/common/VectorInsideLogo';
+import { calendarService } from '@/services/calendarService';
 
 export const MobileSyncModal = ({ isOpen, onClose, tenant }) => {
   const [copiedLink, setCopiedLink] = useState(false);
-  const [copiedWebcal, setCopiedWebcal] = useState(false);
+  const [copiedEndpoint, setCopiedEndpoint] = useState(false);
   const [activeTab, setActiveTab] = useState('qr'); // 'qr' | 'gcal' | 'apple'
+  const [isDownloadingIcs, setIsDownloadingIcs] = useState(false);
+  const [icsError, setIcsError] = useState(null);
 
   if (!isOpen) return null;
 
   const tenantName = tenant?.name || 'Sin negocio seleccionado';
   const tenantId = tenant?.id || '';
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
   const mobileAgendaUrl = typeof window !== 'undefined'
     ? `${window.location.origin}/agenda${tenantId ? `?tenant=${tenantId}` : ''}`
-    : `https://vectorinside.app/agenda${tenantId ? `?tenant=${tenantId}` : ''}`;
-  
-  const gcalSubscribeUrl = `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(`webcal://api.vectorinside.app/cal/${tenantId || 'default'}/events.ics`)}`;
-  const webcalUrl = `webcal://api.vectorinside.app/cal/${tenantId || 'default'}/events.ics`;
+    : `/agenda${tenantId ? `?tenant=${tenantId}` : ''}`;
+
+  const backendIcsEndpoint = `${apiBaseUrl}/appointments/{id}/ics`;
+  const googleCalendarImportUrl = 'https://calendar.google.com/calendar/r/settings/export';
 
   const handleCopy = (text, type) => {
     navigator.clipboard.writeText(text);
@@ -41,17 +43,43 @@ export const MobileSyncModal = ({ isOpen, onClose, tenant }) => {
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
     } else {
-      setCopiedWebcal(true);
-      setTimeout(() => setCopiedWebcal(false), 2000);
+      setCopiedEndpoint(true);
+      setTimeout(() => setCopiedEndpoint(false), 2000);
     }
     try {
       confetti({ particleCount: 25, spread: 40, origin: { y: 0.6 } });
     } catch (e) {}
   };
 
+  const handleDownloadNextIcs = async () => {
+    setIcsError(null);
+    setIsDownloadingIcs(true);
+    try {
+      const appointments = await calendarService.getAppointments(tenantId);
+      const activeApt = Array.isArray(appointments)
+        ? appointments.find((a) => a.status !== 'CANCELLED') || appointments[0]
+        : null;
+
+      if (!activeApt?.id) {
+        setIcsError('No hay citas registradas en este negocio para exportar a .ICS.');
+        return;
+      }
+
+      const icsUrl = calendarService.getIcsDownloadUrl(activeApt.id);
+      window.open(icsUrl, '_blank', 'noopener,noreferrer');
+      try {
+        confetti({ particleCount: 25, spread: 40, origin: { y: 0.6 } });
+      } catch (e) {}
+    } catch (err) {
+      setIcsError(err?.message || 'No se pudo obtener el archivo .ICS desde el backend.');
+    } finally {
+      setIsDownloadingIcs(false);
+    }
+  };
+
   const handleShareWhatsapp = () => {
     const text = encodeURIComponent(
-      `📅 Acceso a la Master Agenda Móvil de ${tenantName}:\n${mobileAgendaUrl}\n\nSincroniza con Google Calendar aquí:\n${gcalSubscribeUrl}`
+      `📅 Acceso a la Master Agenda Móvil de ${tenantName}:\n${mobileAgendaUrl}\n\nImporta tus citas en Google Calendar desde:\n${googleCalendarImportUrl}`
     );
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
@@ -80,7 +108,7 @@ export const MobileSyncModal = ({ isOpen, onClose, tenant }) => {
                   Lleva tu Agenda en el Celular
                 </h3>
                 <p className="text-xs text-[var(--text-muted)] font-mono">
-                  {tenantName} • Google Calendar 2-Way Sync en tiempo real
+                  {tenantName} • Exportación .ICS y acceso móvil a Master Agenda
                 </p>
               </div>
             </div>
@@ -233,80 +261,98 @@ export const MobileSyncModal = ({ isOpen, onClose, tenant }) => {
               <div className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-3">
                 <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold">
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>Suscripción Bidireccional Automática</span>
+                  <span>Importación de Citas (.ICS) a Google Calendar</span>
                 </div>
                 <p className="text-[var(--text-muted)] leading-relaxed">
-                  Al suscribirte, cada cita que el Lobo Vectorial o tu equipo confirmen en WhatsApp o en este panel aparecerá <strong>automáticamente en tu app de Google Calendar</strong> en tu Android o iPhone.
+                  Descarga el archivo <strong>.ICS</strong> generado desde tu backend en PostgreSQL e impórtalo directamente en tu cuenta de Google Calendar, o abre el enlace de Google Calendar desde el detalle de cada cita.
                 </p>
 
-                <div className="pt-2">
+                {icsError && (
+                  <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-[11px] flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{icsError}</span>
+                  </div>
+                )}
+
+                <div className="pt-2 flex flex-col sm:flex-row gap-2">
+                  <button
+                    type="button"
+                    onClick={handleDownloadNextIcs}
+                    disabled={isDownloadingIcs}
+                    className="flex-1 py-3 px-4 rounded-xl bg-neon text-black font-bold text-xs flex items-center justify-center gap-2 shadow-[0_0_15px_var(--neon-glow)] hover:scale-[1.02] active:scale-98 transition-all disabled:opacity-50"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>{isDownloadingIcs ? 'Descargando .ICS...' : 'Descargar .ICS desde Backend'}</span>
+                  </button>
                   <a
-                    href={gcalSubscribeUrl}
+                    href={googleCalendarImportUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="w-full py-3 px-4 rounded-xl bg-neon text-black font-bold text-xs flex items-center justify-center gap-2 shadow-[0_0_15px_var(--neon-glow)] hover:scale-[1.02] active:scale-98 transition-all"
+                    className="flex-1 py-3 px-4 rounded-xl bg-[var(--bg-panel)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] border border-[var(--border-color)] font-bold text-xs flex items-center justify-center gap-2 transition-all"
                   >
                     <Calendar className="w-4 h-4" />
-                    <span>Abrir y Añadir a mi Google Calendar Ahora</span>
+                    <span>Importar en Google Calendar</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 </div>
               </div>
 
               <div className="p-3.5 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-1.5 text-[11px]">
-                <strong className="text-[var(--text-main)] block">¿Cómo funciona el Handshake?</strong>
+                <strong className="text-[var(--text-main)] block">¿Cómo funciona la importación?</strong>
                 <p className="text-[var(--text-muted)]">
-                  • Citas confirmadas en WhatsApp se registran con bloqueo de horario.<br />
-                  • Si creas un evento en tu Google Calendar con la palabra "Bloqueado", la IA respetará ese espacio y no lo ofrecerá a prospectos.
+                  • Cada cita confirmada cuenta con un endpoint real <code className="text-[var(--text-main)]">{backendIcsEndpoint}</code>.<br />
+                  • También puedes abrir cada cita en la Master Agenda y usar <strong>&quot;Añadir a Google Calendar&quot;</strong> para crear el evento al instante.
                 </p>
               </div>
             </div>
           )}
 
-          {/* PESTAÑA 3: APPLE CALENDAR / WEBCAL */}
+          {/* PESTAÑA 3: APPLE CALENDAR / .ICS */}
           {activeTab === 'apple' && (
             <div className="space-y-4 animate-fade-in text-xs font-mono">
               <div className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-3">
                 <div className="flex items-center gap-2 text-blue-500 font-bold">
                   <Smartphone className="w-4 h-4" />
-                  <span>Enlace WebCal (Apple Calendar / iPhone / Mac)</span>
+                  <span>Exportación .ICS (Apple Calendar / iPhone / Mac)</span>
                 </div>
                 <p className="text-[var(--text-muted)] leading-relaxed">
-                  Para sincronizar con la app nativa <strong>Calendario de iPhone / iPad / Mac</strong>, suscríbete al feed encriptado RFC 5545 con actualización periódica:
+                  Descarga el archivo <strong>.ICS (RFC 5545)</strong> desde el endpoint del backend para abrirlo e importarlo directamente en la app nativa <strong>Calendario de iPhone / iPad / Mac</strong>:
                 </p>
 
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
                     readOnly
-                    value={webcalUrl}
+                    value={backendIcsEndpoint}
                     className="flex-1 px-3 py-2 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] text-[11px] font-mono text-[var(--text-muted)] truncate"
                   />
                   <button
                     type="button"
-                    onClick={() => handleCopy(webcalUrl, 'webcal')}
+                    onClick={() => handleCopy(backendIcsEndpoint, 'endpoint')}
                     className="px-3.5 py-2 rounded-xl bg-[var(--bg-panel)] hover:bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border-color)] font-bold text-xs flex items-center gap-1.5 transition-all"
                   >
                     <Copy className="w-3.5 h-3.5" />
-                    <span>{copiedWebcal ? '¡Copiado!' : 'Copiar'}</span>
+                    <span>{copiedEndpoint ? '¡Copiado!' : 'Copiar'}</span>
                   </button>
                 </div>
 
                 <div className="pt-2">
-                  <a
-                    href={webcalUrl}
-                    className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md"
+                  <button
+                    type="button"
+                    onClick={handleDownloadNextIcs}
+                    disabled={isDownloadingIcs}
+                    className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md disabled:opacity-50"
                   >
-                    <Smartphone className="w-4 h-4" />
-                    <span>Suscribir en Calendario de iPhone / Mac</span>
-                  </a>
+                    <Download className="w-4 h-4" />
+                    <span>{isDownloadingIcs ? 'Descargando .ICS...' : 'Descargar Archivo .ICS para Apple Calendar'}</span>
+                  </button>
                 </div>
               </div>
 
               <div className="p-3.5 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[11px] text-[var(--text-muted)] space-y-1">
-                <strong className="text-[var(--text-main)] block">Instrucciones iPhone:</strong>
-                <p>1. Ve a Ajustes &gt; Calendario &gt; Cuentas &gt; Añadir cuenta &gt; Otros &gt; Añadir calendario suscrito.</p>
-                <p>2. Pega la URL WebCal de arriba y pulsa Guardar.</p>
+                <strong className="text-[var(--text-main)] block">Instrucciones iPhone / Mac:</strong>
+                <p>1. Pulsa &quot;Descargar Archivo .ICS&quot; o descarga el .ICS desde el correo de confirmación de la cita.</p>
+                <p>2. Al abrir el archivo en Safari o Mail, iOS/macOS te permitirá añadir el evento directamente a tu Calendario.</p>
               </div>
             </div>
           )}

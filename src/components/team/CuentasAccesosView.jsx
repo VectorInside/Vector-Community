@@ -33,6 +33,7 @@ import {
 import confetti from 'canvas-confetti';
 import { Portal } from '@/components/common/Portal';
 import { isValidEmail, normalizePhone10, formatPhoneDisplay, getEmailDomainTypoSuggestion } from '@/utils/formatters';
+import api, { unwrapApiData } from '@/services/api';
 import { tenantService } from '@/services/tenantService';
 import { userService } from '@/services/userService';
 
@@ -449,26 +450,38 @@ export const CuentasAccesosView = () => {
   };
 
   // Reset Password Handler (Regenerates temp password and flags mustChangePassword = true)
-  const handleResetPasswordSubmit = (tenantId, newPass) => {
-    let updatedAcc = null;
-    setAccounts((prev) =>
-      prev.map((acc) => {
-        if (acc.tenantId === tenantId) {
-          updatedAcc = {
-            ...acc,
-            tempPassword: newPass,
-            mustChangePassword: true,
-            lastLogin: 'Contraseña provisional restablecida',
-          };
-          return updatedAcc;
-        }
-        return acc;
-      })
-    );
-    setResetPasswordModalUser(null);
-    showToast('Contraseña provisional asignada. El cliente deberá cambiarla al iniciar sesión.');
-    if (updatedAcc) {
+  const handleResetPasswordSubmit = async (tenantId, newPass) => {
+    const targetAccount = accounts.find((acc) => acc.tenantId === tenantId);
+    if (!targetAccount?.id) {
+      showToast('No se encontró el identificador de la cuenta.');
+      return;
+    }
+
+    try {
+      const response = await api.patch(`/users/${targetAccount.id}/reset-password`, {
+        newPassword: newPass,
+      });
+      unwrapApiData(response);
+
+      const updatedAcc = {
+        ...targetAccount,
+        tempPassword: newPass,
+        mustChangePassword: true,
+        lastLogin: 'Contraseña provisional restablecida',
+      };
+
+      setAccounts((prev) =>
+        prev.map((acc) => (acc.tenantId === tenantId ? updatedAcc : acc))
+      );
+      setResetPasswordModalUser(null);
+      showToast('Contraseña provisional asignada. El cliente deberá cambiarla al iniciar sesión.');
       setShareCredentialsUser(updatedAcc);
+    } catch (err) {
+      const errMsg =
+        err?.response?.data?.message ||
+        err?.message ||
+        'Error al restablecer la contraseña en el servidor.';
+      showToast(errMsg);
     }
   };
 

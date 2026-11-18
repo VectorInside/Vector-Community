@@ -74,22 +74,35 @@ export const ChannelConnectionsManager = () => {
   const [activeGuideModal, setActiveGuideModal] = useState(null);
   const [isSaved, setIsSaved] = useState(false);
 
-  const handleToggleChannel = (channelId) => {
-    setChannelsState((prev) => {
-      const current = prev[channelId] || { enabled: false };
-      const nextEnabled = !current.enabled;
-      return {
-        ...prev,
-        [channelId]: {
-          ...current,
-          enabled: nextEnabled,
-          status: nextEnabled ? 'connected' : 'disconnected',
-          latencyMs: nextEnabled ? Math.floor(Math.random() * 90) + 70 : null,
-          lastSync: nextEnabled ? 'En tiempo real' : null,
-        },
-      };
-    });
+  const handleToggleChannel = async (channelId) => {
+    const current = channelsState[channelId] || { enabled: false };
+    const nextEnabled = !current.enabled;
+    const nextChannelsState = {
+      ...channelsState,
+      [channelId]: {
+        ...current,
+        enabled: nextEnabled,
+        status: nextEnabled ? 'configured' : 'disconnected',
+        latencyMs: null,
+        lastSync: nextEnabled ? 'Pendiente de verificar' : null,
+      },
+    };
+    setChannelsState(nextChannelsState);
     setIsSaved(false);
+
+    if (updateTenantPolicy && activeTenant?.id) {
+      const res = await updateTenantPolicy(activeTenant.id, {
+        connectedChannels: nextChannelsState,
+      });
+      if (res && res.success === false) {
+        triggerModal(
+          'Error al Actualizar Canal',
+          res?.error?.response?.data?.message ||
+            res?.error?.message ||
+            'No se pudo persistir el estado del canal en PostgreSQL.'
+        );
+      }
+    }
   };
 
   const handleFieldChange = (channelId, fieldKey, value) => {
@@ -100,39 +113,155 @@ export const ChannelConnectionsManager = () => {
     setIsSaved(false);
   };
 
-  const handleTestConnection = (channelId, channelName) => {
+  const handleTestConnection = async (channelId, channelName) => {
+    if (!activeTenant?.id) {
+      triggerModal(
+        'Negocio Requerido',
+        'Selecciona un negocio activo para verificar las credenciales contra el backend.'
+      );
+      return;
+    }
+
     setTestingChannel(channelId);
-    setTimeout(() => {
-      setTestingChannel(null);
-      const simulatedLatency = Math.floor(Math.random() * 80) + 65;
+    const startedAt = performance.now();
+
+    try {
+      if (channelId === 'whatsapp') {
+        const response = await api.get(`/webhooks/whatsapp/health/${activeTenant.id}`);
+        const data = response?.data?.data ?? response?.data ?? {};
+        const elapsedMs = Math.round(performance.now() - startedAt);
+        const isOk = Boolean(data?.connected || data?.isConfigured || data?.status === 'CONNECTED');
+
+        setChannelsState((prev) => ({
+          ...prev,
+          [channelId]: {
+            ...prev[channelId],
+            enabled: isOk ? true : Boolean(prev[channelId]?.enabled),
+            status: isOk ? 'connected' : 'disconnected',
+            latencyMs: elapsedMs,
+            lastSync: isOk ? `Verificado (${elapsedMs}ms)` : 'Sin configurar en backend',
+          },
+        }));
+
+        if (isOk) {
+          try {
+            confetti({
+              particleCount: 35,
+              spread: 60,
+              origin: { y: 0.7 },
+              colors: ['#E7F900', '#10B981', '#38BDF8'],
+            });
+          } catch (e) {}
+          triggerModal(
+            'WhatsApp Cloud API Verificado',
+            `<b>Plataforma:</b> ${channelName}<br><b>Estado Backend:</b> ${data?.status || 'CONNECTED'}<br><b>Latencia Real:</b> ${elapsedMs}ms`
+          );
+        } else {
+          triggerModal(
+            'WhatsApp No Configurado en Backend',
+            `El endpoint <code>/webhooks/whatsapp/health/${activeTenant.id}</code> respondió en ${elapsedMs}ms pero no hay credenciales activas guardadas en PostgreSQL. Ingresa tus claves y haz clic en <b>Guardar Conexiones</b>.`
+          );
+        }
+        return;
+      }
+
+      if (channelId === 'instagram' || channelId === 'meta') {
+        const health = await metaCommentService.getHealthAndConfig(activeTenant.id);
+        const elapsedMs = Math.round(performance.now() - startedAt);
+        const isOk = Boolean(health?.connected || health?.isConfigured || health?.status === 'CONNECTED');
+
+        setChannelsState((prev) => ({
+          ...prev,
+          [channelId]: {
+            ...prev[channelId],
+            enabled: isOk ? true : Boolean(prev[channelId]?.enabled),
+            status: isOk ? 'connected' : 'disconnected',
+            latencyMs: elapsedMs,
+            lastSync: isOk ? `Verificado (${elapsedMs}ms)` : 'Sin configurar en backend',
+          },
+        }));
+
+        if (isOk) {
+          try {
+            confetti({
+              particleCount: 35,
+              spread: 60,
+              origin: { y: 0.7 },
+              colors: ['#E7F900', '#10B981', '#38BDF8'],
+            });
+          } catch (e) {}
+          triggerModal(
+            'Meta / Instagram API Verificado',
+            `<b>Plataforma:</b> ${channelName}<br><b>Estado Backend:</b> ${health?.status || 'CONNECTED'}<br><b>Latencia Real:</b> ${elapsedMs}ms`
+          );
+        } else {
+          triggerModal(
+            'Meta / Instagram No Configurado',
+            `El backend respondió en ${elapsedMs}ms pero el canal Meta/Instagram aún no tiene credenciales activas en PostgreSQL para este negocio.`
+          );
+        }
+        return;
+      }
+
+      // Otros canales (Google, TikTok, LinkedIn, YouTube, etc.): verificar credenciales guardadas en backend (tenant)
+      const catalogEntry = OMNICHANNEL_API_CATALOG[channelId];
+      const savedChannel = activeTenant?.connectedChannels?.[channelId] || {};
+      const requiredFields = catalogEntry?.fields || [];
+      const missingFields = requiredFields.filter(
+        (f) => !String(savedChannel[f.key] || '').trim()
+      );
+      const isConfiguredInBackend = Boolean(savedChannel.enabled) && missingFields.length === 0;
+
       setChannelsState((prev) => ({
         ...prev,
         [channelId]: {
           ...prev[channelId],
-          enabled: true,
-          status: 'connected',
-          latencyMs: simulatedLatency,
-          lastSync: 'Recién verificado (200 OK)',
+          status: isConfiguredInBackend ? 'connected' : 'disconnected',
+          latencyMs: null,
+          lastSync: isConfiguredInBackend
+            ? 'Credenciales guardadas en PostgreSQL'
+            : 'Faltan credenciales en backend',
         },
       }));
 
-      try {
-        confetti({
-          particleCount: 35,
-          spread: 60,
-          origin: { y: 0.7 },
-          colors: ['#E7F900', '#10B981', '#38BDF8'],
-        });
-      } catch (e) {}
-
+      if (isConfiguredInBackend) {
+        triggerModal(
+          'Credenciales Verificadas en PostgreSQL',
+          `<b>Plataforma:</b> ${channelName}<br><b>Estado:</b> Habilitado y con todos los parámetros requeridos guardados en el tenant.`
+        );
+      } else {
+        const missingLabels = missingFields.map((f) => f.label).join(', ');
+        triggerModal(
+          'Credenciales Pendientes en Backend',
+          `<b>Plataforma:</b> ${channelName}<br>${
+            missingLabels
+              ? `<b>Campos faltantes en PostgreSQL:</b> ${missingLabels}<br>`
+              : 'El canal no está habilitado en PostgreSQL.<br>'
+          }Completa los campos y presiona <b>Guardar Conexiones</b> para persistirlos.`
+        );
+      }
+    } catch (err) {
+      setChannelsState((prev) => ({
+        ...prev,
+        [channelId]: {
+          ...prev[channelId],
+          status: 'error',
+          latencyMs: null,
+          lastSync: 'Error de verificación',
+        },
+      }));
       triggerModal(
-        'Prueba de API Exitosa',
-        `<b>Plataforma:</b> ${channelName}<br><b>Estado Webhook:</b> 200 OK<br><b>Latencia de Respuesta:</b> ${simulatedLatency}ms<br><b>Verificación:</b> Token válido con permisos de lectura y despacho de eventos.`
+        'Error al Verificar Conexión',
+        err?.response?.data?.message ||
+          err?.message ||
+          `No se pudo verificar ${channelName} contra el backend.`
       );
-    }, 900);
+    } finally {
+      setTestingChannel(null);
+    }
   };
 
-  const handleSaveAll = () => {
+  const handleSaveAll = async () => {
     if (updateTenantPolicy && activeTenant?.id) {
       const SECRET_TOKEN_KEYS = ['accessToken', 'apiSecret', 'clientSecret', 'bearerToken', 'botToken'];
       const maskSecret = (val) => {
@@ -166,37 +295,57 @@ export const ChannelConnectionsManager = () => {
         sanitizedConsolidated[chanId] = cleanChanObj;
       });
 
+      const errors = [];
+
       const waRaw = rawConsolidated.whatsapp;
       if (waRaw && (waRaw.phoneNumberId || waRaw.accessToken || waRaw.wabaId)) {
-        api
-          .post(`/webhooks/whatsapp/connect/${activeTenant.id}`, {
+        try {
+          await api.post(`/webhooks/whatsapp/connect/${activeTenant.id}`, {
             phoneNumberId: waRaw.phoneNumberId || '',
             wabaId: waRaw.wabaId || '',
             accessToken: waRaw.accessToken || '',
             verifyToken: waRaw.verifyToken || 'VectorInsideSecureWebhookToken2026',
-          })
-          .catch(() => {});
+          });
+        } catch (err) {
+          errors.push(
+            `<b>WhatsApp:</b> ${err?.response?.data?.message || err?.message || 'Error al guardar credenciales en backend'}`
+          );
+        }
       }
 
       const metaRaw = rawConsolidated.meta;
       if (metaRaw && (metaRaw.pixelId || metaRaw.accessToken || metaRaw.instagramAccountId)) {
         const connectFn = metaCommentService.connectAccount || metaCommentService.connectInstagram;
         if (typeof connectFn === 'function') {
-          connectFn
-            .call(metaCommentService, activeTenant.id, {
+          try {
+            await connectFn.call(metaCommentService, activeTenant.id, {
               instagramAccountId: metaRaw.instagramAccountId || metaRaw.pixelId || '',
               accountHandle: metaRaw.accountHandle || activeTenant?.shortName || '',
               accessToken: metaRaw.accessToken || '',
               webhookVerifyToken: metaRaw.verifyToken || 'VectorInsideMetaWebhook2026',
-            })
-            .catch(() => {});
+            });
+          } catch (err) {
+            errors.push(
+              `<b>Meta / Instagram:</b> ${err?.response?.data?.message || err?.message || 'Error al guardar credenciales en backend'}`
+            );
+          }
         }
       }
 
-      updateTenantPolicy(activeTenant.id, {
+      const policyRes = await updateTenantPolicy(activeTenant.id, {
         connectedChannels: sanitizedConsolidated,
         whatsappNumberId: sanitizedConsolidated?.whatsapp?.phoneNumberId || activeTenant?.whatsappNumberId,
       });
+      if (policyRes && policyRes.success === false) {
+        errors.push(
+          `<b>Tenant PostgreSQL:</b> ${policyRes?.error?.response?.data?.message || policyRes?.error?.message || 'Error al persistir configuración'}`
+        );
+      }
+
+      if (errors.length > 0) {
+        triggerModal('Error al Guardar Conexiones', errors.join('<br/>'));
+        return;
+      }
     }
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 2500);
@@ -360,12 +509,33 @@ export const ChannelConnectionsManager = () => {
                     {/* Status de Conexión y Latencia */}
                     <div className="p-2.5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex items-center justify-between text-[11px]">
                       <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                        <span className="text-[var(--text-muted)]">Webhook Status:</span>
-                        <span className="text-emerald-500 font-bold">200 OK</span>
+                        <span
+                          className={`w-2 h-2 rounded-full ${
+                            channelConfig.status === 'connected'
+                              ? 'bg-emerald-500 animate-pulse'
+                              : channelConfig.status === 'error'
+                              ? 'bg-rose-500'
+                              : 'bg-amber-500'
+                          }`}
+                        />
+                        <span className="text-[var(--text-muted)]">Estado:</span>
+                        <span
+                          className={`font-bold ${
+                            channelConfig.status === 'connected'
+                              ? 'text-emerald-500'
+                              : channelConfig.status === 'error'
+                              ? 'text-rose-400'
+                              : 'text-amber-400'
+                          }`}
+                        >
+                          {channelConfig.lastSync || (channelConfig.status === 'connected' ? 'Conectado' : 'Pendiente de verificar')}
+                        </span>
                       </div>
                       <span className="text-[10px] text-[var(--text-muted)] font-mono">
-                        Latencia: <strong className="text-neon">{channelConfig.latencyMs || 120}ms</strong>
+                        Latencia:{' '}
+                        <strong className="text-neon">
+                          {channelConfig.latencyMs != null ? `${channelConfig.latencyMs}ms` : '—'}
+                        </strong>
                       </span>
                     </div>
                   </div>

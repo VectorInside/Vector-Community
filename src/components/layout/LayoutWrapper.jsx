@@ -8,12 +8,11 @@ import { Header } from './Header';
 import { GeneralModal } from '@/components/common/GeneralModal';
 import { ClientPasswordChangeModal } from '@/components/common/ClientPasswordChangeModal';
 import { OnboardingTour } from '@/components/common/OnboardingTour';
-import { INITIAL_BUSINESS_ACCOUNTS } from '@/utils/mockAccounts';
 
 export const LayoutWrapper = ({ children }) => {
   const pathname = usePathname();
   const router = useRouter();
-  const { closeMobileSidebar, role, activeTenantKey, isAuthenticated, authChecking } = useAuth();
+  const { closeMobileSidebar, role, activeTenantKey, currentUser, isAuthenticated, authChecking } = useAuth();
   const [clientMustChangeAccount, setClientMustChangeAccount] = useState(null);
 
   const isMicroLanding = pathname?.startsWith('/m/') || pathname === '/m';
@@ -37,23 +36,41 @@ export const LayoutWrapper = ({ children }) => {
   // Check if current client user must change their temporary password
   useEffect(() => {
     if (role === 'client' && typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('vector_tenant_owner_accounts');
-        const list = saved ? JSON.parse(saved) : INITIAL_BUSINESS_ACCOUNTS;
-        const currentAccount = list.find((a) => a.tenantId === activeTenantKey) || null;
+      if (currentUser?.mustChangePassword) {
+        setClientMustChangeAccount({
+          ...currentUser,
+          tenantId: currentUser.tenantId || activeTenantKey,
+        });
+        return;
+      }
 
-        if (currentAccount && currentAccount.mustChangePassword) {
-          setClientMustChangeAccount(currentAccount);
-        } else {
+      if (currentUser?.mustChangePassword === undefined) {
+        try {
+          const saved = localStorage.getItem('vector_tenant_owner_accounts');
+          const list = saved ? JSON.parse(saved) : [];
+          const currentAccount = Array.isArray(list)
+            ? list.find(
+                (a) =>
+                  a.tenantId === activeTenantKey ||
+                  (currentUser?.email && a.email === currentUser.email)
+              ) || null
+            : null;
+
+          if (currentAccount && currentAccount.mustChangePassword) {
+            setClientMustChangeAccount(currentAccount);
+          } else {
+            setClientMustChangeAccount(null);
+          }
+        } catch {
           setClientMustChangeAccount(null);
         }
-      } catch (e) {
+      } else {
         setClientMustChangeAccount(null);
       }
     } else {
       setClientMustChangeAccount(null);
     }
-  }, [role, activeTenantKey, pathname]);
+  }, [role, activeTenantKey, currentUser, pathname]);
 
   if (isMicroLanding) {
     return <>{children}</>;

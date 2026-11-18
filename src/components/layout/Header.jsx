@@ -26,8 +26,24 @@ import {
   Pencil,
 } from 'lucide-react';
 import { findModuleByPath } from '@/utils/modulesRegistry';
+import { auditService } from '@/services/auditService';
+import { leadService } from '@/services/leadService';
 import { ChangePasswordModal } from '@/components/common/ChangePasswordModal';
 import { CommandPaletteModal } from '@/components/common/CommandPaletteModal';
+
+const READ_NOTIFS_STORAGE_KEY = 'vector_read_notifications';
+
+const formatRelativeTime = (rawDate) => {
+  if (!rawDate) return 'Reciente';
+  const parsed = new Date(rawDate);
+  if (Number.isNaN(parsed.getTime())) return 'Reciente';
+  const diffMin = Math.max(0, Math.floor((Date.now() - parsed.getTime()) / 60000));
+  if (diffMin < 1) return 'Ahora';
+  if (diffMin < 60) return `Hace ${diffMin}m`;
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) return `Hace ${diffHours}h`;
+  return parsed.toLocaleDateString('es-MX', { day: '2-digit', month: 'short' });
+};
 
 export const Header = () => {
   const router = useRouter();
@@ -35,6 +51,7 @@ export const Header = () => {
   const {
     role,
     currentUser,
+    isAuthenticated,
     logout,
     updateCurrentUserProfile,
     isAdmin,
@@ -114,24 +131,100 @@ export const Header = () => {
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, []);
 
-  const INITIAL_CROSS_TENANT_NOTIFICATIONS = [];
-
-  const [notifications, setNotifications] = useState(INITIAL_CROSS_TENANT_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState([]);
+  const [readNotifIds, setReadNotifIds] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(READ_NOTIFS_STORAGE_KEY);
+        const parsed = saved ? JSON.parse(saved) : [];
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
   const [isHeaderMounted, setIsHeaderMounted] = useState(false);
+
+  const targetTenantKey = activeTenantKey || activeTenant?.id;
 
   useEffect(() => {
     setIsHeaderMounted(true);
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('vector_global_notifications');
-        if (saved) {
-          setNotifications(JSON.parse(saved));
-        }
-      } catch (e) { }
-    }
   }, []);
 
-  const targetTenantKey = activeTenantKey || activeTenant?.id;
+  // Hydrate Notification Center from real backend events when authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setNotifications([]);
+      return;
+    }
+
+    let cancelled = false;
+    const readSet = new Set(readNotifIds);
+
+    Promise.all([
+      auditService.getAuditLogs({ limit: 10 }).catch(() => []),
+      targetTenantKey ? leadService.getLeadsByTenant(targetTenantKey).catch(() => []) : Promise.resolve([]),
+    ]).then(([auditLogs, leads]) => {
+      if (cancelled) return;
+
+      const leadNotifs = (Array.isArray(leads) ? leads : []).slice(0, 10).map((lead) => {
+        const tenantInfo = (lead.tenantId && tenantsData?.[lead.tenantId]) || activeTenant;
+        const id = `lead-${lead.id}`;
+        const rawTs = lead.updatedAt || lead.createdAt;
+        return {
+          id,
+          tenantKey: lead.tenantId || targetTenantKey,
+          tenantName: tenantInfo?.shortName || tenantInfo?.name || 'Negocio',
+          tenantAvatar: tenantInfo?.avatar || '🏢',
+          channel: lead.channel || 'WHATSAPP',
+          channelColor: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+          sender: lead.name || 'Prospecto',
+          title: lead.status || 'Lead reciente',
+          snippet: lead.customerNeeds || lead.notes || 'Prospecto actualizado',
+          time: formatRelativeTime(rawTs),
+          sortTs: rawTs ? new Date(rawTs).getTime() : 0,
+          slaRemaining: lead.slaRemaining ?? 15,
+          threadId: lead.id,
+          targetPath: `/inbox?threadId=${lead.id}`,
+          isRead: readSet.has(id),
+        };
+      });
+
+      const auditNotifs = (Array.isArray(auditLogs) ? auditLogs : []).slice(0, 10).map((log) => {
+        const tenantInfo = (log.tenantId && tenantsData?.[log.tenantId]) || activeTenant;
+        const id = `audit-${log.id}`;
+        const rawTs = log.createdAt || log.timestamp;
+        return {
+          id,
+          tenantKey: log.tenantId || targetTenantKey || 'global',
+          tenantName: tenantInfo?.shortName || tenantInfo?.name || 'Plataforma',
+          tenantAvatar: tenantInfo?.avatar || '🛡️',
+          channel: log.eventCategory || 'SECURITY',
+          channelColor: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30',
+          sender: log.actorName || 'Sistema',
+          title: log.action || 'Evento de auditoría',
+          snippet: log.targetResource || 'Registro WORM',
+          time: formatRelativeTime(rawTs),
+          sortTs: rawTs ? new Date(rawTs).getTime() : 0,
+          slaRemaining: null,
+          threadId: null,
+          targetPath: '/team?tab=security',
+          isRead: readSet.has(id),
+        };
+      });
+
+      const combined = [...leadNotifs, ...auditNotifs]
+        .sort((a, b) => (b.sortTs || 0) - (a.sortTs || 0))
+        .slice(0, 20);
+
+      setNotifications(combined);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, targetTenantKey, activeTenant, tenantsData, readNotifIds]);
 
   const scopedNotifications = useMemo(() => {
     if (isAdmin) return notifications;
@@ -148,36 +241,38 @@ export const Header = () => {
     return scopedNotifications;
   }, [scopedNotifications, notifFilter]);
 
-  const handleSelectNotification = (notif) => {
-    // 1. Mark notification as read
-    const updated = notifications.map((n) =>
-      n.id === notif.id ? { ...n, isRead: true } : n
-    );
-    setNotifications(updated);
+  const persistReadIds = (nextIds) => {
+    setReadNotifIds(nextIds);
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem('vector_global_notifications', JSON.stringify(updated));
-      } catch (e) { }
+        localStorage.setItem(READ_NOTIFS_STORAGE_KEY, JSON.stringify(nextIds));
+      } catch {}
     }
+  };
+
+  const handleSelectNotification = (notif) => {
+    // 1. Mark notification as read in localStorage
+    if (!readNotifIds.includes(notif.id)) {
+      persistReadIds([...readNotifIds, notif.id]);
+    }
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === notif.id ? { ...n, isRead: true } : n))
+    );
 
     // 2. Switch Tenant Context (Solo si es administrador de agencia)
-    if (isAdmin && notif.tenantKey && switchTenantContext) {
+    if (isAdmin && notif.tenantKey && notif.tenantKey !== 'global' && switchTenantContext) {
       switchTenantContext(notif.tenantKey);
     }
 
-    // 3. Close popover and jump to inbox thread
+    // 3. Close popover and jump to target route
     setIsNotifOpen(false);
-    router.push(`/inbox?threadId=${notif.threadId}`);
+    router.push(notif.targetPath || (notif.threadId ? `/inbox?threadId=${notif.threadId}` : '/inbox'));
   };
 
   const handleMarkAllRead = () => {
-    const updated = notifications.map((n) => ({ ...n, isRead: true }));
-    setNotifications(updated);
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('vector_global_notifications', JSON.stringify(updated));
-      } catch (e) { }
-    }
+    const allIds = Array.from(new Set([...readNotifIds, ...notifications.map((n) => n.id)]));
+    persistReadIds(allIds);
+    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
   };
 
   const activeModule = findModuleByPath(pathname);
@@ -552,11 +647,17 @@ export const Header = () => {
                           </p>
 
                           <div className="flex items-center justify-between pt-1 text-[9px] font-mono">
-                            <span className="text-amber-400 font-bold">
-                              ⏳ {notif.slaRemaining} min SLA
-                            </span>
+                            {notif.slaRemaining != null ? (
+                              <span className="text-amber-400 font-bold">
+                                ⏳ {notif.slaRemaining} min SLA
+                              </span>
+                            ) : (
+                              <span className="text-cyan-400 font-bold">
+                                Auditoría WORM
+                              </span>
+                            )}
                             <span className="text-[var(--text-faint)] hover:text-lime-400 flex items-center gap-0.5 font-bold">
-                              <span>Atender lead</span>
+                              <span>{notif.threadId ? 'Atender lead' : 'Ver detalle'}</span>
                               <ArrowRight className="w-2.5 h-2.5" />
                             </span>
                           </div>

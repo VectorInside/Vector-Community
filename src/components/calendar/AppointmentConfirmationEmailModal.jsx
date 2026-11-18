@@ -128,6 +128,7 @@ export const AppointmentConfirmationEmailModal = ({
   const [deviceView, setDeviceView] = useState('desktop'); // 'desktop' | 'mobile'
   const [isSending, setIsSending] = useState(false);
   const [sentSuccess, setSentSuccess] = useState(false);
+  const [sendError, setSendError] = useState(null);
 
   // Editable fields
   const [recipientEmail, setRecipientEmail] = useState(
@@ -170,10 +171,38 @@ export const AppointmentConfirmationEmailModal = ({
     } catch (e) {}
   };
 
-  const handleSendEmail = () => {
+  const handleSendEmail = async () => {
+    const cleanRecipient = (recipientEmail || '').trim();
+    if (!cleanRecipient || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanRecipient)) {
+      setSendError('Por favor ingresa un correo electrónico válido para el destinatario.');
+      return;
+    }
+
+    setSendError(null);
+    setSentSuccess(false);
     setIsSending(true);
-    setTimeout(() => {
-      setIsSending(false);
+
+    try {
+      const aptDate = appointment.fullDate || appointment.appointmentDate || '';
+      const aptHour = appointment.hour || '11:00';
+      const response = await fetch('/api/send-invitation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: appointment.client || 'Cliente',
+          email: cleanRecipient,
+          roleLabel: `Confirmación de Cita — ${appointment.serviceName || appointment.title || 'Servicio'}`,
+          assignedSummary: `${tenantName} | Fecha: ${aptDate} ${aptHour} hrs | ${locationAddress}${customNotes ? ` | Nota: ${customNotes}` : ''}`,
+          tempPassword: `CITA-${appointment.id || 'CONFIRMADA'}`,
+          loginUrl: googleCalUrl,
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.message || `Error HTTP ${response.status} al despachar el correo.`);
+      }
+
       setSentSuccess(true);
       try {
         confetti({
@@ -191,7 +220,11 @@ export const AppointmentConfirmationEmailModal = ({
       setTimeout(() => {
         setSentSuccess(false);
       }, 4000);
-    }, 700);
+    } catch (error) {
+      setSendError(error?.message || 'Error al despachar el correo de confirmación.');
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const handleShareWhatsapp = () => {
@@ -499,12 +532,20 @@ export const AppointmentConfirmationEmailModal = ({
             </div>
           </div>
 
+          {/* Error de Envío SMTP */}
+          {sendError && (
+            <div className="my-2 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 dark:text-rose-300 text-xs font-mono flex items-center gap-2 animate-fadeIn shrink-0">
+              <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
+              <span>{sendError}</span>
+            </div>
+          )}
+
           {/* Estado de Envío Exitoso */}
           {sentSuccess && (
             <div className="my-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-300 text-xs font-mono flex items-center gap-2 animate-fadeIn shrink-0">
               <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
               <span>
-                ¡Correo de confirmación membretado despachado con éxito a <strong>{recipientEmail}</strong> y sincronizado con Google Calendar!
+                ¡Correo de confirmación membretado despachado con éxito a <strong>{recipientEmail}</strong>!
               </span>
             </div>
           )}

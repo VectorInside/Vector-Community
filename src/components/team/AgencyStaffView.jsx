@@ -2,7 +2,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { INITIAL_AGENCY_STAFF } from '@/utils/mockAccounts';
 import {
   UserPlus,
   Mail,
@@ -71,7 +70,7 @@ export const AgencyStaffView = () => {
         } catch (e) {}
       }
     }
-    return INITIAL_AGENCY_STAFF;
+    return [];
   });
 
   useEffect(() => {
@@ -103,13 +102,13 @@ export const AgencyStaffView = () => {
     userService
       .getAgencyStaff()
       .then((backendStaff) => {
-        if (Array.isArray(backendStaff) && backendStaff.length > 0) {
+        if (Array.isArray(backendStaff)) {
           setStaffList(backendStaff);
-        } else if (Array.isArray(backendStaff)) {
-          setStaffList(INITIAL_AGENCY_STAFF);
         }
       })
-      .catch(() => {});
+      .catch((err) => {
+        showToast(err?.response?.data?.message || err?.message || 'Error al cargar colaboradores desde el servidor');
+      });
   }, []);
 
   // Search and Filters
@@ -200,9 +199,11 @@ export const AgencyStaffView = () => {
   }, [staffList]);
 
   // Toggle status (Active / Suspended)
-  const handleToggleStatus = (id) => {
-    let targetMember = staffList.find((m) => m.id === id);
-    const next = targetMember?.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
+  const handleToggleStatus = async (id) => {
+    const targetMember = staffList.find((m) => m.id === id);
+    if (!targetMember) return;
+    const prevStatus = targetMember.status;
+    const next = prevStatus === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
 
     setStaffList((prev) =>
       prev.map((member) => {
@@ -213,9 +214,14 @@ export const AgencyStaffView = () => {
       })
     );
 
-    if (targetMember) {
-      userService.updateUserStatus(id, next).catch(() => {});
+    try {
+      await userService.updateUserStatus(id, next);
       showToast(`Acceso de ${targetMember.name} ${next === 'ACTIVE' ? 'reactivado' : 'suspendido'}`);
+    } catch (err) {
+      setStaffList((prev) =>
+        prev.map((member) => (member.id === id ? { ...member, status: prevStatus } : member))
+      );
+      showToast(err?.response?.data?.message || err?.message || 'Error al actualizar el estado del colaborador');
     }
   };
 
@@ -348,7 +354,10 @@ export const AgencyStaffView = () => {
           prev.map((m) => (m.email === newMember.email ? { ...m, id: createdUser.id } : m))
         );
       }
-    }).catch(() => {});
+    }).catch((err) => {
+      setStaffList((prev) => prev.filter((m) => m.email !== newMember.email));
+      showToast(err?.response?.data?.message || err?.message || 'Error al registrar colaborador en el servidor');
+    });
 
     try {
       confetti({
@@ -431,17 +440,26 @@ export const AgencyStaffView = () => {
 
   // Update assigned tenants modal submit
   const handleSaveAssignedTenants = (staffId, assigned) => {
+    const prevAssigned = staffList.find((m) => m.id === staffId)?.assignedTenants;
     setStaffList((prev) =>
       prev.map((m) => (m.id === staffId ? { ...m, assignedTenants: assigned } : m))
     );
     setEditingStaffTenants(null);
-    showToast('Negocios asignados actualizados correctamente');
 
     // Persist to PostgreSQL 17 Backend
     userService.updateAssignedTenants(staffId, {
       assignedTenantsMode: assigned === 'all' ? 'all' : 'custom',
       customTenants: Array.isArray(assigned) ? assigned : [],
-    }).catch(() => {});
+    }).then(() => {
+      showToast('Negocios asignados actualizados correctamente');
+    }).catch((err) => {
+      if (prevAssigned !== undefined) {
+        setStaffList((prev) =>
+          prev.map((m) => (m.id === staffId ? { ...m, assignedTenants: prevAssigned } : m))
+        );
+      }
+      showToast(err?.response?.data?.message || err?.message || 'Error al actualizar negocios asignados');
+    });
   };
 
   // Delete staff confirmation (Soft delete IAM)
@@ -472,11 +490,7 @@ export const AgencyStaffView = () => {
       showToast(`Colaborador ${deleteModalStaff.name} eliminado del equipo.`);
       setDeleteModalStaff(null);
     } catch (err) {
-      console.warn('Sincronización de baja con backend completada localmente:', err);
-      // Remueve al usuario de la vista de inmediato y cierra el modal siempre
-      setStaffList((prev) => prev.filter((s) => s.id !== deleteModalStaff.id && s.email !== deleteModalStaff.email));
-      showToast(`Colaborador ${deleteModalStaff.name} revocado del equipo.`);
-      setDeleteModalStaff(null);
+      showToast(err?.response?.data?.message || err?.message || 'Error al eliminar colaborador en el servidor.');
     } finally {
       setIsDeletingStaff(false);
     }

@@ -573,6 +573,7 @@ export const MasterAgenda = () => {
   const [testRecipientInput, setTestRecipientInput] = useState('');
   const [isDispatchingTest, setIsDispatchingTest] = useState(false);
   const [testDispatchReport, setTestDispatchReport] = useState(null);
+  const [testDispatchError, setTestDispatchError] = useState(null);
   const [copyHtmlSuccess, setCopyHtmlSuccess] = useState(false);
   const [testEmailSent, setTestEmailSent] = useState(false);
 
@@ -890,12 +891,56 @@ export const MasterAgenda = () => {
     }, 1200);
   };
 
-  const handleTestEmail = () => {
-    setTestEmailSent(true);
+  const handleTestEmail = async () => {
+    const targetEmail = (testRecipientInput || emailConfig.senderEmail || activeTenant?.email || '').trim();
+    if (!targetEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(targetEmail)) {
+      const msg = 'Configura o ingresa un correo destinatario válido antes de enviar la prueba.';
+      setTestDispatchError(msg);
+      return;
+    }
+
+    setTestDispatchError(null);
+    setTestDispatchReport(null);
+    setIsDispatchingTest(true);
+    const startedAt = Date.now();
+
     try {
-      confetti({ particleCount: 30, spread: 50, colors: ['#3B82F6', emailConfig.accentColor || '#D4FF00'] });
-    } catch (e) {}
-    setTimeout(() => setTestEmailSent(false), 3500);
+      const response = await fetch('/api/send-invitation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: activeTenant?.name || 'Vector Inside',
+          email: targetEmail,
+          roleLabel: 'Prueba de Correo Master Agenda',
+          assignedSummary: `${activeTenant?.name || 'Negocio'} • Remitente: ${emailConfig.senderName || 'Notificaciones'}`,
+          tempPassword: 'SMTP-TEST-OK',
+          loginUrl: typeof window !== 'undefined' ? window.location.href : 'https://vectorinside.app/agenda',
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.message || `Error HTTP ${response.status} al enviar correo de prueba.`);
+      }
+
+      setTestDispatchReport({
+        recipient: targetEmail,
+        provider: data.provider || 'SMTP',
+        messageId: data.messageId || 'OK',
+        message: data.message || `Correo enviado a ${targetEmail}`,
+        timestamp: new Date().toLocaleTimeString(),
+        latencyMs: Date.now() - startedAt,
+      });
+      setTestEmailSent(true);
+      try {
+        confetti({ particleCount: 30, spread: 50, colors: ['#3B82F6', emailConfig.accentColor || '#D4FF00'] });
+      } catch (e) {}
+      setTimeout(() => setTestEmailSent(false), 3500);
+    } catch (error) {
+      setTestEmailSent(false);
+      setTestDispatchError(error?.message || 'Error al despachar el correo de prueba.');
+    } finally {
+      setIsDispatchingTest(false);
+    }
   };
 
   const dynamicWeekDays = buildWeekDaysForDate(selectedMonthDate);
@@ -951,8 +996,50 @@ export const MasterAgenda = () => {
     handleOpenEmailConfirmation(apt);
   };
 
-  const handleBlockSlot = (shift, hour) => {
-    alert(`Horario ${hour} (${shift.name}) bloqueado en Google Calendar. La IA ya no ofrecerá este espacio.`);
+  const handleBlockSlot = async (shift, hour) => {
+    const dateKey = currentDayConfig?.fullDate || new Date().toISOString().split('T')[0];
+    const currentBlocked = calendarConfig.blockedSlots || {};
+    const dayBlockedList = Array.isArray(currentBlocked[dateKey]) ? currentBlocked[dateKey] : [];
+    const isAlreadyBlocked = dayBlockedList.includes(hour);
+    const updatedDayList = isAlreadyBlocked
+      ? dayBlockedList.filter((h) => h !== hour)
+      : [...dayBlockedList, hour];
+
+    const updatedConfig = {
+      ...calendarConfig,
+      blockedSlots: {
+        ...currentBlocked,
+        [dateKey]: updatedDayList,
+      },
+    };
+
+    setCalendarConfig(updatedConfig);
+
+    if (activeKey) {
+      if (typeof updateTenantPolicy === 'function') {
+        updateTenantPolicy(activeKey, {
+          calendarConfig: updatedConfig,
+        });
+      }
+
+      if (typeof window !== 'undefined') {
+        try {
+          const rawBot = localStorage.getItem(`vector_bot_config_${activeKey}`);
+          const currentBot = rawBot ? JSON.parse(rawBot) : {};
+          currentBot.calendar = {
+            ...(currentBot.calendar || {}),
+            blockedSlots: updatedConfig.blockedSlots,
+          };
+          localStorage.setItem(`vector_bot_config_${activeKey}`, JSON.stringify(currentBot));
+        } catch (e) {}
+      }
+
+      try {
+        await tenantService.updateVerticalConfig(activeKey, updatedConfig);
+      } catch (err) {
+        console.error('[MasterAgenda.handleBlockSlot] Error persistiendo bloqueo en PostgreSQL:', err);
+      }
+    }
   };
 
   const handleManualBook = (shift, hour) => {
@@ -1761,6 +1848,10 @@ export const MasterAgenda = () => {
                           const appointment = dayAppointments.find(
                             (a) => a.hour === hour || (calendarConfig.slotDurationMin >= 60 && a.hour?.startsWith(hour.slice(0, 3)))
                           );
+                          const dateKey = currentDayConfig?.fullDate || '';
+                          const isSlotBlocked = Boolean(
+                            dateKey && Array.isArray(calendarConfig.blockedSlots?.[dateKey]) && calendarConfig.blockedSlots[dateKey].includes(hour)
+                          );
                           return (
                             <SlotRowItem
                               key={hour}
@@ -1770,6 +1861,7 @@ export const MasterAgenda = () => {
                               concurrencyLimit={calendarConfig.concurrencyLimit}
                               capacityLabel={calendarConfig.capacityLabel}
                               appointment={appointment}
+                              isBlocked={isSlotBlocked}
                               onSelectAppointment={setSelectedAppointment}
                               onManualBook={() => handleManualBook(shift, hour)}
                               onBlockSlot={() => handleBlockSlot(shift, hour)}
@@ -3279,23 +3371,45 @@ export const MasterAgenda = () => {
                   triggerIcsDownload(sampleAptObj, activeTenant, emailConfig);
                 };
 
-                const handleExecuteTestDispatch = () => {
-                  const targetEmail = testRecipientInput.trim() || emailConfig.senderEmail;
-                  if (!isValidEmail(targetEmail)) {
-                    alert('Por favor ingresa un correo electrónico válido (ej. tu-correo@gmail.com)');
+                const handleExecuteTestDispatch = async () => {
+                  const targetEmail = (testRecipientInput || emailConfig.senderEmail || '').trim();
+                  if (!targetEmail || !isValidEmail(targetEmail)) {
+                    setTestDispatchError('Por favor ingresa un correo electrónico válido (ej. tu-correo@gmail.com).');
                     return;
                   }
+
+                  setTestDispatchError(null);
+                  setTestDispatchReport(null);
+                  setTestEmailSent(false);
                   setIsDispatchingTest(true);
-                  setTimeout(() => {
-                    setIsDispatchingTest(false);
+                  const startedAt = Date.now();
+
+                  try {
+                    const response = await fetch('/api/send-invitation', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        name: activeTenant?.name || 'Administrador',
+                        email: targetEmail,
+                        roleLabel: 'Prueba SMTP Master Agenda',
+                        assignedSummary: `${activeTenant?.name || 'Vector Inside'} • Remitente: ${emailConfig.senderName || 'Notificaciones'}`,
+                        tempPassword: 'SMTP-TEST-VERIFICADO',
+                        loginUrl: typeof window !== 'undefined' ? `${window.location.origin}/agenda` : 'https://vectorinside.app/agenda',
+                      }),
+                    });
+
+                    const data = await response.json().catch(() => ({}));
+                    if (!response.ok || !data?.success) {
+                      throw new Error(data?.message || `Error HTTP ${response.status} al despachar el correo de prueba.`);
+                    }
+
                     setTestDispatchReport({
                       recipient: targetEmail,
+                      provider: data.provider || 'SMTP',
+                      messageId: data.messageId || 'OK',
+                      message: data.message || `Correo enviado con éxito a ${targetEmail}`,
                       timestamp: new Date().toLocaleTimeString(),
-                      spf: 'PASS',
-                      dkim: 'PASS (2048-bit RSA)',
-                      dmarc: 'PASS (Aligned)',
-                      tls: 'TLSv1.3 (ECDHE-RSA-AES256-GCM-SHA384)',
-                      latencyMs: 142,
+                      latencyMs: Date.now() - startedAt,
                     });
                     setTestEmailSent(true);
                     try {
@@ -3306,7 +3420,12 @@ export const MasterAgenda = () => {
                       });
                     } catch (e) {}
                     setTimeout(() => setTestEmailSent(false), 4500);
-                  }, 800);
+                  } catch (error) {
+                    setTestEmailSent(false);
+                    setTestDispatchError(error?.message || 'No se pudo completar el despacho de prueba SMTP.');
+                  } finally {
+                    setIsDispatchingTest(false);
+                  }
                 };
 
                 return (
@@ -3803,28 +3922,33 @@ export const MasterAgenda = () => {
                         </button>
                       </div>
 
-                      {/* Consola de Diagnóstico de Seguridad SMTP & DKIM */}
+                      {/* Error Real de Despacho SMTP */}
+                      {testDispatchError && (
+                        <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-[11px] font-mono flex items-center gap-2 animate-fadeIn">
+                          <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
+                          <span>{testDispatchError}</span>
+                        </div>
+                      )}
+
+                      {/* Consola de Diagnóstico de Despacho SMTP Real */}
                       {testDispatchReport && (
                         <div className="p-3 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2 animate-fadeIn text-[11px]">
                           <div className="flex items-center justify-between">
                             <span className="text-emerald-400 font-bold flex items-center gap-1.5">
                               <CheckCircle2 className="w-3.5 h-3.5" />
-                              Despacho Exitoso (250 2.0.0 OK Handshake Completado)
+                              {testDispatchReport.message || `Despacho Exitoso a ${testDispatchReport.recipient}`}
                             </span>
                             <span className="text-[10px] text-[var(--text-muted)]">Latencia: {testDispatchReport.latencyMs}ms • {testDispatchReport.timestamp}</span>
                           </div>
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px] text-[var(--text-muted)] pt-1 border-t border-[var(--border-color)]">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[10px] text-[var(--text-muted)] pt-1 border-t border-[var(--border-color)]">
                             <div>
-                              <span>SPF:</span> <strong className="text-emerald-400 block">{testDispatchReport.spf}</strong>
+                              <span>Destinatario:</span> <strong className="text-[var(--text-main)] block truncate">{testDispatchReport.recipient}</strong>
                             </div>
                             <div>
-                              <span>DKIM Sign:</span> <strong className="text-emerald-400 block">{testDispatchReport.dkim}</strong>
+                              <span>Proveedor:</span> <strong className="text-emerald-400 block">{testDispatchReport.provider}</strong>
                             </div>
                             <div>
-                              <span>DMARC:</span> <strong className="text-emerald-400 block">{testDispatchReport.dmarc}</strong>
-                            </div>
-                            <div>
-                              <span>Cifrado:</span> <strong className="text-blue-400 block">{testDispatchReport.tls}</strong>
+                              <span>Message ID:</span> <strong className="text-blue-400 block truncate">{testDispatchReport.messageId}</strong>
                             </div>
                           </div>
                         </div>
@@ -3924,6 +4048,7 @@ function SlotRowItem({
   concurrencyLimit,
   capacityLabel,
   appointment,
+  isBlocked = false,
   onSelectAppointment,
   onManualBook,
   onBlockSlot,
@@ -3980,6 +4105,42 @@ function SlotRowItem({
           <span className="text-[11px] font-mono px-2.5 py-1 rounded-lg bg-brand-primary/10 text-brand-primary border border-brand-primary/30 group-hover:bg-brand-primary group-hover:text-black transition-all">
             Ver Detalle →
           </span>
+        </div>
+      </div>
+    );
+  }
+
+  if (isBlocked) {
+    // CASO 1.5: HORARIO BLOQUEADO EN POSTGRESQL
+    return (
+      <div className="group relative flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-rose-500/5 border border-rose-500/30 transition-all">
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="w-12 h-10 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 font-mono text-xs font-bold">
+            {hour}
+          </div>
+          <div>
+            <span className="text-xs font-bold text-rose-400 block">
+              {hour} hrs ({durationMin} min)
+            </span>
+            <span className="text-[11px] text-[var(--text-muted)] font-mono">
+              {shift.name}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex-1 px-1 sm:px-4 flex items-center gap-2 text-xs text-rose-400 font-mono">
+          <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+          <span>Horario bloqueado • No disponible para citas</span>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={onBlockSlot}
+            className="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-mono font-bold transition-all"
+          >
+            Desbloquear
+          </button>
         </div>
       </div>
     );

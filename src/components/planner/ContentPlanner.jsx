@@ -315,6 +315,36 @@ const CANONICAL_POSTS_BY_TENANT = {};
 const CANONICAL_VIRAL_REELS_BY_TENANT = {};
 const CANONICAL_AUDIT_BY_TENANT = {};
 
+const mapMetaPostToViralReel = (mp, idx, giro, badge) => {
+  const rawHookRate = mp.hookRatePercentage ?? mp.hookRateAvg;
+  const rawDms = mp.dmsTriggered ?? mp.intentLeads;
+  const viewsLabel =
+    mp.reach != null
+      ? mp.reach >= 1000
+        ? `${(mp.reach / 1000).toFixed(1)}k`
+        : `${mp.reach}`
+      : 'N/D';
+
+  return {
+    id: mp.id || `meta-post-${idx}`,
+    platform: 'Instagram Reel',
+    title: mp.caption
+      ? mp.caption.length > 65
+        ? `${mp.caption.slice(0, 65)}...`
+        : mp.caption
+      : `Reel Insignia #${idx + 1}`,
+    views: viewsLabel,
+    hookRate: rawHookRate != null ? `${rawHookRate}%` : 'N/D',
+    dmsGenerated: rawDms != null ? `${rawDms}` : '0',
+    whyItWorked: mp.caption
+      ? `Apertura directa sobre ${giro || 'la propuesta de valor'}, generando retención alta en los primeros 3 segundos.`
+      : 'Interrupción de patrón en 0-3s combinada con llamado a la acción claro.',
+    psychologicalTrigger: 'Curiosidad y Autoridad Técnica',
+    visualHook: 'Zoom rápido y subtítulos cinemáticos en los primeros 3 segundos',
+    ...(badge ? { badge } : {}),
+  };
+};
+
 export const ContentPlanner = ({ embedded = false } = {}) => {
   const { activeTenant, isAdmin, isClient, triggerModal } = useAuth();
   const tenantKey = activeTenant?.id || null;
@@ -469,7 +499,7 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
   };
 
   const [profileAudit, setProfileAudit] = useState(() => {
-    return (tenantKey && CANONICAL_AUDIT_BY_TENANT[tenantKey]) || { score: 92, handle: '', checks: [] };
+    return (tenantKey && CANONICAL_AUDIT_BY_TENANT[tenantKey]) || { score: null, handle: '', checks: [] };
   });
 
   // Re-sync states whenever activeTenant changes
@@ -479,9 +509,20 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
       setCommercialOffer(EMPTY_OFFER);
       setPosts([]);
       setViralReels([]);
-      setProfileAudit({ score: 0, handle: '', checks: [] });
+      setProfileAudit({ score: null, handle: '', checks: [] });
       setSelectedNetworkFilter('ALL');
       return;
+    }
+
+    if (activeTenant?.calendarConfig?.weeklyCronConfig) {
+      setWeeklyCronConfig(activeTenant.calendarConfig.weeklyCronConfig);
+    } else if (typeof window !== 'undefined') {
+      try {
+        const savedCron = localStorage.getItem(`vector_planner_weekly_cron_${tenantKey}`);
+        if (savedCron) {
+          setWeeklyCronConfig(JSON.parse(savedCron));
+        }
+      } catch (e) {}
     }
 
     const defaultDna = getCanonicalDnaForTenant(activeTenant);
@@ -550,19 +591,7 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
       .getPosts(tenantKey)
       .then((metaPosts) => {
         if (Array.isArray(metaPosts) && metaPosts.length > 0) {
-          const mapped = metaPosts.map((mp, idx) => ({
-            id: mp.id || `meta-post-${idx}`,
-            platform: 'Instagram Reel',
-            title: mp.caption ? (mp.caption.length > 65 ? `${mp.caption.slice(0, 65)}...` : mp.caption) : `Reel Insignia #${idx + 1}`,
-            views: mp.reach ? `${(mp.reach / 1000).toFixed(1)}k` : `${(idx * 4.2 + 12.8).toFixed(1)}k`,
-            hookRate: (mp.hookRatePercentage ?? mp.hookRateAvg) != null ? `${mp.hookRatePercentage ?? mp.hookRateAvg}%` : `${(27.5 + idx * 2.3).toFixed(1)}%`,
-            dmsGenerated: (mp.dmsTriggered ?? mp.intentLeads) != null ? `${mp.dmsTriggered ?? mp.intentLeads}` : `${(idx + 1) * 4}`,
-            whyItWorked: mp.caption
-              ? `Apertura directa sobre ${activeTenant?.giro || 'la propuesta de valor'}, generando retención alta en los primeros 3 segundos.`
-              : 'Interrupción de patrón en 0-3s combinada con llamado a la acción claro.',
-            psychologicalTrigger: 'Curiosidad y Autoridad Técnica',
-            visualHook: 'Zoom rápido y subtítulos cinemáticos en los primeros 3 segundos',
-          }));
+          const mapped = metaPosts.map((mp, idx) => mapMetaPostToViralReel(mp, idx, activeTenant?.giro));
           setViralReels(mapped);
         } else {
           // Si no hay posts sincronizados aún en Meta, intentar restaurar los guardados en localStorage
@@ -601,10 +630,11 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
     metaCommentService
       .getBrandAudit(tenantKey)
       .then((auditRes) => {
-        const score = auditRes?.brandAlignmentScore ?? auditRes?.score ?? 92;
+        const score = auditRes?.brandAlignmentScore ?? auditRes?.score ?? null;
         const igHandle = activeTenant?.socialLinks?.instagram
           ? `@${activeTenant.socialLinks.instagram.replace(/.*instagram\.com\//, '').replace(/\/$/, '')}`
           : `@${activeTenant?.shortName?.toLowerCase() || 'vector_inside'}`;
+        const realHookRate = auditRes?.hookRateAvg ?? auditRes?.avgHookRate ?? null;
 
         const checks = [
           {
@@ -637,8 +667,11 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
           {
             id: 'chk-4',
             title: 'Hook Rate Promedio Superior al Benchmark (25%)',
-            status: 'PASSED',
-            diagnosis: 'Retención promedio de los primeros 3 segundos en Reels: 31.4% (Benchmark del sector: 25.0%).',
+            status: realHookRate != null ? (Number(realHookRate) >= 25 ? 'PASSED' : 'WARNING') : 'WARNING',
+            diagnosis:
+              realHookRate != null
+                ? `Retención promedio de los primeros 3 segundos en Reels: ${realHookRate}% (Benchmark del sector: 25.0%).`
+                : 'Sin datos suficientes de retención en Reels sincronizados desde Meta.',
             recommendation: 'Continuar empleando el Laboratorio Viral para iterar sobre las fórmulas con mayor tracción.',
           },
         ];
@@ -646,11 +679,22 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
         setProfileAudit({
           score,
           handle: igHandle,
+          summary: auditRes?.auditSummary || null,
+          error: null,
           checks,
         });
       })
-      .catch(() => {
-        setProfileAudit({ score: 92, handle: `@${activeTenant?.shortName?.toLowerCase() || 'vector'}`, checks: [] });
+      .catch((err) => {
+        setProfileAudit({
+          score: null,
+          handle: `@${activeTenant?.shortName?.toLowerCase() || 'vector'}`,
+          summary: null,
+          error:
+            err?.response?.data?.message ||
+            err?.message ||
+            'No se pudo obtener la auditoría de perfil desde el servidor.',
+          checks: [],
+        });
       });
   }, [activeTenant, tenantKey]);
 
@@ -1281,13 +1325,33 @@ Palabras tabú prohibidas: [${brandDna?.tabooWords || 'ninguna'}].`;
     );
   };
 
-  const handleSaveWeeklyCronConfig = (e) => {
+  const handleSaveWeeklyCronConfig = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (typeof window !== 'undefined' && tenantKey) {
       try {
         localStorage.setItem(`vector_planner_weekly_cron_${tenantKey}`, JSON.stringify(weeklyCronConfig));
       } catch (err) {}
     }
+
+    if (tenantKey) {
+      try {
+        const currentVertical = await tenantService.getVerticalConfig(tenantKey);
+        await tenantService.updateVerticalConfig(tenantKey, {
+          ...(currentVertical || {}),
+          weeklyCronConfig,
+        });
+      } catch (err) {
+        console.warn('Error syncing weeklyCronConfig to backend:', err);
+        triggerModal(
+          '⚠️ Error al Persistir Disparador Semanal',
+          err?.response?.data?.message ||
+            err?.message ||
+            'No se pudo guardar la configuración en PostgreSQL. Se conservó únicamente en caché local.'
+        );
+        return;
+      }
+    }
+
     setShowWeeklyCronModal(false);
 
     try {
@@ -1641,20 +1705,9 @@ Genera exactamente 3 variantes de guion para Instagram Reels 9:16 en JSON estric
       await metaCommentService.syncPosts(tenantKey);
       const updatedPosts = await metaCommentService.getPosts(tenantKey);
       if (Array.isArray(updatedPosts) && updatedPosts.length > 0) {
-        const mapped = updatedPosts.map((mp, idx) => ({
-          id: mp.id || `meta-post-${idx}`,
-          platform: 'Instagram Reel',
-          title: mp.caption ? (mp.caption.length > 65 ? `${mp.caption.slice(0, 65)}...` : mp.caption) : `Reel Insignia #${idx + 1}`,
-          views: mp.reach ? `${(mp.reach / 1000).toFixed(1)}k` : `${(idx * 4.2 + 12.8).toFixed(1)}k`,
-          hookRate: (mp.hookRatePercentage ?? mp.hookRateAvg) != null ? `${mp.hookRatePercentage ?? mp.hookRateAvg}%` : `${(27.5 + idx * 2.3).toFixed(1)}%`,
-          dmsGenerated: (mp.dmsTriggered ?? mp.intentLeads) != null ? `${mp.dmsTriggered ?? mp.intentLeads}` : `${(idx + 1) * 4}`,
-          whyItWorked: mp.caption
-            ? `Apertura directa sobre ${activeTenant?.giro || 'la propuesta de valor'}, generando retención alta en los primeros 3 segundos.`
-            : 'Interrupción de patrón en 0-3s combinada con llamado a la acción claro.',
-          psychologicalTrigger: 'Curiosidad y Autoridad Técnica',
-          visualHook: 'Zoom rápido y subtítulos cinemáticos en los primeros 3 segundos',
-          badge: 'Feed Instagram Sincronizado',
-        }));
+        const mapped = updatedPosts.map((mp, idx) =>
+          mapMetaPostToViralReel(mp, idx, activeTenant?.giro, 'Feed Instagram Sincronizado')
+        );
         persistViralReels(mapped);
         triggerModal(
           'Feed de Instagram Sincronizado',
@@ -1876,22 +1929,37 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
     setIsAuditingBrand(true);
     try {
       const auditRes = await metaCommentService.getBrandAudit(tenantKey);
-      const score = auditRes?.brandAlignmentScore || auditRes?.score || 94;
-      const summaryText = auditRes?.auditSummary || `Evaluación de coherencia de marca finalizada con un Health Score de ${score}/100 para ${activeTenant?.name}.`;
+      const score = auditRes?.brandAlignmentScore ?? auditRes?.score ?? null;
+      const summaryText =
+        auditRes?.auditSummary ||
+        (score != null
+          ? `Evaluación de coherencia de marca finalizada con un Health Score de ${score}/100 para ${activeTenant?.name}.`
+          : `Auditoría de perfil completada para ${activeTenant?.name}.`);
       setProfileAudit((prev) => ({
         ...prev,
         score,
         summary: summaryText,
+        error: null,
       }));
       try {
         confetti({ particleCount: 50, spread: 65, colors: ['#D4FF00', '#10B981'] });
       } catch (e) {}
       triggerModal(
         'Auditoría con IA Completada',
-        `Evaluación de coherencia de marca finalizada con un Health Score de <b>${score}/100</b> para <b>${activeTenant?.name}</b>.<br><br><div class="p-3 rounded-xl bg-neon/10 border border-neon/30 font-mono text-xs text-lime-700 dark:text-neon">${summaryText}</div>`
+        `Evaluación de coherencia de marca finalizada${score != null ? ` con un Health Score de <b>${score}/100</b>` : ''} para <b>${activeTenant?.name}</b>.<br><br><div class="p-3 rounded-xl bg-neon/10 border border-neon/30 font-mono text-xs text-lime-700 dark:text-neon">${summaryText}</div>`
       );
     } catch (err) {
+      const errMsg =
+        err?.response?.data?.message ||
+        err?.message ||
+        'No se pudo ejecutar la auditoría de marca en el servidor.';
       console.warn('Error al auditar marca:', err);
+      setProfileAudit((prev) => ({
+        ...prev,
+        score: null,
+        error: errMsg,
+      }));
+      triggerModal('⚠️ Error en Auditoría de Perfil', errMsg);
     } finally {
       setIsAuditingBrand(false);
     }
@@ -2058,7 +2126,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                 : 'bg-lime-500/15 text-lime-600 dark:text-lime-400 border border-lime-500/30'
             }`}
           >
-            {profileAudit.score || 92}%
+            {profileAudit.score != null ? `${profileAudit.score}%` : 'N/D'}
           </span>
         </button>
         </div>
@@ -3237,7 +3305,9 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                 <div className="p-3 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-right font-mono min-w-[140px]">
                   <span className="text-[10px] text-[var(--text-muted)] block uppercase font-bold">Health Score de Perfil:</span>
                   <div className="flex items-baseline justify-end gap-1">
-                    <span className="text-2xl font-black text-lime-700 dark:text-neon">{profileAudit.score || 94}</span>
+                    <span className="text-2xl font-black text-lime-700 dark:text-neon">
+                      {profileAudit.score != null ? profileAudit.score : 'N/D'}
+                    </span>
                     <span className="text-xs text-[var(--text-muted)]">/ 100</span>
                   </div>
                 </div>
@@ -3282,9 +3352,15 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
               {/* Executive AI Diagnostic Summary */}
               <div className="pt-2 border-t border-[var(--border-color)] text-[11px] text-[var(--text-muted)] flex items-start gap-2">
                 <Bot className="w-4 h-4 text-lime-700 dark:text-neon shrink-0 mt-0.5" />
-                <p className="font-sans leading-relaxed text-[var(--text-main)]">
-                  {profileAudit.summary || `El posicionamiento técnico de ${activeTenant?.name || 'la marca'} es de alto nivel. La mayor palanca de conversión inmediata es inyectar la Oferta Comercial del Mes directamente en la biografía de Instagram y fijar el enlace con palabra clave detonante hacia WhatsApp.`}
-                </p>
+                {profileAudit.error ? (
+                  <p className="font-sans leading-relaxed text-red-400">
+                    {profileAudit.error}
+                  </p>
+                ) : (
+                  <p className="font-sans leading-relaxed text-[var(--text-main)]">
+                    {profileAudit.summary || `El posicionamiento técnico de ${activeTenant?.name || 'la marca'} está listo para evaluación. Ejecuta "Auditar Marca con IA" para obtener el diagnóstico actualizado.`}
+                  </p>
+                )}
               </div>
             </div>
           </div>
