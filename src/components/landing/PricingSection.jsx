@@ -128,7 +128,7 @@ export const PricingSection = ({ onOpenTrial, lang = 'es' }) => {
                   {/* Feature List */}
                   <div className="space-y-3 pt-1">
                     <span className="text-[11px] font-mono font-bold text-zinc-300 uppercase tracking-wider block">
-                      Incluye:
+                      {lang === 'es' ? 'Incluye:' : 'Includes:'}
                     </span>
                     <ul className="space-y-2.5">
                       {plan.features.map((feat, fIdx) => (

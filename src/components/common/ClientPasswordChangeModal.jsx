@@ -1,21 +1,17 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Portal } from '@/components/common/Portal';
 import { useAuth } from '@/context/AuthContext';
 import { userService } from '@/services/userService';
 import {
-  Lock,
-  Eye,
-  EyeOff,
   CheckCircle2,
   AlertTriangle,
-  Sparkles,
-  ShieldCheck,
   Check,
   KeyRound,
   ArrowRight,
-  X,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -46,6 +42,18 @@ export const ClientPasswordChangeModal = ({
   const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isOpen && !isSubmitting && onClose) {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, isSubmitting, onClose]);
 
   if (!isOpen || !account) return null;
 
@@ -124,13 +132,18 @@ export const ClientPasswordChangeModal = ({
 
   return (
     <Portal>
-      <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-fade-in font-sans">
-        <div className="relative w-full max-w-lg bg-[var(--bg-panel)] border-2 border-neon/50 rounded-3xl p-6 sm:p-8 space-y-5 shadow-[0_0_50px_rgba(195,244,0,0.25)] animate-scale-up">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Actualizar Contraseña Obligatoria"
+        className="fixed inset-0 bg-black/65 dark:bg-black/85 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-fade-in font-sans"
+      >
+        <div className="relative w-full max-w-lg bg-[var(--bg-panel)] border-2 border-[var(--neon-primary)]/50 rounded-3xl p-6 sm:p-8 space-y-5 shadow-[0_0_50px_var(--neon-glow)] animate-scale-up">
           {/* Header */}
           <div className="flex items-start justify-between border-b border-[var(--border-color)] pb-4">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-2xl bg-neon/15 text-neon border border-neon/30 shrink-0">
-                <KeyRound className="w-6 h-6 text-neon animate-pulse" />
+              <div className="p-3 rounded-2xl bg-[var(--neon-primary)]/15 text-lime-700 dark:text-neon border border-[var(--neon-primary)]/30 shrink-0">
+                <KeyRound className="w-6 h-6 text-lime-700 dark:text-neon animate-pulse" />
               </div>
               <div>
                 <h3 className="text-lg font-heading font-black text-[var(--text-main)]">
@@ -144,25 +157,25 @@ export const ClientPasswordChangeModal = ({
           </div>
 
           {/* Context Notice */}
-          <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-sans space-y-1">
-            <div className="flex items-center gap-2 font-bold font-mono text-[11px] uppercase tracking-wider text-amber-400">
-              <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />
+          <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs font-sans space-y-1">
+            <div className="flex items-center gap-2 font-bold font-mono text-[11px] uppercase tracking-wider text-amber-700 dark:text-amber-400">
+              <AlertTriangle className="w-4 h-4 shrink-0 text-amber-700 dark:text-amber-400" />
               <span>Primer Ingreso o Clave Provisional Detectada</span>
             </div>
-            <p className="text-[11px] leading-relaxed text-zinc-300">
+            <p className="text-[11px] leading-relaxed text-[var(--text-muted)]">
               Por protocolo estricto de privacidad bancaria y comercial, debes reemplazar la clave provisional emitida por la agencia por tu contraseña personal definitiva. Nadie más tendrá acceso a ella.
             </p>
           </div>
 
           {isSuccess ? (
             <div className="py-8 text-center space-y-3 animate-fade-in">
-              <div className="w-16 h-16 rounded-full bg-emerald-500/20 border-2 border-emerald-500 text-emerald-400 flex items-center justify-center mx-auto shadow-[0_0_30px_rgba(16,185,129,0.3)]">
+              <div className="w-16 h-16 rounded-full bg-emerald-500/20 border-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-[0_0_30px_rgba(16,185,129,0.3)]">
                 <Check className="w-8 h-8" />
               </div>
-              <h4 className="text-lg font-heading font-black text-white">
+              <h4 className="text-lg font-heading font-black text-[var(--text-main)]">
                 ¡Contraseña Actualizada con Éxito!
               </h4>
-              <p className="text-xs text-zinc-400 font-mono">
+              <p className="text-xs text-[var(--text-muted)] font-mono">
                 Tu nueva clave ha sido encriptada. Accediendo a tu espacio de trabajo...
               </p>
             </div>
@@ -179,12 +192,12 @@ export const ClientPasswordChangeModal = ({
                     value={currentPass}
                     onChange={(e) => setCurrentPass(e.target.value)}
                     placeholder={account.tempPassword || 'Ingresa tu clave provisional'}
-                    className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] focus:border-neon rounded-xl pl-3 pr-10 py-2.5 text-xs text-[var(--text-main)] font-mono outline-none"
+                    className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] focus:border-[var(--neon-primary)] rounded-xl pl-3 pr-10 py-2.5 text-xs text-[var(--text-main)] font-mono outline-none"
                   />
                   <button
                     type="button"
                     onClick={() => setShowCurrent(!showCurrent)}
-                    className="absolute right-3 top-3 text-[var(--text-muted)] hover:text-white"
+                    className="absolute right-3 top-3 text-[var(--text-muted)] hover:text-[var(--text-main)]"
                   >
                     {showCurrent ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -203,12 +216,12 @@ export const ClientPasswordChangeModal = ({
                     value={newPass}
                     onChange={(e) => setNewPass(e.target.value)}
                     placeholder="Mínimo 8 caracteres (letras, números y símbolos)"
-                    className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] focus:border-neon rounded-xl pl-3 pr-10 py-2.5 text-xs text-[var(--text-main)] font-mono font-bold outline-none"
+                    className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] focus:border-[var(--neon-primary)] rounded-xl pl-3 pr-10 py-2.5 text-xs text-[var(--text-main)] font-mono font-bold outline-none"
                   />
                   <button
                     type="button"
                     onClick={() => setShowNew(!showNew)}
-                    className="absolute right-3 top-3 text-[var(--text-muted)] hover:text-white"
+                    className="absolute right-3 top-3 text-[var(--text-muted)] hover:text-[var(--text-main)]"
                   >
                     {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -227,12 +240,12 @@ export const ClientPasswordChangeModal = ({
                     value={confirmPass}
                     onChange={(e) => setConfirmPass(e.target.value)}
                     placeholder="Escribe exactamente la misma contraseña"
-                    className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] focus:border-neon rounded-xl pl-3 pr-10 py-2.5 text-xs text-[var(--text-main)] font-mono font-bold outline-none"
+                    className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] focus:border-[var(--neon-primary)] rounded-xl pl-3 pr-10 py-2.5 text-xs text-[var(--text-main)] font-mono font-bold outline-none"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirm(!showConfirm)}
-                    className="absolute right-3 top-3 text-[var(--text-muted)] hover:text-white"
+                    className="absolute right-3 top-3 text-[var(--text-muted)] hover:text-[var(--text-main)]"
                   >
                     {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -241,22 +254,22 @@ export const ClientPasswordChangeModal = ({
 
               {/* Validation Checklist */}
               <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1.5 text-[11px] font-sans">
-                <div className={`flex items-center gap-1.5 ${hasMinLength ? 'text-emerald-400' : 'text-zinc-500'}`}>
-                  <CheckCircle2 className={`w-3.5 h-3.5 ${hasMinLength ? 'text-emerald-400' : 'text-zinc-600'}`} />
+                <div className={`flex items-center gap-1.5 ${hasMinLength ? 'text-emerald-600 dark:text-emerald-400' : 'text-[var(--text-muted)]'}`}>
+                  <CheckCircle2 className={`w-3.5 h-3.5 ${hasMinLength ? 'text-emerald-600 dark:text-emerald-400' : 'text-[var(--text-faint)]'}`} />
                   <span>Al menos 8 caracteres</span>
                 </div>
-                <div className={`flex items-center gap-1.5 ${hasNumberOrSymbol ? 'text-emerald-400' : 'text-zinc-500'}`}>
-                  <CheckCircle2 className={`w-3.5 h-3.5 ${hasNumberOrSymbol ? 'text-emerald-400' : 'text-zinc-600'}`} />
+                <div className={`flex items-center gap-1.5 ${hasNumberOrSymbol ? 'text-emerald-600 dark:text-emerald-400' : 'text-[var(--text-muted)]'}`}>
+                  <CheckCircle2 className={`w-3.5 h-3.5 ${hasNumberOrSymbol ? 'text-emerald-600 dark:text-emerald-400' : 'text-[var(--text-faint)]'}`} />
                   <span>Incluye números o caracteres especiales (!#$%)</span>
                 </div>
-                <div className={`flex items-center gap-1.5 ${passwordsMatch ? 'text-emerald-400' : 'text-zinc-500'}`}>
-                  <CheckCircle2 className={`w-3.5 h-3.5 ${passwordsMatch ? 'text-emerald-400' : 'text-zinc-600'}`} />
+                <div className={`flex items-center gap-1.5 ${passwordsMatch ? 'text-emerald-600 dark:text-emerald-400' : 'text-[var(--text-muted)]'}`}>
+                  <CheckCircle2 className={`w-3.5 h-3.5 ${passwordsMatch ? 'text-emerald-600 dark:text-emerald-400' : 'text-[var(--text-faint)]'}`} />
                   <span>Ambas contraseñas coinciden</span>
                 </div>
               </div>
 
               {errorMsg && (
-                <p className="text-red-400 text-xs font-mono font-bold">
+                <p className="text-rose-600 dark:text-rose-400 text-xs font-mono font-bold">
                   {errorMsg}
                 </p>
               )}
@@ -266,7 +279,7 @@ export const ClientPasswordChangeModal = ({
                 <button
                   type="submit"
                   disabled={!isFormValid || isSubmitting}
-                  className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-neon text-black font-mono font-bold text-xs hover:bg-[var(--neon-hover)] transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(195,244,0,0.35)] disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-[var(--neon-primary)] text-black font-mono font-bold text-xs hover:bg-[var(--neon-hover)] transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_var(--neon-glow)] disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? (
                     <span>Encriptando y guardando...</span>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useId } from 'react';
+import React, { useState, useId, useEffect, useCallback } from 'react';
 import { Portal } from '@/components/common/Portal';
 import { useAuth } from '@/context/AuthContext';
 import { userService } from '@/services/userService';
@@ -13,10 +13,7 @@ import {
   CheckCircle2,
   AlertCircle,
   ShieldCheck,
-  Sparkles,
-  Smartphone,
-  LogOut,
-  Mail,
+  Info,
   RefreshCw,
   Check,
 } from 'lucide-react';
@@ -24,7 +21,7 @@ import confetti from 'canvas-confetti';
 
 // Evaluador de fortaleza de contraseña
 function evaluatePasswordStrength(password) {
-  if (!password) return { score: 0, label: 'Vacía', color: 'bg-zinc-700', textCol: 'text-zinc-500' };
+  if (!password) return { score: 0, label: 'Vacía', color: 'bg-zinc-300 dark:bg-zinc-700', textCol: 'text-[var(--text-muted)]' };
 
   let score = 0;
   if (password.length >= 8) score += 1;
@@ -33,10 +30,10 @@ function evaluatePasswordStrength(password) {
   if (/[0-9]/.test(password)) score += 1;
   if (/[^A-Za-z0-9]/.test(password)) score += 1;
 
-  if (score <= 1) return { score: 1, label: 'Débil', color: 'bg-rose-500', textCol: 'text-rose-500' };
-  if (score === 2) return { score: 2, label: 'Aceptable', color: 'bg-amber-500', textCol: 'text-amber-500' };
-  if (score === 3 || score === 4) return { score: 3, label: 'Fuerte', color: 'bg-blue-500', textCol: 'text-blue-400' };
-  return { score: 4, label: 'Inviolable', color: 'bg-emerald-500', textCol: 'text-emerald-400' };
+  if (score <= 1) return { score: 1, label: 'Débil', color: 'bg-rose-500', textCol: 'text-rose-600 dark:text-rose-400' };
+  if (score === 2) return { score: 2, label: 'Aceptable', color: 'bg-amber-500', textCol: 'text-amber-600 dark:text-amber-400' };
+  if (score === 3 || score === 4) return { score: 3, label: 'Fuerte', color: 'bg-blue-500', textCol: 'text-blue-600 dark:text-blue-400' };
+  return { score: 4, label: 'Inviolable', color: 'bg-emerald-500', textCol: 'text-emerald-600 dark:text-emerald-400' };
 }
 
 export const ChangePasswordModal = ({
@@ -49,8 +46,6 @@ export const ChangePasswordModal = ({
   const currentPasswordId = useId();
   const newPasswordId = useId();
   const confirmPasswordId = useId();
-  const revokeSessionsId = useId();
-  const sendEmailAlertId = useId();
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -60,12 +55,39 @@ export const ChangePasswordModal = ({
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const [revokeOtherSessions, setRevokeOtherSessions] = useState(true);
-  const [sendSecurityEmail, setSendSecurityEmail] = useState(true);
-
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
+  const [infoMessage, setInfoMessage] = useState(null);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  const handleReset = useCallback(() => {
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setErrorMessage(null);
+    setInfoMessage(null);
+    setIsSuccess(false);
+    setIsLoading(false);
+  }, []);
+
+  const handleClose = useCallback(() => {
+    if (!isLoading) {
+      handleReset();
+      onClose();
+    }
+  }, [isLoading, handleReset, onClose]);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        handleClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, handleClose]);
 
   if (!isOpen) return null;
 
@@ -75,6 +97,7 @@ export const ChangePasswordModal = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage(null);
+    setInfoMessage(null);
 
     // Validaciones
     if (!currentPassword) {
@@ -111,7 +134,7 @@ export const ChangePasswordModal = ({
           particleCount: 50,
           spread: 70,
           origin: { y: 0.6 },
-          colors: ['#D4FF00', '#10B981', '#38BDF8'],
+          colors: ['#c3f400', '#10B981', '#38BDF8'],
         });
       } catch (err) {}
     } catch (err) {
@@ -126,26 +149,13 @@ export const ChangePasswordModal = ({
     }
   };
 
-  const handleReset = () => {
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-    setErrorMessage(null);
-    setIsSuccess(false);
-    setIsLoading(false);
-  };
-
-  const handleClose = () => {
-    if (!isLoading) {
-      handleReset();
-      onClose();
-    }
-  };
-
   return (
     <Portal>
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Cambiar Contraseña"
+        className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 dark:bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto"
         onClick={(e) => {
           if (e.target === e.currentTarget) handleClose();
         }}
@@ -154,18 +164,19 @@ export const ChangePasswordModal = ({
           {/* Header */}
           <div className="flex items-start justify-between pb-4 border-b border-[var(--border-color)]">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-brand-primary/15 border border-brand-primary/30 flex items-center justify-center text-brand-primary shadow-neon-sm">
+              <div className="w-10 h-10 rounded-2xl bg-[var(--neon-primary)]/15 border border-[var(--neon-primary)]/30 flex items-center justify-center text-lime-700 dark:text-neon shadow-neon-sm">
                 <KeyRound className="w-5 h-5" />
               </div>
               <div>
-                <span className="text-[10px] font-mono font-bold uppercase text-brand-primary tracking-wider flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-brand-primary" />
+                <span className="text-[10px] font-mono font-bold uppercase text-lime-700 dark:text-neon tracking-wider flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-lime-700 dark:text-neon" />
                   Seguridad de Credenciales
                 </span>
                 <h3 className="text-lg font-heading font-black text-[var(--text-main)] uppercase tracking-tight">
                   Cambiar Contraseña
                 </h3>
                 <p className="text-xs text-[var(--text-muted)] font-mono">
+                  {userName ? `${userName} · ` : ''}
                   Cuenta: <strong className="text-[var(--text-main)]">{userEmail}</strong>
                 </p>
               </div>
@@ -183,8 +194,8 @@ export const ChangePasswordModal = ({
 
           {/* Estado de Éxito */}
           {isSuccess ? (
-            <div className="py-8 px-4 text-center space-y-4 animate-fadeIn">
-              <div className="w-16 h-16 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/10">
+            <div className="py-8 px-4 text-center space-y-4 animate-fade-in">
+              <div className="w-16 h-16 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/10">
                 <CheckCircle2 className="w-8 h-8" />
               </div>
               <div className="space-y-1">
@@ -192,13 +203,13 @@ export const ChangePasswordModal = ({
                   ¡Contraseña actualizada con éxito!
                 </h4>
                 <p className="text-xs text-[var(--text-muted)] max-w-sm mx-auto leading-relaxed">
-                  Tus nuevas credenciales han sido cifradas con SHA-256 / Bcrypt. Se ha despachado una notificación de seguridad a{' '}
-                  <strong className="text-[var(--text-main)] font-mono">{userEmail}</strong>.
+                  Tus nuevas credenciales para{' '}
+                  <strong className="text-[var(--text-main)] font-mono">{userEmail}</strong> han sido cifradas y almacenadas de forma segura.
                 </p>
               </div>
               <div className="pt-2">
-                <span className="text-[11px] font-mono px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  Tokens y sesiones sincronizados correctamente
+                <span className="text-[11px] font-mono px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                  Credencial actualizada en PostgreSQL
                 </span>
               </div>
             </div>
@@ -207,9 +218,17 @@ export const ChangePasswordModal = ({
             <form onSubmit={handleSubmit} className="space-y-4 pt-4">
               {/* Mensaje de Error */}
               {errorMessage && (
-                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs font-mono flex items-start gap-2.5 animate-shake">
+                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-mono flex items-start gap-2.5">
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                   <span className="leading-tight">{errorMessage}</span>
+                </div>
+              )}
+
+              {/* Mensaje Informativo Inline (Recuperación de Contraseña) */}
+              {infoMessage && (
+                <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-700 dark:text-blue-300 text-xs font-mono flex items-start gap-2.5">
+                  <Info className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span className="leading-tight">{infoMessage}</span>
                 </div>
               )}
 
@@ -225,9 +244,12 @@ export const ChangePasswordModal = ({
                   <button
                     type="button"
                     onClick={() => {
-                      alert(`Se ha enviado un enlace de restablecimiento seguro a: ${userEmail}`);
+                      setErrorMessage(null);
+                      setInfoMessage(
+                        `El restablecimiento por correo no es automático desde este diálogo. Solicita a un administrador de agencia una clave provisional para ${userEmail}.`
+                      );
                     }}
-                    className="text-[10px] font-mono text-[var(--text-muted)] hover:text-brand-primary transition-colors underline"
+                    className="text-[10px] font-mono text-[var(--text-muted)] hover:text-lime-700 dark:hover:text-neon transition-colors underline"
                   >
                     ¿Olvidaste tu contraseña?
                   </button>
@@ -241,7 +263,7 @@ export const ChangePasswordModal = ({
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     placeholder="••••••••••••"
-                    className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl pl-9 pr-10 py-2.5 text-xs text-[var(--text-main)] placeholder-[var(--text-faint)] focus:border-brand-primary outline-none font-mono transition-all"
+                    className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl pl-9 pr-10 py-2.5 text-xs text-[var(--text-main)] placeholder-[var(--text-faint)] focus:border-[var(--neon-primary)] outline-none font-mono transition-all"
                   />
                   <button
                     type="button"
@@ -270,7 +292,7 @@ export const ChangePasswordModal = ({
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Mínimo 8 caracteres, números y símbolos"
-                    className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl pl-9 pr-10 py-2.5 text-xs text-[var(--text-main)] placeholder-[var(--text-faint)] focus:border-brand-primary outline-none font-mono transition-all"
+                    className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl pl-9 pr-10 py-2.5 text-xs text-[var(--text-main)] placeholder-[var(--text-faint)] focus:border-[var(--neon-primary)] outline-none font-mono transition-all"
                   />
                   <button
                     type="button"
@@ -283,7 +305,7 @@ export const ChangePasswordModal = ({
 
                 {/* Medidor de Fuerza */}
                 {newPassword && (
-                  <div className="space-y-1 pt-1 animate-fadeIn">
+                  <div className="space-y-1 pt-1 animate-fade-in">
                     <div className="flex items-center justify-between text-[10px] font-mono">
                       <span className="text-[var(--text-muted)]">Nivel de Seguridad:</span>
                       <strong className={strength.textCol}>{strength.label}</strong>
@@ -314,11 +336,11 @@ export const ChangePasswordModal = ({
                   {confirmPassword && (
                     <span className="text-[10px] font-mono flex items-center gap-1">
                       {passwordsMatch ? (
-                        <span className="text-emerald-400 flex items-center gap-0.5">
+                        <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
                           <Check className="w-3 h-3" /> Coinciden
                         </span>
                       ) : (
-                        <span className="text-rose-400">No coinciden</span>
+                        <span className="text-rose-600 dark:text-rose-400">No coinciden</span>
                       )}
                     </span>
                   )}
@@ -335,7 +357,7 @@ export const ChangePasswordModal = ({
                     className={`w-full bg-[var(--bg-card)] border rounded-xl pl-9 pr-10 py-2.5 text-xs text-[var(--text-main)] placeholder-[var(--text-faint)] outline-none font-mono transition-all ${
                       confirmPassword && !passwordsMatch
                         ? 'border-rose-500/60 focus:border-rose-500'
-                        : 'border-[var(--border-color)] focus:border-brand-primary'
+                        : 'border-[var(--border-color)] focus:border-[var(--neon-primary)]'
                     }`}
                   />
                   <button
@@ -348,39 +370,12 @@ export const ChangePasswordModal = ({
                 </div>
               </div>
 
-              {/* Opciones de Seguridad Adicionales */}
-              <div className="p-3 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-2 text-xs font-mono text-[var(--text-muted)]">
-                <label
-                  htmlFor={revokeSessionsId}
-                  className="flex items-center gap-2.5 cursor-pointer text-[var(--text-main)] hover:text-brand-primary transition-colors"
-                >
-                  <input
-                    id={revokeSessionsId}
-                    type="checkbox"
-                    checked={revokeOtherSessions}
-                    onChange={(e) => setRevokeOtherSessions(e.target.checked)}
-                    className="w-4 h-4 accent-brand-primary rounded"
-                  />
-                  <span className="text-[11px]">
-                    Cerrar sesión activa en todos los demás dispositivos y teléfonos
-                  </span>
-                </label>
-
-                <label
-                  htmlFor={sendEmailAlertId}
-                  className="flex items-center gap-2.5 cursor-pointer text-[var(--text-main)] hover:text-brand-primary transition-colors"
-                >
-                  <input
-                    id={sendEmailAlertId}
-                    type="checkbox"
-                    checked={sendSecurityEmail}
-                    onChange={(e) => setSendSecurityEmail(e.target.checked)}
-                    className="w-4 h-4 accent-brand-primary rounded"
-                  />
-                  <span className="text-[11px]">
-                    Enviar comprobante y alerta de seguridad a <strong className="text-[var(--text-main)]">{userEmail}</strong>
-                  </span>
-                </label>
+              {/* Nota transparente de alcance de seguridad */}
+              <div className="p-3 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[11px] font-mono text-[var(--text-muted)] flex items-start gap-2.5">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                <span className="leading-relaxed">
+                  Tu nueva contraseña se cifra y persiste directamente en PostgreSQL para <strong className="text-[var(--text-main)]">{userEmail}</strong>. La revocación remota de otras sesiones y alertas por correo no están habilitadas en esta versión.
+                </span>
               </div>
 
               {/* Botones de Acción */}
@@ -397,7 +392,7 @@ export const ChangePasswordModal = ({
                 <button
                   type="submit"
                   disabled={isLoading || (confirmPassword && !passwordsMatch)}
-                  className="px-5 py-2.5 rounded-xl bg-brand-primary text-black font-mono font-bold text-xs flex items-center gap-2 shadow-neon-sm hover:opacity-95 active:scale-95 disabled:opacity-50 transition-all cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl bg-[var(--neon-primary)] text-black font-mono font-bold text-xs flex items-center gap-2 shadow-neon-sm hover:opacity-95 active:scale-95 disabled:opacity-50 transition-all cursor-pointer"
                 >
                   {isLoading ? (
                     <>

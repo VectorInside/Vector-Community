@@ -63,6 +63,10 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import {
+  EmailTemplatePreview,
+  getAccessibleAccentColor,
+} from '@/components/shared/EmailTemplatePreview';
 import { MobileSyncModal } from './MobileSyncModal';
 import {
   AppointmentConfirmationEmailModal,
@@ -480,16 +484,16 @@ function VariablePill({ tag, sampleVal, onInsert, isRecentlyInserted }) {
       title={`Clic para insertar en el cursor o copiar al portapapeles.\nEjemplo resuelto: "${sampleVal}"`}
       className={`group relative px-2.5 py-1 rounded-lg text-[11px] font-mono font-medium flex items-center gap-1.5 transition-all active:scale-95 border ${
         isRecentlyInserted
-          ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-sm'
-          : 'bg-[var(--bg-card)] hover:bg-brand-primary/15 text-[var(--text-main)] hover:text-brand-primary border-[var(--border-color)] hover:border-brand-primary/40'
+          ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-500/40 shadow-sm'
+          : 'bg-[var(--bg-card)] hover:bg-neon/15 text-[var(--text-main)] hover:text-[var(--neon-text)] border-[var(--border-color)] hover:border-neon/50'
       }`}
     >
-      <span className="text-brand-primary font-bold group-hover:scale-110 transition-transform">
-        {isRecentlyInserted ? <Check className="w-3 h-3 text-emerald-400" /> : <Plus className="w-3 h-3" />}
+      <span className="text-[var(--neon-text)] font-bold group-hover:scale-110 transition-transform">
+        {isRecentlyInserted ? <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> : <Plus className="w-3 h-3" />}
       </span>
       <span>{tag}</span>
       {isRecentlyInserted && (
-        <span className="text-[9px] bg-emerald-500/30 text-emerald-300 px-1 rounded animate-fadeIn">
+        <span className="text-[9px] bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 px-1 rounded animate-fadeIn">
           ¡Listo!
         </span>
       )}
@@ -549,7 +553,8 @@ export const MasterAgenda = () => {
   const [appointments, setAppointments] = useState([]);
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState(null);
-  const [viewMode, setViewMode] = useState('month'); // 'month' (Mes Completo) | 'grid' (Zoom Día / Horas) | 'week_table' (Semana) | 'list'
+  const [agendaError, setAgendaError] = useState(null);
+  const [viewMode, setViewMode] = useState('week_table'); // 'week_table' (ADR_010 §2.5) | 'month' | 'grid' | 'list'
   const [todayIsoStr, setTodayIsoStr] = useState(() => toIsoDateStr(new Date()));
   const [currentCalendarMonth, setCurrentCalendarMonth] = useState(() => {
     const now = new Date();
@@ -565,6 +570,7 @@ export const MasterAgenda = () => {
   const [showEmailConfirmationModal, setShowEmailConfirmationModal] = useState(false);
   const [appointmentForEmail, setAppointmentForEmail] = useState(null);
   const [savedConfigSuccess, setSavedConfigSuccess] = useState(false);
+  const [configSaveError, setConfigSaveError] = useState(null);
   const [activeModalTab, setActiveModalTab] = useState('shifts'); // 'shifts' | 'email' | 'preview'
   const [previewDevice, setPreviewDevice] = useState('desktop'); // 'desktop' | 'mobile'
   const [previewEmailClient, setPreviewEmailClient] = useState('gmail'); // 'gmail' | 'apple' | 'outlook'
@@ -576,6 +582,15 @@ export const MasterAgenda = () => {
   const [testDispatchError, setTestDispatchError] = useState(null);
   const [copyHtmlSuccess, setCopyHtmlSuccess] = useState(false);
   const [testEmailSent, setTestEmailSent] = useState(false);
+  const [manualBookSlot, setManualBookSlot] = useState(null);
+  const [manualBookForm, setManualBookForm] = useState({
+    clientName: '',
+    clientEmail: '',
+    phone: '',
+    serviceName: 'Atención Directa',
+  });
+  const [manualBookError, setManualBookError] = useState(null);
+  const [isSavingManualBook, setIsSavingManualBook] = useState(false);
 
   // Leer configuración de calendario extraída por la IA para este tenant específico (o personalizada en vivo)
   const [calendarConfig, setCalendarConfig] = useState(() => resolveCalendarConfig(activeTenant));
@@ -832,7 +847,43 @@ export const MasterAgenda = () => {
     });
   };
 
+  const isEmailConfigReady = Boolean(
+    emailConfig?.senderName?.trim() &&
+      isValidEmail(emailConfig?.senderEmail) &&
+      emailConfig?.subject?.trim()
+  );
+
+  // Escape & scroll-lock para modales propios de Agenda y Citas
+  useEffect(() => {
+    const anyModalOpen = Boolean(selectedAppointment || showConfigModal || manualBookSlot);
+    if (!anyModalOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (manualBookSlot) setManualBookSlot(null);
+        else if (showConfigModal) setShowConfigModal(false);
+        else if (selectedAppointment) setSelectedAppointment(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = prevOverflow || 'unset';
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [selectedAppointment, showConfigModal, manualBookSlot]);
+
   const handleSaveConfig = async () => {
+    setConfigSaveError(null);
+    // Validación global de correo antes de guardar sin importar la pestaña activa
+    if (!isEmailConfigReady) {
+      setConfigSaveError(
+        'Completa Nombre Remitente, Correo Emisor válido y Asunto en Email Studio antes de guardar.'
+      );
+      setActiveModalTab('email');
+      return;
+    }
+
     const finalizedShifts = recomputeShiftsHours(calendarConfig.shifts, calendarConfig.slotDurationMin);
     const updatedConfig = {
       ...calendarConfig,
@@ -889,63 +940,11 @@ export const MasterAgenda = () => {
         setShowConfigModal(false);
       }, 1200);
     } catch (err) {
-      setTestDispatchError(
+      setConfigSaveError(
         err?.response?.data?.message ||
           err?.message ||
           'No se pudo guardar la configuración de agenda en PostgreSQL.'
       );
-    }
-  };
-
-  const handleTestEmail = async () => {
-    const targetEmail = (testRecipientInput || emailConfig.senderEmail || activeTenant?.email || '').trim();
-    if (!targetEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(targetEmail)) {
-      const msg = 'Configura o ingresa un correo destinatario válido antes de enviar la prueba.';
-      setTestDispatchError(msg);
-      return;
-    }
-
-    setTestDispatchError(null);
-    setTestDispatchReport(null);
-    setIsDispatchingTest(true);
-    const startedAt = Date.now();
-
-    try {
-      const response = await fetch('/api/send-invitation', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: activeTenant?.name || 'Vector Inside',
-          email: targetEmail,
-          roleLabel: 'Prueba de Correo Master Agenda',
-          assignedSummary: `${activeTenant?.name || 'Negocio'} • Remitente: ${emailConfig.senderName || 'Notificaciones'}`,
-          tempPassword: 'SMTP-TEST-OK',
-          loginUrl: typeof window !== 'undefined' ? window.location.href : 'https://vectorinside.app/agenda',
-        }),
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok || !data?.success) {
-        throw new Error(data?.message || `Error HTTP ${response.status} al enviar correo de prueba.`);
-      }
-
-      setTestDispatchReport({
-        recipient: targetEmail,
-        provider: data.provider || 'SMTP',
-        messageId: data.messageId || 'OK',
-        message: data.message || `Correo enviado a ${targetEmail}`,
-        timestamp: new Date().toLocaleTimeString(),
-        latencyMs: Date.now() - startedAt,
-      });
-      setTestEmailSent(true);
-      try {
-        confetti({ particleCount: 30, spread: 50, colors: ['#3B82F6', emailConfig.accentColor || '#D4FF00'] });
-      } catch (e) {}
-      setTimeout(() => setTestEmailSent(false), 3500);
-    } catch (error) {
-      setTestEmailSent(false);
-      setTestDispatchError(error?.message || 'Error al despachar el correo de prueba.');
-    } finally {
-      setIsDispatchingTest(false);
     }
   };
 
@@ -1048,49 +1047,91 @@ export const MasterAgenda = () => {
     }
   };
 
-  const handleManualBook = async (shift, hour) => {
+  const handleManualBook = (shift, hour, overrideFullDate = null) => {
     const currentTenantKey = activeTenant?.id || activeTenantId || null;
     if (!currentTenantKey) {
-      alert('Selecciona un negocio activo antes de agendar una cita.');
+      setAgendaError('Selecciona un negocio activo en el selector superior antes de agendar una cita.');
       return;
     }
-    const clientName = prompt(`Agendar cita manual para las ${hour} hrs (${shift.name}):\nNombre del cliente / paciente:`);
-    if (!clientName) return;
+    setAgendaError(null);
+    setManualBookError(null);
+    setManualBookForm({
+      clientName: '',
+      clientEmail: '',
+      phone: activeTenant?.phone || '',
+      serviceName: 'Atención Directa',
+    });
+    setManualBookSlot({
+      shift,
+      hour,
+      fullDate: overrideFullDate || currentDayConfig.fullDate,
+      dayId: selectedDay,
+    });
+  };
+
+  const handleConfirmManualBook = async (e) => {
+    e.preventDefault();
+    if (!manualBookSlot) return;
+    const currentTenantKey = activeTenant?.id || activeTenantId || null;
+    if (!currentTenantKey) {
+      setManualBookError('Selecciona un negocio activo antes de agendar.');
+      return;
+    }
+    const cleanName = manualBookForm.clientName.trim();
+    if (!cleanName) {
+      setManualBookError('Ingresa el nombre del cliente o paciente.');
+      return;
+    }
+    const cleanEmail = manualBookForm.clientEmail.trim();
+    if (cleanEmail && !isValidEmail(cleanEmail)) {
+      setManualBookError('El correo electrónico ingresado no tiene un formato válido.');
+      return;
+    }
+
+    setManualBookError(null);
+    setIsSavingManualBook(true);
+
     const newApt = {
       id: `apt-${Date.now()}`,
       tenantId: currentTenantKey,
-      dayId: selectedDay,
-      fullDate: currentDayConfig.fullDate,
-      hour: hour,
-      title: `${clientName} — Cita Directa`,
-      client: clientName,
-      clientEmail: `${clientName.toLowerCase().replace(/\s+/g, '.')}@gmail.com`,
-      phone: activeTenant?.phone || '',
+      dayId: manualBookSlot.dayId,
+      fullDate: manualBookSlot.fullDate,
+      hour: manualBookSlot.hour,
+      title: `${cleanName} — ${manualBookForm.serviceName.trim() || 'Cita Directa'}`,
+      client: cleanName,
+      clientEmail: cleanEmail,
+      phone: manualBookForm.phone.trim() || activeTenant?.phone || '',
       specialist: 'Asignado en Recepción',
-      serviceName: 'Atención Directa',
+      serviceName: manualBookForm.serviceName.trim() || 'Atención Directa',
       serviceColor: '#10B981',
       estimatedValue: Number(activeTenant?.leadPriceMXN || 0),
       depositPaid: true,
       status: 'CONFIRMED',
-      start: `${currentDayConfig.fullDate}T${hour}:00`,
-      end: `${currentDayConfig.fullDate}T${hour}:45`,
-      details: 'Agendado manualmente en Master Agenda',
+      start: `${manualBookSlot.fullDate}T${manualBookSlot.hour}:00`,
+      end: `${manualBookSlot.fullDate}T${manualBookSlot.hour}:45`,
+      details: 'Agendado manualmente en Agenda y Citas',
     };
+
     try {
-      const savedApt = await calendarService.createAppointment({ ...newApt, fullDate: currentDayConfig.fullDate });
+      const savedApt = await calendarService.createAppointment({
+        ...newApt,
+        fullDate: manualBookSlot.fullDate,
+      });
       const finalApt = savedApt?.id ? { ...newApt, ...savedApt } : newApt;
       setAppointments((prev) => [...prev, finalApt]);
+      setManualBookSlot(null);
       try {
         confetti({ particleCount: 30, spread: 50, colors: ['#10B981', '#D4FF00'] });
-      } catch (e) {}
-      // Abrir automáticamente el modal de correo de confirmación
+      } catch (e2) {}
       handleOpenEmailConfirmation(finalApt);
     } catch (err) {
-      alert(
+      setManualBookError(
         err?.response?.data?.message ||
           err?.message ||
           'No se pudo registrar la cita en PostgreSQL.'
       );
+    } finally {
+      setIsSavingManualBook(false);
     }
   };
 
@@ -1153,25 +1194,25 @@ export const MasterAgenda = () => {
       {/* ========================================================================= */}
       {/* 1. TOP HERO: GOOGLE CALENDAR 2-WAY SYNC BANNER                            */}
       {/* ========================================================================= */}
-      <div className="p-4 sm:p-5 lg:p-6 rounded-2xl sm:rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] shadow-xl backdrop-blur-xl flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative overflow-hidden">
+      <div className="p-4 sm:p-5 lg:p-6 rounded-2xl sm:rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] shadow-sm backdrop-blur-xl flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative overflow-hidden">
         <div className="absolute -top-16 -right-16 w-64 h-64 bg-neon/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="flex items-center gap-3 sm:gap-4 relative z-10">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-neon/20 via-neon/5 to-transparent border border-neon/30 flex items-center justify-center text-neon shadow-neon-sm shrink-0">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-neon/20 via-neon/5 to-transparent border border-neon/30 flex items-center justify-center text-[var(--neon-text)] shadow-neon-sm shrink-0">
             <CalendarIcon className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-xl sm:text-2xl font-black text-[var(--text-main)] tracking-tight uppercase">
-                Master <span className="text-neon">Agenda</span>
+                Agenda y <span className="text-[var(--neon-text)]">Citas</span>
               </h2>
-              <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold flex items-center gap-1.5">
+              <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Google Calendar 2-Way Sync
               </span>
               <span
                 suppressHydrationWarning
-                className="px-2 py-0.5 rounded-full bg-neon/10 text-lime-700 dark:text-neon border border-neon/30 text-[10px] font-mono font-bold flex items-center gap-1.5"
+                className="px-2 py-0.5 rounded-full bg-neon/10 text-[var(--neon-text)] border border-neon/30 text-[10px] font-mono font-bold flex items-center gap-1.5"
               >
                 <Clock className="w-3 h-3" />
                 Tiempo Real CDMX: <LiveClock /> hrs • {todayIsoStr}
@@ -1181,7 +1222,7 @@ export const MasterAgenda = () => {
               <span>Negocio activo:</span>
               <strong className="text-[var(--text-main)]">{activeTenant?.name || 'Sin negocio seleccionado'}</strong>
               <span className="text-[var(--text-muted)]">•</span>
-              <span className="text-neon">Giro: {activeTenant?.giro || 'Sin giro activo'}</span>
+              <span className="text-[var(--neon-text)] font-semibold">Giro: {activeTenant?.giro || 'Sin giro activo'}</span>
             </p>
           </div>
         </div>
@@ -1194,7 +1235,7 @@ export const MasterAgenda = () => {
             title="Ver en tu celular con Código QR y sincronizar con Google Calendar"
           >
             <Smartphone className="w-3.5 h-3.5" />
-            <span>Ver en Celular & Google Calendar</span>
+            <span>Ver en Celular &amp; Google Calendar</span>
           </button>
 
           <button
@@ -1203,8 +1244,8 @@ export const MasterAgenda = () => {
             className="px-3 py-2 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] border border-neon/50 hover:border-neon text-xs font-mono font-bold flex items-center gap-1.5 transition-all shadow-sm hover:shadow-neon-sm shrink-0"
             title="Personalizar turnos, duración de citas, descansos y membrete de correo"
           >
-            <Settings2 className="w-3.5 h-3.5 text-neon" />
-            <span>Personalizar Agenda & Turnos</span>
+            <Settings2 className="w-3.5 h-3.5 text-[var(--neon-text)]" />
+            <span>Personalizar Agenda &amp; Turnos</span>
           </button>
 
           <Button
@@ -1222,9 +1263,25 @@ export const MasterAgenda = () => {
       </div>
 
       {syncMessage && (
-        <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-mono flex items-center gap-3 animate-fadeIn shadow-lg">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+        <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-mono flex items-center gap-3 animate-fadeIn shadow-sm">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
           <span className="font-semibold">{syncMessage}</span>
+        </div>
+      )}
+
+      {agendaError && (
+        <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-mono flex items-center justify-between gap-3 animate-fadeIn">
+          <div className="flex items-center gap-2.5">
+            <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+            <span className="font-semibold">{agendaError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setAgendaError(null)}
+            className="p-1 rounded-lg hover:bg-rose-500/15"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
         </div>
       )}
 
@@ -1317,18 +1374,18 @@ export const MasterAgenda = () => {
       {viewMode === 'month' && (
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 animate-fadeIn">
           {/* COLUMNA PRINCIPAL (70%): CUADRÍCULA MENSUAL CON PROPORCIÓN ÁUREA */}
-          <div className="xl:col-span-8 2xl:col-span-9 rounded-2xl sm:rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-3.5 sm:p-5 lg:p-6 space-y-3.5 sm:space-y-4 shadow-xl flex flex-col justify-between">
+          <div className="xl:col-span-8 2xl:col-span-9 rounded-2xl sm:rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-4 sm:p-6 space-y-4 shadow-sm flex flex-col justify-between">
             {/* Cabecera del Mes */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 sm:pb-4 border-b border-[var(--border-color)] gap-3">
               <div>
                 <div className="flex items-center gap-2.5">
-                  <span className="p-2 sm:p-2.5 rounded-2xl bg-neon/15 text-lime-700 dark:text-neon border border-neon/30 shrink-0 shadow-neon-sm">
+                  <span className="p-2 sm:p-2.5 rounded-2xl bg-neon/15 text-[var(--neon-text)] border border-neon/30 shrink-0 shadow-neon-sm">
                     <CalendarIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                   </span>
                   <div>
                     <h3 className="text-base sm:text-lg font-black text-[var(--text-main)] flex flex-wrap items-center gap-2">
                       <span suppressHydrationWarning>
-                        {activeMonthName} <span className="text-neon">{activeYear}</span>
+                        {activeMonthName} <span className="text-[var(--neon-text)]">{activeYear}</span>
                       </span>
                       <span
                         suppressHydrationWarning
@@ -1372,7 +1429,7 @@ export const MasterAgenda = () => {
                   </button>
                 </div>
 
-                <span className="text-[11px] sm:text-xs font-mono px-3 py-1.5 rounded-xl bg-neon/15 text-lime-800 dark:text-neon border border-neon/30 font-bold shrink-0">
+                <span className="text-[11px] sm:text-xs font-mono px-3 py-1.5 rounded-xl bg-neon/15 text-[var(--neon-text)] border border-neon/30 font-bold shrink-0">
                   {filteredAppointments.length} Citas del Mes
                 </span>
                 <button
@@ -1380,7 +1437,7 @@ export const MasterAgenda = () => {
                   onClick={() => setShowMobileSyncModal(true)}
                   className="px-3 py-1.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[11px] sm:text-xs font-mono font-bold text-[var(--text-main)] flex items-center gap-1.5 transition-all"
                 >
-                  <Smartphone className="w-3.5 h-3.5 text-neon" />
+                  <Smartphone className="w-3.5 h-3.5 text-[var(--neon-text)]" />
                   <span className="hidden sm:inline">Móvil Sync</span>
                 </button>
               </div>
@@ -1388,7 +1445,7 @@ export const MasterAgenda = () => {
 
             {/* Días de la semana Header (Lunes a Domingo) */}
             <div className="grid grid-cols-7 gap-1 sm:gap-1.5 lg:gap-2 text-center text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider text-[var(--text-muted)] pb-2 border-b border-[var(--border-color)]">
-              <span className="text-lime-700 dark:text-neon">Lun</span>
+              <span className="text-[var(--neon-text)]">Lun</span>
               <span>Mar</span>
               <span>Mié</span>
               <span>Jue</span>
@@ -1475,9 +1532,9 @@ export const MasterAgenda = () => {
                         <span
                           className={`text-xs sm:text-sm font-mono font-bold transition-colors ${
                             isSelected
-                              ? 'text-neon font-black'
+                              ? 'text-[var(--neon-text)] font-black'
                               : hasApts
-                              ? 'text-[var(--text-main)] group-hover:text-neon'
+                              ? 'text-[var(--text-main)] group-hover:text-[var(--neon-text)]'
                               : 'text-[var(--text-muted)] group-hover:text-[var(--text-main)]'
                           }`}
                         >
@@ -1486,8 +1543,8 @@ export const MasterAgenda = () => {
                       )}
 
                       {hasApts ? (
-                        <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-400 text-[9px] font-mono font-bold flex items-center gap-1 border border-emerald-500/30 shrink-0">
-                          <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 text-[9px] font-mono font-bold flex items-center gap-1 border border-emerald-500/30 shrink-0">
+                          <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
                           {aptsOnThisDay.length}
                         </span>
                       ) : !activeTenant ? (
@@ -1507,7 +1564,7 @@ export const MasterAgenda = () => {
                               className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[var(--bg-panel)]/90 border border-[var(--border-color)] text-[var(--text-main)] truncate flex items-center gap-1"
                               style={{ borderLeftColor: apt.serviceColor || '#3B82F6', borderLeftWidth: '2.5px' }}
                             >
-                              <span className="font-bold text-neon shrink-0">{apt.hour}</span>
+                              <span className="font-bold text-[var(--neon-text)] shrink-0">{apt.hour}</span>
                               <span className="truncate">{apt.client.split(' ')[0]}</span>
                             </div>
                           ))}
@@ -1523,17 +1580,17 @@ export const MasterAgenda = () => {
                     {/* Pie de Celda: SIN línea divisoria huérfana en días vacíos */}
                     {hasApts ? (
                       <div className="pt-1 mt-auto border-t border-[var(--border-color)]/60 flex items-center justify-between text-[9px] font-mono">
-                        <span suppressHydrationWarning className="text-emerald-400 font-bold truncate">
+                        <span suppressHydrationWarning className="text-emerald-700 dark:text-emerald-400 font-bold truncate">
                           ${String(dayTotalRevenue).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                         </span>
-                        <span className="text-[8px] text-neon opacity-0 group-hover:opacity-100 font-bold transition-opacity">
+                        <span className="text-[8px] text-[var(--neon-text)] opacity-0 group-hover:opacity-100 font-bold transition-opacity">
                           Ver ↗
                         </span>
                       </div>
                     ) : (
                       <div className="mt-auto flex items-center justify-between text-[8px] font-mono">
                         {isOperating ? (
-                          <span className="text-neon opacity-0 group-hover:opacity-100 font-bold transition-opacity">
+                          <span className="text-[var(--neon-text)] opacity-0 group-hover:opacity-100 font-bold transition-opacity">
                             + Agendar
                           </span>
                         ) : (
@@ -1564,7 +1621,7 @@ export const MasterAgenda = () => {
           </div>
 
           {/* COLUMNA LATERAL (30%): EXECUTIVE RIGHT RAIL (PANEL DEL DÍA SELECCIONADO) */}
-          <div className="xl:col-span-4 2xl:col-span-3 rounded-2xl sm:rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-4 sm:p-5 space-y-4 shadow-xl flex flex-col">
+          <div className="xl:col-span-4 2xl:col-span-3 rounded-2xl sm:rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-4 sm:p-6 space-y-4 shadow-sm flex flex-col">
             {/* Header del Día Seleccionado */}
             <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)]">
               <div>
@@ -1574,7 +1631,7 @@ export const MasterAgenda = () => {
                     Agenda del Día
                   </h4>
                 </div>
-                <p className="text-xs text-neon font-mono font-bold mt-1">
+                <p className="text-xs text-[var(--neon-text)] font-mono font-bold mt-1">
                   {selectedDateFormattedLabel || selectedMonthDate}
                 </p>
               </div>
@@ -1599,7 +1656,7 @@ export const MasterAgenda = () => {
               </div>
               <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
                 <span className="text-[10px] font-mono text-[var(--text-muted)] block">Proyección Valor</span>
-                <span className="text-lg font-mono font-black text-emerald-400 mt-0.5 block">
+                <span className="text-lg font-mono font-black text-emerald-700 dark:text-emerald-400 mt-0.5 block">
                   ${String(selectedDayRevenue).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                 </span>
               </div>
@@ -1624,25 +1681,25 @@ export const MasterAgenda = () => {
                   >
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-1.5">
-                        <Clock className="w-3 h-3 text-neon" />
-                        <span className="text-xs font-mono font-bold text-neon">{apt.hour} hrs</span>
+                        <Clock className="w-3 h-3 text-[var(--neon-text)]" />
+                        <span className="text-xs font-mono font-bold text-[var(--neon-text)]">{apt.hour} hrs</span>
                       </div>
                       <span
                         className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-full ${
                           apt.depositPaid
-                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                            : 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                            ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30'
+                            : 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30'
                         }`}
                       >
                         {apt.depositPaid ? 'Confirmada' : 'Pre-Cita Triage'}
                       </span>
                     </div>
-                    <p className="text-xs font-bold text-[var(--text-main)] group-hover:text-neon transition-colors truncate">
+                    <p className="text-xs font-bold text-[var(--text-main)] group-hover:text-[var(--neon-text)] transition-colors truncate">
                       {apt.client}
                     </p>
                     <div className="flex items-center justify-between mt-1 text-[10px] text-[var(--text-muted)] font-mono">
                       <span className="truncate">{apt.serviceName || 'Servicio General'}</span>
-                      <span className="text-emerald-400 font-bold shrink-0">
+                      <span className="text-emerald-700 dark:text-emerald-400 font-bold shrink-0">
                         ${String(Number(apt.estimatedValue || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                       </span>
                     </div>
@@ -1657,7 +1714,7 @@ export const MasterAgenda = () => {
                 type="button"
                 onClick={() => {
                   const shift = calendarConfig.shifts?.[0] || { name: 'Turno Regular' };
-                  handleManualBook(shift, '10:00');
+                  handleManualBook(shift, shift?.hours?.[0] || '10:00', selectedMonthDate);
                 }}
                 className="w-full py-2.5 rounded-xl bg-neon text-black font-mono font-bold text-xs flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 shadow-neon-sm transition-all"
               >
@@ -1675,19 +1732,19 @@ export const MasterAgenda = () => {
       {viewMode === 'grid' && (
         <div className="space-y-4 animate-fadeIn">
           {/* Header del Día + Selector de Pestañas de Días */}
-          <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-4 shadow-sm">
+          <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-4 shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--border-color)]">
               <div className="flex flex-wrap items-center gap-2.5">
                 <button
                   type="button"
                   onClick={() => setViewMode('month')}
-                  className="px-2.5 py-1 rounded-xl bg-neon/15 hover:bg-neon hover:text-black text-lime-800 dark:text-neon border border-neon/30 text-xs font-mono font-bold flex items-center gap-1 transition-all mr-1 shadow-sm"
+                  className="px-2.5 py-1 rounded-xl bg-neon/15 hover:bg-neon hover:text-black text-[var(--neon-text)] border border-neon/30 text-xs font-mono font-bold flex items-center gap-1 transition-all mr-1 shadow-sm"
                   title="Volver a la vista del mes completo"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   <span>Volver al Mes</span>
                 </button>
-                <CalendarCheck className="w-5 h-5 text-brand-primary" />
+                <CalendarCheck className="w-5 h-5 text-[var(--neon-text)]" />
                 <span suppressHydrationWarning className="text-sm font-bold text-[var(--text-main)] tracking-wide">
                   Zoom Detallado • {currentDayConfig.name} {currentDayConfig.dateStr} ({currentDayConfig.fullDate})
                 </span>
@@ -1718,7 +1775,7 @@ export const MasterAgenda = () => {
                       }}
                       className={`px-3.5 py-2 rounded-xl text-center transition-all shrink-0 border ${
                         isActive
-                          ? 'bg-brand-primary text-black border-brand-primary font-bold shadow-neon-sm'
+                          ? 'bg-neon text-black border-neon font-bold shadow-neon-sm'
                           : isDayOpen
                           ? 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] border-[var(--border-color)]'
                           : 'bg-[var(--bg-card-subtle)] text-[var(--text-muted)] border-[var(--border-color)] line-through opacity-50'
@@ -1732,7 +1789,7 @@ export const MasterAgenda = () => {
                         {dayAptsCount > 0 && (
                           <span
                             className={`w-1.5 h-1.5 rounded-full ${
-                              isActive ? 'bg-black' : 'bg-brand-primary'
+                              isActive ? 'bg-black' : 'bg-neon'
                             }`}
                           />
                         )}
@@ -1746,13 +1803,13 @@ export const MasterAgenda = () => {
             {/* Strip Ejecutivo de Métricas del Día */}
             <div className="flex flex-wrap items-center justify-between gap-4 p-3.5 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-xs">
               <div className="flex flex-wrap items-center gap-3">
-                <span className="px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                <span className="px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 font-medium flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
                   {confirmedCount} {calendarConfig.capacityLabel || 'Citas'} Agendadas
                 </span>
                 {triageCount > 0 && (
-                  <span className="px-2.5 py-1 rounded-md bg-purple-500/10 text-purple-400 border border-purple-500/20 font-medium flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-purple-400" />
+                  <span className="px-2.5 py-1 rounded-md bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-500/20 font-medium flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-purple-500" />
                     {triageCount} Pre-Citas IA
                   </span>
                 )}
@@ -1766,14 +1823,14 @@ export const MasterAgenda = () => {
                   <span className="text-[var(--text-muted)] text-[11px]">Ocupación:</span>
                   <div className="w-24 h-2 rounded-full bg-[var(--bg-card)] border border-[var(--border-color)] overflow-hidden">
                     <div
-                      className="h-full bg-brand-primary transition-all duration-500"
+                      className="h-full bg-neon transition-all duration-500"
                       style={{ width: `${totalOccupancyPct}%` }}
                     />
                   </div>
                   <span className="text-[var(--text-main)] font-bold text-[11px]">{totalOccupancyPct}%</span>
                 </div>
 
-                <div className="flex items-center gap-1 text-emerald-400 font-bold">
+                <div className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-bold">
                   <DollarSign className="w-3.5 h-3.5" />
                   <span suppressHydrationWarning>${String(estimatedDayRevenue).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} MXN</span>
                   <span className="text-[10px] text-[var(--text-muted)] font-normal">estimados</span>
@@ -1805,7 +1862,7 @@ export const MasterAgenda = () => {
             </div>
           ) : (calendarConfig.shifts || []).length === 0 ? (
             <div className="p-12 text-center rounded-2xl bg-[var(--bg-panel)] border border-dashed border-[var(--border-color)] space-y-4">
-              <Clock className="w-10 h-10 text-neon mx-auto opacity-70" />
+              <Clock className="w-10 h-10 text-[var(--neon-text)] mx-auto opacity-80" />
               <div className="space-y-1">
                 <h4 className="text-base font-bold text-[var(--text-main)] font-mono">
                   Sin turnos configurados para {activeTenant?.name}
@@ -1835,16 +1892,16 @@ export const MasterAgenda = () => {
 
                 return (
                   <React.Fragment key={shift.id}>
-                    <div className="rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-5 space-y-3">
+                    <div className="rounded-2xl sm:rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-4 sm:p-6 space-y-3 shadow-sm">
                       {/* Cabecera del Turno */}
                       <div className="flex items-center justify-between pb-2 border-b border-[var(--border-color)]">
                         <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
                           {isMorning ? (
-                            <Sun className="w-4 h-4 text-amber-400" />
+                            <Sun className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                           ) : isDinner ? (
-                            <Moon className="w-4 h-4 text-purple-400" />
+                            <Moon className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                           ) : (
-                            <Sunset className="w-4 h-4 text-indigo-400" />
+                            <Sunset className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                           )}
                           <span className="text-[var(--text-main)] font-mono font-bold">{shift.name}</span>
                           <span className="text-[var(--text-muted)] font-mono font-normal">
@@ -1908,12 +1965,12 @@ export const MasterAgenda = () => {
       {/* 4. VISTA 2: SEMANA COMPLETA EN MATRIZ (7 DÍAS EN PARALELO)                 */}
       {/* ========================================================================= */}
       {viewMode === 'week_table' && (
-        <div className="rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-6 space-y-5 animate-fadeIn shadow-2xl">
+        <div className="rounded-2xl sm:rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-4 sm:p-6 space-y-5 animate-fadeIn shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-[var(--border-color)] gap-3">
             <div>
               <h3 className="text-base font-bold text-[var(--text-main)] flex items-center gap-2">
-                <CalendarDays className="w-5 h-5 text-neon" />
-                <span>Agenda Semanal de Citas & Disponibilidad: <strong>{activeTenant?.name || 'Sin negocio seleccionado'}</strong></span>
+                <CalendarDays className="w-5 h-5 text-[var(--neon-text)]" />
+                <span>Agenda Semanal de Citas &amp; Disponibilidad: <strong>{activeTenant?.name || 'Sin negocio seleccionado'}</strong></span>
               </h3>
               <p suppressHydrationWarning className="text-xs text-[var(--text-muted)] font-mono mt-0.5">
                 Semana {currentWeekNumber} • {weekStartLabel} al {weekEndLabel} {activeYear} • Tiempo Real (<LiveClock /> hrs)
@@ -1921,7 +1978,7 @@ export const MasterAgenda = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-mono px-3 py-1 rounded-xl bg-neon/15 text-lime-800 dark:text-neon border border-neon/30 font-bold">
+              <span className="text-[11px] font-mono px-3 py-1 rounded-xl bg-neon/15 text-[var(--neon-text)] border border-neon/30 font-bold">
                 {filteredAppointments.length} Citas en la Semana
               </span>
               <button
@@ -1929,7 +1986,7 @@ export const MasterAgenda = () => {
                 onClick={() => setShowMobileSyncModal(true)}
                 className="px-3 py-1 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-xs font-mono font-bold text-[var(--text-main)] flex items-center gap-1.5 transition-all"
               >
-                <Smartphone className="w-3.5 h-3.5 text-neon" />
+                <Smartphone className="w-3.5 h-3.5 text-[var(--neon-text)]" />
                 <span>Móvil Sync</span>
               </button>
             </div>
@@ -2017,7 +2074,7 @@ export const MasterAgenda = () => {
                           style={{ borderLeftWidth: '3px', borderLeftColor: apt.serviceColor || '#3B82F6' }}
                         >
                           <div className="flex items-center justify-between">
-                            <span className="font-mono text-[10px] text-neon font-black">
+                            <span className="font-mono text-[10px] text-[var(--neon-text)] font-black">
                               {apt.hour} hrs
                             </span>
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -2026,7 +2083,7 @@ export const MasterAgenda = () => {
                           <div>
                             <p
                               onClick={() => setSelectedAppointment(apt)}
-                              className="text-xs font-bold text-[var(--text-main)] truncate cursor-pointer hover:text-neon transition-colors"
+                              className="text-xs font-bold text-[var(--text-main)] truncate cursor-pointer hover:text-[var(--neon-text)] transition-colors"
                               title={apt.client}
                             >
                               {apt.client}
@@ -2048,7 +2105,7 @@ export const MasterAgenda = () => {
                                 e.stopPropagation();
                                 handleOpenEmailConfirmation(apt);
                               }}
-                              className="p-1 rounded bg-[var(--bg-card)] hover:bg-neon/15 hover:text-neon text-[var(--text-muted)] transition-colors"
+                              className="p-1 rounded bg-[var(--bg-card)] hover:bg-neon/15 hover:text-[var(--neon-text)] text-[var(--text-muted)] transition-colors"
                               title="Despachar Correo Personalizado"
                             >
                               <Mail className="w-3 h-3" />
@@ -2059,7 +2116,7 @@ export const MasterAgenda = () => {
                               target="_blank"
                               rel="noreferrer"
                               onClick={(e) => e.stopPropagation()}
-                              className="p-1 rounded bg-[var(--bg-card)] hover:bg-blue-500/15 hover:text-blue-400 text-[var(--text-muted)] transition-colors"
+                              className="p-1 rounded bg-[var(--bg-card)] hover:bg-blue-500/15 hover:text-blue-600 dark:hover:text-blue-400 text-[var(--text-muted)] transition-colors"
                               title="Añadir a Google Calendar"
                             >
                               <CalendarIcon className="w-3 h-3" />
@@ -2071,7 +2128,7 @@ export const MasterAgenda = () => {
                                 e.stopPropagation();
                                 triggerIcsDownload(apt, activeTenant);
                               }}
-                              className="p-1 rounded bg-[var(--bg-card)] hover:bg-emerald-500/15 hover:text-emerald-400 text-[var(--text-muted)] transition-colors"
+                              className="p-1 rounded bg-[var(--bg-card)] hover:bg-emerald-500/15 hover:text-emerald-600 dark:hover:text-emerald-400 text-[var(--text-muted)] transition-colors"
                               title="Descargar archivo .ICS para Móvil / Apple"
                             >
                               <Download className="w-3 h-3" />
@@ -2080,7 +2137,7 @@ export const MasterAgenda = () => {
                             <button
                               type="button"
                               onClick={() => setSelectedAppointment(apt)}
-                              className="text-[9px] text-neon font-bold hover:underline"
+                              className="text-[9px] text-[var(--neon-text)] font-bold hover:underline"
                             >
                               Ver →
                             </button>
@@ -2118,7 +2175,7 @@ export const MasterAgenda = () => {
       {/* 5. VISTA 3: LISTA CLÁSICA AUDITADA                                        */}
       {/* ========================================================================= */}
       {viewMode === 'list' && (
-        <div className="rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-6 space-y-4 animate-fadeIn">
+        <div className="rounded-2xl sm:rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-4 sm:p-6 space-y-4 animate-fadeIn shadow-sm">
           <div className="flex items-center justify-between pb-4 border-b border-[var(--border-color)]">
             <div>
               <h3 className="text-base font-bold text-[var(--text-main)]">Todas las Citas de {activeTenant?.name || 'Sin negocio seleccionado'}</h3>
@@ -2145,11 +2202,11 @@ export const MasterAgenda = () => {
               <div
                 key={apt.id}
                 onClick={() => setSelectedAppointment(apt)}
-                className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-brand-primary/60 cursor-pointer transition-all space-y-3 group shadow-sm hover:shadow-neon-sm"
+                className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon/60 cursor-pointer transition-all space-y-3 group shadow-sm hover:shadow-neon-sm"
               >
                 <div className="flex items-start justify-between">
                   <div className="space-y-0.5">
-                    <h4 className="text-sm font-bold text-[var(--text-main)] group-hover:text-brand-primary transition-colors">
+                    <h4 className="text-sm font-bold text-[var(--text-main)] group-hover:text-[var(--neon-text)] transition-colors">
                       {apt.title}
                     </h4>
                     <p className="text-xs text-[var(--text-muted)] font-mono">{apt.specialist}</p>
@@ -2161,7 +2218,7 @@ export const MasterAgenda = () => {
 
                 <div className="pt-2 border-t border-[var(--border-color)] grid grid-cols-2 gap-2 text-xs font-mono">
                   <div className="text-[var(--text-main)] flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5 text-brand-primary" />
+                    <Clock className="w-3.5 h-3.5 text-[var(--neon-text)]" />
                     <span>{apt.start ? formatDateTime(apt.start) : `${apt.hour} hrs`}</span>
                   </div>
                   <div className="text-[var(--text-muted)] flex items-center gap-1.5 truncate">
@@ -2172,7 +2229,7 @@ export const MasterAgenda = () => {
                     <Phone className="w-3.5 h-3.5 text-[var(--text-muted)]" />
                     <span className="truncate">{apt.phone}</span>
                   </div>
-                  <div className="text-emerald-400 flex items-center gap-1.5">
+                  <div className="text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1.5">
                     <DollarSign className="w-3.5 h-3.5" />
                     <span>${Number(apt.estimatedValue || 0)} MXN</span>
                   </div>

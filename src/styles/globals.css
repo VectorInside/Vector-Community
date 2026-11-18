@@ -27,6 +27,8 @@
     --purple-glow: rgba(170, 139, 251, 0.2);
     --blue: #80b8ff;                        /* Datos analíticos, filtros y telemetría */
     --azul-cognitivo: #80b8ff;
+    --azul-cognitivo-glow: rgba(128, 184, 255, 0.28);
+    --shadow-surface: 0 10px 30px -10px rgba(0, 0, 0, 0.75);
     
     --success: #72d4ae;
     --success-bg: rgba(114, 212, 174, 0.12);
@@ -58,6 +60,8 @@
     --purple-glow: rgba(119, 83, 203, 0.15);
     --blue: #326faf;
     --azul-cognitivo: #326faf;
+    --azul-cognitivo-glow: rgba(50, 111, 175, 0.25);
+    --shadow-surface: 0 10px 30px -10px rgba(15, 23, 42, 0.12);
     
     --success: #237e5d;
     --success-bg: rgba(35, 126, 93, 0.1);
@@ -130,7 +134,11 @@
   }
   
   /* Amarillo Vectorial Classes */
-  .text-neon {
+  .text-neon,
+  .hover\:text-neon:hover,
+  .group:hover .group-hover\:text-neon,
+  .text-brand-primary,
+  .hover\:text-brand-primary:hover {
     color: var(--neon-text, var(--neon-primary));
   }
   .bg-neon {
@@ -144,7 +152,7 @@
     box-shadow: 0 0 20px 0 var(--neon-glow);
   }
   .neon-shadow-lg {
-    box-shadow: 0 0 35px 0 rgba(231, 249, 0, 0.35);
+    box-shadow: 0 0 35px 0 var(--neon-glow);
   }
 
   /* Azul Cognitivo Classes */
@@ -155,11 +163,40 @@
     background-color: var(--azul-cognitivo);
     color: #000000;
   }
+  .light .bg-cognitive {
+    color: #ffffff;
+  }
   .border-cognitive {
     border-color: var(--azul-cognitivo);
   }
   .cognitive-shadow {
     box-shadow: 0 0 20px 0 var(--azul-cognitivo-glow);
+  }
+
+  /* Custom Cross-Browser Scrollbars */
+  .custom-scrollbar,
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) var(--bg-card-subtle);
+  }
+  .custom-scrollbar::-webkit-scrollbar,
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track,
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: var(--bg-card-subtle);
+    border-radius: 9999px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb,
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 9999px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover,
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: var(--azul-cognitivo);
   }
 
   /* Hide scrollbar for Chrome, Safari, Opera and Firefox */

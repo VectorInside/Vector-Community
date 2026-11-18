@@ -43,16 +43,21 @@ export const SystemConfigHub = ({ initialTab = 'rag', initialMode = 'list' }) =>
     }
   }, [initialTab]);
 
-  // Listener para control programático desde el Tutor Contextual
+  // Listener para control programático desde el Tutor Contextual y eventos ADR_013 §2.3
   useEffect(() => {
     const handleConfigControl = (e) => {
-      const { tab, mode } = e.detail || {};
+      const detail = typeof e.detail === 'string' ? { tab: e.detail } : (e.detail || {});
+      const { tab, mode } = detail;
       if (tab) setActiveTab(tab);
-      if (mode) setAdminMode(mode);
+      if (mode && (isAdmin || mode !== 'wizard')) setAdminMode(mode);
     };
     window.addEventListener('vector_config_set_tab', handleConfigControl);
-    return () => window.removeEventListener('vector_config_set_tab', handleConfigControl);
-  }, []);
+    window.addEventListener('vector:select-config-tab', handleConfigControl);
+    return () => {
+      window.removeEventListener('vector_config_set_tab', handleConfigControl);
+      window.removeEventListener('vector:select-config-tab', handleConfigControl);
+    };
+  }, [isAdmin]);
 
   return (
     <div className="w-full p-4 sm:p-6 lg:p-8 block animate-fade-in space-y-6">
@@ -74,7 +79,7 @@ export const SystemConfigHub = ({ initialTab = 'rag', initialMode = 'list' }) =>
               </div>
             </div>
             <p className="text-xs font-mono text-[var(--text-muted)] mt-1.5">
-              Configura los datos del negocio, asigna su giro comercial (16 verticales oficiales) e indexa la base de conocimiento con total privacidad por empresa.
+              Configura los datos del negocio, asigna su giro comercial (17 Giros Oficiales) e indexa la base de conocimiento con total privacidad por empresa.
             </p>
           </div>
 
@@ -120,8 +125,8 @@ export const SystemConfigHub = ({ initialTab = 'rag', initialMode = 'list' }) =>
             </div>
             <p className="text-xs font-mono text-[var(--text-muted)] mt-1.5">
               {isAdmin
-                ? 'Gestión unificada de Asistente RAG (4 Pilares), Motores de Sub-Bots (DeepSeek / Groq) y Reglas de Gobernanza Vector Inside.'
-                : `Base de conocimiento RAG, sub-bots y políticas comerciales para ${activeTenant?.name || 'tu empresa'}.`}
+                ? 'Gestión unificada de Conexiones, Datos & Cerebro de Marca (4 Pilares), Motores de Asistentes IA (DeepSeek / Groq) y Reglas de Gobernanza Vector Inside.'
+                : `Cerebro de marca (4 Pilares), Asistentes IA y políticas comerciales para ${activeTenant?.name || 'tu empresa'}.`}
             </p>
           </div>
 
@@ -188,7 +193,7 @@ export const SystemConfigHub = ({ initialTab = 'rag', initialMode = 'list' }) =>
             }`}
           >
             <Database className="w-4 h-4" />
-            <span>{isAdmin ? '1. Multi-Tenant RAG (4 Pilares)' : '1. Base de Conocimiento (RAG)'}</span>
+            <span>{isAdmin ? '1. Conexiones, Datos & Cerebro de Marca' : '1. Cerebro de Marca (4 Pilares)'}</span>
           </button>
 
           <button
@@ -202,7 +207,7 @@ export const SystemConfigHub = ({ initialTab = 'rag', initialMode = 'list' }) =>
             }`}
           >
             <Cpu className="w-4 h-4" />
-            <span>2. Motores & Sub-Bots AI</span>
+            <span>2. Motores & Asistentes IA</span>
           </button>
 
           <button

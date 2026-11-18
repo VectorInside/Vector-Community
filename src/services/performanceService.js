@@ -260,3 +260,247 @@ export const performanceService = {
     return [...appointmentLogs, ...leadLogs].slice(0, 50);
   },
 };
+
+const QUALIFIED_LEAD_STATES = new Set([
+  'BILLABLE_LEAD',
+  'LEAD_HOT_PREQUAL',
+  'APPOINTMENT_SCHEDULED',
+  'CONVERTED',
+]);
+
+const EXCLUDED_APPOINTMENT_STATES = new Set([
+  'CANCELLED',
+  'CANCELADA',
+  'NO_SHOW',
+]);
+
+const parsePositiveNumber = (value) => {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) && value > 0 ? value : 0;
+  }
+  if (value === null || value === undefined || value === '') return 0;
+  const cleaned = String(value).replace(/[^0-9.-]/g, '');
+  const parsed = Number.parseFloat(cleaned);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+};
+
+/**
+ * Single Source of Truth (SSOT) financiero compartido entre
+ * CentroDeMando, PerformanceDashboard y SoberaniaFinanciera.
+ *
+ * @param {Object} params
+ * @param {Object|null} [params.tenant]
+ * @param {Array} [params.leads]
+ * @param {Array} [params.appointments]
+ * @param {Array} [params.campaigns]
+ * @param {Object|null} [params.dualTelemetry]
+ */
+export function computeExecutiveFinancialMetrics({
+  tenant = null,
+  leads = [],
+  appointments = [],
+  campaigns = [],
+  dualTelemetry = null,
+} = {}) {
+  const safeLeads = Array.isArray(leads) ? leads : [];
+  const safeAppointments = Array.isArray(appointments) ? appointments : [];
+  const safeCampaigns = Array.isArray(campaigns) ? campaigns : [];
+
+  const getLeadStateUpper = (lead) =>
+    String(lead?.leadState || lead?.status || '').trim().toUpperCase();
+
+  const getLeadAltStateUpper = (lead) =>
+    String(lead?.status || '').trim().toUpperCase();
+
+  const qualifiedLeadsList = safeLeads.filter(
+    (l) =>
+      QUALIFIED_LEAD_STATES.has(getLeadStateUpper(l)) ||
+      QUALIFIED_LEAD_STATES.has(getLeadAltStateUpper(l))
+  );
+
+  const billableLeadsList = safeLeads.filter(
+    (l) =>
+      getLeadStateUpper(l) === 'BILLABLE_LEAD' ||
+      getLeadAltStateUpper(l) === 'BILLABLE_LEAD'
+  );
+
+  const confirmedAppointmentsList = safeAppointments.filter((apt) => {
+    const status = String(apt?.status || 'CONFIRMED').trim().toUpperCase();
+    return !EXCLUDED_APPOINTMENT_STATES.has(status);
+  });
+
+  const campaignLeadsSum = safeCampaigns.reduce(
+    (acc, c) => acc + parsePositiveNumber(c?.leadsCount ?? c?.leads),
+    0
+  );
+  const totalLeads = safeLeads.length > 0 ? safeLeads.length : campaignLeadsSum;
+  const qualifiedLeads = qualifiedLeadsList.length;
+  const billableLeadsCount = billableLeadsList.length;
+  const confirmedAppointments = confirmedAppointmentsList.length;
+
+  const totalSpend = safeCampaigns.reduce(
+    (acc, c) => acc + parsePositiveNumber(c?.spend ?? c?.spent),
+    0
+  );
+
+  const leadPriceMXN = parsePositiveNumber(tenant?.leadPriceMXN);
+
+  const appointmentsRevenue = confirmedAppointmentsList.reduce(
+    (acc, apt) =>
+      acc + parsePositiveNumber(apt?.ticketValue ?? apt?.price ?? apt?.estimatedValue),
+    0
+  );
+
+  const billableLeadsRevenue = billableLeadsList.reduce((acc, lead) => {
+    const realTicket = parsePositiveNumber(
+      lead?.estimatedValue ?? lead?.potentialTicketNumeric ?? lead?.ticketValue
+    );
+    return acc + (realTicket > 0 ? realTicket : leadPriceMXN);
+  }, 0);
+
+  const otherQualifiedLeadsRevenue = qualifiedLeadsList.reduce((acc, lead) => {
+    const isBillable =
+      getLeadStateUpper(lead) === 'BILLABLE_LEAD' ||
+      getLeadAltStateUpper(lead) === 'BILLABLE_LEAD';
+    if (isBillable) return acc;
+    return (
+      acc +
+      parsePositiveNumber(
+        lead?.estimatedValue ?? lead?.potentialTicketNumeric ?? lead?.ticketValue
+      )
+    );
+  }, 0);
+
+  const attributedRevenue =
+    appointmentsRevenue + billableLeadsRevenue + otherQualifiedLeadsRevenue;
+
+  const realRoas =
+    totalSpend > 0 ? Number((attributedRevenue / totalSpend).toFixed(2)) : null;
+
+  const realCac =
+    billableLeadsCount > 0 ? Math.round(totalSpend / billableLeadsCount) : null;
+
+  const cpl = totalLeads > 0 ? Math.round(totalSpend / totalLeads) : null;
+
+  const conversionBase =
+    confirmedAppointments > 0 ? confirmedAppointments : qualifiedLeads;
+  const conversionRate =
+    totalLeads > 0
+      ? Number(((conversionBase / totalLeads) * 100).toFixed(1))
+      : null;
+
+  // Evaluación de Fatiga Publicitaria y Abandono de Contenido (ADR-012 §2.3)
+  const campaignFrequencies = safeCampaigns
+    .map((c) => ({
+      campaign: c,
+      frequency: parsePositiveNumber(c?.frequency ?? c?.adFrequency),
+      avgWatchRetention: parsePositiveNumber(
+        c?.avgWatchRetention ?? c?.watchRetention ?? c?.retentionRate
+      ),
+    }));
+
+  const telemetryFrequency = parsePositiveNumber(
+    dualTelemetry?.frequency ??
+      dualTelemetry?.rawTelemetry?.frequency ??
+      dualTelemetry?.rawTelemetry?.adFrequency
+  );
+  const telemetryWatchRetention = parsePositiveNumber(
+    dualTelemetry?.avgWatchRetention ??
+      dualTelemetry?.rawTelemetry?.avgWatchRetention ??
+      dualTelemetry?.rawTelemetry?.watchRetention
+  );
+
+  const fatiguedCampaigns = campaignFrequencies.filter(
+    (item) =>
+      item.frequency >= 3.5 ||
+      (item.avgWatchRetention > 0 && item.avgWatchRetention < 15)
+  );
+
+  const allFrequencies = [
+    ...campaignFrequencies.map((i) => i.frequency).filter((v) => v > 0),
+    ...(telemetryFrequency > 0 ? [telemetryFrequency] : []),
+  ];
+  const maxFrequency = allFrequencies.length > 0 ? Math.max(...allFrequencies) : 0;
+
+  const allRetentions = [
+    ...campaignFrequencies.map((i) => i.avgWatchRetention).filter((v) => v > 0),
+    ...(telemetryWatchRetention > 0 ? [telemetryWatchRetention] : []),
+  ];
+  const avgWatchRetention =
+    allRetentions.length > 0
+      ? Number(
+          (
+            allRetentions.reduce((sum, val) => sum + val, 0) / allRetentions.length
+          ).toFixed(1)
+        )
+      : 0;
+
+  const hasFrequencyFatigue = maxFrequency >= 3.5;
+  const hasRetentionDropOff =
+    allRetentions.some((ret) => ret > 0 && ret < 15) ||
+    (avgWatchRetention > 0 && avgWatchRetention < 15);
+
+  const fatigueReasons = [];
+  if (hasFrequencyFatigue) {
+    fatigueReasons.push(
+      `Frecuencia de anuncio saturada (${maxFrequency.toFixed(1)}x >= 3.5x)`
+    );
+  }
+  if (hasRetentionDropOff) {
+    const lowestRetention = Math.min(...allRetentions);
+    fatigueReasons.push(
+      `Retención de video crítica (${lowestRetention.toFixed(1)}% < 15%)`
+    );
+  }
+
+  const adFatigueAlert =
+    hasFrequencyFatigue || hasRetentionDropOff
+      ? {
+          active: true,
+          severity: 'warning',
+          hasFrequencyFatigue,
+          hasRetentionDropOff,
+          maxFrequency: maxFrequency > 0 ? Number(maxFrequency.toFixed(1)) : null,
+          avgWatchRetention: avgWatchRetention > 0 ? avgWatchRetention : null,
+          affectedCampaigns: fatiguedCampaigns.map(({ campaign, frequency, avgWatchRetention: ret }) => ({
+            id: campaign?.id || null,
+            name: campaign?.name || 'Campaña sin nombre',
+            frequency: frequency > 0 ? frequency : null,
+            avgWatchRetention: ret > 0 ? ret : null,
+          })),
+          message: fatigueReasons.join(' • '),
+        }
+      : null;
+
+  const hasTelemetryData = Boolean(
+    dualTelemetry?.rawTelemetry &&
+      (parsePositiveNumber(dualTelemetry?.webTrafficMetrics?.sessions) > 0 ||
+        parsePositiveNumber(dualTelemetry?.microLandingMetrics?.visits) > 0)
+  );
+
+  // ADR-011 UX-08: Distinguir ausencia real de datos vs métricas calculables
+  const hasEnoughData =
+    totalLeads > 0 ||
+    safeAppointments.length > 0 ||
+    safeCampaigns.length > 0 ||
+    totalSpend > 0 ||
+    attributedRevenue > 0 ||
+    hasTelemetryData;
+
+  return {
+    totalLeads,
+    qualifiedLeads,
+    billableLeadsCount,
+    confirmedAppointments,
+    totalSpend,
+    attributedRevenue,
+    appointmentsRevenue,
+    leadsRevenue: billableLeadsRevenue + otherQualifiedLeadsRevenue,
+    realRoas,
+    realCac,
+    cpl,
+    conversionRate,
+    adFatigueAlert,
+    hasEnoughData,
+  };
+}

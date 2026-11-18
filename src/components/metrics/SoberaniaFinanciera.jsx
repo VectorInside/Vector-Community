@@ -30,11 +30,14 @@ import {
   Radar,
   Copy,
   X,
+  Info,
+  Check,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Portal } from '@/components/common/Portal';
+import { MeasurementGuideModal } from '@/components/common/MeasurementGuideModal';
 import { leadService } from '@/services/leadService';
-import { performanceService } from '@/services/performanceService';
+import { performanceService, computeExecutiveFinancialMetrics } from '@/services/performanceService';
 import { calendarService } from '@/services/calendarService';
 import { campaignService } from '@/services/campaignService';
 import { aiService } from '@/services/aiService';
@@ -54,12 +57,30 @@ export const SoberaniaFinanciera = () => {
   const [campaigns, setCampaigns] = useState([]);
   const [performanceMetrics, setPerformanceMetrics] = useState(null);
 
-  // Modales
+  // Modales & Feedback
   const [showReportModal, setShowReportModal] = useState(false);
   const [showScriptModal, setShowScriptModal] = useState(false);
   const [isGeneratingScript, setIsGeneratingScript] = useState(false);
   const [generatedScriptData, setGeneratedScriptData] = useState(null);
   const [scriptError, setScriptError] = useState(null);
+  const [copiedScript, setCopiedScript] = useState(false);
+  const [guideMetricId, setGuideMetricId] = useState(null);
+
+  // Escape & Scroll Lock para el Modal de Guion Viral
+  useEffect(() => {
+    if (!showScriptModal) return;
+    document.body.style.overflow = 'hidden';
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setShowScriptModal(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = 'unset';
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showScriptModal]);
 
   // Carga de datos multi-fuente en paralelo (Leads, Citas, Campañas, Telemetría)
   useEffect(() => {
@@ -102,10 +123,12 @@ export const SoberaniaFinanciera = () => {
               : (bl.channel || '').toLowerCase().includes('face')
               ? 'facebook'
               : 'whatsapp',
+            leadState: bl.leadState,
             temperature: bl.leadState === 'BILLABLE_LEAD' ? 'CALIENTE' : (bl.leadState === 'LEAD_HOT_PREQUAL' ? 'CALIENTE' : 'TIBIO'),
             status: bl.status || (bl.leadState === 'BILLABLE_LEAD' ? 'Calificado (Listo para Cierre)' : 'En Seguimiento'),
-            potentialTicket: estVal > 0 ? `$${estVal.toLocaleString()} MXN` : (bl.potentialTicket || '$0 MXN'),
+            potentialTicket: estVal > 0 ? `$${estVal.toLocaleString()} MXN` : (bl.potentialTicket || 'N/D'),
             potentialTicketNumeric: estVal,
+            estimatedValue: estVal,
             dictamen: bl.dictamen || bl.notes || 'Prospecto con interés calificado capturado en embudo comercial.',
           };
         });
@@ -132,51 +155,40 @@ export const SoberaniaFinanciera = () => {
       });
   }, [activeTenant?.id]);
 
-  // Cálculos de Unit Economics y Salud Financiera en Vivo
+  // Cálculos de Unit Economics y Salud Financiera en Vivo (SSOT ADR-014)
   const unitEconomics = useMemo(() => {
-    const totalSpend = campaigns.reduce((acc, c) => acc + (Number(c.spend) || 0), 0);
-    const billableLeads = leads.filter((l) => ['BILLABLE_LEAD', 'Calificado (Listo para Cierre)'].includes(l.status) || l.temperature === 'CALIENTE');
-    
-    // Valor total en cartera (Pipeline Activo)
+    const exec = computeExecutiveFinancialMetrics({
+      tenant: activeTenant,
+      leads,
+      appointments,
+      campaigns,
+      dualTelemetry: performanceMetrics?.dualTelemetry || null,
+    });
+
     const pipelineValue = leads.reduce((acc, l) => acc + (l.potentialTicketNumeric || 0), 0);
+    const realRevenue = exec.attributedRevenue;
+    const totalSpend = exec.totalSpend;
 
-    // Ingresos reales atribuidos en caja
-    const apptsValue = appointments.reduce((acc, a) => acc + (Number(a.ticketValue || a.price || a.estimatedValue) || 0), 0);
-    const leadsValue = billableLeads.reduce((acc, l) => acc + (l.potentialTicketNumeric || 0), 0);
-    const realRevenue = performanceMetrics?.summary?.backendAttributedRevenue || (apptsValue + leadsValue);
+    const merNum = exec.realRoas;
+    const merDisplay = merNum !== null && merNum > 0 ? `${merNum.toFixed(2)}x` : 'N/D';
 
-    // MER (ROAS Global Real)
-    const merNum = totalSpend > 0 && realRevenue > 0
-      ? (realRevenue / totalSpend)
-      : (activeTenant?.mer ? parseFloat(String(activeTenant.mer)) || 0 : 0);
-    const merDisplay = merNum > 0 ? `${merNum.toFixed(2)}x` : '0.0x';
+    const totalConversions = exec.confirmedAppointments > 0 ? exec.confirmedAppointments : exec.qualifiedLeads;
+    const cacNum = exec.realCac;
 
-    // CAC Real (Costo de Adquisición de Clientes)
-    const closedCount = (billableLeads.length + appointments.length);
-    const cacNum = closedCount > 0 && totalSpend > 0
-      ? Math.round(totalSpend / closedCount)
-      : (activeTenant?.cac ? Number(activeTenant.cac) : 0);
+    const avgTicket =
+      totalConversions > 0 && realRevenue > 0
+        ? Math.round(realRevenue / totalConversions)
+        : null;
 
-    // Ticket Promedio
-    const avgTicket = closedCount > 0 && realRevenue > 0
-      ? Math.round(realRevenue / closedCount)
-      : 0;
+    const ltvNum =
+      avgTicket && avgTicket > 0
+        ? Math.round(avgTicket * (activeTenant?.ltvMultiplier || 2.2))
+        : (activeTenant?.ltv ? Number(activeTenant.ltv) : null);
 
-    // LTV (Valor Vida Cliente) proyectado a 12 meses
-    const ltvNum = avgTicket > 0
-      ? Math.round(avgTicket * (activeTenant?.ltvMultiplier || 2.2))
-      : (activeTenant?.ltv ? Number(activeTenant.ltv) : 0);
-
-    // Ratio LTV : CAC
-    const ltvCacRatio = cacNum > 0 && ltvNum > 0
-      ? (ltvNum / cacNum).toFixed(1)
-      : null;
-
-    // Conteo de conversiones / citas reales
-    const totalConversions = closedCount;
-
-    // Verificación de fatiga creativa en campañas de Meta Ads
-    const fatiguedCampaign = campaigns.find((c) => Number(c.frequency || 0) > 3.2);
+    const ltvCacRatio =
+      cacNum && cacNum > 0 && ltvNum && ltvNum > 0
+        ? (ltvNum / cacNum).toFixed(1)
+        : null;
 
     return {
       totalSpend,
@@ -189,14 +201,17 @@ export const SoberaniaFinanciera = () => {
       ltvNum,
       ltvCacRatio,
       totalConversions,
-      fatiguedCampaign,
+      qualifiedLeadsCount: exec.qualifiedLeads,
+      billableLeadsCount: exec.billableLeadsCount,
+      adFatigueAlert: exec.adFatigueAlert,
+      hasEnoughData: exec.hasEnoughData,
     };
   }, [campaigns, leads, appointments, performanceMetrics, activeTenant]);
 
-  // Manejo de Dictamen Pre-Cita
+  // Manejo de Resumen de Resultados Pre-Cita
   const handleShowDictamen = (lead) => {
     triggerModal(
-      `Dictamen Financiero: ${lead.name}`,
+      `Resumen de Resultados: ${lead.name}`,
       `${lead.dictamen}<br><br><b>Ticket Potencial:</b> ${lead.potentialTicket}<br><b>Canal de Origen:</b> ${lead.channel}`,
       () => {
         try {
@@ -297,6 +312,8 @@ export const SoberaniaFinanciera = () => {
       `💬 Destino: Chat Directo de WhatsApp Oficial`;
 
     navigator.clipboard.writeText(text);
+    setCopiedScript(true);
+    setTimeout(() => setCopiedScript(false), 2500);
     try {
       confetti({ particleCount: 35, spread: 60, colors: ['#A855F7', '#E7F900', '#10B981'] });
     } catch (e) {}
@@ -306,61 +323,101 @@ export const SoberaniaFinanciera = () => {
   const currentMonthName = new Intl.DateTimeFormat('es-MX', { month: 'long', year: 'numeric' }).format(new Date());
   const executiveReportData = useMemo(() => {
     const totalLeadsCount = leads.length;
-    const waLeadsCount = leads.filter((l) => (l.channel || '').toLowerCase().includes('what')).length;
-    const igLeadsCount = leads.filter((l) => {
-      const ch = (l.channel || '').toLowerCase();
-      return ch.includes('insta') || ch.includes('meta');
-    }).length;
+    const channelMap = new Map();
 
-    const waShareNum = totalLeadsCount > 0 ? (waLeadsCount / totalLeadsCount) * 100 : 0;
-    const igShareNum = totalLeadsCount > 0 ? (igLeadsCount / totalLeadsCount) * 100 : 0;
+    const normalizeChannelLabel = (rawChannel) => {
+      const ch = String(rawChannel || '').trim();
+      const lower = ch.toLowerCase();
+      if (!ch || lower.includes('what')) return 'WhatsApp Business Cloud API';
+      if (lower.includes('insta') || lower.includes('meta') || lower.includes('fb') || lower.includes('face')) {
+        return 'Instagram Direct / Meta Ads';
+      }
+      if (lower.includes('tiktok')) return 'TikTok Ads & Direct';
+      if (lower.includes('linkedin')) return 'LinkedIn B2B';
+      if (lower.includes('google') || lower.includes('web')) return 'Sitio Web / Google';
+      if (lower.includes('youtube')) return 'YouTube';
+      if (lower.includes('telegram')) return 'Telegram';
+      return ch;
+    };
 
-    const topChannelLabel =
-      totalLeadsCount === 0
-        ? 'Sin canal activo'
-        : igLeadsCount > waLeadsCount
-        ? 'Instagram Direct / Meta Ads'
-        : 'WhatsApp Business Cloud API';
+    leads.forEach((lead) => {
+      const label = normalizeChannelLabel(lead.channel);
+      const prev = channelMap.get(label) || { channel: label, leads: 0, rawRevenue: 0 };
+      prev.leads += 1;
+      prev.rawRevenue += Number(lead.potentialTicketNumeric || 0);
+      channelMap.set(label, prev);
+    });
+
+    // Incluir canales habilitados en la configuración del negocio aunque aún tengan 0 leads
+    const connected = activeTenant?.connectedChannels || {};
+    const channelCatalogLabels = {
+      whatsapp: 'WhatsApp Business Cloud API',
+      meta: 'Instagram Direct / Meta Ads',
+      google: 'Sitio Web / Google',
+      tiktok: 'TikTok Ads & Direct',
+      linkedin: 'LinkedIn B2B',
+      youtube: 'YouTube',
+      telegram: 'Telegram',
+      x: 'X (Twitter)',
+    };
+    Object.entries(connected).forEach(([key, cfg]) => {
+      if (cfg?.enabled === true || cfg?.status === 'connected') {
+        const label = channelCatalogLabels[key] || key;
+        if (!channelMap.has(label)) {
+          channelMap.set(label, { channel: label, leads: 0, rawRevenue: 0 });
+        }
+      }
+    });
+
+    const sortedChannels = Array.from(channelMap.values()).sort((a, b) => b.leads - a.leads);
+    const topChannelLabel = sortedChannels.find((c) => c.leads > 0)?.channel || sortedChannels[0]?.channel || 'N/D';
+
+    const channelBreakdown = sortedChannels.map((row) => {
+      const shareNum = totalLeadsCount > 0 ? (row.leads / totalLeadsCount) * 100 : 0;
+      const attributed =
+        row.rawRevenue > 0
+          ? row.rawRevenue
+          : totalLeadsCount > 0 && unitEconomics.realRevenue > 0
+          ? Math.round(unitEconomics.realRevenue * (shareNum / 100))
+          : 0;
+      return {
+        channel: row.channel,
+        leads: row.leads,
+        revenue: attributed > 0 ? `$${attributed.toLocaleString()} MXN` : 'N/D',
+        share: totalLeadsCount > 0 ? `${shareNum.toFixed(1)}%` : '0.0%',
+      };
+    });
 
     return {
       period: currentMonthName.charAt(0).toUpperCase() + currentMonthName.slice(1),
-      adSpend: `$${unitEconomics.totalSpend.toLocaleString()} MXN`,
-      realRevenue: `$${unitEconomics.realRevenue.toLocaleString()} MXN`,
+      adSpend: unitEconomics.totalSpend > 0 ? `$${unitEconomics.totalSpend.toLocaleString()} MXN` : 'N/D',
+      realRevenue: unitEconomics.realRevenue > 0 ? `$${unitEconomics.realRevenue.toLocaleString()} MXN` : 'N/D',
       mer: unitEconomics.merDisplay,
-      cac: `$${unitEconomics.cacNum.toLocaleString()} MXN`,
-      ltv: `$${unitEconomics.ltvNum.toLocaleString()} MXN`,
+      cac: unitEconomics.cacNum && unitEconomics.cacNum > 0 ? `$${unitEconomics.cacNum.toLocaleString()} MXN` : 'N/D',
+      ltv: unitEconomics.ltvNum && unitEconomics.ltvNum > 0 ? `$${unitEconomics.ltvNum.toLocaleString()} MXN` : 'N/D',
       closedConversions: unitEconomics.totalConversions,
       conversionsLabel: 'Conversiones / Citas Concluidas',
-      avgTicket: `$${unitEconomics.avgTicket.toLocaleString()} MXN`,
+      avgTicket: unitEconomics.avgTicket && unitEconomics.avgTicket > 0 ? `$${unitEconomics.avgTicket.toLocaleString()} MXN` : 'N/D',
       capiMatchRate:
         performanceMetrics?.summary?.capiSyncRate != null && Number(performanceMetrics.summary.capiSyncRate) > 0
           ? `${performanceMetrics.summary.capiSyncRate}%`
           : 'En espera de eventos',
-      humanHoursSaved: `${Math.round((leads.length + appointments.length) * 1.8)} hrs`,
-      messagesProcessed: `${leads.length * 6} mensajes`,
+      humanHoursSaved:
+        leads.length + appointments.length > 0
+          ? `${Math.round((leads.length + appointments.length) * 1.8)} hrs`
+          : 'N/D',
+      messagesProcessed: leads.length > 0 ? `${leads.length * 6} mensajes` : '0 mensajes',
       topChannel: topChannelLabel,
-      deepSeekSummary: unitEconomics.totalSpend > 0 && unitEconomics.realRevenue > 0
-        ? `El ecosistema comercial de ${activeTenant?.name || 'la empresa'} muestra un retorno MER de ${unitEconomics.merDisplay} con un CAC de $${unitEconomics.cacNum.toLocaleString()} MXN. El embudo directo a WhatsApp pre-califica la intención del prospecto, reduciendo el ciclo de venta a menos de 48 horas.`
-        : `Ecosistema comercial en proceso de consolidación para ${activeTenant?.name || 'la empresa'}. Se recomienda sostener la captación omnicanal con enlaces en bio y activar pauta publicitaria en Meta Ads para registrar los primeros retornos sobre inversión.`,
-      channelBreakdown: [
-        {
-          channel: 'WhatsApp Business Cloud API',
-          leads: waLeadsCount,
-          revenue: `$${Math.round(unitEconomics.realRevenue * (waShareNum / 100)).toLocaleString()} MXN`,
-          share: `${waShareNum.toFixed(1)}%`,
-        },
-        {
-          channel: 'Instagram Direct / Meta Ads',
-          leads: igLeadsCount,
-          revenue: `$${Math.round(unitEconomics.realRevenue * (igShareNum / 100)).toLocaleString()} MXN`,
-          share: `${igShareNum.toFixed(1)}%`,
-        },
-      ],
+      deepSeekSummary:
+        unitEconomics.totalSpend > 0 && unitEconomics.realRevenue > 0
+          ? `El ecosistema comercial de ${activeTenant?.name || 'la empresa'} muestra un retorno MER de ${unitEconomics.merDisplay} con un CAC de ${unitEconomics.cacNum ? `$${unitEconomics.cacNum.toLocaleString()} MXN` : 'N/D'}. El embudo directo a WhatsApp pre-califica la intención del prospecto, reduciendo el ciclo de venta a menos de 48 horas.`
+          : `Ecosistema comercial en proceso de consolidación para ${activeTenant?.name || 'la empresa'}. Se recomienda sostener la captación omnicanal con enlaces en bio y activar pauta publicitaria en Meta Ads para registrar los primeros retornos sobre inversión.`,
+      channelBreakdown,
     };
   }, [currentMonthName, unitEconomics, activeTenant, leads, appointments, performanceMetrics]);
 
   return (
-    <div className="p-8 block animate-fade-in font-sans">
+    <div className="p-4 sm:p-6 lg:p-8 block animate-fade-in font-sans">
       {/* Header */}
       <header className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border-color)] pb-4 gap-4">
         <div>
@@ -384,381 +441,455 @@ export const SoberaniaFinanciera = () => {
           </button>
           {(activeTenant?.metaPixelId || campaigns.length > 0) && (
             <span className="text-[11px] font-sans font-medium bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 px-3 py-2 rounded-xl flex items-center gap-2 shadow-sm">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               Meta CAPI Sincronizado
             </span>
           )}
         </div>
       </header>
 
-      {/* SÍNTESIS EJECUTIVA DE UNIT ECONOMICS & SALUD DE CAPITAL */}
-      <div id="tour-results-unit-economics" className="mb-8 p-5 rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 font-sans">
-        <div className="flex items-center gap-3.5">
-          <div className="p-3 rounded-2xl bg-neon/10 text-neon border border-neon/30 shrink-0">
-            <TrendingUp className="w-5 h-5" />
+      {loading ? (
+        <div className="space-y-8 animate-pulse" aria-busy="true" aria-label="Cargando resultados financieros">
+          <div className="h-24 rounded-3xl bg-[var(--bg-card)] border border-[var(--border-color)]" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((idx) => (
+              <div key={idx} className="h-28 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)]" />
+            ))}
           </div>
-          <div>
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <h3 className="text-sm font-heading font-black text-[var(--text-main)] uppercase tracking-wide">
-                Salud Comercial & Eficiencia de Capital
-              </h3>
-              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                unitEconomics.ltvCacRatio && Number(unitEconomics.ltvCacRatio) >= 3
-                  ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
-                  : unitEconomics.ltvCacRatio && Number(unitEconomics.ltvCacRatio) >= 1.5
-                  ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30'
-                  : 'bg-zinc-500/15 text-zinc-600 dark:text-zinc-400 border-zinc-500/30'
-              }`}>
-                {unitEconomics.ltvCacRatio ? `Ratio LTV:CAC ${unitEconomics.ltvCacRatio}x` : 'Calibrando Ratio LTV:CAC'}
-              </span>
-              {unitEconomics.pipelineValue > 0 && (
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30">
-                  Pipeline: ${unitEconomics.pipelineValue.toLocaleString()} MXN
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-[var(--text-muted)] mt-1 font-sans">
-              {!activeTenant
-                ? 'Selecciona un negocio para auditar la relación de rentabilidad y aceleración de cierres.'
-                : `Monitoreo financiero en vivo: ${leads.length} prospectos activos en seguimiento con ticket promedio de $${unitEconomics.avgTicket.toLocaleString()} MXN.`}
-            </p>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 h-80 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)]" />
+            <div className="lg:col-span-1 h-80 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)]" />
           </div>
         </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={() => router.push('/contactability')}
-            className="px-4 py-2.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] font-bold text-xs border border-[var(--border-color)] hover:border-neon flex items-center gap-1.5 transition-all active:scale-95 shadow-sm"
-            title="Ver telemetría detallada de canales publicitarios y Meta CAPI"
-          >
-            <Globe className="w-3.5 h-3.5 text-neon" />
-            <span>Ver Embudo Publicitario CAPI →</span>
-          </button>
-        </div>
-      </div>
-
-      {/* KPI Stats Grid */}
-      <div id="tour-results-financial-kpis" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8 font-sans">
-        <div className="vector-bg-panel vector-border p-5 rounded-2xl shadow-sm space-y-1">
-          <div className="flex items-center justify-between">
-            <p className="text-[11px] font-sans font-semibold text-[var(--text-muted)] uppercase tracking-wider">
-              MER (ROAS Global)
-            </p>
-            <span className="text-[9.5px] font-mono px-2 py-0.5 rounded bg-white/5 border border-white/10 text-zinc-400">
-              {unitEconomics.totalSpend > 0 ? 'CONCILIADO' : 'EN ESPERA'}
-            </span>
-          </div>
-          <p className="text-2xl font-black text-[var(--text-main)] font-sans tabular-nums">
-            {unitEconomics.merDisplay}
-          </p>
-          <p className="text-[10px] text-[var(--text-muted)] font-mono">
-            {unitEconomics.totalSpend > 0
-              ? `$${unitEconomics.totalSpend.toLocaleString()} MXN pautados`
-              : 'Sin pauta activa devengada'}
-          </p>
-        </div>
-
-        <div className="vector-bg-panel vector-border p-5 rounded-2xl shadow-sm space-y-1">
-          <div className="flex items-center justify-between">
-            <p className="text-[11px] font-sans font-semibold text-[var(--text-muted)] uppercase tracking-wider">
-              CAC (Costo Adquisición)
-            </p>
-            <span className="text-[9.5px] font-mono px-2 py-0.5 rounded bg-white/5 border border-white/10 text-zinc-400">
-              CALCULADO
-            </span>
-          </div>
-          <p className="text-2xl font-black text-[var(--text-main)] font-sans tabular-nums">
-            ${unitEconomics.cacNum.toLocaleString()}{' '}
-            <span className="text-xs font-normal text-[var(--text-muted)]">MXN</span>
-          </p>
-          <p className="text-[10px] text-[var(--text-muted)] font-mono">
-            {unitEconomics.totalConversions > 0 ? 'Por cliente / cita confirmada' : 'Esperando primeros clientes'}
-          </p>
-        </div>
-
-        <div className="vector-bg-panel vector-border p-5 rounded-2xl shadow-sm space-y-1">
-          <div className="flex items-center justify-between">
-            <p className="text-[11px] font-sans font-semibold text-[var(--text-muted)] uppercase tracking-wider">
-              LTV (Valor Vida Cliente)
-            </p>
-            <span className="text-[9.5px] font-mono px-2 py-0.5 rounded bg-neon/10 border border-neon/20 text-neon font-bold">
-              ESTIMADO 12M
-            </span>
-          </div>
-          <p className="text-2xl font-black text-neon font-sans tabular-nums">
-            ${unitEconomics.ltvNum.toLocaleString()}{' '}
-            <span className="text-xs font-normal text-[var(--text-muted)]">MXN</span>
-          </p>
-          <p className="text-[10px] text-[var(--text-muted)] font-mono">
-            {unitEconomics.avgTicket > 0 ? `Ticket base: $${unitEconomics.avgTicket.toLocaleString()} MXN` : 'Sin histórico de recompra'}
-          </p>
-        </div>
-
-        <div className="vector-bg-panel border border-[var(--success)] bg-[var(--success-bg)] p-5 rounded-2xl shadow-sm space-y-1">
-          <div className="flex items-center justify-between">
-            <p className="text-[11px] font-sans text-[var(--success)] font-bold uppercase tracking-wider">
-              Conversiones / Citas IA
-            </p>
-            <span className="text-[9.5px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">
-              CONCILIADO
-            </span>
-          </div>
-          <p className="text-2xl font-black text-[var(--text-main)] font-sans tabular-nums flex items-center gap-2">
-            <CalendarCheck className="w-5 h-5 text-[var(--success)]" />
-            <span>{unitEconomics.totalConversions}</span>
-          </p>
-          <p className="text-[10px] text-[var(--text-muted)] font-mono">
-            {appointments.length} en agenda • {leads.filter((l) => l.temperature === 'CALIENTE').length} calientes
-          </p>
-        </div>
-      </div>
-
-      {/* Main Grid: Pipeline Financiero de Cierre + Reporte Creativo IA */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Pipeline Financiero de Cierre */}
-        <div className="lg:col-span-2 flex flex-col gap-8">
-          <div id="tour-results-pipeline" className="vector-bg-card vector-border rounded-2xl overflow-hidden flex flex-col shadow-sm">
-            <div className="p-5 border-b border-[var(--border-color)] bg-[var(--bg-panel)] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+      ) : (
+        <>
+          {/* SÍNTESIS EJECUTIVA DE UNIT ECONOMICS & SALUD DE CAPITAL */}
+          <div id="tour-results-unit-economics" className="mb-8 p-5 rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 font-sans">
+            <div className="flex items-center gap-3.5">
+              <div className="p-3 rounded-2xl bg-neon/10 text-lime-700 dark:text-neon border border-neon/30 shrink-0">
+                <TrendingUp className="w-5 h-5" />
+              </div>
               <div>
-                <h3 className="text-sm font-bold uppercase tracking-wider flex items-center gap-2 text-[var(--text-main)]">
-                  <Users className="w-4 h-4 text-neon" />
-                  <span>Pipeline Financiero de Cierre — {activeTenant?.name || 'Sin negocio seleccionado'}</span>
-                </h3>
-                <p className="text-[10px] font-mono text-[var(--text-muted)] mt-1">
-                  Prospectos calificados con valor monetario estimado y origen de atribución validado.
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <h3 className="text-sm font-heading font-black text-[var(--text-main)] uppercase tracking-wide">
+                    Salud Comercial & Eficiencia de Capital
+                  </h3>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                    unitEconomics.ltvCacRatio && Number(unitEconomics.ltvCacRatio) >= 3
+                      ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30'
+                      : unitEconomics.ltvCacRatio && Number(unitEconomics.ltvCacRatio) >= 1.5
+                      ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30'
+                      : 'bg-zinc-500/15 text-[var(--text-muted)] border-[var(--border-color)]'
+                  }`}>
+                    {unitEconomics.ltvCacRatio ? `Ratio LTV:CAC ${unitEconomics.ltvCacRatio}x` : 'Calibrando Ratio LTV:CAC'}
+                  </span>
+                  {unitEconomics.pipelineValue > 0 && (
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/15 text-purple-700 dark:text-purple-400 border border-purple-500/30">
+                      Pipeline: ${unitEconomics.pipelineValue.toLocaleString()} MXN
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-[var(--text-muted)] mt-1 font-sans">
+                  {!activeTenant
+                    ? 'Selecciona un negocio para auditar la relación de rentabilidad y aceleración de cierres.'
+                    : `Monitoreo financiero en vivo: ${leads.length} prospectos activos en seguimiento con ticket promedio de ${unitEconomics.avgTicket && unitEconomics.avgTicket > 0 ? `$${unitEconomics.avgTicket.toLocaleString()} MXN` : 'N/D'}.`}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono bg-neon text-black px-2.5 py-1 rounded-full font-bold">
-                  {leads.length} Oportunidades
-                </span>
-              </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm font-sans">
-                <thead className="bg-[var(--bg-base)] text-[9px] font-mono text-[var(--text-muted)] uppercase tracking-wider border-b border-[var(--border-color)]">
-                  <tr>
-                    <th className="p-4 font-normal">Prospecto / Contacto</th>
-                    <th className="p-4 font-normal">Canal de Origen</th>
-                    <th className="p-4 font-normal">Ticket Estimado</th>
-                    <th className="p-4 font-normal">Scoring / Temperatura</th>
-                    <th className="p-4 font-normal">Estado Comercial</th>
-                    <th className="p-4 font-normal text-right">Acción</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--border-color)]">
-                  {leads.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="p-8 text-center text-xs font-mono text-[var(--text-muted)]">
-                        <Radar className="w-8 h-8 opacity-30 mx-auto mb-2" />
-                        {!activeTenant ? 'Selecciona un negocio para ver su pipeline comercial.' : 'Sin prospectos activos en el radar financiero de este negocio.'}
-                      </td>
-                    </tr>
-                  ) : (
-                    leads.map((lead) => {
-                      const isHot = lead.temperature === 'CALIENTE';
-
-                      return (
-                        <tr key={lead.id} className="hover:bg-[var(--bg-panel)] transition-colors">
-                          <td className="p-4 font-bold text-[var(--text-main)] text-xs">
-                            {lead.name}
-                            <br />
-                            <span className="text-[10px] font-mono text-[var(--text-muted)] font-normal">
-                              {lead.phone}
-                            </span>
-                          </td>
-                          <td className="p-4">
-                            <span className="flex items-center gap-1.5 text-[10px] text-blue-400 font-mono">
-                              {lead.channelIcon === 'facebook' && <Facebook className="w-3.5 h-3.5 text-blue-500" />}
-                              {lead.channelIcon === 'instagram' && <Instagram className="w-3.5 h-3.5 text-pink-500" />}
-                              {lead.channelIcon === 'whatsapp' && <MessageCircle className="w-3.5 h-3.5 text-emerald-500" />}
-                              <span>{lead.channel}</span>
-                            </span>
-                          </td>
-                          <td className="p-4">
-                            <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-mono font-bold text-xs">
-                              {lead.potentialTicket}
-                            </span>
-                          </td>
-                          <td className="p-4">
-                            <span
-                              className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 w-fit ${
-                                isHot
-                                  ? 'bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success)] shadow-[0_0_8px_var(--success-bg)]'
-                                  : 'bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)]'
-                              }`}
-                            >
-                              {isHot ? <Flame className="w-3 h-3" /> : <Thermometer className="w-3 h-3" />}
-                              <span>{lead.temperature}</span>
-                            </span>
-                          </td>
-                          <td className="p-4 text-[10px] text-[var(--text-muted)] font-mono">
-                            {lead.status}
-                          </td>
-                          <td className="p-4 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() => handleShowDictamen(lead)}
-                                className="text-[10px] bg-[var(--bg-base)] border border-[var(--border-color)] px-2.5 py-1.5 rounded-lg hover:border-neon text-[var(--text-main)] transition-colors flex items-center gap-1"
-                                title="Ver dictamen de calificación BANT"
-                              >
-                                <FileText className="w-3 h-3 text-neon" />
-                                <span>Dictamen</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => router.push(`/inbox?threadId=${lead.id}`)}
-                                className="text-[10px] bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-black dark:hover:text-white px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1"
-                                title="Abrir conversación en Inbox"
-                              >
-                                <ArrowUpRight className="w-3 h-3" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => router.push('/contactability')}
+                className="px-4 py-2.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] font-bold text-xs border border-[var(--border-color)] hover:border-neon flex items-center gap-1.5 transition-all active:scale-95 shadow-sm"
+                title="Ver telemetría detallada de canales publicitarios y Meta CAPI"
+              >
+                <Globe className="w-3.5 h-3.5 text-lime-700 dark:text-neon" />
+                <span>Ver Embudo Publicitario CAPI →</span>
+              </button>
             </div>
           </div>
-        </div>
 
-        {/* Right Column: Reporte Creativo IA (DeepSeek Analista) */}
-        <div className="lg:col-span-1">
-          <div id="tour-results-creative-ai" className="bg-gradient-to-b from-purple-950/20 via-zinc-950/70 to-zinc-950 border border-purple-500/30 dark:border-[#a855f7]/50 p-6 rounded-2xl relative shadow-[0_0_20px_rgba(168,85,247,0.12)] h-full flex flex-col justify-between space-y-4">
-            <div>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2.5 bg-purple-500/20 rounded-xl border border-purple-500/30">
-                  <BrainCircuit className="w-5 h-5 text-purple-600 dark:text-[#c084fc]" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-black uppercase text-purple-900 dark:text-[#e9d5ff]">
-                    Reporte Creativo IA
-                  </h4>
-                  <p className="text-[9px] font-mono text-purple-700 dark:text-[#a855f7]">
-                    DeepSeek R1 Analista • {activeTenant?.name || 'Sin negocio seleccionado'}
-                  </p>
+          {/* KPI Stats Grid */}
+          <div id="tour-results-financial-kpis" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8 font-sans">
+            <div className="vector-bg-panel vector-border p-5 rounded-2xl shadow-sm space-y-1">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[11px] font-sans font-semibold text-[var(--text-muted)] uppercase tracking-wider">
+                  MER (ROAS Global)
+                </p>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[9.5px] font-mono px-2 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)]">
+                    {unitEconomics.totalSpend > 0 ? 'CONCILIADO' : 'EN ESPERA'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setGuideMetricId('roas_real')}
+                    className="p-1 rounded-md text-[var(--text-faint)] hover:text-lime-700 dark:hover:text-neon hover:bg-[var(--bg-card)] transition-colors"
+                    title="Ver fórmula y metodología de ROAS Real"
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
+              <p className="text-2xl font-black text-[var(--text-main)] font-sans tabular-nums">
+                {!unitEconomics.hasEnoughData || unitEconomics.realRoas === null ? 'N/D' : unitEconomics.merDisplay}
+              </p>
+              <p className="text-[10px] text-[var(--text-muted)] font-mono">
+                {unitEconomics.totalSpend > 0
+                  ? `$${unitEconomics.totalSpend.toLocaleString()} MXN pautados`
+                  : 'Sin pauta activa devengada'}
+              </p>
+            </div>
 
-              <div className="bg-white/70 dark:bg-black/40 border border-purple-500/20 dark:border-[#a855f7]/30 p-4 rounded-xl text-sm mb-4 space-y-3">
-                {!activeTenant ? (
-                  <div>
-                    <span className="text-[10px] font-bold uppercase text-[var(--text-muted)] tracking-wider flex items-center gap-1 mb-1 font-mono">
-                      <BrainCircuit className="w-3 h-3 text-purple-400" /> Monitoreo en Pausa
-                    </span>
-                    <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                      Selecciona un negocio para auditar la fatiga de anuncios publicitarios y disparar guiones de optimización comercial.
-                    </p>
-                  </div>
-                ) : unitEconomics.fatiguedCampaign ? (
-                  <div>
-                    <span className="text-[10px] font-bold uppercase text-[var(--danger)] tracking-wider flex items-center gap-1 mb-1 font-mono">
-                      <AlertTriangle className="w-3 h-3" /> Fatiga Detectada
-                    </span>
-                    <p className="text-xs text-purple-950 dark:text-[#d8b4fe] leading-relaxed">
-                      La campaña <strong className="text-[var(--text-main)]">"{unitEconomics.fatiguedCampaign.name}"</strong> superó la frecuencia de {unitEconomics.fatiguedCampaign.frequency}. Costos de adquisición en aumento.
-                    </p>
-                  </div>
-                ) : (campaigns.length > 0 || activeTenant?.metaPixelId) ? (
-                  <div>
-                    <span className="text-[10px] font-bold uppercase text-emerald-400 tracking-wider flex items-center gap-1 mb-1 font-mono">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-400" /> Rendimiento Creativo Saludable
-                    </span>
-                    <p className="text-xs text-purple-950 dark:text-[#d8b4fe] leading-relaxed">
-                      Frecuencia publicitaria controlada (&lt; 2.5x). Sin fatiga de audiencia detectada en los activos de Meta Ads.
-                    </p>
-                  </div>
+            <div className="vector-bg-panel vector-border p-5 rounded-2xl shadow-sm space-y-1">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[11px] font-sans font-semibold text-[var(--text-muted)] uppercase tracking-wider">
+                  CAC (Costo Adquisición)
+                </p>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[9.5px] font-mono px-2 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)]">
+                    {unitEconomics.cacNum && unitEconomics.cacNum > 0 ? 'CALCULADO' : 'EN ESPERA'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setGuideMetricId('cac_real')}
+                    className="p-1 rounded-md text-[var(--text-faint)] hover:text-lime-700 dark:hover:text-neon hover:bg-[var(--bg-card)] transition-colors"
+                    title="Ver fórmula y metodología de CAC Real"
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+              <p className="text-2xl font-black text-[var(--text-main)] font-sans tabular-nums">
+                {unitEconomics.cacNum && unitEconomics.cacNum > 0 ? (
+                  <>
+                    ${unitEconomics.cacNum.toLocaleString()}{' '}
+                    <span className="text-xs font-normal text-[var(--text-muted)]">MXN</span>
+                  </>
                 ) : (
+                  'N/D'
+                )}
+              </p>
+              <p className="text-[10px] text-[var(--text-muted)] font-mono">
+                {unitEconomics.totalConversions > 0 ? 'Por cliente / cita confirmada' : 'Esperando primeros clientes'}
+              </p>
+            </div>
+
+            <div className="vector-bg-panel vector-border p-5 rounded-2xl shadow-sm space-y-1">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[11px] font-sans font-semibold text-[var(--text-muted)] uppercase tracking-wider">
+                  LTV (Valor Vida Cliente)
+                </p>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[9.5px] font-mono px-2 py-0.5 rounded bg-neon/10 border border-neon/20 text-lime-700 dark:text-neon font-bold">
+                    ESTIMADO 12M
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setGuideMetricId('venta_ganada')}
+                    className="p-1 rounded-md text-[var(--text-faint)] hover:text-lime-700 dark:hover:text-neon hover:bg-[var(--bg-card)] transition-colors"
+                    title="Ver fórmula y metodología de Venta Ganada / LTV"
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+              <p className="text-2xl font-black text-lime-700 dark:text-neon font-sans tabular-nums">
+                {unitEconomics.ltvNum && unitEconomics.ltvNum > 0 ? (
+                  <>
+                    ${unitEconomics.ltvNum.toLocaleString()}{' '}
+                    <span className="text-xs font-normal text-[var(--text-muted)]">MXN</span>
+                  </>
+                ) : (
+                  'N/D'
+                )}
+              </p>
+              <p className="text-[10px] text-[var(--text-muted)] font-mono">
+                {unitEconomics.avgTicket && unitEconomics.avgTicket > 0
+                  ? `Ticket base: $${unitEconomics.avgTicket.toLocaleString()} MXN`
+                  : 'Sin histórico de recompra'}
+              </p>
+            </div>
+
+            <div className="vector-bg-panel border border-[var(--success)] bg-[var(--success-bg)] p-5 rounded-2xl shadow-sm space-y-1">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[11px] font-sans text-[var(--success)] font-bold uppercase tracking-wider">
+                  Conversiones / Citas IA
+                </p>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[9.5px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 font-bold">
+                    CONCILIADO
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setGuideMetricId('lead_calificado')}
+                    className="p-1 rounded-md text-[var(--text-faint)] hover:text-lime-700 dark:hover:text-neon hover:bg-[var(--bg-card)] transition-colors"
+                    title="Ver definición de Prospecto Calificado y Conversiones"
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+              <p className="text-2xl font-black text-[var(--text-main)] font-sans tabular-nums flex items-center gap-2">
+                <CalendarCheck className="w-5 h-5 text-[var(--success)]" />
+                <span>{!unitEconomics.hasEnoughData && unitEconomics.totalConversions === 0 ? '—' : unitEconomics.totalConversions}</span>
+              </p>
+              <p className="text-[10px] text-[var(--text-muted)] font-mono">
+                {appointments.length} en agenda • {leads.filter((l) => l.temperature === 'CALIENTE').length} calientes
+              </p>
+            </div>
+          </div>
+
+          {/* Main Grid: Pipeline Financiero de Cierre + Reporte Creativo IA */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left Column: Pipeline Financiero de Cierre */}
+            <div className="lg:col-span-2 flex flex-col gap-8">
+              <div id="tour-results-pipeline" className="vector-bg-card vector-border rounded-2xl overflow-hidden flex flex-col shadow-sm">
+                <div className="p-5 border-b border-[var(--border-color)] bg-[var(--bg-panel)] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                   <div>
-                    <span className="text-[10px] font-bold uppercase text-[var(--text-muted)] tracking-wider flex items-center gap-1 mb-1 font-mono">
-                      <BrainCircuit className="w-3 h-3 text-purple-400" /> Sin Campañas Activas
-                    </span>
-                    <p className="text-xs text-purple-950 dark:text-[#d8b4fe] leading-relaxed">
-                      Activa una campaña publicitaria o configura tu Pixel de Meta para monitorear frecuencia y desgaste de audiencia.
+                    <h3 className="text-sm font-bold uppercase tracking-wider flex items-center gap-2 text-[var(--text-main)]">
+                      <Users className="w-4 h-4 text-lime-700 dark:text-neon" />
+                      <span>Pipeline Financiero de Cierre — {activeTenant?.name || 'Sin negocio seleccionado'}</span>
+                    </h3>
+                    <p className="text-[10px] font-mono text-[var(--text-muted)] mt-1">
+                      Prospectos calificados con valor monetario estimado y origen de atribución validado.
                     </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono bg-neon text-black px-2.5 py-1 rounded-full font-bold">
+                      {leads.length} Oportunidades
+                    </span>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm font-sans">
+                    <thead className="bg-[var(--bg-base)] text-[9px] font-mono text-[var(--text-muted)] uppercase tracking-wider border-b border-[var(--border-color)]">
+                      <tr>
+                        <th className="p-4 font-normal">Prospecto / Contacto</th>
+                        <th className="p-4 font-normal">Canal de Origen</th>
+                        <th className="p-4 font-normal">Ticket Estimado</th>
+                        <th className="p-4 font-normal">Scoring / Temperatura</th>
+                        <th className="p-4 font-normal">Estado Comercial</th>
+                        <th className="p-4 font-normal text-right">Acción</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[var(--border-color)]">
+                      {leads.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="p-8 text-center text-xs font-mono text-[var(--text-muted)]">
+                            <Radar className="w-8 h-8 opacity-30 mx-auto mb-2" />
+                            {!activeTenant ? 'Selecciona un negocio para ver su pipeline comercial.' : 'Sin prospectos activos en el radar financiero de este negocio.'}
+                          </td>
+                        </tr>
+                      ) : (
+                        leads.map((lead) => {
+                          const isHot = lead.temperature === 'CALIENTE';
+
+                          return (
+                            <tr key={lead.id} className="hover:bg-[var(--bg-panel)] transition-colors">
+                              <td className="p-4 font-bold text-[var(--text-main)] text-xs">
+                                {lead.name}
+                                <br />
+                                <span className="text-[10px] font-mono text-[var(--text-muted)] font-normal">
+                                  {lead.phone}
+                                </span>
+                              </td>
+                              <td className="p-4">
+                                <span className="flex items-center gap-1.5 text-[10px] text-blue-700 dark:text-blue-400 font-mono">
+                                  {lead.channelIcon === 'facebook' && <Facebook className="w-3.5 h-3.5 text-blue-600 dark:text-blue-500" />}
+                                  {lead.channelIcon === 'instagram' && <Instagram className="w-3.5 h-3.5 text-pink-600 dark:text-pink-500" />}
+                                  {lead.channelIcon === 'whatsapp' && <MessageCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-500" />}
+                                  <span>{lead.channel}</span>
+                                </span>
+                              </td>
+                              <td className="p-4">
+                                <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-mono font-bold text-xs">
+                                  {lead.potentialTicket}
+                                </span>
+                              </td>
+                              <td className="p-4">
+                                <span
+                                  className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 w-fit ${
+                                    isHot
+                                      ? 'bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success)] shadow-[0_0_8px_var(--success-bg)]'
+                                      : 'bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning)]'
+                                  }`}
+                                >
+                                  {isHot ? <Flame className="w-3 h-3" /> : <Thermometer className="w-3 h-3" />}
+                                  <span>{lead.temperature}</span>
+                                </span>
+                              </td>
+                              <td className="p-4 text-[10px] text-[var(--text-muted)] font-mono">
+                                {lead.status}
+                              </td>
+                              <td className="p-4 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleShowDictamen(lead)}
+                                    className="text-[10px] bg-[var(--bg-base)] border border-[var(--border-color)] px-2.5 py-1.5 rounded-lg hover:border-neon text-[var(--text-main)] transition-colors flex items-center gap-1"
+                                    title="Ver resumen de resultados y calificación"
+                                  >
+                                    <FileText className="w-3 h-3 text-lime-700 dark:text-neon" />
+                                    <span>Resumen</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => router.push(`/inbox?threadId=${lead.id}`)}
+                                    className="text-[10px] bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-black dark:hover:text-white px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+                                    title="Abrir conversación en Inbox"
+                                  >
+                                    <ArrowUpRight className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Reporte Creativo IA (DeepSeek Analista) */}
+            <div className="lg:col-span-1">
+              <div id="tour-results-creative-ai" className="bg-gradient-to-b from-purple-50 via-[var(--bg-panel)] to-[var(--bg-card)] dark:from-purple-950/30 dark:via-zinc-950/80 dark:to-zinc-950 border border-purple-500/30 dark:border-[#a855f7]/50 p-6 rounded-2xl relative shadow-[0_0_20px_rgba(168,85,247,0.12)] h-full flex flex-col justify-between space-y-4">
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2.5 bg-purple-500/15 dark:bg-purple-500/20 rounded-xl border border-purple-500/30">
+                      <BrainCircuit className="w-5 h-5 text-purple-700 dark:text-[#c084fc]" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black uppercase text-purple-950 dark:text-[#e9d5ff]">
+                        Reporte Creativo IA
+                      </h4>
+                      <p className="text-[9px] font-mono text-purple-700 dark:text-[#a855f7]">
+                        DeepSeek R1 Analista • {activeTenant?.name || 'Sin negocio seleccionado'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/90 dark:bg-black/40 border border-purple-500/20 dark:border-[#a855f7]/30 p-4 rounded-xl text-sm mb-4 space-y-3">
+                    {!activeTenant ? (
+                      <div>
+                        <span className="text-[10px] font-bold uppercase text-[var(--text-muted)] tracking-wider flex items-center gap-1 mb-1 font-mono">
+                          <BrainCircuit className="w-3 h-3 text-purple-600 dark:text-purple-400" /> Monitoreo en Pausa
+                        </span>
+                        <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+                          Selecciona un negocio para auditar la fatiga de anuncios publicitarios y disparar guiones de optimización comercial.
+                        </p>
+                      </div>
+                    ) : unitEconomics.adFatigueAlert?.active ? (
+                      <div>
+                        <span className="text-[10px] font-bold uppercase text-rose-700 dark:text-rose-400 tracking-wider flex items-center gap-1 mb-1 font-mono">
+                          <AlertTriangle className="w-3 h-3" /> Fatiga Detectada
+                        </span>
+                        <p className="text-xs text-purple-950 dark:text-[#d8b4fe] leading-relaxed">
+                          {unitEconomics.adFatigueAlert.message}. Costos de adquisición en aumento; se recomienda rotar el creativo.
+                        </p>
+                      </div>
+                    ) : (campaigns.length > 0 || activeTenant?.metaPixelId) ? (
+                      <div>
+                        <span className="text-[10px] font-bold uppercase text-emerald-700 dark:text-emerald-400 tracking-wider flex items-center gap-1 mb-1 font-mono">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> Rendimiento Creativo Saludable
+                        </span>
+                        <p className="text-xs text-purple-950 dark:text-[#d8b4fe] leading-relaxed">
+                          Frecuencia publicitaria controlada (&lt; 3.5x). Sin fatiga de audiencia detectada en los activos de Meta Ads.
+                        </p>
+                      </div>
+                    ) : (
+                      <div>
+                        <span className="text-[10px] font-bold uppercase text-[var(--text-muted)] tracking-wider flex items-center gap-1 mb-1 font-mono">
+                          <BrainCircuit className="w-3 h-3 text-purple-600 dark:text-purple-400" /> Sin Campañas Activas
+                        </span>
+                        <p className="text-xs text-purple-950 dark:text-[#d8b4fe] leading-relaxed">
+                          Activa una campaña publicitaria o configura tu Pixel de Meta para monitorear frecuencia y desgaste de audiencia.
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="border-t border-purple-500/20 dark:border-[#a855f7]/30 pt-3">
+                      <p className="text-[10px] font-mono text-purple-950 dark:text-[#e9d5ff] font-bold mb-1.5 uppercase">
+                        Sugerencia Estratégica (Diversidad):
+                      </p>
+                      <p className="text-xs text-purple-950 dark:text-[#d8b4fe] leading-relaxed">
+                        {!activeTenant
+                          ? 'Sin recomendaciones estratégicas activas sin un contexto de negocio.'
+                          : (resolveTenantIndustry(activeTenant)
+                              ? `Para el giro de ${resolveTenantIndustry(activeTenant)}, intensificar ganchos orientados a resolver objeciones de confianza y dirigir tráfico prioritario hacia WhatsApp Directo.`
+                              : 'Mantener la rotación regular de copies y creativos visuales para sostener la tasa de conversión.')}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {scriptError && (
+                  <div role="alert" className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-[11px] font-mono space-y-1.5">
+                    <p className="flex items-start gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                      <span>{scriptError}</span>
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => router.push('/connections?tab=ai')}
+                      className="text-[10px] text-lime-700 dark:text-neon underline font-bold hover:opacity-80"
+                    >
+                      Configurar API Key IA →
+                    </button>
                   </div>
                 )}
 
-                <div className="border-t border-purple-500/20 dark:border-[#a855f7]/30 pt-3">
-                  <p className="text-[10px] font-mono text-purple-900 dark:text-[#e9d5ff] font-bold mb-1.5 uppercase">
-                    Sugerencia Estratégica (Diversidad):
-                  </p>
-                  <p className="text-xs text-purple-950 dark:text-[#d8b4fe] leading-relaxed">
-                    {!activeTenant
-                      ? 'Sin recomendaciones estratégicas activas sin un contexto de negocio.'
-                      : (resolveTenantIndustry(activeTenant)
-                          ? `Para el giro de ${resolveTenantIndustry(activeTenant)}, intensificar ganchos orientados a resolver objeciones de confianza y dirigir tráfico prioritario hacia WhatsApp Directo.`
-                          : 'Mantener la rotación regular de copies y creativos visuales para sostener la tasa de conversión.')}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {scriptError && (
-              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-[11px] font-mono space-y-1.5">
-                <p className="flex items-start gap-1.5">
-                  <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0 mt-0.5" />
-                  <span>{scriptError}</span>
-                </p>
                 <button
                   type="button"
-                  onClick={() => router.push('/connections?tab=ai')}
-                  className="text-[10px] text-neon underline font-bold hover:opacity-80"
+                  disabled={isGeneratingScript}
+                  onClick={handleGenerateScript}
+                  className="w-full bg-purple-600 hover:bg-purple-700 disabled:opacity-60 text-white font-black text-[10px] uppercase tracking-widest py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(168,85,247,0.3)] active:scale-95"
                 >
-                  Configurar API Key IA →
+                  {isGeneratingScript ? (
+                    <>
+                      <Loader2 className="w-4 h-4 text-neon animate-spin" />
+                      <span>Generando Guion DeepSeek...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 text-neon" />
+                      <span>Generar Guion Viral (30s)</span>
+                    </>
+                  )}
                 </button>
               </div>
-            )}
-
-            <button
-              type="button"
-              disabled={isGeneratingScript}
-              onClick={handleGenerateScript}
-              className="w-full bg-purple-600 hover:bg-purple-700 disabled:opacity-60 text-white font-black text-[10px] uppercase tracking-widest py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(168,85,247,0.3)] active:scale-95"
-            >
-              {isGeneratingScript ? (
-                <>
-                  <Loader2 className="w-4 h-4 text-neon animate-spin" />
-                  <span>Generando Guion DeepSeek...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4 text-neon" />
-                  <span>Generar Guion Viral (30s)</span>
-                </>
-              )}
-            </button>
+            </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
 
-      {/* Modal Interactivo de Guion Viral Generado */}
+      {/* Modal Interactivo de Guion Viral Generado (Dual Theme, Portal, Escape, Scroll Lock) */}
       {showScriptModal && generatedScriptData && (
         <Portal>
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Guion Viral DeepSeek R1"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 dark:bg-black/80 backdrop-blur-md animate-fade-in"
             onClick={() => setShowScriptModal(false)}
           >
             <div
-              className="w-full max-w-xl rounded-3xl bg-zinc-950 border border-purple-500/40 shadow-2xl p-6 sm:p-8 space-y-6 animate-scale-up text-zinc-100 font-sans"
+              className="w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl bg-[var(--bg-panel)] border border-purple-500/40 shadow-2xl p-6 sm:p-8 space-y-6 animate-scale-up text-[var(--text-main)] font-sans"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between pb-4 border-b border-zinc-800">
+              <div className="flex items-center justify-between pb-4 border-b border-[var(--border-color)]">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                  <div className="p-2 rounded-xl bg-purple-500/15 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400 border border-purple-500/30">
                     <BrainCircuit className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-heading font-black text-white uppercase tracking-wider">
+                    <h3 className="text-sm font-heading font-black text-[var(--text-main)] uppercase tracking-wider">
                       Guion Viral DeepSeek R1 (30s)
                     </h3>
-                    <p className="text-[10px] font-mono text-purple-400">
+                    <p className="text-[10px] font-mono text-purple-700 dark:text-purple-400">
                       {generatedScriptData.targetFormat} • {activeTenant?.name}
                     </p>
                   </div>
@@ -766,66 +897,86 @@ export const SoberaniaFinanciera = () => {
                 <button
                   type="button"
                   onClick={() => setShowScriptModal(false)}
-                  className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+                  className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] transition-colors"
+                  title="Cerrar (Esc)"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
               <div className="space-y-3 font-sans text-xs">
-                <div className="p-3.5 rounded-2xl bg-zinc-900/80 border border-zinc-800 space-y-1">
-                  <span className="text-[10px] font-mono font-bold text-neon uppercase">
+                <div className="p-3.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1">
+                  <span className="text-[10px] font-mono font-bold text-lime-700 dark:text-neon uppercase">
                     [0-3s Gancho Viral]:
                   </span>
-                  <p className="text-zinc-200 text-xs font-semibold leading-relaxed">
+                  <p className="text-[var(--text-main)] text-xs font-semibold leading-relaxed">
                     "{generatedScriptData.scriptHook}"
                   </p>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-zinc-900/80 border border-zinc-800 space-y-1">
-                  <span className="text-[10px] font-mono font-bold text-purple-400 uppercase">
+                <div className="p-3.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1">
+                  <span className="text-[10px] font-mono font-bold text-purple-700 dark:text-purple-400 uppercase">
                     [4-15s Demostración / Dolor]:
                   </span>
-                  <p className="text-zinc-300 text-xs leading-relaxed">
+                  <p className="text-[var(--text-main)] text-xs leading-relaxed">
                     "{generatedScriptData.scriptDemo}"
                   </p>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-zinc-900/80 border border-zinc-800 space-y-1">
-                  <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase">
+                <div className="p-3.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1">
+                  <span className="text-[10px] font-mono font-bold text-emerald-700 dark:text-emerald-400 uppercase">
                     [16-25s Oferta Irresistible]:
                   </span>
-                  <p className="text-zinc-300 text-xs leading-relaxed">
+                  <p className="text-[var(--text-main)] text-xs leading-relaxed">
                     "{generatedScriptData.scriptOffer}"
                   </p>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-emerald-950/20 border border-emerald-500/30 space-y-1">
-                  <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase">
+                <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 space-y-1">
+                  <span className="text-[10px] font-mono font-bold text-emerald-700 dark:text-emerald-400 uppercase">
                     [26-30s Llamado a la Acción (WhatsApp)]:
                   </span>
-                  <p className="text-emerald-200 text-xs font-semibold leading-relaxed">
+                  <p className="text-emerald-900 dark:text-emerald-200 text-xs font-semibold leading-relaxed">
                     "{generatedScriptData.scriptCta}"
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[var(--border-color)]">
                 <button
                   type="button"
+                  disabled={isGeneratingScript}
                   onClick={handleGenerateScript}
-                  className="px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 text-xs font-mono font-bold flex items-center gap-1.5 border border-zinc-700 transition-all"
+                  className="px-4 py-2 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] disabled:opacity-50 text-[var(--text-main)] text-xs font-mono font-bold flex items-center gap-1.5 border border-[var(--border-color)] transition-all"
                 >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Regenerar</span>
+                  {isGeneratingScript ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Regenerando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>Regenerar</span>
+                    </>
+                  )}
                 </button>
                 <button
                   type="button"
                   onClick={handleCopyScriptClipboard}
-                  className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-mono font-bold flex items-center gap-1.5 shadow-lg shadow-purple-900/40 transition-all active:scale-95"
+                  className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-mono font-bold flex items-center gap-1.5 shadow-lg shadow-purple-900/30 transition-all active:scale-95"
                 >
-                  <Copy className="w-3.5 h-3.5 text-neon" />
-                  <span>Copiar Guion Completo</span>
+                  {copiedScript ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-neon" />
+                      <span>¡Guion Copiado!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5 text-neon" />
+                      <span>Copiar Guion Completo</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -842,6 +993,13 @@ export const SoberaniaFinanciera = () => {
           reportData={executiveReportData}
         />
       )}
+
+      {/* Modal de Guía de Medición */}
+      <MeasurementGuideModal
+        isOpen={!!guideMetricId}
+        onClose={() => setGuideMetricId(null)}
+        initialMetricId={guideMetricId}
+      />
     </div>
   );
 };

@@ -249,7 +249,7 @@ export const HeroSection = ({ onOpenTrial, lang = 'es' }) => {
         </div>
 
         {/* HERO SHOWCASE: Interactive Glassmorphism Dashboard Preview */}
-        <div className="mt-10 lg:mt-14 relative">
+        <div className="mt-10 lg:mt-14 relative group">
           {/* Ambient Glow Perimeter with Cyber-Neon Spectrum */}
           <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-neon/30 via-cyan-500/25 to-purple-600/30 blur-2xl opacity-80 group-hover:opacity-100 transition duration-1000 -z-10" />
 
@@ -313,24 +313,29 @@ export const HeroSection = ({ onOpenTrial, lang = 'es' }) => {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-neon">
-                      Asistencia Inteligente • Lobo Vectorial
+                      {lang === 'es' ? 'Asistencia Inteligente • Lobo Vectorial' : 'Smart Assistance • Lobo Vectorial'}
                     </span>
                     <span className="text-[9px] font-sans px-2 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/30 hidden sm:inline">
-                      Moderación 24/7 Activa
+                      {lang === 'es' ? 'Moderación 24/7 Activa' : '24/7 Moderation Active'}
                     </span>
                   </div>
                   <p className="text-xs text-zinc-300 font-sans italic">
-                    "Detecto oportunidades comerciales en tus conversaciones. Empecemos por la atención."
+                    {lang === 'es'
+                      ? '"Detecto oportunidades comerciales en tus conversaciones. Empecemos por la atención."'
+                      : '"Detecting commercial opportunities in your conversations. Every click starts with attention."'}
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-3 text-[11px] font-sans text-zinc-400 shrink-0">
                 <span className="flex items-center gap-1.5 text-zinc-300">
                   <span className="w-2 h-2 rounded-full bg-neon animate-pulse" />
-                  Puntaje de Atención: <strong className="text-neon font-black">98/100</strong>
+                  {lang === 'es' ? 'Puntaje de Atención:' : 'Attention Score:'}{' '}
+                  <strong className="text-neon font-black">98/100</strong>
                 </span>
                 <span className="text-zinc-700">|</span>
-                <span className="text-blue-400 font-semibold">Meta CAPI Conectado</span>
+                <span className="text-blue-400 font-semibold">
+                  {lang === 'es' ? 'Meta CAPI Conectado' : 'Meta CAPI Connected'}
+                </span>
               </div>
             </div>
 

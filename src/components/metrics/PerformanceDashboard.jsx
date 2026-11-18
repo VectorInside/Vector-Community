@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { performanceService, ZERO_PERFORMANCE_METRICS } from '@/services/performanceService';
+import { performanceService, ZERO_PERFORMANCE_METRICS, computeExecutiveFinancialMetrics } from '@/services/performanceService';
 import { campaignService } from '@/services/campaignService';
 import { leadService } from '@/services/leadService';
 import { calendarService } from '@/services/calendarService';
@@ -12,6 +12,7 @@ import { StatCard } from '@/components/common/StatCard';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { MicroLandingPreviewModal } from '@/components/common/MicroLandingPreviewModal';
+import { MeasurementGuideModal } from '@/components/common/MeasurementGuideModal';
 import { formatCurrency, formatNumber, cleanConcept } from '@/utils/formatters';
 import { OMNICHANNEL_API_CATALOG, SOCIAL_NETWORKS_CATALOG } from '@/utils/constants';
 import Link from 'next/link';
@@ -53,6 +54,7 @@ import {
   Sliders,
   RefreshCw,
   Gauge,
+  Info,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -67,7 +69,7 @@ import {
 import confetti from 'canvas-confetti';
 
 export const PerformanceDashboard = () => {
-  const { activeTenant: authTenant, activeTenantKey, tenantsData } = useAuth();
+  const { activeTenant: authTenant, activeTenantKey, tenantsData, theme } = useAuth();
   
   // Resolve active tenant from canonical AuthContext
   const activeTenant = useMemo(() => {
@@ -82,6 +84,7 @@ export const PerformanceDashboard = () => {
 
   const [data, setData] = useState(null);
   const [capiLogs, setCapiLogs] = useState([]);
+  const [campaignsData, setCampaignsData] = useState([]);
   const [campaignMetrics, setCampaignMetrics] = useState({ totalSpend: 0, totalLeads: 0, activeCount: 0 });
   const [leadsData, setLeadsData] = useState([]);
   const [appointmentsData, setAppointmentsData] = useState([]);
@@ -91,6 +94,10 @@ export const PerformanceDashboard = () => {
   const [activeTab, setActiveTab] = useState('web'); // 'web' | 'capi' | 'microlanding'
   const [showMicroLandingModal, setShowMicroLandingModal] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [guideMetricId, setGuideMetricId] = useState(null);
+
+  const revenueChartColor = theme === 'dark' ? '#C3F400' : '#506500';
+  const publicOrigin = typeof window !== 'undefined' ? window.location.origin : '';
 
   // Limpieza inicial defensiva: eliminar cualquier rastro de simulador previo en localStorage
   useEffect(() => {
@@ -171,6 +178,7 @@ export const PerformanceDashboard = () => {
     if (!activeTenantId) {
       setData(ZERO_PERFORMANCE_METRICS);
       setCapiLogs([]);
+      setCampaignsData([]);
       setCampaignMetrics({ totalSpend: 0, totalLeads: 0, activeCount: 0 });
       setLeadsData([]);
       setAppointmentsData([]);
@@ -201,13 +209,14 @@ export const PerformanceDashboard = () => {
 
       setLeadsData(realLeads);
       setAppointmentsData(realAppointments);
+      setCampaignsData(realCampaigns);
       setConversationsList(realConvs);
       setChannelHealth(realHealth);
 
       if (realCampaigns.length > 0) {
         const totalSpend = realCampaigns.reduce((acc, c) => acc + (Number(c.spend) || 0), 0);
         const totalLeads = realCampaigns.reduce((acc, c) => acc + (Number(c.leadsCount) || 0), 0);
-        const activeCount = realCampaigns.filter((c) => c.status === 'Activa').length;
+        const activeCount = realCampaigns.filter((c) => ['ACTIVA', 'ACTIVE'].includes(String(c.status || '').toUpperCase())).length;
         setCampaignMetrics({ totalSpend, totalLeads, activeCount });
       } else {
         setCampaignMetrics({ totalSpend: 0, totalLeads: 0, activeCount: 0 });
@@ -236,8 +245,9 @@ export const PerformanceDashboard = () => {
   }, [loadData]);
 
   const handleCopyPublicLink = () => {
-    const slug = activeTenant?.microLandingSlug || activeTenant?.id || 'demo';
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://app.vectorinside.com';
+    if (!activeTenant) return;
+    const slug = activeTenant?.microLandingSlug || activeTenant?.id;
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
     const url = `${baseUrl}/m/${slug}`;
     navigator.clipboard.writeText(url);
     setCopiedLink(true);
@@ -264,7 +274,7 @@ export const PerformanceDashboard = () => {
     Send: Send,
   };
 
-  // Lista de canales oficiales y redes sociales gobernadas por estado de conexión real (Progressive Disclosure)
+  // Lista de canales oficiales filtrada estrictamente por conexión/actividad real (ADR-012 §2.2)
   const activeChannelsList = useMemo(() => {
     if (!activeTenant) return [];
 
@@ -273,23 +283,31 @@ export const PerformanceDashboard = () => {
     const tenantConnected = activeTenant?.connectedChannels || {};
     const socialLinks = activeTenant?.socialLinks || {};
 
-    // 1. WhatsApp Business Cloud API (Canal Principal Conversacional)
+    // 1. WhatsApp Business Cloud API
     const waCat = OMNICHANNEL_API_CATALOG['whatsapp'];
     const waConf = tenantConnected['whatsapp'] || {};
-    let waStatus = 'disconnected';
-    let waLatency = waConf.latencyMs || null;
-    let waLastSync = 'Sin handshake aún';
+    const isWaConnected = channelHealth?.whatsapp?.status === 'CONNECTED' || waConf.status === 'connected';
+    const isWaPending = channelHealth?.whatsapp?.isConfigured || waConf.status === 'pending';
+    const hasWaActivity = conversationsList.length > 0 || Boolean(activeTenant?.whatsappNumberId);
+    const includeWa =
+      waConf.enabled === true ||
+      isWaConnected ||
+      (waConf.enabled !== false && (isWaPending || hasWaActivity));
 
-    if (channelHealth?.whatsapp?.status === 'CONNECTED' || waConf.status === 'connected') {
-      waStatus = 'connected';
-      waLatency = channelHealth?.whatsapp?.latencyMs || waConf.latencyMs || null;
-      waLastSync = 'Verificado vía Cloud API v21.0';
-    } else if (channelHealth?.whatsapp?.isConfigured || activeTenant?.whatsappNumberId || waConf.enabled) {
-      waStatus = 'pending';
-      waLastSync = 'Esperando verificación webhook';
-    }
+    if (waCat && includeWa) {
+      let waStatus = 'configured';
+      let waLatency = waConf.latencyMs || null;
+      let waLastSync = 'Habilitado (Sin handshake)';
 
-    if (waCat) {
+      if (isWaConnected) {
+        waStatus = 'connected';
+        waLatency = channelHealth?.whatsapp?.latencyMs || waConf.latencyMs || null;
+        waLastSync = 'Verificado vía Cloud API v21.0';
+      } else if (isWaPending || activeTenant?.whatsappNumberId) {
+        waStatus = 'pending';
+        waLastSync = 'Esperando verificación webhook';
+      }
+
       list.push({
         ...waCat,
         tenantConfig: {
@@ -303,27 +321,42 @@ export const PerformanceDashboard = () => {
       seen.add('whatsapp');
     }
 
-    // 2. Meta Ads & CAPI (Canal Principal de Adquisición y Atribución)
+    // 2. Meta Ads & CAPI
     const metaCat = OMNICHANNEL_API_CATALOG['meta'];
     const metaConf = tenantConnected['meta'] || {};
-    let metaStatus = 'disconnected';
-    let metaLastSync = 'Sin handshake aún';
+    const isMetaConnected = channelHealth?.meta?.status === 'CONNECTED' || metaConf.status === 'connected';
+    const isMetaPending = channelHealth?.meta?.status === 'PENDING' || metaConf.status === 'pending';
+    const hasMetaCredentials = Boolean(
+      activeTenant?.metaPixelId ||
+        activeTenant?.metaAccessToken ||
+        socialLinks.instagram ||
+        socialLinks.facebook ||
+        activeTenant?.connectedSocialNetworks?.includes('INSTAGRAM') ||
+        activeTenant?.connectedSocialNetworks?.includes('FACEBOOK')
+    );
+    const includeMeta =
+      metaConf.enabled === true ||
+      isMetaConnected ||
+      (metaConf.enabled !== false && (isMetaPending || hasMetaCredentials));
 
-    if (channelHealth?.meta?.status === 'CONNECTED' || metaConf.status === 'connected') {
-      metaStatus = 'connected';
-      metaLastSync = 'Graph API v21.0';
-    } else if (channelHealth?.meta?.status === 'PENDING' || metaConf.status === 'pending') {
-      metaStatus = 'pending';
-      metaLastSync = 'Esperando validación del webhook';
-    } else if (socialLinks.instagram || socialLinks.facebook) {
-      metaStatus = 'configured';
-      metaLastSync = 'Perfil vinculado (Sin webhook)';
-    } else if (activeTenant?.metaPixelId || activeTenant?.metaAccessToken || metaConf.enabled) {
-      metaStatus = 'configured';
-      metaLastSync = 'Pixel registrado (Sin webhook)';
-    }
+    if (metaCat && includeMeta) {
+      let metaStatus = 'configured';
+      let metaLastSync = 'Habilitado (Sin webhook)';
 
-    if (metaCat) {
+      if (isMetaConnected) {
+        metaStatus = 'connected';
+        metaLastSync = 'Graph API v21.0';
+      } else if (isMetaPending) {
+        metaStatus = 'pending';
+        metaLastSync = 'Esperando validación del webhook';
+      } else if (socialLinks.instagram || socialLinks.facebook) {
+        metaStatus = 'configured';
+        metaLastSync = 'Perfil vinculado (Sin webhook)';
+      } else if (activeTenant?.metaPixelId || activeTenant?.metaAccessToken) {
+        metaStatus = 'configured';
+        metaLastSync = 'Pixel registrado (Sin webhook)';
+      }
+
       list.push({
         ...metaCat,
         tenantConfig: {
@@ -339,64 +372,115 @@ export const PerformanceDashboard = () => {
       seen.add('facebook');
     }
 
-    // 3. Sitio Web Oficial & Google Analytics 4 (si aplica)
-    if (activeTenant?.hasWebsite && activeTenant?.websiteUrl) {
-      const googleCat = OMNICHANNEL_API_CATALOG['google'];
-      if (googleCat) {
-        seen.add('google');
-        list.push({
-          ...googleCat,
-          tenantConfig: {
-            enabled: true,
-            status: 'connected',
-            latencyMs: null,
-            lastSync: 'Sincronizado vía GA4',
-          },
-          profileLink: activeTenant.websiteUrl,
-        });
-      }
+    // 3. Sitio Web Oficial & Google Analytics 4
+    const googleCat = OMNICHANNEL_API_CATALOG['google'];
+    const googleConf = tenantConnected['google'] || {};
+    const hasGoogleConfig =
+      (activeTenant?.hasWebsite && activeTenant?.websiteUrl) || Boolean(activeTenant?.ga4MeasurementId);
+    const includeGoogle =
+      googleConf.enabled === true ||
+      googleConf.status === 'connected' ||
+      (googleConf.enabled !== false && hasGoogleConfig);
+
+    if (googleCat && includeGoogle) {
+      const googleStatus =
+        googleConf.status === 'connected' || (activeTenant?.hasWebsite && activeTenant?.websiteUrl)
+          ? 'connected'
+          : googleConf.status === 'pending'
+          ? 'pending'
+          : 'configured';
+      seen.add('google');
+      list.push({
+        ...googleCat,
+        tenantConfig: {
+          ...googleConf,
+          enabled: true,
+          status: googleStatus,
+          latencyMs: null,
+          lastSync: googleStatus === 'connected' ? 'Sincronizado vía GA4' : 'Habilitado (Pendiente GA4)',
+        },
+        profileLink: activeTenant?.websiteUrl || null,
+      });
     }
 
-    // 4. Redes sociales adicionales vinculadas (TikTok, LinkedIn, YouTube)
-    const extraNetworks = ['TIKTOK', 'LINKEDIN', 'YOUTUBE'];
-    extraNetworks.forEach((netName) => {
-      const lower = netName.toLowerCase();
-      if (socialLinks[lower] || activeTenant?.connectedSocialNetworks?.includes(netName)) {
-        const socialCat = SOCIAL_NETWORKS_CATALOG[netName];
-        if (socialCat && !seen.has(lower)) {
-          seen.add(lower);
-          list.push({
-            id: socialCat.id,
-            name: socialCat.name,
-            category: 'Redes Sociales Oficiales',
-            iconName: socialCat.iconName,
-            color: socialCat.color,
-            badgeColor: socialCat.badgeColor,
-            tenantConfig: {
-              enabled: true,
-              status: 'connected',
-              latencyMs: null,
-              lastSync: 'Perfil vinculado',
-            },
-            profileLink: socialLinks[lower] || null,
-          });
-        }
+    // 4. Canales adicionales habilitados (TikTok, LinkedIn, YouTube, X, Telegram)
+    const extraKeys = ['tiktok', 'linkedin', 'youtube', 'x', 'telegram'];
+    extraKeys.forEach((key) => {
+      const chConf = tenantConnected[key] || {};
+      const upper = key.toUpperCase();
+      const hasSocial = Boolean(socialLinks[key]) || Boolean(activeTenant?.connectedSocialNetworks?.includes(upper));
+      const includeExtra =
+        chConf.enabled === true ||
+        chConf.status === 'connected' ||
+        (chConf.enabled !== false && hasSocial);
+
+      if (!includeExtra || seen.has(key)) return;
+
+      const apiCat = OMNICHANNEL_API_CATALOG[key];
+      const socialCat = SOCIAL_NETWORKS_CATALOG[upper];
+      const baseCat = apiCat || (socialCat ? {
+        id: socialCat.id,
+        name: socialCat.name,
+        category: 'Redes Sociales Oficiales',
+        iconName: socialCat.iconName,
+        color: socialCat.color,
+        badgeColor: socialCat.badgeColor,
+      } : null);
+
+      if (baseCat) {
+        seen.add(key);
+        const status =
+          chConf.status === 'connected'
+            ? 'connected'
+            : chConf.status === 'pending'
+            ? 'pending'
+            : 'configured';
+
+        list.push({
+          ...baseCat,
+          tenantConfig: {
+            ...chConf,
+            enabled: true,
+            status,
+            latencyMs: chConf.latencyMs || null,
+            lastSync:
+              chConf.lastSync ||
+              (status === 'connected' ? 'API Conectada' : hasSocial ? 'Perfil vinculado' : 'Configurado'),
+          },
+          profileLink: socialLinks[key] || chConf.accountHandle || chConf.chatId || null,
+        });
       }
     });
 
     return list;
-  }, [activeTenant, channelHealth]);
+  }, [activeTenant, channelHealth, conversationsList.length]);
 
-  const summary = data?.summary || {
-    realRoas: 0.0,
-    metaReportedRoas: 0.0,
-    realCac: 0,
-    blendedCpa: 0,
-    totalSpend: 0,
-    backendAttributedRevenue: 0,
-    capiSyncRate: 0,
-    avgHookRate: 0,
-  };
+  const execMetrics = useMemo(
+    () =>
+      computeExecutiveFinancialMetrics({
+        tenant: activeTenant,
+        leads: leadsData,
+        appointments: appointmentsData,
+        campaigns: campaignsData,
+        dualTelemetry: data?.dualTelemetry || null,
+      }),
+    [activeTenant, leadsData, appointmentsData, campaignsData, data?.dualTelemetry]
+  );
+
+  const summary = useMemo(() => {
+    const raw = data?.summary || {};
+    return {
+      ...raw,
+      realRoas: execMetrics.realRoas ?? 0,
+      metaReportedRoas: raw.metaReportedRoas ?? execMetrics.realRoas ?? 0,
+      realCac: execMetrics.realCac ?? 0,
+      blendedCpa: execMetrics.cpl ?? raw.blendedCpa ?? 0,
+      totalSpend: execMetrics.totalSpend,
+      backendAttributedRevenue: execMetrics.attributedRevenue,
+      capiSyncRate: raw.capiSyncRate ?? 0,
+      avgHookRate: raw.avgHookRate ?? 0,
+    };
+  }, [data?.summary, execMetrics]);
 
   const series = data?.dailySeries || [];
 
@@ -520,15 +604,47 @@ export const PerformanceDashboard = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-          {activeTenant?.metaPixelId && (
-            <div id="tour-contactability-capi-badge" className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] font-mono text-xs shadow-sm">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-              <span className="text-[var(--text-muted)]">Meta CAPI:</span>
-              <span className="font-bold text-emerald-500">
-                {activeTenant?.capiStatus || (summary.capiSyncRate > 0 ? `Conectado • ${summary.capiSyncRate}% Entrega` : 'En espera de eventos')}
-              </span>
-            </div>
-          )}
+          {(activeTenant?.metaPixelId || activeTenant?.connectedChannels?.meta?.enabled || channelHealth?.meta?.status === 'CONNECTED') && (() => {
+            const isMetaLive =
+              channelHealth?.meta?.status === 'CONNECTED' ||
+              activeTenant?.connectedChannels?.meta?.status === 'connected';
+            const isMetaPending =
+              channelHealth?.meta?.status === 'PENDING' ||
+              activeTenant?.connectedChannels?.meta?.status === 'pending';
+
+            return (
+              <div
+                id="tour-contactability-capi-badge"
+                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] font-mono text-xs shadow-sm"
+              >
+                <span
+                  className={`w-2 h-2 rounded-full shrink-0 ${
+                    isMetaLive
+                      ? 'bg-emerald-500 animate-pulse'
+                      : isMetaPending
+                      ? 'bg-amber-500 animate-ping'
+                      : 'bg-amber-500'
+                  }`}
+                />
+                <span className="text-[var(--text-muted)]">Meta CAPI:</span>
+                <span
+                  className={`font-bold ${
+                    isMetaLive
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'text-amber-700 dark:text-amber-400'
+                  }`}
+                >
+                  {isMetaLive
+                    ? summary.capiSyncRate > 0
+                      ? `Conectado • ${summary.capiSyncRate}% Entrega`
+                      : 'Conectado • En espera de eventos'
+                    : isMetaPending
+                    ? 'Pendiente verificación'
+                    : 'Configurado (Sin handshake)'}
+                </span>
+              </div>
+            );
+          })()}
 
           <button
             id="tour-contactability-microlanding-btn"
@@ -585,15 +701,32 @@ export const PerformanceDashboard = () => {
         </button>
       </div>
 
+      {loading && (
+        <div className="space-y-6 animate-pulse" aria-busy="true" aria-label="Cargando telemetría">
+          <div className="h-24 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)]" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            {[1, 2, 3].map((idx) => (
+              <div key={idx} className="h-44 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)]" />
+            ))}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((idx) => (
+              <div key={idx} className="h-36 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]" />
+            ))}
+          </div>
+          <div className="h-72 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)]" />
+        </div>
+      )}
+
       {/* ========================================================================= */}
       {/* PESTAÑA 1: TELEMETRÍA DE CANALES & CONVERSIÓN                             */}
       {/* ========================================================================= */}
-      {activeTab === 'web' && (
+      {!loading && activeTab === 'web' && (
         <div className="space-y-6 animate-fade-in">
           {/* Identity & Tracking Card */}
           <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-4 font-mono text-xs shadow-sm">
             <div className="flex items-center gap-3">
-              <span className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+              <span className="p-2.5 rounded-xl bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20">
                 {activeTenant?.hasWebsite ? <Globe className="w-5 h-5" /> : <Smartphone className="w-5 h-5 text-neon" />}
               </span>
               <div>
@@ -603,8 +736,8 @@ export const PerformanceDashboard = () => {
                   </span>
                   <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold border ${
                     activeTenant?.hasWebsite
-                      ? 'bg-blue-500/15 text-blue-400 border-blue-500/30'
-                      : 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30'
+                      ? 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30'
+                      : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30'
                   }`}>
                     {!activeTenant ? 'Inactivo' : (activeTenant?.hasWebsite ? 'Google Analytics 4' : 'Atención Directa por WhatsApp')}
                   </span>
@@ -624,7 +757,7 @@ export const PerformanceDashboard = () => {
                     </a>
                   ) : (
                     <span className="text-neon font-mono">
-                      app.vectorinside.com/m/{activeTenant?.microLandingSlug || activeTenant?.id}
+                      {publicOrigin ? `${publicOrigin}/m/` : '/m/'}{activeTenant?.microLandingSlug || activeTenant?.id}
                     </span>
                   )}{' '}
                   • ID de Medición:{' '}
@@ -663,18 +796,47 @@ export const PerformanceDashboard = () => {
                   </span>
                 </div>
                 <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                  Telemetría de adquisición exclusiva para los medios dados de alta por <strong className="text-[var(--text-main)]">{activeTenant?.shortName || activeTenant?.name}</strong>. Cero saturación de canales no configurados.
+                  Telemetría de adquisición exclusiva para los medios habilitados por <strong className="text-[var(--text-main)]">{activeTenant?.shortName || activeTenant?.name}</strong>. Cero saturación de canales apagados.
                 </p>
               </div>
 
               <Link
-                href="/config?tab=channels"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] hover:text-neon border border-[var(--border-color)] hover:border-neon text-xs font-mono font-bold transition-all shrink-0 self-start sm:self-auto shadow-sm"
+                href="/connections?tab=channels"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] hover:text-lime-700 dark:hover:text-neon border border-[var(--border-color)] hover:border-neon text-xs font-mono font-bold transition-all shrink-0 self-start sm:self-auto shadow-sm"
               >
                 <Sliders className="w-3.5 h-3.5 text-neon" />
                 <span>Configurar Canales & APIs</span>
               </Link>
             </div>
+
+            {/* Alerta de Fatiga Publicitaria ADR-012 §2.3 */}
+            {execMetrics.adFatigueAlert?.active && (
+              <div
+                role="alert"
+                className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono ${
+                  execMetrics.adFatigueAlert.hasFrequencyFatigue && execMetrics.adFatigueAlert.hasRetentionDropOff
+                    ? 'bg-rose-500/10 border-rose-500/35 text-rose-700 dark:text-rose-300'
+                    : 'bg-amber-500/10 border-amber-500/35 text-amber-800 dark:text-amber-300'
+                }`}
+              >
+                <div className="flex items-start gap-2.5">
+                  <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="font-bold uppercase tracking-wider text-[11px]">
+                      Alerta de Fatiga Creativa & Desgaste de Audiencia
+                    </p>
+                    <p className="font-sans text-xs">{execMetrics.adFatigueAlert.message}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setGuideMetricId('fatiga_creativa')}
+                  className="px-2.5 py-1 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] text-[var(--text-main)] hover:border-neon text-[10px] font-bold shrink-0 self-start sm:self-auto"
+                >
+                  Ver Criterio (i)
+                </button>
+              </div>
+            )}
 
             {/* Barra de Redes Sociales Vinculadas */}
             <div className="p-3.5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono shadow-sm">
@@ -693,7 +855,7 @@ export const PerformanceDashboard = () => {
                       href={igUrl || undefined}
                       target={igUrl ? '_blank' : undefined}
                       rel={igUrl ? 'noopener noreferrer' : undefined}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-pink-500/10 border border-pink-500/30 text-pink-400 transition-colors ${igUrl ? 'hover:bg-pink-500/20 cursor-pointer' : 'opacity-80 cursor-default'}`}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-pink-500/10 border border-pink-500/30 text-pink-700 dark:text-pink-400 transition-colors ${igUrl ? 'hover:bg-pink-500/20 cursor-pointer' : 'opacity-80 cursor-default'}`}
                     >
                       <Instagram className="w-3.5 h-3.5" />
                       <span>Instagram: {activeTenant?.socialLinks?.instagram || 'Vinculado'}</span>
@@ -710,7 +872,7 @@ export const PerformanceDashboard = () => {
                       href={fbUrl || undefined}
                       target={fbUrl ? '_blank' : undefined}
                       rel={fbUrl ? 'noopener noreferrer' : undefined}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-400 transition-colors ${fbUrl ? 'hover:bg-blue-500/20 cursor-pointer' : 'opacity-80 cursor-default'}`}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-700 dark:text-blue-400 transition-colors ${fbUrl ? 'hover:bg-blue-500/20 cursor-pointer' : 'opacity-80 cursor-default'}`}
                     >
                       <Facebook className="w-3.5 h-3.5" />
                       <span>Facebook: {fbUrl || 'Vinculado'}</span>
@@ -720,10 +882,17 @@ export const PerformanceDashboard = () => {
                 })()}
 
                 {/* WhatsApp */}
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
-                  <MessageSquare className="w-3.5 h-3.5" />
-                  <span>WhatsApp: {activeTenant?.phone || activeTenant?.whatsappNumberId || 'API Conectada'}</span>
-                </span>
+                {(activeTenant?.connectedChannels?.whatsapp?.enabled === true ||
+                  channelHealth?.whatsapp?.status === 'CONNECTED' ||
+                  Boolean(activeTenant?.phone) ||
+                  Boolean(activeTenant?.whatsappNumberId)) && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400">
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    <span>
+                      WhatsApp: {activeTenant?.phone || activeTenant?.whatsappNumberId || (channelHealth?.whatsapp?.status === 'CONNECTED' ? 'API Conectada' : 'Habilitado')}
+                    </span>
+                  </span>
+                )}
 
                 {/* TikTok */}
                 {(activeTenant?.socialLinks?.tiktok || activeTenant?.connectedSocialNetworks?.includes('TIKTOK')) && (() => {
@@ -733,7 +902,7 @@ export const PerformanceDashboard = () => {
                       href={ttUrl || undefined}
                       target={ttUrl ? '_blank' : undefined}
                       rel={ttUrl ? 'noopener noreferrer' : undefined}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-800 border border-cyan-500/30 text-cyan-400 transition-colors ${ttUrl ? 'hover:bg-zinc-700 cursor-pointer' : 'opacity-80 cursor-default'}`}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-700 dark:text-cyan-400 transition-colors ${ttUrl ? 'hover:bg-cyan-500/20 cursor-pointer' : 'opacity-80 cursor-default'}`}
                     >
                       <Video className="w-3.5 h-3.5" />
                       <span>TikTok: {ttUrl || 'Vinculado'}</span>
@@ -750,7 +919,7 @@ export const PerformanceDashboard = () => {
                       href={liUrl || undefined}
                       target={liUrl ? '_blank' : undefined}
                       rel={liUrl ? 'noopener noreferrer' : undefined}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-600/10 border border-sky-500/30 text-sky-400 transition-colors ${liUrl ? 'hover:bg-sky-600/20 cursor-pointer' : 'opacity-80 cursor-default'}`}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-600/10 border border-sky-500/30 text-sky-700 dark:text-sky-400 transition-colors ${liUrl ? 'hover:bg-sky-600/20 cursor-pointer' : 'opacity-80 cursor-default'}`}
                     >
                       <Linkedin className="w-3.5 h-3.5" />
                       <span>LinkedIn: {liUrl || 'Vinculado'}</span>
@@ -767,7 +936,7 @@ export const PerformanceDashboard = () => {
                       href={ytUrl || undefined}
                       target={ytUrl ? '_blank' : undefined}
                       rel={ytUrl ? 'noopener noreferrer' : undefined}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 transition-colors ${ytUrl ? 'hover:bg-red-500/20 cursor-pointer' : 'opacity-80 cursor-default'}`}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-500/10 border border-red-500/30 text-red-700 dark:text-red-400 transition-colors ${ytUrl ? 'hover:bg-red-500/20 cursor-pointer' : 'opacity-80 cursor-default'}`}
                     >
                       <Play className="w-3.5 h-3.5" />
                       <span>YouTube: {ytUrl || 'Vinculado'}</span>
@@ -780,8 +949,21 @@ export const PerformanceDashboard = () => {
 
             {/* Grid de Canales Filtrados Estrictamente */}
             {activeChannelsList.length === 0 ? (
-              <div className="p-8 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] text-center text-xs font-mono text-[var(--text-muted)]">
-                Selecciona un negocio activo para visualizar la salud y telemetría de sus canales conectados.
+              <div className="p-8 rounded-2xl bg-[var(--bg-card)] border border-dashed border-[var(--border-color)] text-center text-xs font-mono text-[var(--text-muted)] space-y-3">
+                <p>
+                  {!activeTenant
+                    ? 'Selecciona un negocio activo para visualizar la salud y telemetría de sus canales conectados.'
+                    : `No hay canales habilitados o vinculados para ${activeTenant.name}. Activa tus canales en Conexiones para monitorearlos aquí.`}
+                </p>
+                {activeTenant && (
+                  <Link
+                    href="/connections?tab=channels"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-neon text-black font-bold text-xs shadow-sm"
+                  >
+                    <Sliders className="w-3.5 h-3.5" />
+                    <span>+ Habilitar Canales en Conexiones</span>
+                  </Link>
+                )}
               </div>
             ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
@@ -801,7 +983,7 @@ export const PerformanceDashboard = () => {
                       <div className="space-y-2.5">
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                            <span className="p-2 rounded-xl bg-zinc-800 text-zinc-400 border border-zinc-700/60 shadow-sm shrink-0 group-hover:text-neon group-hover:border-neon/30 transition-colors">
+                            <span className="p-2 rounded-xl bg-[var(--bg-card-subtle)] text-[var(--text-muted)] border border-[var(--border-color)] shadow-sm shrink-0 group-hover:text-lime-700 dark:group-hover:text-neon group-hover:border-neon/30 transition-colors">
                               <IconComp className="w-4 h-4" />
                             </span>
                             <div className="min-w-0 flex-1">
@@ -814,8 +996,8 @@ export const PerformanceDashboard = () => {
                             </div>
                           </div>
 
-                          <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-zinc-800/80 border border-zinc-700/60 text-zinc-400 text-[10px] font-mono shrink-0">
-                            <span className="w-1.5 h-1.5 rounded-full bg-zinc-500" />
+                          <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[var(--bg-panel)] border border-[var(--border-color)] text-[var(--text-muted)] text-[10px] font-mono shrink-0">
+                            <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 dark:bg-zinc-500" />
                             <span>Sin vincular</span>
                           </span>
                         </div>
@@ -832,7 +1014,7 @@ export const PerformanceDashboard = () => {
                       <div className="pt-2 border-t border-[var(--border-color)]/60 flex items-center justify-between">
                         <span className="text-[10px] font-mono text-[var(--text-muted)]">Handshake requerido</span>
                         <Link
-                          href="/config?tab=channels"
+                          href="/connections?tab=channels"
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neon text-black text-[11px] font-mono font-bold hover:scale-105 active:scale-95 transition-all shadow-sm"
                         >
                           <Sliders className="w-3 h-3" />
@@ -868,15 +1050,15 @@ export const PerformanceDashboard = () => {
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-mono font-semibold shrink-0">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping shrink-0" />
+                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 text-[10px] font-mono font-semibold shrink-0">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping shrink-0" />
                             <span>Handshake Pendiente</span>
                           </div>
                         </div>
 
-                        <div className="p-2.5 rounded-xl bg-amber-500/5 border border-amber-500/20 text-[11px] font-sans text-amber-300 space-y-1">
+                        <div className="p-2.5 rounded-xl bg-amber-500/5 border border-amber-500/20 text-[11px] font-sans text-amber-800 dark:text-amber-300 space-y-1">
                           <p className="font-bold font-mono text-[10px] flex items-center gap-1">
-                            <Activity className="w-3 h-3 text-amber-400 animate-pulse" />
+                            <Activity className="w-3 h-3 text-amber-600 dark:text-amber-400 animate-pulse" />
                             <span>Verificación en Curso:</span>
                           </p>
                           <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">
@@ -887,7 +1069,7 @@ export const PerformanceDashboard = () => {
 
                       <div className="pt-2 border-t border-[var(--border-color)]/60 flex items-center justify-between text-[10px] font-mono text-[var(--text-muted)]">
                         <span>Sincronización:</span>
-                        <Link href="/config?tab=channels" className="text-amber-400 hover:underline font-bold flex items-center gap-1">
+                        <Link href="/connections?tab=channels" className="text-amber-700 dark:text-amber-400 hover:underline font-bold flex items-center gap-1">
                           <span>Revisar Configuración</span>
                           <ExternalLink className="w-2.5 h-2.5" />
                         </Link>
@@ -915,14 +1097,40 @@ export const PerformanceDashboard = () => {
                   ? `$${(campaignMetrics.totalSpend / chInteractions).toFixed(2)} MXN`
                   : '—';
 
-                const chBounce = isGoogle
-                  ? (webMetrics.bounceRate || '0.0%')
-                  : '0.0%';
+                const chBounce = isGoogle && Number(webMetrics.sessions || 0) > 0
+                  ? (webMetrics.bounceRate || '—')
+                  : '—';
+
+                const rawFreq =
+                  Number(ch.tenantConfig?.adFrequency) ||
+                  (isMeta ? Number(channelHealth?.meta?.frequency || execMetrics.adFatigueAlert?.maxFrequency || 0) : 0);
+                const hasFreq = Number.isFinite(rawFreq) && rawFreq > 0;
+                const isFreqCritical = hasFreq && rawFreq >= 3.5;
+                const isFreqWarning = hasFreq && rawFreq >= 2.8 && rawFreq < 3.5;
+
+                const rawRetention =
+                  parseFloat(String(ch.tenantConfig?.retentionRate || '').replace(/[^0-9.]/g, '')) ||
+                  (isMeta && execMetrics.adFatigueAlert?.avgWatchRetention
+                    ? execMetrics.adFatigueAlert.avgWatchRetention
+                    : data?.summary?.avgHookRate > 0
+                    ? Number(data.summary.avgHookRate)
+                    : chInteractions > 0 && chBounce !== '—' && !isNaN(parseFloat(chBounce))
+                    ? Math.max(0, 100 - parseFloat(chBounce))
+                    : 0);
+                const hasRetention = Number.isFinite(rawRetention) && rawRetention > 0;
+                const isRetentionCritical = hasRetention && rawRetention < 15;
+                const isRetentionWarning = hasRetention && rawRetention >= 15 && rawRetention < 25;
 
                 return (
                   <div
                     key={ch.id}
-                    className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon/40 transition-all flex flex-col justify-between space-y-3 shadow-sm group"
+                    className={`p-4 rounded-2xl bg-[var(--bg-card)] border transition-all flex flex-col justify-between space-y-3 shadow-sm group ${
+                      isFreqCritical || isRetentionCritical
+                        ? 'border-rose-500/40 hover:border-rose-500/60'
+                        : isFreqWarning || isRetentionWarning
+                        ? 'border-amber-500/40 hover:border-amber-500/60'
+                        : 'border-[var(--border-color)] hover:border-neon/40'
+                    }`}
                   >
                     <div className="space-y-2.5">
                       {/* Top Header del Canal */}
@@ -943,13 +1151,13 @@ export const PerformanceDashboard = () => {
 
                         {/* Status API Badge Robusto */}
                         {status === 'connected' ? (
-                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-mono font-semibold shrink-0 whitespace-nowrap">
+                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-mono font-semibold shrink-0 whitespace-nowrap">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                             <span>{ch.tenantConfig?.latencyMs ? `${ch.tenantConfig.latencyMs}ms` : 'En línea'}</span>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-mono shrink-0 whitespace-nowrap">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
+                          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 text-[10px] font-mono shrink-0 whitespace-nowrap">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
                             <span>{ch.tenantConfig?.lastSync?.includes('Perfil') ? 'Perfil Vinculado' : 'Configurado'}</span>
                           </div>
                         )}
@@ -967,49 +1175,59 @@ export const PerformanceDashboard = () => {
                         <div className="p-1.5 rounded-lg bg-[var(--bg-panel)]">
                           <span className="text-[9px] text-[var(--text-muted)] block">Interacciones</span>
                           <span className="text-xs font-bold text-[var(--text-main)]">
-                            {formatNumber(chInteractions)}
+                            {chInteractions > 0 ? formatNumber(chInteractions) : '—'}
                           </span>
                         </div>
                         <div className="p-1.5 rounded-lg bg-[var(--bg-panel)]">
                           <span className="text-[9px] text-[var(--text-muted)] block">CPC</span>
-                          <span className={`text-xs font-bold ${chInteractions > 0 ? 'text-emerald-500' : 'text-[var(--text-muted)]'}`}>
+                          <span className={`text-xs font-bold ${chInteractions > 0 && chCpc !== '—' ? 'text-emerald-600 dark:text-emerald-400' : 'text-[var(--text-muted)]'}`}>
                             {chCpc}
                           </span>
                         </div>
                         <div className="p-1.5 rounded-lg bg-[var(--bg-panel)]">
                           <span className="text-[9px] text-[var(--text-muted)] block">Fuga/Rebote</span>
-                          <span className="text-xs font-bold text-emerald-400">
+                          <span className={`text-xs font-bold ${chBounce !== '—' ? 'text-emerald-600 dark:text-emerald-400' : 'text-[var(--text-muted)]'}`}>
                             {chBounce}
                           </span>
                         </div>
                       </div>
 
-                      {/* Detector de Desgaste y Fatiga Publicitaria */}
+                      {/* Detector de Desgaste y Fatiga Publicitaria (ADR-012 §2.3) */}
                       <div className="space-y-1.5 font-sans text-xs">
                         <div className="flex items-center justify-between text-[11px]">
                           <span className="text-[var(--text-muted)] flex items-center gap-1 font-mono text-[10px]">
-                            <Flame className="w-3 h-3 text-neon" />
+                            <Flame className={`w-3 h-3 ${isFreqCritical ? 'text-rose-500' : isFreqWarning ? 'text-amber-500' : 'text-neon'}`} />
                             Frecuencia de Anuncio:
                           </span>
-                          <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded border bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
-                            {ch.tenantConfig?.adFrequency
-                              ? `${ch.tenantConfig.adFrequency}x`
-                              : isMeta && channelHealth?.meta?.frequency
-                              ? `${Number(channelHealth.meta.frequency).toFixed(1)}x`
-                              : 'Sin medición'}
+                          <span
+                            className={`font-mono text-[10px] font-bold px-1.5 py-0.5 rounded border ${
+                              isFreqCritical
+                                ? 'bg-rose-500/15 text-rose-700 dark:text-rose-400 border-rose-500/35'
+                                : isFreqWarning
+                                ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/35'
+                                : hasFreq
+                                ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30'
+                                : 'bg-[var(--bg-panel)] text-[var(--text-muted)] border-[var(--border-color)]'
+                            }`}
+                          >
+                            {hasFreq ? `${rawFreq.toFixed(1)}x${isFreqCritical ? ' · Fatiga' : ''}` : 'Sin medición'}
                           </span>
                         </div>
 
                         <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)] font-mono">
                           <span>Retención de Audiencia:</span>
-                          <span className={`font-bold ${chInteractions > 0 ? 'text-neon' : 'text-[var(--text-muted)]'}`}>
-                            {ch.tenantConfig?.retentionRate
-                              ? `${ch.tenantConfig.retentionRate}`
-                              : data?.summary?.avgHookRate > 0
-                              ? `${data.summary.avgHookRate}%`
-                              : chInteractions > 0 && chBounce !== '0.0%' && !isNaN(parseFloat(chBounce))
-                              ? `${Math.max(0, 100 - parseFloat(chBounce)).toFixed(1)}%`
-                              : 'Sin medición'}
+                          <span
+                            className={`font-bold ${
+                              isRetentionCritical
+                                ? 'text-rose-700 dark:text-rose-400'
+                                : isRetentionWarning
+                                ? 'text-amber-700 dark:text-amber-400'
+                                : hasRetention
+                                ? 'text-emerald-700 dark:text-emerald-400'
+                                : 'text-[var(--text-muted)]'
+                            }`}
+                          >
+                            {hasRetention ? `${rawRetention.toFixed(1)}%${isRetentionCritical ? ' · Baja (<15%)' : ''}` : 'Sin medición'}
                           </span>
                         </div>
                       </div>
@@ -1020,7 +1238,7 @@ export const PerformanceDashboard = () => {
                       <div className="flex items-center gap-2">
                         <span className="text-[var(--text-main)] font-semibold">{ch.tenantConfig?.lastSync || 'En tiempo real'}</span>
                         {status === 'configured' && (
-                          <Link href="/config?tab=channels" className="text-neon hover:underline font-bold flex items-center gap-0.5 text-[9px]">
+                          <Link href="/connections?tab=channels" className="text-lime-700 dark:text-neon hover:underline font-bold flex items-center gap-0.5 text-[9px]">
                             <span>Conectar Webhook</span>
                             <ExternalLink className="w-2.5 h-2.5" />
                           </Link>
@@ -1038,7 +1256,7 @@ export const PerformanceDashboard = () => {
           {activeTenant?.hasWebsite && (
             <div className="p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs font-mono animate-fade-in shadow-sm">
               <div className="flex items-center gap-2.5 text-[var(--text-main)]">
-                <Globe className="w-4 h-4 text-blue-400 shrink-0" />
+                <Globe className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
                 <span>
                   <strong>Fuente de Telemetría:</strong> Métricas registradas en tu <strong>Sitio Web Oficial ({activeTenant.websiteUrl})</strong> vía Google Analytics 4.
                 </span>
@@ -1046,10 +1264,10 @@ export const PerformanceDashboard = () => {
               <button
                 type="button"
                 onClick={() => setActiveTab('microlanding')}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[var(--bg-panel)] hover:bg-[var(--bg-card)] text-neon font-bold border border-neon/30 text-[11px] transition-all shrink-0 hover:scale-[1.02]"
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[var(--bg-panel)] hover:bg-[var(--bg-card)] text-lime-700 dark:text-neon font-bold border border-neon/30 text-[11px] transition-all shrink-0 hover:scale-[1.02]"
               >
                 <Smartphone className="w-3.5 h-3.5" />
-                <span>Ver Telemetría Exclusiva de tu Micro-Landing ({mlMetrics.conversionRate} Conv.) →</span>
+                <span>Ver Telemetría Exclusiva de tu Micro-Landing ({Number(mlMetrics.visits) > 0 ? `${mlMetrics.conversionRate} Conv.` : 'N/D'}) →</span>
               </button>
             </div>
           )}
@@ -1057,13 +1275,25 @@ export const PerformanceDashboard = () => {
           {/* KPI Cards adaptadas según sitio web o flujo directo */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
-              title={activeTenant?.hasWebsite ? 'Sesiones Web Totales' : 'Clics / Tráfico de Entrada'}
+              title={
+                <span className="inline-flex items-center gap-1.5">
+                  <span>{activeTenant?.hasWebsite ? 'Sesiones Web Totales' : 'Clics / Tráfico de Entrada'}</span>
+                  <button
+                    type="button"
+                    onClick={() => setGuideMetricId('alcance')}
+                    className="p-0.5 rounded text-[var(--text-faint)] hover:text-lime-700 dark:hover:text-neon transition-colors"
+                    title="Ver definición metodológica"
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                  </button>
+                </span>
+              }
               value={
                 !activeTenant
-                  ? '0'
+                  ? '—'
                   : activeTenant?.hasWebsite
-                  ? (webMetrics.sessions ? formatNumber(webMetrics.sessions) : '0')
-                  : formatNumber(funnelData.step1.count)
+                  ? (Number(webMetrics.sessions) > 0 ? formatNumber(webMetrics.sessions) : '—')
+                  : (funnelData.step1.count > 0 ? formatNumber(funnelData.step1.count) : '—')
               }
               subvalue={
                 !activeTenant
@@ -1072,8 +1302,6 @@ export const PerformanceDashboard = () => {
                   ? 'Esperando primeros prospectos vía webhook'
                   : (activeTenant?.hasWebsite ? 'Tráfico web verificado' : 'Interacciones iniciales captadas')
               }
-              change="0%"
-              isPositive={null}
               icon={Users}
               badgeText={
                 !activeTenant
@@ -1086,13 +1314,25 @@ export const PerformanceDashboard = () => {
             />
 
             <StatCard
-              title={activeTenant?.hasWebsite ? 'Costo por Clic (CPC Web)' : 'Costo por Conversación'}
+              title={
+                <span className="inline-flex items-center gap-1.5">
+                  <span>{activeTenant?.hasWebsite ? 'Costo por Clic (CPC Web)' : 'Costo por Conversación'}</span>
+                  <button
+                    type="button"
+                    onClick={() => setGuideMetricId('intencion_contacto')}
+                    className="p-0.5 rounded text-[var(--text-faint)] hover:text-lime-700 dark:hover:text-neon transition-colors"
+                    title="Ver definición metodológica"
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                  </button>
+                </span>
+              }
               value={
                 !activeTenant
-                  ? '—'
+                  ? 'N/D'
                   : campaignMetrics.totalSpend > 0 && funnelData.step2.count > 0
                   ? `$${(campaignMetrics.totalSpend / funnelData.step2.count).toFixed(2)} MXN`
-                  : (webMetrics.cpc && webMetrics.cpc !== '$0.00 MXN' ? webMetrics.cpc : '—')
+                  : (webMetrics.cpc && webMetrics.cpc !== '$0.00 MXN' ? webMetrics.cpc : 'N/D')
               }
               subvalue={
                 !activeTenant
@@ -1101,8 +1341,6 @@ export const PerformanceDashboard = () => {
                   ? 'Sin pauta activa devengada'
                   : 'Costo unitario por prospecto'
               }
-              change="0%"
-              isPositive={null}
               icon={DollarSign}
               badgeText={
                 !activeTenant
@@ -1115,8 +1353,20 @@ export const PerformanceDashboard = () => {
             />
 
             <StatCard
-              title="Conversión a Cita / Venta"
-              value={!activeTenant ? '0.0%' : funnelData.hasData ? `${funnelData.step5.pct.toFixed(1)}%` : '—'}
+              title={
+                <span className="inline-flex items-center gap-1.5">
+                  <span>Conversión a Cita / Venta</span>
+                  <button
+                    type="button"
+                    onClick={() => setGuideMetricId('contactabilidad_ratio')}
+                    className="p-0.5 rounded text-[var(--text-faint)] hover:text-lime-700 dark:hover:text-neon transition-colors"
+                    title="Ver definición metodológica"
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                  </button>
+                </span>
+              }
+              value={!activeTenant || !funnelData.hasData ? 'N/D' : `${funnelData.step5.pct.toFixed(1)}%`}
               subvalue={
                 !activeTenant
                   ? 'Sin negocio seleccionado'
@@ -1128,8 +1378,6 @@ export const PerformanceDashboard = () => {
                   ? 'Saludable (> 3.0%)'
                   : `${funnelData.step5.count} conversiones logradas`
               }
-              change="0%"
-              isPositive={null}
               icon={MousePointerClick}
               badgeText={
                 !activeTenant
@@ -1146,14 +1394,26 @@ export const PerformanceDashboard = () => {
             />
 
             <StatCard
-              title="Tasa de Fuga / Rebote"
+              title={
+                <span className="inline-flex items-center gap-1.5">
+                  <span>Tasa de Fuga / Rebote</span>
+                  <button
+                    type="button"
+                    onClick={() => setGuideMetricId('friccion_web')}
+                    className="p-0.5 rounded text-[var(--text-faint)] hover:text-lime-700 dark:hover:text-neon transition-colors"
+                    title="Ver definición metodológica"
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                  </button>
+                </span>
+              }
               value={
                 !activeTenant
-                  ? '0.0%'
+                  ? 'N/D'
                   : activeTenant?.hasWebsite
-                  ? (webMetrics.bounceRate || '0%')
+                  ? (Number(webMetrics.sessions) > 0 && webMetrics.bounceRate ? webMetrics.bounceRate : 'N/D')
                   : funnelData.step1.count === 0
-                  ? '0.0%'
+                  ? 'N/D'
                   : `${Math.max(0, (100 - funnelData.step2.pct)).toFixed(1)}%`
               }
               subvalue={
@@ -1163,8 +1423,6 @@ export const PerformanceDashboard = () => {
                   ? 'Directo a chat (Cero fugas)'
                   : (activeTenant?.hasWebsite ? 'Salidas en primer fold' : 'Retención de canal activo')
               }
-              change="0%"
-              isPositive={null}
               icon={TrendingUp}
               badgeText={
                 !activeTenant
@@ -1276,7 +1534,7 @@ export const PerformanceDashboard = () => {
               )}
 
               {auditError && (
-                <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 flex items-start gap-2.5 text-xs font-mono text-red-400">
+                <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 flex items-start gap-2.5 text-xs font-mono text-red-700 dark:text-red-400">
                   <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                   <div>
                     <p className="font-bold">Error en Auditoría IA:</p>
@@ -1467,7 +1725,7 @@ export const PerformanceDashboard = () => {
 
             {!activeTenant ? (
               <div className="p-8 text-center text-xs font-mono text-[var(--text-muted)] space-y-2">
-                <Activity className="w-8 h-8 opacity-30 mx-auto text-lime-400" />
+                <Activity className="w-8 h-8 opacity-30 mx-auto text-lime-700 dark:text-neon" />
                 <p className="text-[var(--text-main)] font-bold">Sin Negocio Seleccionado</p>
                 <p>Selecciona un negocio en el selector superior para monitorear su embudo de conversión y puntos de fuga en tiempo real.</p>
               </div>
@@ -1481,10 +1739,10 @@ export const PerformanceDashboard = () => {
                   </p>
                 </div>
                 <div className="flex items-center justify-center gap-2 pt-2 text-[10px]">
-                  <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">
+                  <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 font-bold">
                     Cero Datos en Buffer
                   </span>
-                  <span className="px-2.5 py-1 rounded-full bg-neon/10 text-neon border border-neon/20 font-bold">
+                  <span className="px-2.5 py-1 rounded-full bg-neon/10 text-lime-700 dark:text-neon border border-neon/20 font-bold">
                     Lectura en Vivo
                   </span>
                 </div>
@@ -1626,7 +1884,7 @@ export const PerformanceDashboard = () => {
                 </div>
                 <div className="flex justify-between items-center p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
                   <span className="text-[var(--text-main)]">Google Búsqueda Orgánica</span>
-                  <span className="text-blue-400 font-bold">
+                  <span className="text-blue-700 dark:text-blue-400 font-bold">
                     {!activeTenant || Number(webMetrics.sessions) === 0
                       ? 'Sin datos (0 visitas)'
                       : `${data?.dualTelemetry?.webTrafficMetrics?.organicShare ? `${data.dualTelemetry.webTrafficMetrics.organicShare} · ` : ''}${formatNumber(webMetrics.sessions ?? 0)} visitas`}
@@ -1634,7 +1892,7 @@ export const PerformanceDashboard = () => {
                 </div>
                 <div className="flex justify-between items-center p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
                   <span className="text-[var(--text-main)]">Tráfico Directo / WhatsApp</span>
-                  <span className="text-emerald-500 font-bold">
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">
                     {!activeTenant || (funnelData.step2.count === 0 && Number(mlMetrics.ctaClicks) === 0)
                       ? 'Sin datos (0 contactos)'
                       : `${data?.dualTelemetry?.microLandingMetrics?.sources?.bioLink ? `${data.dualTelemetry.microLandingMetrics.sources.bioLink} · ` : ''}${formatNumber(funnelData.step2.count || mlMetrics.ctaClicks || 0)} conversaciones`}
@@ -1653,7 +1911,7 @@ export const PerformanceDashboard = () => {
                     <Smartphone className="w-3.5 h-3.5 text-neon" />
                     <span>Dispositivos Móviles (Smartphones)</span>
                   </span>
-                  <span className="text-emerald-500 font-bold">
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">
                     {data?.dualTelemetry?.deviceBreakdown?.mobile || webMetrics.mobileShare || 'Sin medición'}
                   </span>
                 </div>
@@ -1675,12 +1933,12 @@ export const PerformanceDashboard = () => {
       {/* ========================================================================= */}
       {/* PESTAÑA 2: ATRIBUCIÓN BACKEND & META CAPI                                  */}
       {/* ========================================================================= */}
-      {activeTab === 'capi' && (
+      {!loading && activeTab === 'capi' && (
         <div className="space-y-6 animate-fadeIn">
           {/* Tarjeta de Conectividad CAPI & Redes Publicitarias */}
           <div className="p-4 sm:p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex flex-col md:flex-row md:items-center justify-between gap-4 font-mono text-xs shadow-sm">
             <div className="flex items-center gap-3">
-              <span className="p-2.5 rounded-xl bg-pink-500/10 text-pink-400 border border-pink-500/20">
+              <span className="p-2.5 rounded-xl bg-pink-500/10 text-pink-700 dark:text-pink-400 border border-pink-500/20">
                 <ShieldCheck className="w-5 h-5 text-neon" />
               </span>
               <div>
@@ -1689,17 +1947,19 @@ export const PerformanceDashboard = () => {
                     Meta Conversions API (CAPI) & Atribución Server-to-Server
                   </span>
                   {activeTenant?.metaPixelId ? (
-                    <span className="text-[10px] px-2 py-0.5 rounded font-bold border bg-emerald-500/15 text-emerald-400 border-emerald-500/30">
-                      Handshake Activo (Graph API v21.0)
+                    <span className="text-[10px] px-2 py-0.5 rounded font-bold border bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30">
+                      {channelHealth?.meta?.status === 'CONNECTED' || activeTenant?.connectedChannels?.meta?.status === 'connected'
+                        ? 'Handshake Activo (Graph API v21.0)'
+                        : 'Pixel Configurado (Sin handshake)'}
                     </span>
                   ) : (
-                    <span className="text-[10px] px-2 py-0.5 rounded font-bold border bg-zinc-500/15 text-zinc-400 border-zinc-500/30">
+                    <span className="text-[10px] px-2 py-0.5 rounded font-bold border bg-zinc-500/15 text-[var(--text-muted)] border-[var(--border-color)]">
                       Sin Pixel Configurado
                     </span>
                   )}
                 </div>
                 <p className="text-[var(--text-muted)] text-xs mt-0.5 font-sans">
-                  Dataset / Pixel ID: <code className="text-neon bg-[var(--bg-card)] px-1.5 py-0.5 rounded border border-[var(--border-color)]">{activeTenant?.metaPixelId || 'No configurado'}</code>
+                  Dataset / Pixel ID: <code className="text-lime-700 dark:text-neon bg-[var(--bg-card)] px-1.5 py-0.5 rounded border border-[var(--border-color)]">{activeTenant?.metaPixelId || 'No configurado'}</code>
                   {' '}• Cuenta Publicitaria:{' '}
                   <code className="text-[var(--text-main)] bg-[var(--bg-card)] px-1.5 py-0.5 rounded border border-[var(--border-color)]">
                     {activeTenant?.connectedChannels?.meta?.adAccountId || 'No configurada'}
@@ -1710,7 +1970,7 @@ export const PerformanceDashboard = () => {
 
             {activeTenant?.metaPixelId && (
               <div className="flex flex-wrap items-center gap-2 shrink-0">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono text-xs">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-mono text-xs">
                   <ShieldCheck className="w-3.5 h-3.5" />
                   <span>Atribución Server-to-Server Activa</span>
                 </span>
@@ -1721,44 +1981,84 @@ export const PerformanceDashboard = () => {
           {/* KPI Stat Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
-              title="ROAS Real Atribuido"
-              value={summary.realRoas > 0 ? `${summary.realRoas}x` : '—'}
+              title={
+                <span className="inline-flex items-center gap-1.5">
+                  <span>ROAS Real Atribuido</span>
+                  <button
+                    type="button"
+                    onClick={() => setGuideMetricId('roas_real')}
+                    className="p-0.5 rounded text-[var(--text-faint)] hover:text-lime-700 dark:hover:text-neon transition-colors"
+                    title="Ver definición metodológica"
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                  </button>
+                </span>
+              }
+              value={summary.realRoas > 0 ? `${summary.realRoas}x` : 'N/D'}
               subvalue={summary.realRoas > 0 ? `(Meta: ${summary.metaReportedRoas ?? 0}x)` : 'Esperando conversiones'}
-              change="0%"
-              isPositive={null}
               icon={TrendingUp}
               badgeText={!activeTenant ? 'INACTIVO' : summary.realRoas > 0 ? 'BACKEND REAL' : 'SIN REGISTRO'}
               accentColor={summary.realRoas > 0 ? 'brand' : 'zinc'}
             />
 
             <StatCard
-              title="CAC Real (Cost per Acquisition)"
-              value={summary.realCac > 0 ? `$${formatNumber(summary.realCac)} MXN` : '—'}
-              subvalue={summary.realCac > 0 ? `(CPA: $${formatNumber(summary.blendedCpa ?? 0)} MXN)` : 'Sin ventas registradas'}
-              change="0%"
-              isPositive={null}
+              title={
+                <span className="inline-flex items-center gap-1.5">
+                  <span>CAC Real (Cost per Acquisition)</span>
+                  <button
+                    type="button"
+                    onClick={() => setGuideMetricId('cac_real')}
+                    className="p-0.5 rounded text-[var(--text-faint)] hover:text-lime-700 dark:hover:text-neon transition-colors"
+                    title="Ver definición metodológica"
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                  </button>
+                </span>
+              }
+              value={summary.realCac > 0 ? `$${formatNumber(summary.realCac)} MXN` : 'N/D'}
+              subvalue={summary.realCac > 0 ? `(CPL: $${formatNumber(summary.blendedCpa ?? 0)} MXN)` : 'Sin ventas registradas'}
               icon={DollarSign}
               badgeText={!activeTenant ? 'INACTIVO' : summary.realCac > 0 ? 'OPT. METRIC' : 'CALIBRANDO'}
               accentColor={summary.realCac > 0 ? 'emerald' : 'zinc'}
             />
 
             <StatCard
-              title="Ingresos Reales Atribuidos"
-              value={summary.backendAttributedRevenue > 0 ? `$${formatNumber(summary.backendAttributedRevenue)} MXN` : '—'}
+              title={
+                <span className="inline-flex items-center gap-1.5">
+                  <span>Ingresos Reales Atribuidos</span>
+                  <button
+                    type="button"
+                    onClick={() => setGuideMetricId('venta_ganada')}
+                    className="p-0.5 rounded text-[var(--text-faint)] hover:text-lime-700 dark:hover:text-neon transition-colors"
+                    title="Ver definición metodológica"
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                  </button>
+                </span>
+              }
+              value={summary.backendAttributedRevenue > 0 ? `$${formatNumber(summary.backendAttributedRevenue)} MXN` : 'N/D'}
               subvalue={summary.totalSpend > 0 ? `Gasto: $${formatNumber(summary.totalSpend)} MXN` : 'Sin gasto devengado'}
-              change="0%"
-              isPositive={null}
               icon={Activity}
               badgeText={!activeTenant ? 'INACTIVO' : summary.backendAttributedRevenue > 0 ? 'VERIFICADO' : 'EN ESPERA'}
               accentColor={summary.backendAttributedRevenue > 0 ? 'blue' : 'zinc'}
             />
 
             <StatCard
-              title="Sincronización con Meta Ads"
-              value={summary.capiSyncRate > 0 ? `${summary.capiSyncRate}%` : '—'}
+              title={
+                <span className="inline-flex items-center gap-1.5">
+                  <span>Sincronización con Meta Ads</span>
+                  <button
+                    type="button"
+                    onClick={() => setGuideMetricId('inversion_publicitaria')}
+                    className="p-0.5 rounded text-[var(--text-faint)] hover:text-lime-700 dark:hover:text-neon transition-colors"
+                    title="Ver definición metodológica"
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                  </button>
+                </span>
+              }
+              value={summary.capiSyncRate > 0 ? `${summary.capiSyncRate}%` : 'N/D'}
               subvalue={!activeTenant || summary.capiSyncRate === 0 ? 'Sin eventos registrados' : 'Conexión verificada en tiempo real'}
-              change="0%"
-              isPositive={null}
               icon={ShieldCheck}
               badgeText={!activeTenant ? 'INACTIVO' : summary.capiSyncRate > 0 ? 'EN TIEMPO REAL' : 'SIN EVENTOS'}
               accentColor={summary.capiSyncRate > 0 ? 'amber' : 'zinc'}
@@ -1777,7 +2077,7 @@ export const PerformanceDashboard = () => {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant="neon" size="sm">ROAS Promedio: {summary.realRoas}x</Badge>
+                <Badge variant="neon" size="sm">ROAS Promedio: {summary.realRoas > 0 ? `${summary.realRoas}x` : 'N/D'}</Badge>
                 {summary.avgHookRate > 0 && <Badge variant="warning" size="sm">Hook Rate: {summary.avgHookRate}%</Badge>}
               </div>
             </div>
@@ -1787,8 +2087,8 @@ export const PerformanceDashboard = () => {
                 <AreaChart data={series} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#C3F400" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="#C3F400" stopOpacity={0} />
+                      <stop offset="5%" stopColor={revenueChartColor} stopOpacity={0.4} />
+                      <stop offset="95%" stopColor={revenueChartColor} stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="colorSpend" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
@@ -1813,7 +2113,7 @@ export const PerformanceDashboard = () => {
                     type="monotone"
                     dataKey="revenue"
                     name="Ingreso Atribuido ($ MXN)"
-                    stroke="#C3F400"
+                    stroke={revenueChartColor}
                     strokeWidth={2.5}
                     fillOpacity={1}
                     fill="url(#colorRevenue)"
@@ -1834,7 +2134,7 @@ export const PerformanceDashboard = () => {
             {/* Aviso de Telemetría Dinámica */}
             {(!summary.totalSpend && !summary.backendAttributedRevenue) && (
               <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-center text-xs font-mono text-[var(--text-muted)]">
-                Línea base activa: $0.00 MXN • La curva diaria se actualizará automáticamente conforme se registre gasto de pauta en Meta Ads y conversiones en la agenda.
+                Sin pauta ni conversiones registradas en este periodo • La curva diaria se actualizará automáticamente conforme se registre gasto en Meta Ads y conversiones en la agenda.
               </div>
             )}
           </div>
@@ -1843,7 +2143,7 @@ export const PerformanceDashboard = () => {
           <div className="p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-4 shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--border-color)]">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                 <h3 className="text-sm font-bold text-[var(--text-main)] uppercase font-mono tracking-wider">
                   Registro de Conversiones en Tiempo Real
                 </h3>
@@ -1853,7 +2153,7 @@ export const PerformanceDashboard = () => {
                   Conexión en Vivo con Meta Ads ({activeTenant?.shortName || activeTenant?.name})
                 </span>
                 {activeTenant?.metaPixelId && (
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-mono font-bold flex items-center gap-1">
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-mono font-bold flex items-center gap-1">
                     <ShieldCheck className="w-3 h-3" />
                     Meta CAPI v21.0
                   </span>
@@ -1876,7 +2176,7 @@ export const PerformanceDashboard = () => {
                   {capiLogs.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="py-8 text-center text-xs font-mono text-[var(--text-muted)]">
-                        <CheckCircle2 className="w-6 h-6 opacity-30 mx-auto text-emerald-400 mb-2" />
+                        <CheckCircle2 className="w-6 h-6 opacity-30 mx-auto text-emerald-600 dark:text-emerald-400 mb-2" />
                         <p className="text-[var(--text-main)] font-bold font-sans">En Espera de Conversiones Comerciales</p>
                         <p className="max-w-md mx-auto text-[11px] mt-1 font-sans">
                           No se han registrado conversiones todavía para <strong>{activeTenant?.name}</strong>. Conforme se agenden citas en Google Calendar o los prospectos califiquen en el CRM (4-Guard), los eventos se registrarán aquí automáticamente vía Meta Conversions API.
@@ -1887,13 +2187,13 @@ export const PerformanceDashboard = () => {
                     capiLogs.map((log) => (
                       <tr key={log.id} className="hover:bg-[var(--bg-card)] transition-colors">
                         <td className="py-3 px-3 font-semibold text-[var(--text-main)] flex items-center gap-2">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                           {cleanConcept(log.event)}
                         </td>
                         <td className="py-3 px-3 text-[var(--text-muted)]">{log.timestamp}</td>
-                        <td className="py-3 px-3 font-bold text-neon">{log.value}</td>
+                        <td className="py-3 px-3 font-bold text-lime-700 dark:text-neon">{log.value}</td>
                         <td className="py-3 px-3">
-                          <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-bold">
+                          <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-bold">
                             {cleanConcept(log.status)}
                           </span>
                         </td>
@@ -1911,7 +2211,7 @@ export const PerformanceDashboard = () => {
       {/* ========================================================================= */}
       {/* PESTAÑA 3: MICRO-LANDING & ENLACE EN BIO                                   */}
       {/* ========================================================================= */}
-      {activeTab === 'microlanding' && (
+      {!loading && activeTab === 'microlanding' && (
         <div className="space-y-6 animate-fade-in">
           {/* Header de Identidad de Micro-Landing */}
           <div className="p-6 rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
@@ -1931,8 +2231,8 @@ export const PerformanceDashboard = () => {
                   </h3>
                   <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold border ${
                     activeTenant
-                      ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                      : 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'
+                      ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-500/30'
+                      : 'bg-zinc-500/20 text-[var(--text-muted)] border-[var(--border-color)]'
                   }`}>
                     {activeTenant ? 'ACTIVA' : 'INACTIVO'}
                   </span>
@@ -1940,8 +2240,8 @@ export const PerformanceDashboard = () => {
                 <p className="text-xs text-[var(--text-muted)] font-mono mt-0.5">
                   Embudo ultraligero de alta conversión alojado en:{' '}
                   {activeTenant ? (
-                    <code className="text-neon underline">
-                      app.vectorinside.com/m/{activeTenant.microLandingSlug || activeTenant.id}
+                    <code className="text-lime-700 dark:text-neon underline">
+                      {publicOrigin ? `${publicOrigin}/m/` : '/m/'}{activeTenant.microLandingSlug || activeTenant.id}
                     </code>
                   ) : (
                     <span className="italic text-[var(--text-muted)]">
@@ -1959,8 +2259,8 @@ export const PerformanceDashboard = () => {
                 onClick={handleCopyPublicLink}
                 className="px-4 py-2 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] disabled:opacity-50 disabled:cursor-not-allowed text-[var(--text-main)] text-xs font-mono font-bold border border-[var(--border-color)] flex items-center gap-1.5 transition-all shadow-sm"
               >
-                {copiedLink ? <Check className="w-4 h-4 text-neon" /> : <Copy className="w-4 h-4" />}
-                <span>{copiedLink ? '¡Copiado!' : 'Copiar URL Pública'}</span>
+                {copiedLink ? <Check className="w-4 h-4 text-emerald-600 dark:text-neon" /> : <Copy className="w-4 h-4" />}
+                <span>{copiedLink ? '¡Enlace Copiado!' : 'Copiar URL Pública'}</span>
               </button>
               <button
                 type="button"
@@ -1979,8 +2279,20 @@ export const PerformanceDashboard = () => {
           {/* =================================================================== */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
-              title="Visitas a Micro-Landing"
-              value={formatNumber(!activeTenant ? 0 : (mlMetrics.visits ?? 0))}
+              title={
+                <span className="inline-flex items-center gap-1.5">
+                  <span>Visitas a Micro-Landing</span>
+                  <button
+                    type="button"
+                    onClick={() => setGuideMetricId('alcance')}
+                    className="p-0.5 rounded text-[var(--text-faint)] hover:text-lime-700 dark:hover:text-neon transition-colors"
+                    title="Ver definición metodológica"
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                  </button>
+                </span>
+              }
+              value={!activeTenant || Number(mlMetrics.visits) === 0 ? '—' : formatNumber(mlMetrics.visits)}
               subvalue={!activeTenant ? 'Sin negocio seleccionado' : Number(mlMetrics.visits) > 0 ? 'Tráfico de alta intención' : 'Sin visitas registradas aún'}
               icon={Users}
               badgeText={!activeTenant ? 'INACTIVO' : Number(mlMetrics.visits) > 0 ? 'EMBUDO VECTOR' : 'EN ESPERA'}
@@ -1988,8 +2300,24 @@ export const PerformanceDashboard = () => {
             />
 
             <StatCard
-              title="Conversión a WhatsApp (Chat)"
-              value={!activeTenant ? '0.0%' : (mlMetrics.conversionRate || '0.0%')}
+              title={
+                <span className="inline-flex items-center gap-1.5">
+                  <span>Conversión a WhatsApp (Chat)</span>
+                  <button
+                    type="button"
+                    onClick={() => setGuideMetricId('contactabilidad_ratio')}
+                    className="p-0.5 rounded text-[var(--text-faint)] hover:text-lime-700 dark:hover:text-neon transition-colors"
+                    title="Ver definición metodológica"
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                  </button>
+                </span>
+              }
+              value={
+                !activeTenant || Number(mlMetrics.visits) === 0 || !mlMetrics.conversionRate || mlMetrics.conversionRate === '0.0%'
+                  ? 'N/D'
+                  : mlMetrics.conversionRate
+              }
               subvalue={Number(mlMetrics.leadsGenerated) > 0 ? `${mlMetrics.leadsGenerated} chats iniciados` : 'Esperando prospectos'}
               icon={MousePointerClick}
               badgeText={!activeTenant ? 'INACTIVO' : Number(mlMetrics.leadsGenerated) > 0 ? 'ALTA CONVERSIÓN' : 'EN ESPERA'}
@@ -1997,8 +2325,24 @@ export const PerformanceDashboard = () => {
             />
 
             <StatCard
-              title="Costo por Lead (Micro-Landing)"
-              value={!activeTenant ? '$0.00 MXN' : (mlMetrics.costPerLead || '$0.00 MXN')}
+              title={
+                <span className="inline-flex items-center gap-1.5">
+                  <span>Costo por Lead (Micro-Landing)</span>
+                  <button
+                    type="button"
+                    onClick={() => setGuideMetricId('cac_real')}
+                    className="p-0.5 rounded text-[var(--text-faint)] hover:text-lime-700 dark:hover:text-neon transition-colors"
+                    title="Ver definición metodológica"
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                  </button>
+                </span>
+              }
+              value={
+                !activeTenant || !mlMetrics.costPerLead || mlMetrics.costPerLead === '$0.00 MXN'
+                  ? 'N/D'
+                  : mlMetrics.costPerLead
+              }
               subvalue={!activeTenant ? 'Sin negocio seleccionado' : Number(mlMetrics.visits) > 0 ? 'Costo unitario por conversación' : 'Sin pauta activa devengada'}
               icon={DollarSign}
               badgeText={!activeTenant ? 'INACTIVO' : Number(mlMetrics.visits) > 0 ? 'ÓPTIMO' : 'CALIBRANDO'}
@@ -2006,9 +2350,25 @@ export const PerformanceDashboard = () => {
             />
 
             <StatCard
-              title="Velocidad Móvil & Retención"
-              value={!activeTenant || Number(mlMetrics.visits) === 0 ? '0.00s' : (mlMetrics.avgLoadTime || '0.00s')}
-              subvalue={!activeTenant || Number(mlMetrics.visits) === 0 ? 'Sin tráfico de carga medido aún' : (Number(mlMetrics.visits) > 0 ? `Rebote de solo ${mlMetrics.bounceRate || '0.0%'}` : 'Embudo ultraligero sin rebote')}
+              title={
+                <span className="inline-flex items-center gap-1.5">
+                  <span>Velocidad Móvil & Retención</span>
+                  <button
+                    type="button"
+                    onClick={() => setGuideMetricId('friccion_web')}
+                    className="p-0.5 rounded text-[var(--text-faint)] hover:text-lime-700 dark:hover:text-neon transition-colors"
+                    title="Ver definición metodológica"
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                  </button>
+                </span>
+              }
+              value={
+                !activeTenant || Number(mlMetrics.visits) === 0 || !mlMetrics.avgLoadTime || mlMetrics.avgLoadTime === '0.00s'
+                  ? 'N/D'
+                  : mlMetrics.avgLoadTime
+              }
+              subvalue={!activeTenant || Number(mlMetrics.visits) === 0 ? 'Sin tráfico de carga medido aún' : (Number(mlMetrics.visits) > 0 ? `Rebote de solo ${mlMetrics.bounceRate || '—'}` : 'Embudo ultraligero sin rebote')}
               icon={TrendingUp}
               badgeText={!activeTenant ? 'INACTIVO' : Number(mlMetrics.visits) > 0 ? '0% FRICCIÓN' : 'OPTIMIZADO'}
               accentColor={Number(mlMetrics.visits) > 0 ? 'blue' : 'zinc'}
@@ -2034,7 +2394,7 @@ export const PerformanceDashboard = () => {
                 </p>
               </div>
 
-              <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 font-bold shrink-0 self-start sm:self-auto">
+              <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-cyan-500/15 text-cyan-700 dark:text-cyan-400 border border-cyan-500/30 font-bold shrink-0 self-start sm:self-auto">
                 Segmentación de Tráfico Activa
               </span>
             </div>
@@ -2046,13 +2406,13 @@ export const PerformanceDashboard = () => {
                     <th className="py-2.5 px-3">Parámetro Evaluado</th>
                     <th className="py-2.5 px-3">
                       <span className="flex items-center gap-1.5">
-                        <Globe className="w-3.5 h-3.5 text-blue-400" />
+                        <Globe className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                         Sitio Web Tradicional (GA4)
                       </span>
                     </th>
                     <th className="py-2.5 px-3">
-                      <span className="flex items-center gap-1.5 text-neon font-bold">
-                        <Smartphone className="w-3.5 h-3.5 text-neon" />
+                      <span className="flex items-center gap-1.5 text-lime-700 dark:text-neon font-bold">
+                        <Smartphone className="w-3.5 h-3.5 text-lime-700 dark:text-neon" />
                         Micro-Landing Vector (/m/{activeTenant?.microLandingSlug || activeTenant?.id})
                       </span>
                     </th>
@@ -2063,12 +2423,14 @@ export const PerformanceDashboard = () => {
                   <tr className="hover:bg-[var(--bg-card)] transition-colors">
                     <td className="py-3 px-3 font-semibold font-sans">Velocidad de Carga Celular (LCP)</td>
                     <td className="py-3 px-3 text-[var(--text-muted)] font-bold">
-                      {!activeTenant || !activeTenant?.hasWebsite ? 'No configurado (100% Chat)' : (Number(webMetrics.sessions) === 0 ? '0.00s (Sin datos)' : (webMetrics.avgLoadTime || '—'))}
+                      {!activeTenant || !activeTenant?.hasWebsite ? 'No configurado (100% Chat)' : (Number(webMetrics.sessions) === 0 ? 'N/D (Sin datos)' : (webMetrics.avgLoadTime || 'N/D'))}
                     </td>
-                    <td className="py-3 px-3 text-neon font-bold">
-                      {!activeTenant || Number(mlMetrics.visits) === 0 ? '0.00s' : (mlMetrics.avgLoadTime || '0.00s')}
+                    <td className="py-3 px-3 text-lime-700 dark:text-neon font-bold">
+                      {!activeTenant || Number(mlMetrics.visits) === 0 || !mlMetrics.avgLoadTime || mlMetrics.avgLoadTime === '0.00s'
+                        ? 'N/D'
+                        : mlMetrics.avgLoadTime}
                     </td>
-                    <td className="py-3 px-3 text-right text-emerald-400 font-bold">
+                    <td className="py-3 px-3 text-right text-emerald-600 dark:text-emerald-400 font-bold">
                       Optimizado (&lt; 0.6s LCP)
                     </td>
                   </tr>
@@ -2076,12 +2438,18 @@ export const PerformanceDashboard = () => {
                   <tr className="hover:bg-[var(--bg-card)] transition-colors">
                     <td className="py-3 px-3 font-semibold font-sans">Tasa de Contacto a WhatsApp</td>
                     <td className="py-3 px-3 text-[var(--text-muted)] font-bold">
-                      {!activeTenant || !activeTenant?.hasWebsite ? 'No aplica' : (webMetrics.whatsappClickRate || '0.0%')}
+                      {!activeTenant || !activeTenant?.hasWebsite
+                        ? 'No aplica'
+                        : (Number(webMetrics.sessions) === 0 || !webMetrics.whatsappClickRate || webMetrics.whatsappClickRate === '0.0%'
+                          ? 'N/D'
+                          : webMetrics.whatsappClickRate)}
                     </td>
-                    <td className="py-3 px-3 text-emerald-400 font-bold">
-                      {!activeTenant ? '0.0%' : (mlMetrics.conversionRate || '0.0%')}
+                    <td className="py-3 px-3 text-emerald-600 dark:text-emerald-400 font-bold">
+                      {!activeTenant || Number(mlMetrics.visits) === 0 || !mlMetrics.conversionRate || mlMetrics.conversionRate === '0.0%'
+                        ? 'N/D'
+                        : mlMetrics.conversionRate}
                     </td>
-                    <td className="py-3 px-3 text-right text-emerald-400 font-bold">
+                    <td className="py-3 px-3 text-right text-emerald-600 dark:text-emerald-400 font-bold">
                       Directo a WhatsApp (Cero fuga)
                     </td>
                   </tr>
@@ -2089,12 +2457,16 @@ export const PerformanceDashboard = () => {
                   <tr className="hover:bg-[var(--bg-card)] transition-colors">
                     <td className="py-3 px-3 font-semibold font-sans">Costo Unitario de Adquisición</td>
                     <td className="py-3 px-3 text-[var(--text-muted)]">
-                      {!activeTenant || !activeTenant?.hasWebsite ? 'No aplica' : `${webMetrics.cpc || '$0.00 MXN'} CPC`}
+                      {!activeTenant || !activeTenant?.hasWebsite
+                        ? 'No aplica'
+                        : (!webMetrics.cpc || webMetrics.cpc === '$0.00 MXN' ? 'N/D' : `${webMetrics.cpc} CPC`)}
                     </td>
-                    <td className="py-3 px-3 text-neon font-bold">
-                      {!activeTenant ? '$0.00 MXN' : (mlMetrics.costPerLead || '$0.00 MXN')} por Lead
+                    <td className="py-3 px-3 text-lime-700 dark:text-neon font-bold">
+                      {!activeTenant || !mlMetrics.costPerLead || mlMetrics.costPerLead === '$0.00 MXN'
+                        ? 'N/D'
+                        : `${mlMetrics.costPerLead} por Lead`}
                     </td>
-                    <td className="py-3 px-3 text-right text-emerald-400 font-bold">
+                    <td className="py-3 px-3 text-right text-emerald-600 dark:text-emerald-400 font-bold">
                       Menor costo por prospecto
                     </td>
                   </tr>
@@ -2102,12 +2474,18 @@ export const PerformanceDashboard = () => {
                   <tr className="hover:bg-[var(--bg-card)] transition-colors">
                     <td className="py-3 px-3 font-semibold font-sans">Tasa de Rebote / Fuga de Visitas</td>
                     <td className="py-3 px-3 text-[var(--text-muted)] font-bold">
-                      {!activeTenant || !activeTenant?.hasWebsite ? 'No aplica' : `${webMetrics.bounceRate || '0%'} de abandono`}
+                      {!activeTenant || !activeTenant?.hasWebsite
+                        ? 'No aplica'
+                        : (Number(webMetrics.sessions) === 0 || !webMetrics.bounceRate || webMetrics.bounceRate === '0%'
+                          ? 'N/D'
+                          : `${webMetrics.bounceRate} de abandono`)}
                     </td>
-                    <td className="py-3 px-3 text-emerald-400 font-bold">
-                      {!activeTenant ? '0.0%' : (mlMetrics.bounceRate || '0.0%')} de rebote
+                    <td className="py-3 px-3 text-emerald-600 dark:text-emerald-400 font-bold">
+                      {!activeTenant || Number(mlMetrics.visits) === 0 || !mlMetrics.bounceRate || mlMetrics.bounceRate === '0.0%'
+                        ? 'N/D'
+                        : `${mlMetrics.bounceRate} de rebote`}
                     </td>
-                    <td className="py-3 px-3 text-right text-emerald-400 font-bold">
+                    <td className="py-3 px-3 text-right text-emerald-600 dark:text-emerald-400 font-bold">
                       0% fricción de carga
                     </td>
                   </tr>
@@ -2117,10 +2495,10 @@ export const PerformanceDashboard = () => {
                     <td className="py-3 px-3 text-[var(--text-muted)] text-[11px] font-sans">
                       {!activeTenant || !activeTenant?.hasWebsite ? 'Atención comercial directa por mensajería' : 'Catálogo institucional & Posicionamiento SEO de marca'}
                     </td>
-                    <td className="py-3 px-3 text-neon text-[11px] font-sans font-bold">
+                    <td className="py-3 px-3 text-lime-700 dark:text-neon text-[11px] font-sans font-bold">
                       Destino prioritario de Meta Ads, TikTok y Enlace en Bio
                     </td>
-                    <td className="py-3 px-3 text-right text-neon font-bold text-[11px] font-sans">
+                    <td className="py-3 px-3 text-right text-lime-700 dark:text-neon font-bold text-[11px] font-sans">
                       Máxima Rentabilidad
                     </td>
                   </tr>
@@ -2135,11 +2513,15 @@ export const PerformanceDashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
             <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2 shadow-sm">
               <div className="flex items-center justify-between">
-                <span className="text-neon font-bold text-xs flex items-center gap-1.5">
+                <span className="text-lime-700 dark:text-neon font-bold text-xs flex items-center gap-1.5">
                   <Smartphone className="w-4 h-4" />
                   Enlace en Bio (Redes)
                 </span>
-                <span className="text-neon font-bold">{!activeTenant ? '0.0%' : (mlMetrics.sources?.bioLink || '0.0%')}</span>
+                <span className="text-lime-700 dark:text-neon font-bold">
+                  {!activeTenant || Number(mlMetrics.visits) === 0 || !mlMetrics.sources?.bioLink || mlMetrics.sources.bioLink === '0.0%'
+                    ? 'N/D'
+                    : mlMetrics.sources.bioLink}
+                </span>
               </div>
               <p className="text-[var(--text-muted)] font-sans text-xs">
                 Tráfico orgánico proveniente de Instagram Bio, TikTok y perfiles sociales.
@@ -2148,11 +2530,15 @@ export const PerformanceDashboard = () => {
 
             <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2 shadow-sm">
               <div className="flex items-center justify-between">
-                <span className="text-emerald-500 font-bold text-xs flex items-center gap-1.5">
+                <span className="text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center gap-1.5">
                   <MousePointerClick className="w-4 h-4" />
                   Meta Ads Pauta Directa
                 </span>
-                <span className="text-emerald-500 font-bold">{!activeTenant ? '0.0%' : (mlMetrics.sources?.directAds || '0.0%')}</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                  {!activeTenant || Number(mlMetrics.visits) === 0 || !mlMetrics.sources?.directAds || mlMetrics.sources.directAds === '0.0%'
+                    ? 'N/D'
+                    : mlMetrics.sources.directAds}
+                </span>
               </div>
               <p className="text-[var(--text-muted)] font-sans text-xs">
                 Campañas de tráfico pagado en Meta con atribución CAPI server-to-server.
@@ -2161,11 +2547,15 @@ export const PerformanceDashboard = () => {
 
             <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2 shadow-sm">
               <div className="flex items-center justify-between">
-                <span className="text-blue-500 font-bold text-xs flex items-center gap-1.5">
+                <span className="text-blue-600 dark:text-blue-400 font-bold text-xs flex items-center gap-1.5">
                   <QrCode className="w-4 h-4" />
                   Código QR en Mostrador
                 </span>
-                <span className="text-blue-500 font-bold">{!activeTenant ? '0.0%' : (mlMetrics.sources?.qrPrint || '0.0%')}</span>
+                <span className="text-blue-600 dark:text-blue-400 font-bold">
+                  {!activeTenant || Number(mlMetrics.visits) === 0 || !mlMetrics.sources?.qrPrint || mlMetrics.sources.qrPrint === '0.0%'
+                    ? 'N/D'
+                    : mlMetrics.sources.qrPrint}
+                </span>
               </div>
               <p className="text-[var(--text-muted)] font-sans text-xs">
                 Clientes físicos que escanean el QR en recepción, mesas o material impreso.
@@ -2176,7 +2566,7 @@ export const PerformanceDashboard = () => {
           {/* Micro-Landing Key Benefits Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
             <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2 shadow-sm">
-              <span className="text-neon font-bold text-xs flex items-center gap-1.5">
+              <span className="text-lime-700 dark:text-neon font-bold text-xs flex items-center gap-1.5">
                 <Sparkles className="w-4 h-4" />
                 1. Cero Pérdida de Carga Web
               </span>
@@ -2196,7 +2586,7 @@ export const PerformanceDashboard = () => {
             </div>
 
             <div className="p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2 shadow-sm">
-              <span className="text-blue-500 font-bold text-xs flex items-center gap-1.5">
+              <span className="text-blue-600 dark:text-blue-400 font-bold text-xs flex items-center gap-1.5">
                 <QrCode className="w-4 h-4" />
                 3. QR para Mostrador Físico
               </span>
@@ -2213,12 +2603,12 @@ export const PerformanceDashboard = () => {
 
             <div className="flex flex-col sm:flex-row items-center justify-between w-full max-w-xl gap-3 z-10">
               <div className="flex items-center gap-2">
-                <span className={`w-2.5 h-2.5 rounded-full ${activeTenant ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-600'}`} />
+                <span className={`w-2.5 h-2.5 rounded-full ${activeTenant ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-400 dark:bg-zinc-600'}`} />
                 <span className="text-xs font-mono font-bold text-[var(--text-main)]">
                   Previsualización Móvil Oficial: {activeTenant ? activeTenant.name : 'Sin negocio seleccionado'}
                 </span>
                 {activeTenant && (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[var(--text-muted)] font-mono">
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] font-mono">
                     /m/{activeTenant.microLandingSlug || activeTenant.id}
                   </span>
                 )}
@@ -2264,36 +2654,11 @@ export const PerformanceDashboard = () => {
             {/* Quick Actions Footer */}
             {activeTenant && (
               <div className="flex flex-wrap items-center justify-center gap-3 z-10 pt-2">
-                <button
-                  onClick={() => {
-                    const slug = activeTenant.microLandingSlug || activeTenant.id;
-                    const url = typeof window !== 'undefined' 
-                      ? `${window.location.origin}/m/${slug}`
-                      : `https://vector.lat/m/${slug}`;
-                    navigator.clipboard.writeText(url);
-                    setCopiedLink(true);
-                    setTimeout(() => setCopiedLink(false), 2000);
-                  }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-[var(--text-main)] transition-colors"
-                >
-                  {copiedLink ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 text-emerald-400" />
-                      <span className="text-emerald-400">¡Enlace Copiado!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5 text-[var(--text-muted)]" />
-                      <span>Copiar Enlace Bio</span>
-                    </>
-                  )}
-                </button>
-
                 <a
                   href={`/m/${activeTenant.microLandingSlug || activeTenant.id}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-neon transition-colors"
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] border border-[var(--border-color)] hover:border-neon text-xs font-mono text-lime-700 dark:text-neon font-bold transition-colors"
                 >
                   <span>Abrir Pestaña Completa</span>
                   <ExternalLink className="w-3.5 h-3.5" />
@@ -2312,6 +2677,13 @@ export const PerformanceDashboard = () => {
           tenant={activeTenant}
         />
       )}
+
+      {/* Modal de Guía de Medición */}
+      <MeasurementGuideModal
+        isOpen={!!guideMetricId}
+        onClose={() => setGuideMetricId(null)}
+        initialMetricId={guideMetricId}
+      />
     </div>
   );
 };

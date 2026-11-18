@@ -46,34 +46,41 @@ import { leadService } from '@/services/leadService';
 import { calendarService } from '@/services/calendarService';
 import api, { unwrapApiData } from '@/services/api';
 import { WhatsAppConnectModal } from './WhatsAppConnectModal';
+import { getDynamicCriteriaLabels } from '@/utils/businessVerticals';
+import { LEAD_STATUS_ENUM } from '@/utils/constants';
 
 // =========================================================================
 // CANONICAL OMNICHANNEL INBOX BY TENANT (ADR-001, ADR-002, ADR-011)
 // =========================================================================
 
-const CANONICAL_INBOX_BY_TENANT = {};
-
 const CHANNEL_BADGES = {
   WhatsApp: {
-    badge: 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10',
-    dot: 'bg-emerald-400',
+    badge: 'border-emerald-500/30 text-emerald-700 dark:text-emerald-400 bg-emerald-500/10',
+    dot: 'bg-emerald-500',
     iconName: 'WhatsApp',
   },
   'Instagram DM': {
-    badge: 'border-pink-500/30 text-pink-400 bg-pink-500/10',
-    dot: 'bg-pink-400',
+    badge: 'border-pink-500/30 text-pink-700 dark:text-pink-400 bg-pink-500/10',
+    dot: 'bg-pink-500',
     iconName: 'Instagram',
   },
   Facebook: {
-    badge: 'border-blue-500/30 text-blue-400 bg-blue-500/10',
-    dot: 'bg-blue-400',
+    badge: 'border-blue-500/30 text-blue-700 dark:text-blue-400 bg-blue-500/10',
+    dot: 'bg-blue-500',
     iconName: 'Facebook',
   },
   'Web Chat': {
-    badge: 'border-cyan-500/30 text-cyan-400 bg-cyan-500/10',
-    dot: 'bg-cyan-400',
+    badge: 'border-cyan-500/30 text-cyan-700 dark:text-cyan-400 bg-cyan-500/10',
+    dot: 'bg-cyan-500',
     iconName: 'Web',
   },
+};
+
+const QUAL_KEY_BY_CRITERION = {
+  identityValidated: 'contactValid',
+  catalogIdentified: 'productIdentified',
+  financialClarified: 'doubtsResolved',
+  consentOrBooked: 'ctaAccepted',
 };
 
 export const ConversacionesInbox = () => {
@@ -114,6 +121,13 @@ export const ConversacionesInbox = () => {
   const [isPreCitaDrawerOpen, setIsPreCitaDrawerOpen] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [playingAudioId, setPlayingAudioId] = useState(null);
+  const [isTogglingAiPause, setIsTogglingAiPause] = useState(false);
+  const replyInputRef = useRef(null);
+
+  const dynamicCriteria = useMemo(
+    () => getDynamicCriteriaLabels(activeTenant),
+    [activeTenant]
+  );
 
   // Actualizar modo de respuesta y persistir en la directriz del Tenant
   const handleUpdateBotAudioMode = async (mode) => {
@@ -126,7 +140,12 @@ export const ConversacionesInbox = () => {
   // Motor de Síntesis de Voz Real (Web Speech API) en Español Latino/Mexicano
   const playSpeechReal = (text, msgId) => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-      alert('Tu navegador no cuenta con soporte nativo de síntesis de voz (Web Speech API).');
+      if (triggerModal) {
+        triggerModal(
+          'Audio No Soportado',
+          'Tu navegador no cuenta con soporte nativo de síntesis de voz (Web Speech API).'
+        );
+      }
       return;
     }
 
@@ -227,49 +246,58 @@ export const ConversacionesInbox = () => {
 
         // Hilos canónicos desde base de datos de mensajería (Meta Cloud API)
         const convThreads = Array.isArray(rawConvs)
-          ? rawConvs.map((c) => ({
-              id: c.id,
-              conversationId: c.id,
-              leadId: c.leadId,
-              aiPaused: Boolean(c.aiPaused),
-              name: c.contactName || 'Contacto WhatsApp',
-              company: 'Inbound WhatsApp Oficial',
-              channel: 'WhatsApp',
-              phone: c.externalSenderId || '',
-              need: c.lastMessageText || 'Conversación WhatsApp Cloud API',
-              campaign: 'Meta Cloud API v21.0',
-              date: c.lastMessageAt ? new Date(c.lastMessageAt).toLocaleDateString() : 'Reciente',
-              contacted: true,
-              owner: 'Lobo Vectorial (Agencia)',
-              stage: c.status === 'ATTENDED' ? 'Atendido' : 'Nuevo',
-              slaMinutesRemaining: c.slaMinutesRemaining ?? null,
-              potentialTicket: Number(c.estimatedValue || c.potentialTicket || 0),
-              qualification: {
-                contactValid: true,
-                productIdentified: true,
-                doubtsResolved: false,
-                ctaAccepted: false,
-              },
-              messages:
-                Array.isArray(c.messages) && c.messages.length > 0
-                  ? c.messages.map((m) => ({
-                      id: m.id,
-                      direction: m.direction === 'OUTBOUND' ? 'out' : 'in',
-                      text: m.content,
-                      time: m.sentAt
-                        ? new Date(m.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                        : 'Reciente',
-                      type: m.messageType || 'text',
-                    }))
-                  : [
-                      {
-                        id: `m-${c.id}-1`,
-                        direction: 'in',
-                        text: c.lastMessageText || 'Hola, deseo informes.',
-                        time: 'Reciente',
-                      },
-                    ],
-            }))
+          ? rawConvs.map((c) => {
+              const audit = c.criteriaAudit || {};
+              const qual = {
+                contactValid: Boolean(audit.identityValidated ?? c.qualification?.contactValid),
+                productIdentified: Boolean(audit.catalogIdentified ?? c.qualification?.productIdentified),
+                doubtsResolved: Boolean(audit.financialClarified ?? c.qualification?.doubtsResolved),
+                ctaAccepted: Boolean(audit.consentOrBooked ?? c.qualification?.ctaAccepted),
+              };
+              const allQualified = Object.values(qual).every(Boolean);
+              return {
+                id: c.id,
+                conversationId: c.id,
+                leadId: c.leadId,
+                aiPaused: Boolean(c.aiPaused),
+                name: c.contactName || 'Contacto WhatsApp',
+                email: c.contactEmail || c.email || '',
+                company: 'Inbound WhatsApp Oficial',
+                channel: 'WhatsApp',
+                phone: c.externalSenderId || '',
+                need: c.lastMessageText || 'Conversación WhatsApp Cloud API',
+                campaign: 'Meta Cloud API v21.0',
+                date: c.lastMessageAt ? new Date(c.lastMessageAt).toLocaleDateString() : 'Reciente',
+                contacted: true,
+                owner: 'Lobo Vectorial (Agencia)',
+                leadState:
+                  c.leadState ||
+                  (allQualified ? LEAD_STATUS_ENUM.BILLABLE_LEAD : LEAD_STATUS_ENUM.LEAD_COLD_24H),
+                stage: c.status === 'ATTENDED' ? 'Atendido' : allQualified ? 'Calificado' : 'Nuevo',
+                slaMinutesRemaining: c.slaMinutesRemaining ?? null,
+                potentialTicket: Number(c.estimatedValue || c.potentialTicket || 0),
+                qualification: qual,
+                messages:
+                  Array.isArray(c.messages) && c.messages.length > 0
+                    ? c.messages.map((m) => ({
+                        id: m.id,
+                        direction: m.direction === 'OUTBOUND' ? 'out' : 'in',
+                        text: m.content,
+                        time: m.sentAt
+                          ? new Date(m.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                          : 'Reciente',
+                        type: m.messageType || 'text',
+                      }))
+                    : [
+                        {
+                          id: `m-${c.id}-1`,
+                          direction: 'in',
+                          text: c.lastMessageText || 'Hola, deseo informes.',
+                          time: 'Reciente',
+                        },
+                      ],
+              };
+            })
           : [];
 
         // Hilos desde leads de CRM
@@ -281,6 +309,7 @@ export const ConversacionesInbox = () => {
             leadId: lead.id,
             aiPaused: Boolean(lead.aiPaused),
             name: lead.name,
+            email: lead.email || '',
             company: lead.notes || 'Contacto Directo',
             channel: lead.channel || 'WhatsApp',
             phone: lead.phone || '',
@@ -289,6 +318,7 @@ export const ConversacionesInbox = () => {
             date: lead.createdAt ? new Date(lead.createdAt).toLocaleDateString() : 'Reciente',
             contacted: lead.leadState === 'BILLABLE_LEAD',
             owner: 'Lobo Vectorial (Agencia)',
+            leadState: lead.leadState || LEAD_STATUS_ENUM.LEAD_COLD_24H,
             stage: lead.status || (lead.leadState === 'BILLABLE_LEAD' ? 'Calificado' : 'Nuevo'),
             slaMinutesRemaining: lead.slaMinutesRemaining ?? null,
             potentialTicket: typeof lead.estimatedValue === 'number' ? lead.estimatedValue : 0,
@@ -425,6 +455,46 @@ export const ConversacionesInbox = () => {
     setDraftReply('');
   };
 
+  // Pausar / Reanudar IA por conversación (Atención Humana)
+  const handleToggleAiPause = async () => {
+    if (!activeThread || isTogglingAiPause) return;
+    const conversationId = activeThread.conversationId || activeThread.id;
+    const nextPaused = !Boolean(activeThread.aiPaused);
+
+    setIsTogglingAiPause(true);
+    try {
+      if (conversationId) {
+        await api.patch(`/webhooks/whatsapp/conversations/${conversationId}/ai-pause`, {
+          paused: nextPaused,
+        });
+      }
+      persistThreads(
+        threads.map((t) =>
+          t.id === activeThread.id ? { ...t, aiPaused: nextPaused } : t
+        )
+      );
+      if (triggerModal) {
+        triggerModal(
+          nextPaused ? 'Pausa Automática de Asistente (Atención Humana)' : 'Asistente IA Reactivado',
+          nextPaused
+            ? `La IA fue pausada para <b>${activeThread.name}</b>. Ahora tienes control manual directo de esta conversación.`
+            : `El asistente IA ha reanudado la atención autónoma para <b>${activeThread.name}</b>.`
+        );
+      }
+    } catch (err) {
+      if (triggerModal) {
+        triggerModal(
+          'Error al Cambiar Estado de IA',
+          err?.response?.data?.message ||
+            err?.message ||
+            'No se pudo actualizar el estado de pausa de IA en el servidor.'
+        );
+      }
+    } finally {
+      setIsTogglingAiPause(false);
+    }
+  };
+
   // Toggle qualification check
   const handleToggleRequirement = async (key) => {
     if (!activeThread) return;
@@ -459,6 +529,7 @@ export const ConversacionesInbox = () => {
         return {
           ...t,
           qualification: updatedQual,
+          leadState: allFourTrue ? LEAD_STATUS_ENUM.BILLABLE_LEAD : t.leadState,
           stage: allFourTrue ? 'Calificado' : t.stage,
         };
       }
@@ -471,6 +542,18 @@ export const ConversacionesInbox = () => {
   const handleApproveDrawerAppointment = async (targetLead) => {
     if (!activeThread) return;
     const todayIso = new Date().toISOString().split('T')[0];
+    const appointmentDate = targetLead?.appointmentDate || todayIso;
+    let appointmentHour = targetLead?.hour;
+
+    if (!appointmentHour && activeTenant?.id) {
+      try {
+        const availability = await calendarService.getAvailableSlots(activeTenant.id, appointmentDate);
+        appointmentHour = availability?.nextAvailableSlot || availability?.availableSlots?.[0] || '10:00';
+      } catch (e) {
+        appointmentHour = '10:00';
+      }
+    }
+    appointmentHour = appointmentHour || '10:00';
 
     await calendarService.createAppointment({
       tenantId: activeTenant?.id,
@@ -479,8 +562,8 @@ export const ConversacionesInbox = () => {
       phone: targetLead?.phone || activeThread.phone || '',
       serviceName: targetLead?.customerNeeds?.intent || activeThread.need || 'Cita de Valoración',
       estimatedValue: targetLead?.estimatedValue || activeThread.potentialTicket || 0,
-      appointmentDate: todayIso,
-      hour: '10:00',
+      appointmentDate,
+      hour: appointmentHour,
       status: 'CONFIRMED',
       details: `Cita aprobada desde Bandeja de Conversaciones (${activeThread.channel || 'WhatsApp'})`,
     });
@@ -500,7 +583,9 @@ export const ConversacionesInbox = () => {
       if (t.id === activeThread.id) {
         return {
           ...t,
+          email: targetLead?.email || t.email || '',
           contacted: true,
+          leadState: LEAD_STATUS_ENUM.BILLABLE_LEAD,
           stage: 'Calificado',
           qualification: {
             contactValid: true,
@@ -513,7 +598,7 @@ export const ConversacionesInbox = () => {
             {
               id: `m-${Date.now()}`,
               direction: 'out',
-              text: '✅ Cita aprobada y guardada en la Agenda PostgreSQL del sistema. Criterios del prospecto actualizados.',
+              text: `✅ Cita aprobada (${appointmentDate} • ${appointmentHour} hrs) y guardada en la Agenda PostgreSQL del sistema.`,
               time: 'Ahora',
             },
           ],
@@ -526,7 +611,7 @@ export const ConversacionesInbox = () => {
     if (triggerModal) {
       triggerModal(
         'Cita Guardada en Agenda PostgreSQL',
-        `La cita con <b>${targetLead?.name || activeThread.name}</b> quedó registrada en PostgreSQL y su expediente fue actualizado a Calificado.`
+        `La cita con <b>${targetLead?.name || activeThread.name}</b> quedó registrada (${appointmentDate} a las ${appointmentHour} hrs) en PostgreSQL y su expediente fue actualizado a Calificado.`
       );
     }
   };
@@ -560,7 +645,7 @@ export const ConversacionesInbox = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end border-b border-[var(--border-color)] pb-4 gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-lime-400 font-extrabold bg-lime-400/10 px-2 py-0.5 rounded border border-lime-400/20">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--neon-text)] font-extrabold bg-neon/10 px-2 py-0.5 rounded border border-neon/30">
               OPERACIÓN / BANDEJA DE ATENCIÓN
             </span>
             <span className="text-xs text-[var(--text-muted)] font-mono">
@@ -576,16 +661,16 @@ export const ConversacionesInbox = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          {/* Directriz de Voz del Bot (Paz mental para el usuario) */}
+          {/* Directriz de Voz del Bot */}
           <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs font-mono">
             <span className="text-[10px] text-[var(--text-muted)] px-1.5 font-bold flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5 text-lime-400" />
+              <ShieldCheck className="w-3.5 h-3.5 text-[var(--neon-text)]" />
               Modo Bot:
             </span>
             <select
               value={botAudioMode}
               onChange={(e) => handleUpdateBotAudioMode(e.target.value)}
-              className="bg-[var(--bg-base)] border border-[var(--border-color)] text-[11px] rounded-lg px-2 py-1 text-[var(--text-main)] font-semibold focus:outline-none focus:border-lime-400 cursor-pointer"
+              className="bg-[var(--bg-base)] border border-[var(--border-color)] text-[11px] rounded-lg px-2 py-1 text-[var(--text-main)] font-semibold focus:outline-none focus:border-neon cursor-pointer"
             >
               <option value="text_only">🛡️ Solo Texto (Recomendado)</option>
               <option value="mirror">🔄 Modo Espejo (Audio solo si cliente manda audio)</option>
@@ -597,7 +682,7 @@ export const ConversacionesInbox = () => {
                 const sampleText = `Hola, te atiende el asistente comercial de ${activeTenant?.name || 'nuestro negocio'}. Con gusto te comparto disponibilidad y resolvemos cualquier duda.`;
                 playSpeechReal(sampleText, 'test-voice');
               }}
-              className="p-1.5 rounded-lg hover:bg-[var(--bg-panel)] text-[var(--text-muted)] hover:text-lime-400 transition-colors"
+              className="p-1.5 rounded-lg hover:bg-[var(--bg-panel)] text-[var(--text-muted)] hover:text-[var(--neon-text)] transition-colors"
               title="Escuchar muestra real de voz del asistente (Web Speech API)"
             >
               <Volume2 className="w-3.5 h-3.5" />
@@ -607,14 +692,14 @@ export const ConversacionesInbox = () => {
           <button
             type="button"
             onClick={() => setIsGuideOpen(true)}
-            className="text-xs font-mono px-3 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-lime-400 text-[var(--text-muted)] hover:text-lime-400 transition-all flex items-center gap-1.5"
+            className="text-xs font-mono px-3 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all flex items-center gap-1.5"
           >
             <span>Ver Fórmulas SLA</span>
           </button>
           <button
             type="button"
             onClick={() => router.push('/crm')}
-            className="text-xs bg-lime-400 text-black font-mono font-black uppercase px-4 py-2 rounded-xl flex items-center gap-1.5 hover:bg-lime-300 transition-all shadow-md active:scale-95"
+            className="text-xs bg-neon text-black font-mono font-black uppercase px-4 py-2 rounded-xl flex items-center gap-1.5 hover:bg-[var(--neon-hover)] transition-all shadow-md active:scale-95"
           >
             <span>Abrir Tablero CRM</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -624,9 +709,9 @@ export const ConversacionesInbox = () => {
 
       {/* Meta Omnichannel Status Banner - Estado Verídico de Conexión */}
       {!activeTenant ? (
-        <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-between text-xs text-zinc-400 font-mono">
+        <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-between text-xs text-[var(--text-muted)] font-mono">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-zinc-600" />
+            <span className="w-2 h-2 rounded-full bg-[var(--text-muted)]" />
             <span>Sin negocio activo seleccionado en el selector superior.</span>
           </div>
         </div>
@@ -634,11 +719,11 @@ export const ConversacionesInbox = () => {
         !isWaBannerDismissed ? (
           <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs animate-fadeIn relative">
             <div className="flex items-center gap-2.5">
-              <span className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400 shrink-0">
+              <span className="p-1.5 rounded-lg bg-amber-500/20 text-amber-700 dark:text-amber-400 shrink-0">
                 <AlertCircle className="w-4 h-4" />
               </span>
               <div>
-                <div className="font-heading font-bold text-amber-300">
+                <div className="font-heading font-bold text-amber-800 dark:text-amber-300">
                   WhatsApp Cloud API no está conectado en {activeTenant.name}
                 </div>
                 <p className="text-[11px] text-[var(--text-muted)] font-mono">
@@ -660,7 +745,7 @@ export const ConversacionesInbox = () => {
               <button
                 type="button"
                 onClick={() => setIsWaBannerDismissed(true)}
-                className="p-1 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-amber-500/20 transition-colors ml-1"
+                className="p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-amber-500/20 transition-colors ml-1"
                 title="Ocultar aviso de conexión"
               >
                 <X className="w-4 h-4" />
@@ -670,14 +755,14 @@ export const ConversacionesInbox = () => {
         ) : (
           <div className="py-1 px-3 rounded-xl bg-[var(--bg-card)]/40 border border-[var(--border-color)] flex items-center justify-between text-[11px] font-mono text-[var(--text-muted)]">
             <span className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
               WhatsApp Cloud API pendiente de configurar
             </span>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setIsWhatsAppModalOpen(true)}
-                className="text-amber-400 hover:underline"
+                className="text-amber-700 dark:text-amber-400 hover:underline font-semibold"
               >
                 Configurar ahora
               </button>
@@ -695,16 +780,16 @@ export const ConversacionesInbox = () => {
       ) : (
         <div className="p-3 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
           <div className="flex items-center gap-2.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
             <div className="font-mono text-[11px] text-[var(--text-main)] flex flex-wrap items-center gap-1.5">
-              <strong className="text-emerald-400">WhatsApp Cloud API v21.0 Conectado:</strong>
+              <strong className="text-emerald-700 dark:text-emerald-400">WhatsApp Cloud API v21.0 Conectado:</strong>
               <span className="text-[var(--text-main)] font-bold">{waPhoneNumber}</span>
               <span className="text-[var(--text-muted)]">•</span>
               <span className="text-[10px] text-[var(--text-muted)]">
-                Webhook: <strong className="text-zinc-300">{waLastSync}</strong>
+                Webhook: <strong className="text-[var(--text-main)]">{waLastSync}</strong>
               </span>
-              <span className="text-[10px] text-zinc-500 font-mono">
-                (SLA Objetivo: 15 min)
+              <span className="text-[10px] text-[var(--text-muted)] font-mono">
+                (SLA Objetivo: {activeTenant?.slaHitlMinutes || 5} min)
               </span>
             </div>
           </div>
@@ -713,13 +798,13 @@ export const ConversacionesInbox = () => {
             <button
               type="button"
               onClick={() => setIsWhatsAppModalOpen(true)}
-              className="px-2.5 py-1 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] hover:border-lime-400 text-[10px] font-mono text-[var(--text-muted)] hover:text-lime-400 transition-colors flex items-center gap-1.5"
+              className="px-2.5 py-1 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] hover:border-neon text-[10px] font-mono text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors flex items-center gap-1.5"
             >
-              <Activity className="w-3 h-3 text-emerald-400" />
-              <span>Diagnóstico & Credenciales</span>
+              <Activity className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+              <span>Diagnóstico &amp; Credenciales</span>
             </button>
 
-            <span className="font-mono text-[10px] text-lime-400 font-bold bg-lime-400/10 px-2 py-0.5 rounded border border-lime-400/20 shrink-0">
+            <span className="font-mono text-[10px] text-[var(--neon-text)] font-bold bg-neon/10 px-2 py-0.5 rounded border border-neon/30 shrink-0">
               {pendingCount} Pendientes
             </span>
           </div>
@@ -773,7 +858,7 @@ export const ConversacionesInbox = () => {
                   <button
                     type="button"
                     onClick={handleClearAllDemos}
-                    className="px-2 py-0.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-[10px] font-mono flex items-center gap-1 transition-all ml-1"
+                    className="px-2 py-0.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-700 dark:text-red-400 border border-red-500/30 text-[10px] font-mono flex items-center gap-1 transition-all ml-1"
                     title="Eliminar todas las conversaciones demo simuladas"
                   >
                     <Trash2 className="w-3 h-3" />
@@ -785,7 +870,7 @@ export const ConversacionesInbox = () => {
               <select
                 value={channelFilter}
                 onChange={(e) => setChannelFilter(e.target.value)}
-                className="bg-[var(--bg-base)] border border-[var(--border-color)] text-[10px] rounded-lg px-2 py-1 text-[var(--text-muted)] focus:outline-none focus:border-lime-400"
+                className="bg-[var(--bg-base)] border border-[var(--border-color)] text-[10px] rounded-lg px-2 py-1 text-[var(--text-muted)] focus:outline-none focus:border-neon"
               >
                 <option value="all">Canal: Todos</option>
                 <option value="whatsapp">WhatsApp</option>
@@ -800,7 +885,7 @@ export const ConversacionesInbox = () => {
           <div className="flex-1 overflow-y-auto divide-y divide-[var(--border-color)] custom-scrollbar">
             {filteredThreads.length === 0 ? (
               <div className="p-6 text-center text-xs font-mono space-y-4 my-auto">
-                <div className="w-12 h-12 rounded-2xl bg-lime-400/10 border border-lime-400/20 text-lime-400 flex items-center justify-center mx-auto text-xl shadow-sm">
+                <div className="w-12 h-12 rounded-2xl bg-neon/10 border border-neon/30 text-[var(--neon-text)] flex items-center justify-center mx-auto text-xl shadow-sm">
                   💬
                 </div>
                 <div className="space-y-1">
@@ -838,13 +923,13 @@ export const ConversacionesInbox = () => {
                   onClick={() => setSelectedThreadId(thread.id)}
                   className={`w-full text-left p-3.5 transition-all flex items-start gap-3 ${
                     isSelected
-                      ? 'bg-[var(--bg-card)] border-l-4 border-lime-400'
+                      ? 'bg-[var(--bg-card)] border-l-4 border-neon'
                       : 'hover:bg-[var(--bg-card)]/50'
                   }`}
                 >
                   {/* Avatar with Channel Indicator */}
                   <div className="relative">
-                    <div className="w-9 h-9 rounded-xl bg-lime-400/10 border border-lime-400/20 text-lime-400 flex items-center justify-center font-mono font-bold text-xs shrink-0 mt-0.5">
+                    <div className="w-9 h-9 rounded-xl bg-neon/10 border border-neon/30 text-[var(--neon-text)] flex items-center justify-center font-mono font-bold text-xs shrink-0 mt-0.5">
                       {thread.name.charAt(0)}
                     </div>
                     <span
@@ -867,18 +952,23 @@ export const ConversacionesInbox = () => {
                       {thread.need} · <span className="font-mono text-[10px]">{thread.company}</span>
                     </p>
 
-                    <div className="flex items-center gap-1.5 pt-0.5">
+                    <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
                       <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold border ${channelBadge.badge}`}>
                         {thread.channel}
                       </span>
                       {thread.contacted ? (
-                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold">
+                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 font-semibold">
                           Atendida
                         </span>
                       ) : (
-                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30 font-semibold flex items-center gap-1">
+                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-semibold flex items-center gap-1">
                           <Clock className="w-2.5 h-2.5" />
                           Por responder
+                        </span>
+                      )}
+                      {thread.aiPaused && (
+                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30 font-semibold">
+                          Atención Humana
                         </span>
                       )}
                     </div>
@@ -894,7 +984,7 @@ export const ConversacionesInbox = () => {
           {activeThread ? (
             <>
               {/* Chat Header */}
-              <div className="p-3.5 border-b border-[var(--border-color)] bg-[var(--bg-card)]/50 flex items-center justify-between">
+              <div className="p-3.5 border-b border-[var(--border-color)] bg-[var(--bg-card)]/50 flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="font-heading font-bold text-sm text-[var(--text-main)]">
@@ -903,11 +993,16 @@ export const ConversacionesInbox = () => {
                     <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded font-bold border ${CHANNEL_BADGES[activeThread.channel]?.badge || ''}`}>
                       {activeThread.channel}
                     </span>
+                    {activeThread.aiPaused && (
+                      <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30 font-bold">
+                        Pausa Automática de Asistente
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2 text-xs font-mono text-[var(--text-muted)] mt-0.5">
                     <span>{activeThread.phone}</span>
                     <span>•</span>
-                    <span className="text-[10px] text-lime-400">{activeThread.campaign || 'Inbound Directo'}</span>
+                    <span className="text-[10px] text-[var(--neon-text)] font-semibold">{activeThread.campaign || 'Inbound Directo'}</span>
                   </div>
                 </div>
 
@@ -916,8 +1011,8 @@ export const ConversacionesInbox = () => {
                     <span
                       className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold ${
                         activeThread.slaMinutesRemaining > 0
-                          ? 'bg-amber-400/15 text-amber-400 border border-amber-400/30'
-                          : 'bg-red-500/15 text-red-400 border border-red-500/30 animate-pulse'
+                          ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30'
+                          : 'bg-red-500/15 text-red-700 dark:text-red-400 border border-red-500/30 animate-pulse'
                       }`}
                     >
                       {activeThread.slaMinutesRemaining > 0
@@ -925,6 +1020,34 @@ export const ConversacionesInbox = () => {
                         : '⚠️ SLA Vencido'}
                     </span>
                   )}
+
+                  <button
+                    type="button"
+                    disabled={isTogglingAiPause}
+                    onClick={handleToggleAiPause}
+                    className={`px-2.5 py-1.5 rounded-xl text-[10px] font-mono font-bold flex items-center gap-1.5 transition-all shadow-sm ${
+                      activeThread.aiPaused
+                        ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                        : 'bg-rose-600 hover:bg-rose-500 text-white'
+                    } disabled:opacity-50`}
+                    title={
+                      activeThread.aiPaused
+                        ? 'Reanudar respuestas automáticas del asistente IA'
+                        : 'Pausar IA en esta conversación para Atención Humana directa'
+                    }
+                  >
+                    {activeThread.aiPaused ? (
+                      <>
+                        <Play className="w-3 h-3" />
+                        <span>Reanudar IA</span>
+                      </>
+                    ) : (
+                      <>
+                        <Pause className="w-3 h-3" />
+                        <span>Atención Humana</span>
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
 
@@ -983,7 +1106,7 @@ export const ConversacionesInbox = () => {
 
                           {/* Badge de Transcripción Whisper si es inbound */}
                           {msg.direction === 'in' && (
-                            <div className="text-[9px] font-mono font-bold text-purple-300 bg-purple-500/15 border border-purple-500/30 px-2 py-0.5 rounded flex items-center gap-1 w-fit">
+                            <div className="text-[9px] font-mono font-bold text-purple-700 dark:text-purple-300 bg-purple-500/15 border border-purple-500/30 px-2 py-0.5 rounded flex items-center gap-1 w-fit">
                               <Mic className="w-2.5 h-2.5" />
                               <span>Transcripción IA Whisper instantánea</span>
                             </div>
@@ -995,38 +1118,39 @@ export const ConversacionesInbox = () => {
                         </div>
                       ) : msg.type === 'image' ? (
                         <div className="space-y-2">
-                          {msg.imageUrl && (
+                          {typeof msg.imageUrl === 'string' && msg.imageUrl.trim().length > 0 && (
                             <div className="rounded-xl overflow-hidden border border-[var(--border-color)] max-h-48 relative">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img src={msg.imageUrl} alt="Documento enviado" className="w-full object-cover" />
                             </div>
                           )}
                           {msg.aiAnalysis && (
-                            <div className="p-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-[10px] font-mono text-emerald-300 space-y-1">
+                            <div className="p-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-[10px] font-mono text-emerald-800 dark:text-emerald-300 space-y-1">
                               <div className="flex items-center gap-1 font-bold">
                                 <ImageIcon className="w-3 h-3" />
                                 <span>{msg.aiAnalysis.badge}</span>
                               </div>
-                              <p className="text-zinc-200">{msg.aiAnalysis.extracted}</p>
+                              <p className="text-[var(--text-main)]">{msg.aiAnalysis.extracted}</p>
                             </div>
                           )}
                           <p className="text-xs">{msg.text}</p>
                         </div>
                       ) : msg.type === 'document' ? (
                         <div className="space-y-2">
-                          <div className="flex items-center gap-2.5 p-2 rounded-xl bg-black/20 border border-[var(--border-color)]">
-                            <FileText className="w-6 h-6 text-red-400 shrink-0" />
+                          <div className="flex items-center gap-2.5 p-2 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)]">
+                            <FileText className="w-6 h-6 text-red-600 dark:text-red-400 shrink-0" />
                             <div className="min-w-0 flex-1">
                               <div className="font-bold text-xs truncate text-[var(--text-main)]">{msg.fileName || 'documento.pdf'}</div>
                               <div className="text-[10px] text-[var(--text-muted)] font-mono">{msg.fileSize || 'PDF'}</div>
                             </div>
                           </div>
                           {msg.aiAnalysis && (
-                            <div className="p-2 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-[10px] font-mono text-cyan-300 space-y-1">
+                            <div className="p-2 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-[10px] font-mono text-cyan-800 dark:text-cyan-300 space-y-1">
                               <div className="flex items-center gap-1 font-bold">
                                 <FileCheck className="w-3 h-3" />
                                 <span>{msg.aiAnalysis.badge}</span>
                               </div>
-                              <p className="text-zinc-200">{msg.aiAnalysis.summary}</p>
+                              <p className="text-[var(--text-main)]">{msg.aiAnalysis.summary}</p>
                             </div>
                           )}
                           <p className="text-xs">{msg.text}</p>
@@ -1038,7 +1162,7 @@ export const ConversacionesInbox = () => {
 
                     <div className="flex items-center gap-1 mt-1 px-1 text-[9px] font-mono text-[var(--text-faint)]">
                       <span>{msg.time}</span>
-                      {msg.direction === 'out' && <CheckCheck className="w-3 h-3 text-cyan-400" />}
+                      {msg.direction === 'out' && <CheckCheck className="w-3 h-3 text-cyan-600 dark:text-cyan-400" />}
                     </div>
                   </div>
                 ))}
@@ -1047,7 +1171,7 @@ export const ConversacionesInbox = () => {
               {/* Quick Replies Bar (Respuestas Rápidas) */}
               <div className="p-2 border-t border-[var(--border-color)] bg-[var(--bg-card)]/40 flex items-center gap-1.5 overflow-x-auto text-[11px] font-mono no-scrollbar">
                 <span className="text-[10px] text-[var(--text-faint)] flex items-center gap-1 shrink-0 px-1 font-bold">
-                  <Sparkles className="w-3 h-3 text-lime-400" />
+                  <Sparkles className="w-3 h-3 text-[var(--neon-text)]" />
                   Respuestas Rápidas:
                 </span>
                 {tenantSuggestions.map((sug, i) => (
@@ -1055,7 +1179,7 @@ export const ConversacionesInbox = () => {
                     key={i}
                     type="button"
                     onClick={() => setDraftReply(sug.text)}
-                    className="px-2.5 py-1 rounded-lg bg-[var(--bg-base)] border border-[var(--border-color)] hover:border-lime-400 text-[var(--text-muted)] hover:text-[var(--text-main)] whitespace-nowrap transition-colors"
+                    className="px-2.5 py-1 rounded-lg bg-[var(--bg-base)] border border-[var(--border-color)] hover:border-neon text-[var(--text-muted)] hover:text-[var(--text-main)] whitespace-nowrap transition-colors"
                   >
                     {sug.label}
                   </button>
@@ -1065,6 +1189,7 @@ export const ConversacionesInbox = () => {
               {/* Compose Box with Voice Note & Send */}
               <div className="p-3 border-t border-[var(--border-color)] bg-[var(--bg-panel)] flex items-end gap-2">
                 <textarea
+                  ref={replyInputRef}
                   rows={2}
                   placeholder={`Responder a ${activeThread.name} en ${activeThread.channel}...`}
                   value={draftReply}
@@ -1075,14 +1200,14 @@ export const ConversacionesInbox = () => {
                       handleSendReply();
                     }
                   }}
-                  className="flex-1 p-2.5 text-xs bg-[var(--bg-base)] border border-[var(--border-color)] rounded-xl text-[var(--text-main)] placeholder-[var(--text-muted)] focus:outline-none focus:border-lime-400 resize-none font-sans"
+                  className="flex-1 p-2.5 text-xs bg-[var(--bg-base)] border border-[var(--border-color)] rounded-xl text-[var(--text-main)] placeholder-[var(--text-muted)] focus:outline-none focus:border-neon resize-none font-sans"
                 />
 
                 <button
                   type="button"
                   onClick={handleSendReply}
                   disabled={!draftReply.trim()}
-                  className="px-4 py-3 rounded-xl bg-lime-400 text-black font-mono font-bold text-xs hover:bg-lime-300 transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0 shadow-sm flex items-center gap-1.5 active:scale-95"
+                  className="px-4 py-3 rounded-xl bg-neon text-black font-mono font-bold text-xs hover:bg-[var(--neon-hover)] transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0 shadow-sm flex items-center gap-1.5 active:scale-95"
                 >
                   <span>Enviar</span>
                   <Send className="w-3.5 h-3.5" />
@@ -1096,7 +1221,7 @@ export const ConversacionesInbox = () => {
           )}
         </div>
 
-        {/* Column 3: Lead Context & 4 BANT Qualification Rules (3 cols) */}
+        {/* Column 3: Lead Context & 4 Qualification Rules (3 cols) */}
         <div className="lg:col-span-3 bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-2xl p-4 flex flex-col justify-between overflow-y-auto space-y-4 shadow-sm custom-scrollbar">
           {activeThread ? (
             <>
@@ -1120,7 +1245,7 @@ export const ConversacionesInbox = () => {
                     <span className="text-[9px] font-mono text-[var(--text-muted)] block uppercase">
                       Ticket Estimado
                     </span>
-                    <span className="text-sm font-mono font-black text-lime-400">
+                    <span className="text-sm font-mono font-black text-[var(--neon-text)]">
                       ${formatNumber(activeThread.potentialTicket)} MXN
                     </span>
                   </div>
@@ -1135,70 +1260,46 @@ export const ConversacionesInbox = () => {
                   </div>
                 </div>
 
-                {/* 4 Inviolable Qualification Requirements (BILLABLE_LEAD Protocol) */}
+                {/* 4 Dynamic Qualification Requirements (ADR_008 §2.2) */}
                 <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-2.5">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-mono uppercase font-bold text-[var(--text-main)] flex items-center gap-1.5">
-                      <ShieldCheck className="w-3.5 h-3.5 text-lime-400" />
-                      4 Requisitos de Calificación
+                      <ShieldCheck className="w-3.5 h-3.5 text-[var(--neon-text)]" />
+                      4 Requisitos de Calidad
                     </span>
-                    <span className="text-[9px] font-mono text-lime-400">
+                    <span className="text-[9px] font-mono font-bold text-[var(--neon-text)]">
                       {Object.values(activeThread.qualification).filter(Boolean).length}/4
                     </span>
                   </div>
 
                   <div className="space-y-1.5 text-xs font-sans">
-                    <label
-                      onClick={() => handleToggleRequirement('contactValid')}
-                      className="flex items-center gap-2 cursor-pointer text-[var(--text-muted)] hover:text-[var(--text-main)]"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={activeThread.qualification.contactValid}
-                        readOnly
-                        className="accent-lime-400 rounded"
-                      />
-                      <span>1. Identidad y WhatsApp</span>
-                    </label>
-
-                    <label
-                      onClick={() => handleToggleRequirement('productIdentified')}
-                      className="flex items-center gap-2 cursor-pointer text-[var(--text-muted)] hover:text-[var(--text-main)]"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={activeThread.qualification.productIdentified}
-                        readOnly
-                        className="accent-lime-400 rounded"
-                      />
-                      <span>2. Interés en Catálogo</span>
-                    </label>
-
-                    <label
-                      onClick={() => handleToggleRequirement('doubtsResolved')}
-                      className="flex items-center gap-2 cursor-pointer text-[var(--text-muted)] hover:text-[var(--text-main)]"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={activeThread.qualification.doubtsResolved}
-                        readOnly
-                        className="accent-lime-400 rounded"
-                      />
-                      <span>3. Dudas resueltas (RAG)</span>
-                    </label>
-
-                    <label
-                      onClick={() => handleToggleRequirement('ctaAccepted')}
-                      className="flex items-center gap-2 cursor-pointer text-[var(--text-muted)] hover:text-[var(--text-main)]"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={activeThread.qualification.ctaAccepted}
-                        readOnly
-                        className="accent-lime-400 rounded"
-                      />
-                      <span>4. Cita / Contacto aceptado</span>
-                    </label>
+                    {dynamicCriteria.map((crit, idx) => {
+                      const qualKey = QUAL_KEY_BY_CRITERION[crit.key] || 'contactValid';
+                      const isChecked = Boolean(activeThread.qualification?.[qualKey]);
+                      const rawTitle = crit.shortLabel || crit.label;
+                      const labelText =
+                        crit.id === 'identity' && !/correo|email/i.test(rawTitle)
+                          ? `${rawTitle} (WhatsApp y Email)`
+                          : rawTitle;
+                      return (
+                        <label
+                          key={crit.id}
+                          onClick={() => handleToggleRequirement(qualKey)}
+                          title={crit.description}
+                          className="flex items-center gap-2 cursor-pointer text-[var(--text-muted)] hover:text-[var(--text-main)]"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            readOnly
+                            className="accent-lime-600 dark:accent-lime-400 rounded"
+                          />
+                          <span>
+                            {idx + 1}. {labelText}
+                          </span>
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -1214,7 +1315,7 @@ export const ConversacionesInbox = () => {
                 <button
                   type="button"
                   onClick={() => setIsPreCitaDrawerOpen(true)}
-                  className="w-full py-2.5 rounded-xl bg-lime-400 text-black font-mono font-black text-xs uppercase flex items-center justify-center gap-2 hover:bg-lime-300 transition-all shadow-md active:scale-95"
+                  className="w-full py-2.5 rounded-xl bg-neon text-black font-mono font-black text-xs uppercase flex items-center justify-center gap-2 hover:bg-[var(--neon-hover)] transition-all shadow-md active:scale-95"
                 >
                   <Calendar className="w-4 h-4" />
                   <span>Dictaminar Pre-Cita</span>
@@ -1235,35 +1336,44 @@ export const ConversacionesInbox = () => {
         isOpen={isPreCitaDrawerOpen}
         onClose={() => setIsPreCitaDrawerOpen(false)}
         onApproveAppointment={handleApproveDrawerAppointment}
-        lead={{
-          id: activeThread?.id || 'lead-001',
-          name: activeThread?.name || 'Prospecto',
-          phone: activeThread?.phone || '',
-          email: activeThread?.email || 'contacto@prospecto.com',
-          notes: activeThread?.need || 'Servicio Profesional',
-          estimatedValue: Number(activeThread?.potentialTicket || 0),
-          channel: activeThread?.channel || 'WhatsApp',
-          status: activeThread?.stage || 'LEAD_COLD_24H',
-          customerNeeds: {
-            potentialTicket: Number(activeThread?.potentialTicket || 0),
-            intent: activeThread?.need || 'Servicio Profesional',
-            objection: 'Requiere confirmación de horario y financiamiento',
-            suggestedAction: 'Cita de valoración y confirmación inmediata',
-          },
-          messages: activeThread?.messages || [],
+        onOpenChat={() => {
+          setTimeout(() => replyInputRef.current?.focus(), 60);
         }}
-        alert={{
-          id: activeThread?.id || 'alert-001',
-          client_name: activeThread?.name || 'Prospecto',
-          client_phone: activeThread?.phone || '',
-          customer_needs_summary: {
-            potentialTicket: Number(activeThread?.potentialTicket || 0),
-            intent: activeThread?.need || 'Servicio Profesional',
-            objection: 'Requiere confirmación de horario y financiamiento',
-            suggestedAction: 'Cita de valoración y confirmación inmediata',
-          },
-          transcript_snippet: activeThread?.messages ? activeThread.messages.map((m) => `${m.direction === 'in' ? 'Cliente' : 'Agente'}: ${m.text}`) : [],
-        }}
+        lead={
+          activeThread
+            ? {
+                id: activeThread.id,
+                name: activeThread.name || 'Prospecto',
+                phone: activeThread.phone || '',
+                email: activeThread.email || '',
+                notes: activeThread.need || 'Servicio Profesional',
+                estimatedValue: Number(activeThread.potentialTicket || 0),
+                potentialTicket: `$${formatNumber(activeThread.potentialTicket || 0)} MXN`,
+                channel: activeThread.channel || 'WhatsApp',
+                status: activeThread.stage || 'LEAD_COLD_24H',
+                leadState:
+                  activeThread.leadState ||
+                  (Object.values(activeThread.qualification || {}).every(Boolean)
+                    ? LEAD_STATUS_ENUM.BILLABLE_LEAD
+                    : LEAD_STATUS_ENUM.LEAD_COLD_24H),
+                criteriaAudit: {
+                  identityValidated: Boolean(activeThread.qualification?.contactValid),
+                  catalogIdentified: Boolean(activeThread.qualification?.productIdentified),
+                  financialClarified: Boolean(activeThread.qualification?.doubtsResolved),
+                  consentOrBooked: Boolean(activeThread.qualification?.ctaAccepted),
+                },
+                customerNeeds: {
+                  potentialTicket: Number(activeThread.potentialTicket || 0),
+                  intent: activeThread.need || 'Servicio Profesional',
+                  objectionIdentified: activeThread.qualification?.doubtsResolved
+                    ? 'Precios y condiciones clarificados'
+                    : '',
+                  suggestedAction: 'Cita de valoración y confirmación inmediata',
+                },
+                messages: activeThread.messages || [],
+              }
+            : null
+        }
       />
 
       {/* Measurement Guide Modal */}

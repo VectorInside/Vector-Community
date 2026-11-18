@@ -2,12 +2,12 @@
 @import 'driver.js/dist/driver.css';
 
 .driver-popover.vector-tour-popover {
-  background-color: var(--bg-panel, #141519) !important;
+  background-color: var(--bg-panel, #191a1f) !important;
   color: var(--text-main, #f3f3f5) !important;
   border: 1px solid var(--border-color, #303139) !important;
   border-radius: 18px !important;
   padding: 20px 24px !important;
-  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.5), 0 0 25px rgba(195, 244, 0, 0.15) !important;
+  box-shadow: var(--shadow-surface, 0 25px 60px -15px rgba(0, 0, 0, 0.5)), 0 0 25px var(--neon-glow, rgba(195, 244, 0, 0.22)) !important;
   max-width: 420px !important;
   font-family: inherit !important;
   backdrop-filter: blur(16px) !important;
@@ -15,16 +15,16 @@
 
 /* Arrow styling */
 .driver-popover.vector-tour-popover .driver-popover-arrow-side-left.driver-popover-arrow {
-  border-left-color: var(--bg-panel, #141519) !important;
+  border-left-color: var(--bg-panel, #191a1f) !important;
 }
 .driver-popover.vector-tour-popover .driver-popover-arrow-side-right.driver-popover-arrow {
-  border-right-color: var(--bg-panel, #141519) !important;
+  border-right-color: var(--bg-panel, #191a1f) !important;
 }
 .driver-popover.vector-tour-popover .driver-popover-arrow-side-top.driver-popover-arrow {
-  border-top-color: var(--bg-panel, #141519) !important;
+  border-top-color: var(--bg-panel, #191a1f) !important;
 }
 .driver-popover.vector-tour-popover .driver-popover-arrow-side-bottom.driver-popover-arrow {
-  border-bottom-color: var(--bg-panel, #141519) !important;
+  border-bottom-color: var(--bg-panel, #191a1f) !important;
 }
 
 /* Title */
@@ -54,7 +54,7 @@
   justify-content: space-between !important;
   margin-top: 14px !important;
   padding-top: 14px !important;
-  border-top: 1px solid var(--border-color, #202127) !important;
+  border-top: 1px solid var(--border-color, #303139) !important;
 }
 
 /* Step Progress Indicator */
@@ -86,28 +86,28 @@
 }
 
 .driver-popover.vector-tour-popover .driver-popover-prev-btn:hover {
-  background-color: var(--bg-card-subtle, #2d2f38) !important;
+  background-color: var(--bg-card-subtle, #141519) !important;
   color: var(--text-main, #f3f3f5) !important;
-  border-color: var(--neon-primary, #4a4d5b) !important;
+  border-color: var(--neon-primary, #c3f400) !important;
 }
 
 .driver-popover.vector-tour-popover .driver-popover-next-btn {
-  background-color: #c3f400 !important;
+  background-color: var(--neon-primary, #c3f400) !important;
   color: #07080a !important;
-  border: 1px solid #c3f400 !important;
+  border: 1px solid var(--neon-primary, #c3f400) !important;
   padding: 6px 16px !important;
   font-size: 12px !important;
   font-weight: 800 !important;
   border-radius: 10px !important;
   transition: all 0.2s ease !important;
   cursor: pointer !important;
-  box-shadow: 0 0 15px rgba(195, 244, 0, 0.3) !important;
+  box-shadow: 0 0 15px var(--neon-glow, rgba(195, 244, 0, 0.22)) !important;
   text-shadow: none !important;
 }
 
 .driver-popover.vector-tour-popover .driver-popover-next-btn:hover {
-  background-color: #b0dc00 !important;
-  box-shadow: 0 0 20px rgba(195, 244, 0, 0.45) !important;
+  background-color: var(--neon-hover, #b0dc00) !important;
+  box-shadow: 0 0 20px var(--neon-glow, rgba(195, 244, 0, 0.35)) !important;
   transform: translateY(-1px) !important;
 }
 
@@ -122,24 +122,24 @@
   width: 26px !important;
   height: 26px !important;
   border-radius: 8px !important;
-  background: var(--bg-card, rgba(255, 255, 255, 0.05)) !important;
-  color: var(--text-muted, #8A95B6) !important;
+  background: var(--bg-card, #202127) !important;
+  color: var(--text-muted, #a4a6b2) !important;
   font-size: 14px !important;
-  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1)) !important;
+  border: 1px solid var(--border-color, #303139) !important;
   transition: all 0.2s ease !important;
   cursor: pointer !important;
 }
 
 .driver-popover.vector-tour-popover .driver-popover-close-btn:hover {
-  background: rgba(195, 244, 0, 0.15) !important;
+  background: var(--neon-glow, rgba(195, 244, 0, 0.22)) !important;
   color: var(--neon-text, #c3f400) !important;
-  border-color: rgba(195, 244, 0, 0.4) !important;
+  border-color: var(--neon-primary, #c3f400) !important;
 }
 
 /* Highlight Stage Box */
 .driver-stage {
   border-radius: 14px !important;
-  outline: 2px solid #c3f400 !important;
-  box-shadow: 0 0 25px rgba(195, 244, 0, 0.35) !important;
+  outline: 2px solid var(--neon-primary, #c3f400) !important;
+  box-shadow: 0 0 25px var(--neon-glow, rgba(195, 244, 0, 0.22)) !important;
 }
 

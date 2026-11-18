@@ -8,29 +8,25 @@ import {
   Megaphone,
   Plus,
   ArrowRight,
-  Target,
   DollarSign,
   Users,
-  Calendar,
   Layers,
   Sparkles,
   ExternalLink,
   Filter,
-  CheckCircle2,
   X,
   Bot,
   Zap,
   TrendingUp,
-  BarChart2,
   Play,
   Pause,
   Trash2,
   RefreshCw,
-  Copy,
-  Check,
   Search,
+  Info,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { Portal } from '@/components/common/Portal';
 import { campaignService } from '@/services/campaignService';
 import { aiService } from '@/services/aiService';
 
@@ -41,6 +37,7 @@ export const CampanasView = () => {
 
   // Campañas cargadas con persistencia resiliente multi-tenant
   const [campaigns, setCampaigns] = useState([]);
+  const [isLoading, setIsLoading] = useState(Boolean(activeTenant?.id));
   const [searchQuery, setSearchQuery] = useState('');
   const [channelFilter, setChannelFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -56,25 +53,54 @@ export const CampanasView = () => {
   };
 
   useEffect(() => {
+    let isMounted = true;
     const activeId = activeTenant?.id;
     if (!activeId) {
       setCampaigns([]);
+      setIsLoading(false);
       return;
     }
+    setIsLoading(true);
     campaignService
       .getCampaigns(activeId)
       .then((data) => {
+        if (!isMounted) return;
         setCampaigns(Array.isArray(data) ? data : []);
       })
       .catch((err) => {
+        if (!isMounted) return;
         setCampaigns([]);
         showError(
           err?.response?.data?.message ||
             err?.message ||
             'No se pudieron cargar las campañas desde el servidor.'
         );
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
       });
+
+    return () => {
+      isMounted = false;
+    };
   }, [activeTenant?.id]);
+
+  // Cierre por Escape y scroll-lock en body para el modal de nueva campaña
+  useEffect(() => {
+    if (!isNewModalOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsNewModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow || '';
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isNewModalOpen]);
 
   const tenantMonthlyBudget = Number(activeTenant?.monthlyAdBudget || 0);
 
@@ -191,7 +217,7 @@ export const CampanasView = () => {
         })
       );
     }
-    router.push(`/planner?fromCampaign=${encodeURIComponent(camp.id)}`);
+    router.push(`/crm?tab=studio&fromCampaign=${encodeURIComponent(camp.id)}`);
   };
 
   const parseAiCampaignPayload = (aiRes) => {
@@ -221,7 +247,7 @@ export const CampanasView = () => {
     const hypothesis = parsed?.hypothesis || parsed?.copy;
 
     if (!name && !offer && !hypothesis) {
-      throw new Error('La respuesta de DeepSeek R1 no contiene una estrategia de campaña válida.');
+      throw new Error('La respuesta del motor de IA no contiene una estrategia de campaña válida.');
     }
 
     return { name, offer, objective, audience, hypothesis };
@@ -244,7 +270,7 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
 }`;
   };
 
-  // Generador de Campaña Inteligente con IA (DeepSeek R1)
+  // Generador de Campaña Inteligente con IA
   const handleGenerateWithAi = async () => {
     if (!tenantId) {
       showError('Selecciona un negocio activo antes de generar una campaña con IA.');
@@ -278,11 +304,11 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
         leadsCount: 0,
         piecesCount: 0,
         status: 'Activa',
-        owner: 'DeepSeek R1 Vector',
+        owner: 'Asistente IA Vector',
         start: todayIso,
         end: nextMonth,
         hypothesis: hypothesis || 'Conversión directa a WhatsApp con calificación automatizada.',
-        roas: '0.0x',
+        roas: 'N/D',
         cpl: 0,
       };
 
@@ -301,11 +327,11 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
 
       setTimeout(() => setAiSuccessToast(false), 3500);
     } catch (err) {
-      console.error('Error generando campaña con DeepSeek R1:', err);
+      console.error('Error generando campaña con IA:', err);
       showError(
         err?.response?.data?.message ||
           err?.message ||
-          'No se pudo conectar con DeepSeek R1 para generar la campaña. Verifica tu API Key de IA en Conexiones.'
+          'No se pudo conectar con el motor de IA para generar la campaña. Verifica tu API Key de IA en Conexiones.'
       );
     } finally {
       setIsGeneratingAi(false);
@@ -413,25 +439,30 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
       showError(
         err?.response?.data?.message ||
           err?.message ||
-          'No se pudo obtener sugerencias de IA. Verifica tu conexión con DeepSeek R1.'
+          'No se pudo obtener sugerencias de IA. Verifica tu conexión con el motor de IA.'
       );
     } finally {
       setIsAutofillingAi(false);
     }
   };
 
+  const totalPiecesCount = useMemo(
+    () => campaigns.reduce((acc, c) => acc + (c.piecesCount || 0), 0),
+    [campaigns]
+  );
+
   return (
     <div className="w-full p-3 sm:p-5 lg:p-6 block animate-fade-in space-y-6 font-sans pb-28 min-w-0">
       {/* Toast de Éxito de IA */}
       {aiSuccessToast && (
-        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-2xl bg-zinc-900 border border-neon/50 text-white shadow-2xl flex items-center gap-3 animate-slide-up">
-          <span className="p-2 rounded-xl bg-neon/20 text-neon">
+        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-2xl bg-[var(--bg-panel)] border border-neon/50 text-[var(--text-main)] shadow-2xl flex items-center gap-3 animate-slide-up">
+          <span className="p-2 rounded-xl bg-neon/20 text-lime-700 dark:text-neon">
             <Sparkles className="w-5 h-5" />
           </span>
           <div>
-            <h4 className="font-bold text-xs text-neon">Campaña Generada con Éxito</h4>
-            <p className="text-[11px] text-zinc-300">
-              La hipótesis comercial y los parámetros de pauta han sido persistidos.
+            <h4 className="font-bold text-xs text-lime-700 dark:text-neon">Campaña Generada con Éxito</h4>
+            <p className="text-[11px] text-[var(--text-muted)]">
+              La hipótesis comercial y los parámetros de pauta han sido guardados.
             </p>
           </div>
         </div>
@@ -439,13 +470,13 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
 
       {/* Toast de Error de IA */}
       {aiErrorToast && (
-        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-2xl bg-zinc-900 border border-red-500/50 text-white shadow-2xl flex items-center gap-3 animate-slide-up max-w-md">
-          <span className="p-2 rounded-xl bg-red-500/20 text-red-400">
+        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-2xl bg-[var(--bg-panel)] border border-rose-500/50 text-[var(--text-main)] shadow-2xl flex items-center gap-3 animate-slide-up max-w-md">
+          <span className="p-2 rounded-xl bg-rose-500/15 text-rose-600 dark:text-rose-400">
             <X className="w-5 h-5" />
           </span>
           <div>
-            <h4 className="font-bold text-xs text-red-400">Error de DeepSeek R1</h4>
-            <p className="text-[11px] text-zinc-300">{aiErrorToast}</p>
+            <h4 className="font-bold text-xs text-rose-600 dark:text-rose-400">Error del Asistente IA</h4>
+            <p className="text-[11px] text-[var(--text-muted)]">{aiErrorToast}</p>
           </div>
         </div>
       )}
@@ -453,8 +484,8 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
       {/* Header Unificado */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between pb-5 border-b border-[var(--border-color)] gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-mono font-bold uppercase text-neon tracking-wider bg-neon/10 px-2 py-0.5 rounded border border-neon/30">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <span className="text-[10px] font-mono font-bold uppercase text-lime-700 dark:text-neon tracking-wider bg-neon/10 px-2 py-0.5 rounded border border-neon/30">
               OPERACIÓN / ESTRATEGIA COMERCIAL
             </span>
             <span className="text-xs text-[var(--text-muted)] font-mono flex items-center gap-1.5">
@@ -462,7 +493,7 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
               <strong className="text-[var(--text-main)]">
                 {activeTenant?.name || 'Sin negocio seleccionado'}
               </strong>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-neon font-bold">
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--bg-card)] border border-[var(--border-color)] text-lime-700 dark:text-neon font-bold">
                 {activeTenant?.giro || activeTenant?.verticalLabel || 'General'}
               </span>
             </span>
@@ -485,12 +516,12 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
           >
             {isGeneratingAi ? (
               <>
-                <RefreshCw className="w-3.5 h-3.5 animate-spin text-neon" />
+                <RefreshCw className="w-3.5 h-3.5 animate-spin text-lime-700 dark:text-neon" />
                 <span>Generando con IA...</span>
               </>
             ) : (
               <>
-                <Bot className="w-4 h-4 text-neon" />
+                <Bot className="w-4 h-4 text-lime-700 dark:text-neon" />
                 <span>Copilot IA: Nueva Oferta</span>
               </>
             )}
@@ -508,30 +539,49 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
         </div>
       </div>
 
-      {/* KPI Cards Overview con Inteligencia de Estado Cero */}
+      {/* KPI Cards Overview con Inteligencia de Estado Cero y Tooltips (UX-04, UX-08) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         {/* Presupuesto Asignado */}
         <div className="p-4 sm:p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2.5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block">
-              Presupuesto Asignado
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-1.5">
+              <span>Presupuesto Asignado</span>
+              <span
+                className="inline-flex items-center text-[var(--text-faint)] hover:text-[var(--text-main)] cursor-help"
+                title="Suma del presupuesto mensual asignado a tus campañas activas o presupuesto base del negocio."
+                aria-label="Información sobre Presupuesto Asignado"
+              >
+                <Info className="w-3 h-3" />
+              </span>
             </span>
-            <DollarSign className="w-4 h-4 text-[var(--text-muted)]" />
+            <DollarSign className="w-4 h-4 text-[var(--text-muted)] shrink-0" />
           </div>
           <p className="text-2xl font-heading font-black text-[var(--text-main)]">
-            ${formatNumber(campaigns.length > 0 ? totalBudget : tenantMonthlyBudget)}{' '}
-            <small className="text-xs font-mono text-[var(--text-faint)]">MXN</small>
+            {(campaigns.length > 0 ? totalBudget : tenantMonthlyBudget) > 0 ? (
+              <>
+                ${formatNumber(campaigns.length > 0 ? totalBudget : tenantMonthlyBudget)}{' '}
+                <small className="text-xs font-mono text-[var(--text-faint)]">MXN</small>
+              </>
+            ) : (
+              'N/D'
+            )}
           </p>
           <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)] font-mono">
             <span>{campaigns.length} campañas registradas</span>
-            <span className="text-neon font-bold">
-              {campaigns.length > 0 ? `${executionPct}% ejecutado` : tenantMonthlyBudget > 0 ? 'Presupuesto Base' : 'Sin presupuesto'}
+            <span className="text-lime-700 dark:text-neon font-bold">
+              {campaigns.length > 0
+                ? totalBudget > 0
+                  ? `${executionPct}% ejecutado`
+                  : 'N/D'
+                : tenantMonthlyBudget > 0
+                ? 'Presupuesto Base'
+                : 'N/D'}
             </span>
           </div>
           <div className="w-full h-1.5 rounded-full bg-[var(--bg-card)] overflow-hidden">
             <div
               className={`h-full rounded-full transition-all duration-500 ${
-                executionPct > 90 ? 'bg-amber-400' : 'bg-neon'
+                executionPct > 90 ? 'bg-amber-500 dark:bg-amber-400' : 'bg-neon'
               }`}
               style={{ width: `${campaigns.length > 0 ? Math.min(executionPct, 100) : 0}%` }}
             />
@@ -540,44 +590,76 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
 
         {/* Gasto Devengado */}
         <div className="p-4 sm:p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2.5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block">
-              Gasto Devengado Real
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-1.5">
+              <span>Gasto Devengado Real</span>
+              <span
+                className="inline-flex items-center text-[var(--text-faint)] hover:text-[var(--text-main)] cursor-help"
+                title="Inversión publicitaria consumida en Meta Ads y Google Ads durante el periodo activo."
+                aria-label="Información sobre Gasto Devengado Real"
+              >
+                <Info className="w-3 h-3" />
+              </span>
             </span>
-            <TrendingUp className="w-4 h-4 text-emerald-400" />
+            <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
           </div>
-          <p className="text-2xl font-heading font-black text-emerald-400">
-            ${formatNumber(totalSpend)} <small className="text-xs font-mono text-[var(--text-faint)]">MXN</small>
+          <p className="text-2xl font-heading font-black text-emerald-600 dark:text-emerald-400">
+            {campaigns.length > 0 ? (
+              <>
+                ${formatNumber(totalSpend)} <small className="text-xs font-mono text-[var(--text-faint)]">MXN</small>
+              </>
+            ) : (
+              'N/D'
+            )}
           </p>
           <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)] font-mono">
             <span>Inversión Meta / Google</span>
-            <span className="text-emerald-400 font-bold">
+            <span className="text-emerald-600 dark:text-emerald-400 font-bold">
               {campaigns.length > 0 ? 'En ritmo' : 'Sin pauta activa'}
             </span>
           </div>
           <div className="w-full h-1.5 rounded-full bg-[var(--bg-card)] overflow-hidden">
             <div
               className="h-full bg-emerald-500 rounded-full"
-              style={{ width: `${Math.min(executionPct, 100)}%` }}
+              style={{ width: `${campaigns.length > 0 ? Math.min(executionPct, 100) : 0}%` }}
             />
           </div>
         </div>
 
         {/* Prospectos Generados & CPL Proyectado */}
         <div className="p-4 sm:p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2.5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block">
-              Prospectos Generados
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-1.5">
+              <span>Prospectos Generados</span>
+              <span
+                className="inline-flex items-center text-[var(--text-faint)] hover:text-[var(--text-main)] cursor-help"
+                title="Total de prospectos captados por campañas y su costo promedio por prospecto (CPL)."
+                aria-label="Información sobre Prospectos Generados"
+              >
+                <Info className="w-3 h-3" />
+              </span>
             </span>
-            <Users className="w-4 h-4 text-neon" />
+            <Users className="w-4 h-4 text-lime-700 dark:text-neon shrink-0" />
           </div>
           <p className="text-2xl font-heading font-black text-[var(--text-main)]">
-            {totalLeads} <small className="text-xs font-mono text-neon font-bold">leads</small>
+            {campaigns.length > 0 ? (
+              <>
+                {totalLeads} <small className="text-xs font-mono text-lime-700 dark:text-neon font-bold">leads</small>
+              </>
+            ) : (
+              'N/D'
+            )}
           </p>
           <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)] font-mono">
             <span>{campaigns.length > 0 ? 'Costo Promedio (CPL):' : 'Tarifa Base Lead:'}</span>
-            <strong className="text-neon font-bold">
-              ${campaigns.length > 0 ? avgCpl : benchmarkCpl} MXN
+            <strong className="text-lime-700 dark:text-neon font-bold">
+              {campaigns.length > 0
+                ? totalLeads > 0
+                  ? `$${avgCpl} MXN`
+                  : 'N/D'
+                : benchmarkCpl > 0
+                ? `$${benchmarkCpl} MXN`
+                : 'N/D'}
             </strong>
           </div>
           <div className="w-full h-1.5 rounded-full bg-[var(--bg-card)] overflow-hidden">
@@ -590,23 +672,37 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
 
         {/* Piezas Creativas Vinculadas */}
         <div className="p-4 sm:p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2.5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block">
-              Piezas en Estudio
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-1.5">
+              <span>Piezas en Estudio</span>
+              <span
+                className="inline-flex items-center text-[var(--text-faint)] hover:text-[var(--text-main)] cursor-help"
+                title="Piezas creativas y anuncios vinculados directamente con el Estudio de Contenido."
+                aria-label="Información sobre Piezas en Estudio"
+              >
+                <Info className="w-3 h-3" />
+              </span>
             </span>
-            <Layers className="w-4 h-4 text-blue-400" />
+            <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
           </div>
           <p className="text-2xl font-heading font-black text-[var(--text-main)]">
-            {campaigns.reduce((acc, c) => acc + (c.piecesCount || 0), 0)}{' '}
-            <small className="text-xs font-mono text-[var(--text-faint)]">piezas</small>
+            {campaigns.length > 0 ? (
+              <>
+                {totalPiecesCount}{' '}
+                <small className="text-xs font-mono text-[var(--text-faint)]">piezas</small>
+              </>
+            ) : (
+              'N/D'
+            )}
           </p>
           <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)] font-mono">
-            <span>Conectadas con Planner</span>
+            <span>Conectadas con Estudio</span>
             <button
-              onClick={() => router.push('/planner')}
-              className="text-blue-400 font-bold hover:underline flex items-center gap-0.5"
+              type="button"
+              onClick={() => router.push('/crm?tab=studio')}
+              className="text-blue-600 dark:text-blue-400 font-bold hover:underline flex items-center gap-0.5"
             >
-              <span>Ver Planner</span>
+              <span>Ver Estudio</span>
               <ArrowRight className="w-3 h-3" />
             </button>
           </div>
@@ -614,8 +710,7 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
             <div
               className="h-full bg-blue-500 rounded-full"
               style={{
-                width:
-                  campaigns.reduce((acc, c) => acc + (c.piecesCount || 0), 0) > 0 ? '100%' : '0%',
+                width: totalPiecesCount > 0 ? '100%' : '0%',
               }}
             />
           </div>
@@ -623,15 +718,42 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
       </div>
 
       {/* =========================================================================
-          CONTENIDO DINÁMICO: LAUNCHPAD ASISTIDO vs GRID CON FILTROS (SIN DOBLE RENDER)
+          CONTENIDO DINÁMICO: SKELETON vs INICIO RÁPIDO vs GRID CON FILTROS
           ========================================================================= */}
-      {campaigns.length === 0 ? (
-        /* CASO A: ESTADO CERO TOTAL -> LAUNCHPAD ASISTIDO CON 3 RUTAS */
+      {isLoading ? (
+        <div className="space-y-4" aria-busy="true" aria-label="Cargando campañas">
+          <div className="h-14 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] animate-pulse" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+            {[0, 1, 2].map((idx) => (
+              <div
+                key={idx}
+                className="p-5 sm:p-6 rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-4 animate-pulse"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="h-5 w-20 rounded-full bg-[var(--bg-card)]" />
+                  <div className="h-5 w-28 rounded-lg bg-[var(--bg-card)]" />
+                </div>
+                <div className="space-y-2">
+                  <div className="h-6 w-3/4 rounded-lg bg-[var(--bg-card)]" />
+                  <div className="h-4 w-full rounded-lg bg-[var(--bg-card)]" />
+                </div>
+                <div className="h-20 rounded-2xl bg-[var(--bg-card)]" />
+                <div className="h-14 rounded-2xl bg-[var(--bg-card)]" />
+                <div className="flex items-center justify-between pt-2">
+                  <div className="h-8 w-36 rounded-xl bg-[var(--bg-card)]" />
+                  <div className="h-8 w-24 rounded-xl bg-[var(--bg-card)]" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : campaigns.length === 0 ? (
+        /* CASO A: ESTADO CERO TOTAL -> INICIO RÁPIDO ASISTIDO CON 3 RUTAS */
         <div className="rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-5 sm:p-6 lg:p-8 space-y-6 shadow-sm">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neon/10 border border-neon/30 text-lime-700 dark:text-neon text-xs font-mono font-bold mb-3">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>LAUNCHPAD ESTRATÉGICO • {activeTenant?.name || 'ESPACIO ACTIVO'}</span>
+              <span>INICIO RÁPIDO ESTRATÉGICO • {activeTenant?.name || 'ESPACIO ACTIVO'}</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-heading font-black text-[var(--text-main)] tracking-tight">
               Activa la Adquisición Predecible de Clientes
@@ -645,19 +767,19 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
             {/* RUTA 1: LANZAR CAMPAÑA PUBLICITARIA MULTICANAL */}
             <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-emerald-500/50 transition-all flex flex-col justify-between space-y-5 group">
               <div className="space-y-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
                   <Zap className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-400 font-bold block">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-bold block">
                     Meta Ads, Google & Conversiones
                   </span>
-                  <h3 className="font-heading font-black text-base text-[var(--text-main)] group-hover:text-emerald-400 transition-colors">
+                  <h3 className="font-heading font-black text-base text-[var(--text-main)] group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                     Crear Campaña Publicitaria
                   </h3>
                 </div>
                 <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                  Configura pauta en Instagram, Facebook o Google con captación multicanal, medición CAPI y derivación automática a citas.
+                  Configura pauta en Instagram, Facebook o Google con captación multicanal, medición avanzada de conversiones y derivación automática a citas.
                 </p>
               </div>
               <button
@@ -681,14 +803,14 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
             <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-card)] border border-neon/40 hover:border-neon transition-all flex flex-col justify-between space-y-5 relative overflow-hidden group shadow-sm">
               <div className="absolute top-0 right-0 w-24 h-24 bg-neon/10 rounded-full blur-xl pointer-events-none" />
               <div className="space-y-3 relative z-10">
-                <div className="w-10 h-10 rounded-xl bg-neon/20 border border-neon/40 flex items-center justify-center text-neon">
+                <div className="w-10 h-10 rounded-xl bg-neon/20 border border-neon/40 flex items-center justify-center text-lime-700 dark:text-neon">
                   <Bot className="w-5 h-5" />
                 </div>
                 <div>
                   <span className="text-[10px] font-mono uppercase tracking-wider text-lime-700 dark:text-neon font-bold block">
-                    Asistencia DeepSeek R1
+                    Asistencia IA Estratégica
                   </span>
-                  <h3 className="font-heading font-black text-base text-[var(--text-main)] group-hover:text-neon transition-colors">
+                  <h3 className="font-heading font-black text-base text-[var(--text-main)] group-hover:text-lime-700 dark:group-hover:text-neon transition-colors">
                     Diseñar Oferta Gancho con IA
                   </h3>
                 </div>
@@ -714,25 +836,25 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
             {/* RUTA 3: CONECTAR CANALES O IMPORTAR */}
             <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-blue-500/50 transition-all flex flex-col justify-between space-y-5 group">
               <div className="space-y-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
                   <ExternalLink className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-blue-400 font-bold block">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-blue-600 dark:text-blue-400 font-bold block">
                     Sincronización Multicanal
                   </span>
-                  <h3 className="font-heading font-black text-base text-[var(--text-main)] group-hover:text-blue-400 transition-colors">
+                  <h3 className="font-heading font-black text-base text-[var(--text-main)] group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                     Conectar Cuentas Publicitarias
                   </h3>
                 </div>
                 <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                  ¿Ya tienes anuncios activos en Meta Ads Manager o Google? Vincula las cuentas para habilitar medición CAPI y atribución.
+                  ¿Ya tienes anuncios activos en Meta Ads Manager o Google? Vincula las cuentas para habilitar medición de conversiones y atribución.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => router.push('/connections?tab=channels')}
-                className="w-full py-2.5 px-3 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] hover:border-blue-400 text-blue-400 font-mono font-bold text-xs transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                className="w-full py-2.5 px-3 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] hover:border-blue-500 text-blue-600 dark:text-blue-400 font-mono font-bold text-xs transition-all flex items-center justify-center gap-1.5 active:scale-95"
               >
                 <span>Conectar Cuentas</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -754,7 +876,7 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
               <button
                 type="button"
                 onClick={() => setChannelFilter('all')}
-                className={`px-3 py-1 rounded-xl transition-all ${
+                className={`px-3 py-1.5 rounded-xl transition-all ${
                   channelFilter === 'all'
                     ? 'bg-neon text-black font-bold shadow-sm'
                     : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)]'
@@ -765,7 +887,7 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
               <button
                 type="button"
                 onClick={() => setChannelFilter('meta')}
-                className={`px-3 py-1 rounded-xl transition-all ${
+                className={`px-3 py-1.5 rounded-xl transition-all ${
                   channelFilter === 'meta'
                     ? 'bg-neon text-black font-bold shadow-sm'
                     : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)]'
@@ -776,18 +898,18 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
               <button
                 type="button"
                 onClick={() => setChannelFilter('google')}
-                className={`px-3 py-1 rounded-xl transition-all ${
+                className={`px-3 py-1.5 rounded-xl transition-all ${
                   channelFilter === 'google'
                     ? 'bg-neon text-black font-bold shadow-sm'
                     : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)]'
                 }`}
               >
-                Google Search & CAPI
+                Google Search & Ads
               </button>
               <button
                 type="button"
                 onClick={() => setChannelFilter('tiktok')}
-                className={`px-3 py-1 rounded-xl transition-all ${
+                className={`px-3 py-1.5 rounded-xl transition-all ${
                   channelFilter === 'tiktok'
                     ? 'bg-neon text-black font-bold shadow-sm'
                     : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)]'
@@ -800,20 +922,20 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
             {/* Búsqueda y Selector de Estatus */}
             <div className="flex items-center gap-2 flex-wrap">
               <div className="relative">
-                <Search className="w-3.5 h-3.5 text-[var(--text-muted)] absolute left-2.5 top-1/2 -translate-y-1/2" />
+                <Search className="w-3.5 h-3.5 text-[var(--text-muted)] absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="Buscar campaña..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8 pr-3 py-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] placeholder-[var(--text-faint)] text-xs font-sans outline-none focus:border-neon w-40 sm:w-52"
+                  className="pl-8 pr-3 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] placeholder-[var(--text-faint)] text-xs font-sans outline-none focus:border-neon w-40 sm:w-52"
                 />
               </div>
 
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="p-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] text-xs font-mono outline-none focus:border-neon"
+                className="px-3 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] text-xs font-mono outline-none focus:border-neon"
               >
                 <option value="all">Todos los estados</option>
                 <option value="active">Solo Activas</option>
@@ -821,16 +943,17 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
                 <option value="prep">En preparación</option>
               </select>
 
-              {hasActiveFilters && (
-                <button
-                  type="button"
-                  onClick={handleResetFilters}
-                  className="p-1.5 rounded-xl bg-[var(--bg-card)] text-zinc-400 hover:text-white border border-[var(--border-color)] transition-colors"
-                  title="Restablecer filtros"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                </button>
-              )}
+              <button
+                type="button"
+                disabled={!hasActiveFilters}
+                onClick={handleResetFilters}
+                className="px-2.5 py-2 rounded-xl bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
+                title={hasActiveFilters ? 'Restablecer filtros' : 'Sin filtros activos'}
+                aria-label="Restablecer filtros"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span className="hidden xl:inline text-[11px]">Limpiar</span>
+              </button>
             </div>
           </div>
 
@@ -863,6 +986,11 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
                   camp.budget > 0 ? Math.round((campSpend / camp.budget) * 100) : 0;
                 const currentCpl =
                   camp.leadsCount > 0 ? Math.round(campSpend / camp.leadsCount) : campCpl;
+                const hasCplData = camp.leadsCount > 0 || campCpl > 0;
+                const roasLabel =
+                  camp.roas && camp.roas !== '0.0x' && camp.roas !== 'Pendiente'
+                    ? camp.roas
+                    : 'N/D';
 
                 return (
                   <div
@@ -876,21 +1004,21 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-1.5">
                           <span
-                            className={`text-[9px] font-mono px-2 py-0.5 rounded-full font-bold uppercase flex items-center gap-1 border ${
+                            className={`text-[9px] font-mono px-2.5 py-0.5 rounded-full font-bold uppercase flex items-center gap-1 border ${
                               camp.status === 'Activa'
-                                ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                                ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30'
                                 : camp.status === 'Pausada'
-                                ? 'bg-zinc-500/15 text-zinc-400 border-zinc-500/30'
-                                : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                                ? 'bg-zinc-500/15 text-zinc-600 dark:text-zinc-400 border-zinc-500/30'
+                                : 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30'
                             }`}
                           >
                             <span
                               className={`w-1.5 h-1.5 rounded-full ${
                                 camp.status === 'Activa'
-                                  ? 'bg-emerald-400 animate-pulse'
+                                  ? 'bg-emerald-500 dark:bg-emerald-400 animate-pulse'
                                   : camp.status === 'Pausada'
-                                  ? 'bg-zinc-400'
-                                  : 'bg-amber-400'
+                                  ? 'bg-zinc-500 dark:bg-zinc-400'
+                                  : 'bg-amber-500 dark:bg-amber-400'
                               }`}
                             />
                             <span>{camp.status}</span>
@@ -899,7 +1027,7 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
                           <button
                             type="button"
                             onClick={() => handleToggleStatus(camp.id)}
-                            className="p-1 rounded-lg text-zinc-500 hover:text-white hover:bg-white/5 transition-colors"
+                            className="p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] transition-colors"
                             title={camp.status === 'Activa' ? 'Pausar campaña' : 'Activar campaña'}
                           >
                             {camp.status === 'Activa' ? (
@@ -910,14 +1038,14 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
                           </button>
                         </div>
 
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-faint)]">
+                        <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-faint)]">
                           {camp.channel}
                         </span>
                       </div>
 
                       {/* Title & Offer */}
                       <div>
-                        <h3 className="font-heading font-black text-lg text-[var(--text-main)] group-hover:text-neon transition-colors leading-tight">
+                        <h3 className="font-heading font-black text-lg text-[var(--text-main)] group-hover:text-lime-700 dark:group-hover:text-neon transition-colors leading-tight">
                           {camp.name}
                         </h3>
                         <p className="text-xs text-[var(--text-muted)] mt-1.5 font-sans leading-relaxed line-clamp-2">
@@ -926,20 +1054,18 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
                       </div>
 
                       {/* Strategic Hypothesis */}
-                      <div className="p-3 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs font-sans space-y-1">
+                      <div className="p-3.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs font-sans space-y-1">
                         <div className="flex items-center justify-between">
                           <span className="text-[10px] font-mono font-bold text-lime-700 dark:text-neon flex items-center gap-1">
                             <Sparkles className="w-3 h-3" />
                             Hipótesis Estratégica
                           </span>
-                          {camp.roas && (
-                            <span className="text-[9.5px] font-mono font-bold text-emerald-400">
-                              ROAS: {camp.roas}
-                            </span>
-                          )}
+                          <span className="text-[9.5px] font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                            ROAS: {roasLabel}
+                          </span>
                         </div>
                         <p className="text-[11px] text-[var(--text-muted)] italic leading-relaxed">
-                          "{camp.hypothesis}"
+                          &quot;{camp.hypothesis}&quot;
                         </p>
                       </div>
 
@@ -947,38 +1073,42 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
                       <div className="space-y-1.5 pt-1">
                         <div className="flex items-center justify-between text-[10.5px] font-mono">
                           <span className="text-[var(--text-muted)]">Presupuesto Consumido</span>
-                          <span className="text-[var(--text-main)] font-bold">{spendPct}%</span>
+                          <span className="text-[var(--text-main)] font-bold">
+                            {camp.budget > 0 ? `${spendPct}%` : 'N/D'}
+                          </span>
                         </div>
                         <div className="w-full h-2 rounded-full bg-[var(--bg-card)] overflow-hidden">
                           <div
                             className={`h-full rounded-full transition-all duration-500 ${
                               spendPct > 90
-                                ? 'bg-amber-400'
+                                ? 'bg-amber-500 dark:bg-amber-400'
                                 : 'bg-gradient-to-r from-emerald-500 to-neon'
                             }`}
                             style={{ width: `${Math.min(spendPct, 100)}%` }}
                           />
                         </div>
                         <div className="flex items-center justify-between text-[10px] font-mono text-[var(--text-faint)] pt-0.5">
-                          <span>Gasto: ${formatNumber(camp.spend)} MXN</span>
-                          <span>Meta: ${formatNumber(camp.budget)} MXN</span>
+                          <span>Gasto: ${formatNumber(campSpend)} MXN</span>
+                          <span>Meta: {camp.budget > 0 ? `$${formatNumber(camp.budget)} MXN` : 'N/D'}</span>
                         </div>
                       </div>
 
                       {/* Performance Metrics: CPL & Leads */}
-                      <div className="grid grid-cols-2 gap-2 p-2.5 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-xs font-mono">
+                      <div className="grid grid-cols-2 gap-2 p-3 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-xs font-mono">
                         <div>
                           <span className="text-[9px] text-[var(--text-faint)] block uppercase">
                             Costo por Lead
                           </span>
-                          <span className="font-bold text-neon">${currentCpl} MXN</span>
+                          <span className="font-bold text-lime-700 dark:text-neon">
+                            {hasCplData ? `$${currentCpl} MXN` : 'N/D'}
+                          </span>
                         </div>
                         <div>
                           <span className="text-[9px] text-[var(--text-faint)] block uppercase">
                             Prospectos Captados
                           </span>
-                          <span className="font-bold text-emerald-400">
-                            {camp.leadsCount} leads
+                          <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                            {camp.leadsCount ?? 0} leads
                           </span>
                         </div>
                       </div>
@@ -986,9 +1116,9 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
 
                     {/* Creativos Vinculados Reales de la Parrilla */}
                     {Array.isArray(camp.linkedPosts) && camp.linkedPosts.length > 0 && (
-                      <div className="p-2.5 rounded-2xl bg-[var(--bg-card)] border border-neon/20 space-y-1.5 text-xs z-10">
+                      <div className="p-3 rounded-2xl bg-[var(--bg-card)] border border-neon/20 space-y-1.5 text-xs z-10">
                         <span className="text-[10px] font-mono text-lime-700 dark:text-neon font-bold flex items-center gap-1 uppercase tracking-wider">
-                          <Sparkles className="w-3 h-3 text-neon" />
+                          <Sparkles className="w-3 h-3 text-lime-700 dark:text-neon" />
                           Creativos Vinculados ({camp.linkedPosts.length})
                         </span>
                         <div className="space-y-1">
@@ -1007,7 +1137,7 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
                       <button
                         type="button"
                         onClick={() => handleSendCampaignToPlanner(camp)}
-                        className="px-2.5 py-1.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 font-mono font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+                        className="px-3 py-1.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 font-mono font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
                         title="Abrir el Estudio de Contenido con la oferta y canal de esta campaña pre-cargados"
                       >
                         <Sparkles className="w-3.5 h-3.5" />
@@ -1018,7 +1148,7 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
                         <button
                           type="button"
                           onClick={() => handleDeleteCampaign(camp.id)}
-                          className="p-1.5 rounded-xl text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                          className="p-2 rounded-xl text-[var(--text-muted)] hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
                           title="Eliminar campaña"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -1029,7 +1159,7 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
                           onClick={() => router.push('/crm')}
                           className="px-3 py-1.5 rounded-xl bg-neon/15 hover:bg-neon text-lime-700 dark:text-neon hover:text-black font-mono font-bold text-xs transition-all flex items-center gap-1.5 active:scale-95"
                         >
-                          <span>Ver Leads ({camp.leadsCount})</span>
+                          <span>Ver Leads ({camp.leadsCount ?? 0})</span>
                           <ArrowRight className="w-3.5 h-3.5" />
                         </button>
                       </div>
@@ -1042,179 +1172,187 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
         </div>
       )}
 
-      {/* Modal de Nueva Campaña */}
+      {/* Modal de Nueva Campaña en Portal con Escape y scroll-lock */}
       {isNewModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in select-none overflow-y-auto">
-          <div className="w-full max-w-xl bg-[var(--bg-panel)] border border-neon/30 rounded-3xl shadow-2xl overflow-hidden p-6 space-y-5 my-auto animate-scale-up text-[var(--text-main)]">
-            <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
-              <div>
-                <h3 className="font-heading font-black text-lg text-[var(--text-main)] flex items-center gap-2">
-                  <Megaphone className="w-5 h-5 text-neon" />
-                  <span>{isAdmin ? 'Alta de Nueva Campaña Estratégica' : 'Proponer una Campaña'}</span>
-                </h3>
-                <span className="text-[10px] font-mono text-[var(--text-muted)]">
-                  Giro activo: {activeTenant?.name} ({activeTenant?.giro || activeTenant?.verticalLabel || 'Comercial'})
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsNewModalOpen(false)}
-                className="p-1.5 rounded-xl bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-white border border-[var(--border-color)] transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* AI Autofill Prompt Box */}
-            <div className="p-3.5 rounded-2xl bg-neon/10 border border-neon/30 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <Bot className="w-4 h-4 text-neon shrink-0" />
-                <span className="text-xs font-mono text-lime-700 dark:text-neon">
-                  ¿Quieres sugerencias automáticas para {activeTenant?.giro || 'tu giro'}?
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={handleAutofillAiForm}
-                disabled={isAutofillingAi}
-                className="py-1 px-3 rounded-xl bg-neon text-black font-mono font-bold text-xs hover:bg-neon-hover transition-all shrink-0 active:scale-95 shadow-sm disabled:opacity-60 flex items-center gap-1.5"
-              >
-                {isAutofillingAi ? (
-                  <>
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    Generando con IA...
-                  </>
-                ) : (
-                  '✨ Autocompletar con IA'
-                )}
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateCampaign} className="space-y-4 text-xs font-sans">
-              <div>
-                <label className="font-mono text-[10px] text-[var(--text-muted)] uppercase block mb-1 font-bold">
-                  Nombre de la Campaña (Catchy & Comercial)
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ej: Diagnóstico Inicial & Cualificación 24/7"
-                  value={newCampaignForm.name}
-                  onChange={(e) =>
-                    setNewCampaignForm({ ...newCampaignForm, name: e.target.value })
-                  }
-                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="font-mono text-[10px] text-[var(--text-muted)] uppercase block mb-1 font-bold">
-                  Oferta Principal / Gancho Promocional
-                </label>
-                <textarea
-                  rows={2}
-                  required
-                  placeholder="¿Cuál es la propuesta de valor o gancho que se ofrecerá al prospecto?"
-                  value={newCampaignForm.offer}
-                  onChange={(e) =>
-                    setNewCampaignForm({ ...newCampaignForm, offer: e.target.value })
-                  }
-                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none resize-none text-xs"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-mono">
+        <Portal>
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in select-none overflow-y-auto"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setIsNewModalOpen(false);
+            }}
+          >
+            <div className="w-full max-w-xl bg-[var(--bg-panel)] border border-neon/30 rounded-3xl shadow-2xl overflow-hidden p-6 space-y-5 my-auto animate-scale-up text-[var(--text-main)]">
+              <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
                 <div>
-                  <label className="text-[10px] text-[var(--text-muted)] uppercase block mb-1 font-bold">
-                    Canal Publicitario
-                  </label>
-                  <select
-                    value={newCampaignForm.channel}
-                    onChange={(e) =>
-                      setNewCampaignForm({ ...newCampaignForm, channel: e.target.value })
-                    }
-                    className="w-full p-2.5 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs font-mono"
-                  >
-                    <option value="Meta Ads (Instagram & FB)">Meta Ads (Instagram & FB)</option>
-                    <option value="Google Search & CAPI">Google Search & CAPI</option>
-                    <option value="Reels & TikTok">Reels & TikTok</option>
-                    <option value="WhatsApp Direct (CAPI)">WhatsApp Direct (CAPI)</option>
-                  </select>
+                  <h3 className="font-heading font-black text-lg text-[var(--text-main)] flex items-center gap-2">
+                    <Megaphone className="w-5 h-5 text-lime-700 dark:text-neon" />
+                    <span>{isAdmin ? 'Alta de Nueva Campaña Estratégica' : 'Proponer una Campaña'}</span>
+                  </h3>
+                  <span className="text-[10px] font-mono text-[var(--text-muted)]">
+                    Giro activo: {activeTenant?.name} ({activeTenant?.giro || activeTenant?.verticalLabel || 'Comercial'})
+                  </span>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setIsNewModalOpen(false)}
+                  className="p-2 rounded-xl bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)] transition-colors"
+                  aria-label="Cerrar modal"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
 
+              {/* AI Autofill Prompt Box */}
+              <div className="p-3.5 rounded-2xl bg-neon/10 border border-neon/30 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Bot className="w-4 h-4 text-lime-700 dark:text-neon shrink-0" />
+                  <span className="text-xs font-mono text-lime-700 dark:text-neon">
+                    ¿Quieres sugerencias automáticas para {activeTenant?.giro || 'tu giro'}?
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAutofillAiForm}
+                  disabled={isAutofillingAi}
+                  className="py-1.5 px-3 rounded-xl bg-neon text-black font-mono font-bold text-xs hover:bg-neon-hover transition-all shrink-0 active:scale-95 shadow-sm disabled:opacity-60 flex items-center gap-1.5"
+                >
+                  {isAutofillingAi ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      Generando con IA...
+                    </>
+                  ) : (
+                    '✨ Autocompletar con IA'
+                  )}
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateCampaign} className="space-y-4 text-xs font-sans">
                 <div>
-                  <label className="text-[10px] text-[var(--text-muted)] uppercase block mb-1 font-bold">
-                    Presupuesto Mensual (MXN)
+                  <label className="font-mono text-[10px] text-[var(--text-muted)] uppercase block mb-1 font-bold">
+                    Nombre de la Campaña (Catchy & Comercial)
                   </label>
                   <input
-                    type="number"
-                    min={1000}
-                    step={500}
-                    value={newCampaignForm.budget}
+                    type="text"
+                    required
+                    placeholder="Ej: Diagnóstico Inicial & Cualificación 24/7"
+                    value={newCampaignForm.name}
                     onChange={(e) =>
-                      setNewCampaignForm({ ...newCampaignForm, budget: e.target.value })
+                      setNewCampaignForm({ ...newCampaignForm, name: e.target.value })
                     }
                     className="w-full p-2.5 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs"
                   />
                 </div>
-              </div>
 
-              <div>
-                <label className="font-mono text-[10px] text-[var(--text-muted)] uppercase block mb-1 font-bold">
-                  Público Objetivo & Geosegmentación
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ej: Profesionistas 28-50 años en CDMX interesados en salud / negocios"
-                  value={newCampaignForm.audience}
-                  onChange={(e) =>
-                    setNewCampaignForm({ ...newCampaignForm, audience: e.target.value })
-                  }
-                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs"
-                />
-              </div>
+                <div>
+                  <label className="font-mono text-[10px] text-[var(--text-muted)] uppercase block mb-1 font-bold">
+                    Oferta Principal / Gancho Promocional
+                  </label>
+                  <textarea
+                    rows={2}
+                    required
+                    placeholder="¿Cuál es la propuesta de valor o gancho que se ofrecerá al prospecto?"
+                    value={newCampaignForm.offer}
+                    onChange={(e) =>
+                      setNewCampaignForm({ ...newCampaignForm, offer: e.target.value })
+                    }
+                    className="w-full p-2.5 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none resize-none text-xs"
+                  />
+                </div>
 
-              <div>
-                <label className="font-mono text-[10px] text-[var(--text-muted)] uppercase block mb-1 font-bold">
-                  Hipótesis Estratégica (¿Por qué convertirá?)
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="¿Qué objeción resuelve esta oferta y por qué generará leads más calificados?"
-                  value={newCampaignForm.hypothesis}
-                  onChange={(e) =>
-                    setNewCampaignForm({ ...newCampaignForm, hypothesis: e.target.value })
-                  }
-                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none resize-none text-xs"
-                />
-              </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-mono">
+                  <div>
+                    <label className="text-[10px] text-[var(--text-muted)] uppercase block mb-1 font-bold">
+                      Canal Publicitario
+                    </label>
+                    <select
+                      value={newCampaignForm.channel}
+                      onChange={(e) =>
+                        setNewCampaignForm({ ...newCampaignForm, channel: e.target.value })
+                      }
+                      className="w-full p-2.5 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs font-mono"
+                    >
+                      <option value="Meta Ads (Instagram & FB)">Meta Ads (Instagram & FB)</option>
+                      <option value="Google Search & Ads">Google Search & Ads</option>
+                      <option value="Reels & TikTok">Reels & TikTok</option>
+                      <option value="WhatsApp Direct">WhatsApp Direct</option>
+                    </select>
+                  </div>
 
-              <div className="pt-2 flex items-center justify-end gap-2.5 border-t border-[var(--border-color)] flex-wrap">
-                <button
-                  type="button"
-                  onClick={() => setIsNewModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-[var(--border-color)] text-[var(--text-muted)] hover:text-white font-mono text-xs transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-xl bg-[var(--bg-card)] border border-neon/40 hover:border-neon text-lime-700 dark:text-neon font-mono font-bold text-xs transition-all active:scale-95"
-                >
-                  Guardar & Activar
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => handleCreateCampaign(e, true)}
-                  className="px-5 py-2 rounded-xl bg-neon text-black font-mono font-black uppercase text-xs hover:bg-neon-hover transition-all active:scale-95 shadow-md flex items-center gap-1.5"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Guardar & Crear Anuncios ⚡</span>
-                </button>
-              </div>
-            </form>
+                  <div>
+                    <label className="text-[10px] text-[var(--text-muted)] uppercase block mb-1 font-bold">
+                      Presupuesto Mensual (MXN)
+                    </label>
+                    <input
+                      type="number"
+                      min={1000}
+                      step={500}
+                      value={newCampaignForm.budget}
+                      onChange={(e) =>
+                        setNewCampaignForm({ ...newCampaignForm, budget: e.target.value })
+                      }
+                      className="w-full p-2.5 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="font-mono text-[10px] text-[var(--text-muted)] uppercase block mb-1 font-bold">
+                    Público Objetivo & Geosegmentación
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ej: Profesionistas 28-50 años en CDMX interesados en salud / negocios"
+                    value={newCampaignForm.audience}
+                    onChange={(e) =>
+                      setNewCampaignForm({ ...newCampaignForm, audience: e.target.value })
+                    }
+                    className="w-full p-2.5 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-mono text-[10px] text-[var(--text-muted)] uppercase block mb-1 font-bold">
+                    Hipótesis Estratégica (¿Por qué convertirá?)
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="¿Qué objeción resuelve esta oferta y por qué generará leads más calificados?"
+                    value={newCampaignForm.hypothesis}
+                    onChange={(e) =>
+                      setNewCampaignForm({ ...newCampaignForm, hypothesis: e.target.value })
+                    }
+                    className="w-full p-2.5 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none resize-none text-xs"
+                  />
+                </div>
+
+                <div className="pt-2 flex items-center justify-end gap-2.5 border-t border-[var(--border-color)] flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => setIsNewModalOpen(false)}
+                    className="px-4 py-2 rounded-xl border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)] font-mono text-xs transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 rounded-xl bg-[var(--bg-card)] border border-neon/40 hover:border-neon text-lime-700 dark:text-neon font-mono font-bold text-xs transition-all active:scale-95"
+                  >
+                    Guardar & Activar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => handleCreateCampaign(e, true)}
+                    className="px-5 py-2 rounded-xl bg-neon text-black font-mono font-black uppercase text-xs hover:bg-neon-hover transition-all active:scale-95 shadow-md flex items-center gap-1.5"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Guardar & Crear Anuncios ⚡</span>
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
+        </Portal>
       )}
     </div>
   );

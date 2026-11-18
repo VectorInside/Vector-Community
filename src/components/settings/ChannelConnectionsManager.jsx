@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { OMNICHANNEL_API_CATALOG } from '@/utils/constants';
+import { Portal } from '@/components/common/Portal';
 import api from '@/services/api';
 import { metaCommentService } from '@/services/metaCommentService';
 import {
@@ -73,6 +74,23 @@ export const ChannelConnectionsManager = () => {
   const [testingChannel, setTestingChannel] = useState(null);
   const [activeGuideModal, setActiveGuideModal] = useState(null);
   const [isSaved, setIsSaved] = useState(false);
+
+  // Cerrar modal con Escape y bloquear scroll de fondo cuando está abierto
+  useEffect(() => {
+    if (!activeGuideModal) return undefined;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setActiveGuideModal(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [activeGuideModal]);
 
   const handleToggleChannel = async (channelId) => {
     const current = channelsState[channelId] || { enabled: false };
@@ -357,6 +375,7 @@ export const ChannelConnectionsManager = () => {
   };
 
   const activeChannelsCount = Object.values(channelsState).filter((c) => c?.enabled).length;
+  const totalCatalogChannels = Object.keys(OMNICHANNEL_API_CATALOG).length;
 
   if (!activeTenant) {
     return (
@@ -417,7 +436,9 @@ export const ChannelConnectionsManager = () => {
           <div className="px-3.5 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] font-mono text-xs flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span className="text-[var(--text-muted)]">Canales Activos:</span>
-            <span className="text-neon font-black">{activeChannelsCount} de 8</span>
+            <span className="text-lime-700 dark:text-neon font-black">
+              {activeChannelsCount} de {totalCatalogChannels}
+            </span>
           </div>
 
           <button
@@ -478,7 +499,7 @@ export const ChannelConnectionsManager = () => {
                       onChange={() => handleToggleChannel(channel.id)}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-neon" />
+                    <div className="w-11 h-6 bg-zinc-300 dark:bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-neon" />
                   </label>
                 </div>
 
@@ -522,10 +543,10 @@ export const ChannelConnectionsManager = () => {
                         <span
                           className={`font-bold ${
                             channelConfig.status === 'connected'
-                              ? 'text-emerald-500'
+                              ? 'text-emerald-700 dark:text-emerald-500'
                               : channelConfig.status === 'error'
-                              ? 'text-rose-400'
-                              : 'text-amber-400'
+                              ? 'text-rose-600 dark:text-rose-400'
+                              : 'text-amber-700 dark:text-amber-400'
                           }`}
                         >
                           {channelConfig.lastSync || (channelConfig.status === 'connected' ? 'Conectado' : 'Pendiente de verificar')}
@@ -576,71 +597,77 @@ export const ChannelConnectionsManager = () => {
 
       {/* Modal Guiado de Ayuda para Obtener Credenciales */}
       {activeGuideModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in"
-          onClick={() => setActiveGuideModal(null)}
-        >
+        <Portal>
           <div
-            className="w-full max-w-lg rounded-3xl bg-[var(--bg-card)] border border-neon/50 shadow-2xl p-6 space-y-4 font-sans animate-scale-up"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in"
+            onClick={() => setActiveGuideModal(null)}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Guía oficial de conexión: ${activeGuideModal.name}`}
           >
-            <div className="flex items-start justify-between pb-3 border-b border-[var(--border-color)]">
-              <div>
-                <span className="text-[10px] font-mono uppercase tracking-wider text-neon font-bold">
-                  Guía Oficial de Conexión
-                </span>
-                <h3 className="text-lg font-heading font-black text-[var(--text-main)]">
-                  {activeGuideModal.name}
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveGuideModal(null)}
-                className="text-zinc-400 hover:text-white text-lg font-bold p-1 rounded-lg hover:bg-zinc-800 transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs leading-relaxed text-[var(--text-muted)] font-sans">
-              <p>
-                Para conectar este canal de manera nativa con Vector Community y recibir telemetría en tiempo real:
-              </p>
-              <div className="p-3.5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] font-mono text-[11px] text-[var(--text-main)] space-y-1">
-                <span className="text-neon block font-bold">Instrucciones de Obtención:</span>
-                <p>{activeGuideModal.credentialsGuide}</p>
+            <div
+              className="w-full max-w-lg rounded-3xl bg-[var(--bg-card)] border border-neon/50 shadow-2xl p-6 space-y-4 font-sans animate-scale-up"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start justify-between pb-3 border-b border-[var(--border-color)]">
+                <div>
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-lime-700 dark:text-neon font-bold">
+                    Guía Oficial de Conexión
+                  </span>
+                  <h3 className="text-lg font-heading font-black text-[var(--text-main)]">
+                    {activeGuideModal.name}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveGuideModal(null)}
+                  className="text-[var(--text-muted)] hover:text-[var(--text-main)] text-lg font-bold p-1 rounded-lg hover:bg-[var(--bg-panel)] transition-colors"
+                  aria-label="Cerrar modal"
+                >
+                  ✕
+                </button>
               </div>
 
-              <div className="space-y-1.5">
-                <span className="font-bold text-[var(--text-main)] block">Parámetros Requeridos:</span>
-                <ul className="list-disc list-inside space-y-1 font-mono text-[11px]">
-                  {activeGuideModal.fields.map((f) => (
-                    <li key={f.key}>
-                      <strong className="text-[var(--text-main)]">{f.label}:</strong> {f.placeholder}
-                    </li>
-                  ))}
-                </ul>
+              <div className="space-y-3 text-xs leading-relaxed text-[var(--text-muted)] font-sans">
+                <p>
+                  Para conectar este canal de manera nativa con Vector Community y recibir telemetría en tiempo real:
+                </p>
+                <div className="p-3.5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] font-mono text-[11px] text-[var(--text-main)] space-y-1">
+                  <span className="text-lime-700 dark:text-neon block font-bold">Instrucciones de Obtención:</span>
+                  <p>{activeGuideModal.credentialsGuide}</p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <span className="font-bold text-[var(--text-main)] block">Parámetros Requeridos:</span>
+                  <ul className="list-disc list-inside space-y-1 font-mono text-[11px]">
+                    {activeGuideModal.fields.map((f) => (
+                      <li key={f.key}>
+                        <strong className="text-[var(--text-main)]">{f.label}:</strong> {f.placeholder}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-800 dark:text-blue-300 text-[11px] flex items-start gap-2">
+                  <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                  <span>
+                    Tus credenciales se cifran bajo los protocolos de aislamiento multi-tenant de Vector Inside. Nunca se comparten entre empresas ni con terceros.
+                  </span>
+                </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-300 text-[11px] flex items-start gap-2">
-                <ShieldCheck className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
-                <span>
-                  Tus credenciales se cifran bajo los protocolos de aislamiento multi-tenant de Vector Inside. Nunca se comparten entre empresas ni con terceros.
-                </span>
+              <div className="flex justify-end pt-2 border-t border-[var(--border-color)]">
+                <button
+                  type="button"
+                  onClick={() => setActiveGuideModal(null)}
+                  className="px-5 py-2 rounded-xl bg-neon text-black font-bold text-xs hover:bg-[var(--neon-hover)] transition-all font-mono"
+                >
+                  Entendido
+                </button>
               </div>
-            </div>
-
-            <div className="flex justify-end pt-2 border-t border-[var(--border-color)]">
-              <button
-                type="button"
-                onClick={() => setActiveGuideModal(null)}
-                className="px-5 py-2 rounded-xl bg-neon text-black font-bold text-xs hover:bg-[var(--neon-hover)] transition-all font-mono"
-              >
-                Entendido
-              </button>
             </div>
           </div>
-        </div>
+        </Portal>
       )}
     </div>
   );

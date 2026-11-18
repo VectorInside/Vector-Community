@@ -18,7 +18,7 @@ export const StatCard = ({
   return (
     <div
       className={clsx(
-        'relative overflow-hidden rounded-xl bg-dark-surface border border-dark-border p-5 transition-all duration-300 hover:border-zinc-700/80 hover:shadow-surface group',
+        'relative overflow-hidden rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] p-5 transition-all duration-300 hover:border-[var(--neon-primary)]/40 hover:shadow-sm group',
         className
       )}
     >
@@ -26,10 +26,12 @@ export const StatCard = ({
       <div
         className={clsx(
           'absolute top-0 left-0 right-0 h-[2px] opacity-70 group-hover:opacity-100 transition-opacity',
-          accentColor === 'brand' && 'bg-gradient-to-r from-transparent via-brand-primary to-transparent',
+          accentColor === 'brand' && 'bg-gradient-to-r from-transparent via-[var(--neon-primary)] to-transparent',
           accentColor === 'emerald' && 'bg-gradient-to-r from-transparent via-emerald-500 to-transparent',
           accentColor === 'blue' && 'bg-gradient-to-r from-transparent via-blue-500 to-transparent',
-          accentColor === 'amber' && 'bg-gradient-to-r from-transparent via-amber-500 to-transparent'
+          accentColor === 'amber' && 'bg-gradient-to-r from-transparent via-amber-500 to-transparent',
+          accentColor === 'rose' && 'bg-gradient-to-r from-transparent via-rose-500 to-transparent',
+          accentColor === 'zinc' && 'bg-gradient-to-r from-transparent via-zinc-400 dark:via-zinc-500 to-transparent'
         )}
       />
 
@@ -51,13 +53,13 @@ export const StatCard = ({
         </div>
 
         {Icon && (
-          <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-dark-elevated border border-dark-border text-[var(--text-main)] group-hover:text-brand-primary group-hover:border-brand-primary/40 transition-colors">
+          <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-main)] group-hover:text-lime-700 dark:group-hover:text-neon group-hover:border-[var(--neon-primary)]/40 transition-colors">
             <Icon className="h-5 w-5" />
           </div>
         )}
       </div>
 
-      <div className="mt-4 flex items-center justify-between pt-3 border-t border-dark-border/60">
+      <div className="mt-4 flex items-center justify-between pt-3 border-t border-[var(--border-color)]/60">
         {change !== undefined ? (
           <div className="flex items-center gap-1.5 text-xs font-medium">
             {isPositive === true && (
@@ -85,7 +87,7 @@ export const StatCard = ({
         )}
 
         {badgeText && (
-          <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-dark-elevated text-[var(--text-muted)] border border-dark-border">
+          <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-[var(--bg-card-subtle)] text-[var(--text-muted)] border border-[var(--border-color)]">
             {badgeText}
           </span>
         )}

@@ -58,10 +58,10 @@ module.exports = {
       },
       boxShadow: {
         'neon': '0 0 20px 0 var(--neon-glow)',
-        'neon-lg': '0 0 35px -5px rgba(231, 249, 0, 0.45)',
+        'neon-lg': '0 0 35px -5px var(--neon-glow)',
         'neon-sm': '0 0 10px var(--neon-glow)',
         'cognitive': '0 0 20px 0 var(--azul-cognitivo-glow)',
-        'surface': '0 10px 30px -10px rgba(0, 0, 0, 0.8)',
+        'surface': 'var(--shadow-surface)',
       },
       fontFamily: {
         sans: ['var(--font-sans)', 'Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],

@@ -20,43 +20,58 @@ import {
 import confetti from 'canvas-confetti';
 import { Portal } from '@/components/common/Portal';
 import { leadService } from '@/services/leadService';
+import { BUSINESS_VERTICALS_CONFIG } from '@/utils/businessVerticals';
 import { LANDING_TRANSLATIONS } from './landingTranslations';
 
-// TAXONOMÍA UNIVERSAL DE GIROS DE NEGOCIO (Las 16 verticales oficiales de la plataforma)
-export const BUSINESS_VERTIALS_16 = [
-  { group: 'Salud & Bienestar', options: [
-    { id: 'gym_fitness', name: 'Gimnasios, CrossFit & Fitness Studios', icon: '🏋️‍♂️' },
-    { id: 'service_appointments', name: 'Clínicas Médicas, Dentales & Consultorios', icon: '🦷' },
-    { id: 'spa_beauty', name: 'Spas, Clínicas Estéticas & Barberías', icon: '💆🏻‍♀️' },
-  ]},
-  { group: 'Educación & Cursos', options: [
-    { id: 'education_schools', name: 'Escuelas, Colegios & Universidades', icon: '🎓' },
-    { id: 'academies_courses', name: 'Academias de Idiomas, Música & Danza', icon: '📚' },
-    { id: 'infoproducts_bootcamps', name: 'Cursos Online, Bootcamps Tech & Infoproductos', icon: '💻' },
-  ]},
-  { group: 'Networking & Comunidades', options: [
-    { id: 'networking_mastermind', name: 'Redes de Networking, Cámaras & Masterminds', icon: '🤝' },
-    { id: 'community_subscriptions', name: 'Comunidades de Pago & Clubs Privados', icon: '🏛️' },
-  ]},
-  { group: 'Retail & E-Commerce', options: [
-    { id: 'ecommerce', name: 'Retail & E-Commerce (Marcas D2C / Shopify)', icon: '👟' },
-  ]},
-  { group: 'Hospitality & Eventos', options: [
-    { id: 'hospitality', name: 'Restaurantes, Bares & Mixología', icon: '🥩' },
-    { id: 'event_venues', name: 'Salones de Eventos, Bodas & Banquetes', icon: '🎉' },
-  ]},
-  { group: 'B2B & Servicios Profesionales', options: [
-    { id: 'b2b', name: 'B2B Sales, Software SaaS & Consultoría Enterprise', icon: '💼' },
-    { id: 'legal_accounting', name: 'Despachos Legales, Notarías & Fiscalistas', icon: '⚖️' },
-  ]},
-  { group: 'Bienes Raíces & Automotriz', options: [
-    { id: 'realestate', name: 'Bienes Raíces, Desarrollos & Inmobiliarias', icon: '🏙️' },
-    { id: 'automotive', name: 'Agencias de Autos, Concesionarias & Talleres', icon: '🚗' },
-  ]},
-  { group: 'Creadores & Marcas Personales', options: [
-    { id: 'creator', name: 'Creadores en Redes Meta, Streamers & Podcasts', icon: '🎬' },
-  ]},
+const CATEGORY_LABELS = {
+  es: {
+    fitness_health: 'Salud & Bienestar',
+    education: 'Educación & Cursos',
+    networking: 'Networking & Comunidades',
+    retail_ecom: 'Retail & E-Commerce',
+    hospitality: 'Hospitality & Eventos',
+    b2b_services: 'B2B & Servicios Profesionales',
+    realestate_auto: 'Bienes Raíces & Automotriz',
+    creators: 'Creadores & Marcas Personales',
+  },
+  en: {
+    fitness_health: 'Health & Wellness',
+    education: 'Education & Courses',
+    networking: 'Networking & Communities',
+    retail_ecom: 'Retail & E-Commerce',
+    hospitality: 'Hospitality & Events',
+    b2b_services: 'B2B & Professional Services',
+    realestate_auto: 'Real Estate & Automotive',
+    creators: 'Creators & Personal Brands',
+  },
+};
+
+const CATEGORY_ORDER = [
+  'fitness_health',
+  'education',
+  'networking',
+  'retail_ecom',
+  'hospitality',
+  'b2b_services',
+  'realestate_auto',
+  'creators',
 ];
+
+const buildVerticalGroups = (lang = 'es') => {
+  const labels = CATEGORY_LABELS[lang] || CATEGORY_LABELS.es;
+  const allVerticals = Object.values(BUSINESS_VERTICALS_CONFIG || {});
+  return CATEGORY_ORDER.map((catId) => ({
+    group: labels[catId] || catId,
+    options: allVerticals
+      .filter((v) => v.category === catId)
+      .map((v) => ({
+        id: v.id,
+        name: v.name,
+        icon: v.avatar || '🏢',
+        canonicalId: v.canonicalId,
+      })),
+  })).filter((g) => g.options.length > 0);
+};
 
 export const TrialModal = ({ isOpen, onClose, lang = 'es' }) => {
   const router = useRouter();
@@ -69,7 +84,31 @@ export const TrialModal = ({ isOpen, onClose, lang = 'es' }) => {
   const [errorMessage, setErrorMessage] = useState('');
   const dropdownRef = useRef(null);
 
-  const t = LANDING_TRANSLATIONS[lang].modal;
+  const t = (LANDING_TRANSLATIONS[lang] || LANDING_TRANSLATIONS.es).modal;
+  const isEs = lang === 'es';
+  const verticalGroups = buildVerticalGroups(lang);
+  const totalVerticalsCount = Object.keys(BUSINESS_VERTICALS_CONFIG || {}).length;
+
+  // Cerrar con Escape y bloquear scroll de fondo cuando está abierto
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (dropdownOpen) {
+          setDropdownOpen(false);
+        } else {
+          onClose();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, dropdownOpen, onClose]);
 
   // Cerrar el dropdown al hacer clic fuera
   useEffect(() => {
@@ -88,7 +127,7 @@ export const TrialModal = ({ isOpen, onClose, lang = 'es' }) => {
 
   if (!isOpen) return null;
 
-  const allOptions = BUSINESS_VERTIALS_16.flatMap((g) => g.options);
+  const allOptions = verticalGroups.flatMap((g) => g.options);
   const selectedOption = allOptions.find((o) => o.id === vertical) || allOptions[0];
 
   const handleSubmit = async (e) => {
@@ -166,7 +205,7 @@ export const TrialModal = ({ isOpen, onClose, lang = 'es' }) => {
           type="button"
           onClick={onClose}
           className="absolute top-3 right-3 p-1.5 min-w-[34px] min-h-[34px] rounded-xl bg-zinc-900 border border-white/10 text-zinc-400 hover:text-white transition-colors z-20 flex items-center justify-center"
-          aria-label="Cerrar modal"
+          aria-label={isEs ? 'Cerrar modal' : 'Close modal'}
         >
           <X className="w-4 h-4" />
         </button>
@@ -177,13 +216,13 @@ export const TrialModal = ({ isOpen, onClose, lang = 'es' }) => {
             <div className="space-y-1 text-center pr-6">
               <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-neon/10 border border-neon/30 text-neon text-[9px] font-mono font-bold uppercase">
                 <Clock className="w-3 h-3" />
-                <span>Sandbox Limitado (7 Días)</span>
+                <span>{t.tag}</span>
               </div>
               <h3 className="text-lg sm:text-xl font-heading font-black text-white">
                 {t.title}
               </h3>
               <p className="text-[11px] text-zinc-400 font-mono leading-tight">
-                Acceso restringido para auditar tu giro sin tarjeta de crédito.
+                {t.subtitle}
               </p>
             </div>
 
@@ -191,7 +230,15 @@ export const TrialModal = ({ isOpen, onClose, lang = 'es' }) => {
             <div className="p-2 rounded-xl bg-zinc-900/90 border border-amber-500/30 flex items-start gap-2 text-[10px] font-mono text-zinc-300">
               <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
               <span>
-                <strong>Condiciones:</strong> 7 días de evaluación, 100 chats de prueba y 1 administrador.
+                {isEs ? (
+                  <>
+                    <strong>Condiciones:</strong> 7 días de evaluación, 100 chats de prueba y 1 administrador.
+                  </>
+                ) : (
+                  <>
+                    <strong>Conditions:</strong> 7-day evaluation, 100 test chats, and 1 administrator seat.
+                  </>
+                )}
               </span>
             </div>
 
@@ -206,7 +253,7 @@ export const TrialModal = ({ isOpen, onClose, lang = 'es' }) => {
                   <input
                     type="email"
                     required
-                    placeholder="director@tuempresa.com"
+                    placeholder={isEs ? 'director@tuempresa.com' : 'director@yourcompany.com'}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full min-h-[38px] bg-zinc-900 border border-white/10 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-zinc-500 font-mono focus:border-neon focus:outline-none"
@@ -223,7 +270,7 @@ export const TrialModal = ({ isOpen, onClose, lang = 'es' }) => {
                   <input
                     type="text"
                     required
-                    placeholder="Clínica Polanco / Marca de Retail"
+                    placeholder={isEs ? 'Clínica Polanco / Marca de Retail' : 'Polanco Clinic / Retail Brand'}
                     value={businessName}
                     onChange={(e) => setBusinessName(e.target.value)}
                     className="w-full min-h-[38px] bg-zinc-900 border border-white/10 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-zinc-500 font-mono focus:border-neon focus:outline-none"
@@ -231,13 +278,15 @@ export const TrialModal = ({ isOpen, onClose, lang = 'es' }) => {
                 </div>
               </div>
 
-              {/* Custom Expandable Selector for the 16 Verticals (Inline Flow: Zero Overlap) */}
+              {/* Custom Expandable Selector for the 17 Official Verticals (Inline Flow: Zero Overlap) */}
               <div ref={dropdownRef} className="space-y-1">
                 <div className="flex items-center justify-between mb-0.5">
                   <label className="block text-[10px] font-mono font-bold text-zinc-300">
                     {t.verticalLabel}
                   </label>
-                  <span className="text-[9px] font-mono text-neon font-semibold">16 Giros Oficiales</span>
+                  <span className="text-[9px] font-mono text-neon font-semibold">
+                    {isEs ? `${totalVerticalsCount} Giros Oficiales` : `${totalVerticalsCount} Official Verticals`}
+                  </span>
                 </div>
 
                 {/* Trigger Button */}
@@ -251,8 +300,8 @@ export const TrialModal = ({ isOpen, onClose, lang = 'es' }) => {
                   }`}
                 >
                   <div className="flex items-center gap-2 truncate">
-                    <span className="text-sm shrink-0">{selectedOption.icon}</span>
-                    <span className="truncate text-zinc-100 text-xs font-semibold">{selectedOption.name}</span>
+                    <span className="text-sm shrink-0">{selectedOption?.icon}</span>
+                    <span className="truncate text-zinc-100 text-xs font-semibold">{selectedOption?.name}</span>
                   </div>
                   <ChevronDown
                     className={`w-3.5 h-3.5 text-zinc-400 shrink-0 transition-transform duration-200 ${
@@ -264,7 +313,7 @@ export const TrialModal = ({ isOpen, onClose, lang = 'es' }) => {
                 {/* Expandable Scrollable Options List (In-Flow: Never covers the submit button) */}
                 {dropdownOpen && (
                   <div className="max-h-48 overflow-y-auto bg-black border border-neon/40 rounded-xl p-1.5 space-y-1.5 shadow-2xl animate-fade-in mt-1">
-                    {BUSINESS_VERTIALS_16.map((group, gIdx) => (
+                    {verticalGroups.map((group, gIdx) => (
                       <div key={gIdx} className="space-y-0.5">
                         <div className="px-2 py-0.5 text-[8.5px] font-mono font-bold text-neon uppercase tracking-wider bg-zinc-900/90 rounded border border-white/5">
                           {group.group}
@@ -333,15 +382,19 @@ export const TrialModal = ({ isOpen, onClose, lang = 'es' }) => {
 
             <div className="p-3.5 rounded-xl bg-zinc-900 border border-white/10 text-left text-xs font-mono space-y-1.5">
               <div className="flex justify-between text-zinc-400 text-[11px]">
-                <span>Duración Sandbox:</span>
-                <span className="text-neon font-bold">7 Días de Evaluación</span>
+                <span>{isEs ? 'Duración Sandbox:' : 'Sandbox Duration:'}</span>
+                <span className="text-neon font-bold">
+                  {isEs ? '7 Días de Evaluación' : '7-Day Evaluation'}
+                </span>
               </div>
               <div className="flex justify-between text-zinc-400 text-[11px]">
-                <span>Nivel de Acceso:</span>
-                <span className="text-amber-400 font-bold">Restringido (Evaluación)</span>
+                <span>{isEs ? 'Nivel de Acceso:' : 'Access Tier:'}</span>
+                <span className="text-amber-400 font-bold">
+                  {isEs ? 'Restringido (Evaluación)' : 'Restricted (Evaluation)'}
+                </span>
               </div>
               <div className="flex justify-between text-zinc-400 text-[11px]">
-                <span>Aislamiento:</span>
+                <span>{isEs ? 'Aislamiento:' : 'Isolation:'}</span>
                 <span className="text-emerald-400 font-bold">PostgreSQL RLS</span>
               </div>
             </div>

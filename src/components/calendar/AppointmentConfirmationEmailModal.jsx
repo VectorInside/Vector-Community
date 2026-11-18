@@ -1,31 +1,20 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Portal } from '@/components/common/Portal';
+import { EmailTemplatePreview } from '@/components/shared/EmailTemplatePreview';
 import {
   X,
   Mail,
-  Calendar,
-  Clock,
-  User,
-  Phone,
-  MapPin,
   CheckCircle2,
   AlertCircle,
-  Download,
-  ExternalLink,
-  MessageCircle,
   Smartphone,
   Monitor,
   Send,
   Sparkles,
   ShieldCheck,
-  Building2,
-  Paperclip,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { VectorInsideLogo } from '@/components/common/VectorInsideLogo';
-import { formatDateTime } from '@/utils/formatters';
 
 // Helper to format Date for iCal RFC 5545 (e.g. YYYYMMDDTHHMMSSZ)
 function formatIcsDate(dateObj) {
@@ -146,21 +135,30 @@ export const AppointmentConfirmationEmailModal = ({
     }
   }, [appointment]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const defaultInstructions =
       emailConfig?.instructions || 'Por favor preséntate 10 minutos antes de tu cita programada.';
     setCustomNotes(defaultInstructions);
   }, [tenant, emailConfig, appointment]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = prevOverflow || 'unset';
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen || !appointment) return null;
 
   const tenantName = emailConfig?.senderName || tenant?.name || 'Vector Inside';
-  const tenantAvatar = emailConfig?.logoAvatar || tenant?.avatar || '🐺';
-  const accentColor = emailConfig?.accentColor || tenant?.brandColor || '#D4FF00';
-  const senderEmail = emailConfig?.senderEmail || tenant?.email || `citas@${tenant?.id || 'vectorinside'}.com`;
   const locationAddress = emailConfig?.locationAddress || getTenantDefaultAddress(tenant);
-  const cancellationPolicy = emailConfig?.cancellationPolicy || 'Puedes cancelar o reprogramar sin costo notificando con al menos 24 horas de antelación.';
-  const ctaButtonText = emailConfig?.ctaText || 'Añadir a mi Google Calendar (Móvil / Web)';
 
   const googleCalUrl = getGoogleCalendarUrl(appointment, tenant, emailConfig);
 
@@ -237,7 +235,7 @@ export const AppointmentConfirmationEmailModal = ({
   return (
     <Portal>
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto"
+        className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 dark:bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto"
         onClick={(e) => {
           if (e.target === e.currentTarget) onClose();
         }}
@@ -246,12 +244,12 @@ export const AppointmentConfirmationEmailModal = ({
           {/* Header */}
           <div className="flex items-start justify-between pb-3 border-b border-[var(--border-color)] shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-neon/15 border border-neon/30 flex items-center justify-center text-neon shadow-[0_0_15px_var(--neon-glow)]">
+              <div className="w-10 h-10 rounded-2xl bg-neon/15 border border-neon/30 flex items-center justify-center text-[var(--neon-text)] shadow-[0_0_15px_var(--neon-glow)]">
                 <Mail className="w-5 h-5" />
               </div>
               <div>
-                <span className="text-[10px] font-mono font-bold uppercase text-neon tracking-wider flex items-center gap-1.5">
-                  <Sparkles className="w-3 h-3 text-neon" />
+                <span className="text-[10px] font-mono font-bold uppercase text-[var(--neon-text)] tracking-wider flex items-center gap-1.5">
+                  <Sparkles className="w-3 h-3 text-[var(--neon-text)]" />
                   Correo Personalizado de Confirmación de Cita
                 </span>
                 <h3 className="text-xl font-heading font-black text-[var(--text-main)] uppercase tracking-tight">
@@ -317,233 +315,49 @@ export const AppointmentConfirmationEmailModal = ({
             </div>
             <div>
               <label className="text-[10px] text-[var(--text-muted)] block mb-0.5">Teléfono WhatsApp:</label>
-              <div className="px-2.5 py-1.5 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] text-emerald-600 dark:text-emerald-400 font-bold">
+              <div className="px-2.5 py-1.5 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] text-emerald-700 dark:text-emerald-400 font-bold">
                 {appointment.phone || tenant?.phone || 'Sin teléfono registrado'}
               </div>
             </div>
             <div>
               <label className="text-[10px] text-[var(--text-muted)] block mb-0.5">Estado de Pago:</label>
-              <div className="px-2.5 py-1.5 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1.5">
+              <div className="px-2.5 py-1.5 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 <span>{appointment.depositPaid ? 'Anticipo Verificado' : 'Pago en Recepción'}</span>
               </div>
             </div>
           </div>
 
-          {/* Contenedor del Preview WYSIWYG */}
-          <div className="flex-1 overflow-y-auto pr-1">
-            <div
-              className={`mx-auto transition-all ${
-                deviceView === 'mobile'
-                  ? 'max-w-sm rounded-[36px] border-4 border-zinc-700 bg-zinc-950 p-3 shadow-2xl'
-                  : 'w-full'
-              }`}
-            >
-              {/* Marco Celular si aplica */}
-              {deviceView === 'mobile' && (
-                <div className="w-24 h-4 bg-zinc-800 rounded-full mx-auto mb-2" />
-              )}
-
-              {/* Plantilla HTML del Correo */}
-              <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--bg-panel)] shadow-xl overflow-hidden font-sans">
-                {/* Cabecera del Cliente de Correo */}
-                <div className="p-3 bg-[var(--bg-card)] border-b border-[var(--border-color)] text-xs font-mono space-y-1">
-                  <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)]">
-                    <div>
-                      <strong className="text-[var(--text-main)]">De:</strong> {tenantName} &lt;{senderEmail}&gt;
-                    </div>
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                      RFC 5545 Listo ✅
-                    </span>
-                  </div>
-                  <div className="text-[11px] text-[var(--text-muted)]">
-                    <strong className="text-[var(--text-main)]">Para:</strong> {appointment.client} &lt;{recipientEmail}&gt;
-                  </div>
-                  <div className="text-xs font-bold text-[var(--text-main)] pt-0.5 truncate">
-                    {emailConfig?.subject
-                      ? emailConfig.subject
-                          .replaceAll('{{cliente}}', appointment.client || 'Cliente')
-                          .replaceAll('{{servicio}}', appointment.serviceName || appointment.title || 'Servicio')
-                          .replaceAll('{{negocio}}', tenantName)
-                          .replaceAll('{{especialista}}', appointment.specialist || 'Especialista')
-                      : `✅ Cita Confirmada: ${appointment.serviceName || appointment.title} en ${tenantName}`}
-                  </div>
-                </div>
-
-                {/* Cuerpo del Correo Membretado */}
-                <div
-                  className="p-5 sm:p-7 space-y-5 bg-[var(--bg-panel)]"
-                  style={{ borderTop: `4px solid ${accentColor}` }}
-                >
-                  {/* Brand Header */}
-                  <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)]">
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] shadow-sm">
-                        {tenantAvatar}
-                      </span>
-                      <div>
-                        <h4 className="text-sm font-bold text-[var(--text-main)] leading-tight">{tenantName}</h4>
-                        <span className="text-[10px] text-[var(--text-muted)] font-mono">
-                          Confirmación Oficial • Vector Inside Engine
-                        </span>
-                      </div>
-                    </div>
-                    <span
-                      className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full"
-                      style={{
-                        backgroundColor: `${accentColor}20`,
-                        color: accentColor,
-                        border: `1px solid ${accentColor}50`,
-                      }}
-                    >
-                      RESERVA CONFIRMADA
-                    </span>
-                  </div>
-
-                  {/* Mensaje de Bienvenida */}
-                  <div className="space-y-1.5">
-                    <p className="text-sm font-bold text-[var(--text-main)]">
-                      {emailConfig?.welcomeMessage
-                        ? emailConfig.welcomeMessage
-                            .replaceAll('{{cliente}}', appointment.client || 'Cliente')
-                            .replaceAll('{{servicio}}', appointment.serviceName || appointment.title || 'Servicio')
-                            .replaceAll('{{negocio}}', tenantName)
-                            .replaceAll('{{especialista}}', appointment.specialist || 'Especialista')
-                        : `¡Hola, ${appointment.client}! Tu cita ha sido agendada con éxito.`}
-                    </p>
-                    <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                      Hemos reservado y bloqueado tu horario en nuestra agenda oficial. A continuación encuentras la ficha técnica y los botones directos para integrarla a tu Google Calendar o calendario en tu celular.
-                    </p>
-                  </div>
-
-                  {/* Ficha Resumen de la Cita */}
-                  <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-2 text-xs font-mono">
-                    <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-2">
-                      <span className="text-[var(--text-muted)] flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-neon" />
-                        Horario:
-                      </span>
-                      <strong className="text-[var(--text-main)]">
-                        {appointment.start ? formatDateTime(appointment.start) : `${appointment.hour} hrs`}
-                      </strong>
-                    </div>
-
-                    <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-2">
-                      <span className="text-[var(--text-muted)] flex items-center gap-1.5">
-                        <User className="w-3.5 h-3.5 text-blue-500" />
-                        Especialista:
-                      </span>
-                      <span className="text-[var(--text-main)] font-semibold">{appointment.specialist}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-2">
-                      <span className="text-[var(--text-muted)] flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-emerald-500" />
-                        Ubicación:
-                      </span>
-                      <span className="text-[var(--text-main)] truncate max-w-[260px]">
-                        {emailConfig?.locationAddress || getTenantDefaultAddress(tenant)}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-[var(--text-muted)]">Inversión / Arancel:</span>
-                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">
-                        ${Number(appointment.estimatedValue || 0)} MXN ({appointment.depositPaid ? 'Anticipo Pagado' : 'Por Liquidar'})
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Indicaciones Previas */}
-                  <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-200 text-xs font-mono flex items-start gap-2.5">
-                    <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                    <div>
-                      <strong className="block text-amber-700 dark:text-amber-300 mb-0.5">Indicaciones Previas:</strong>
-                      <span>{customNotes}</span>
-                    </div>
-                  </div>
-
-                  {/* BOTONES INTERACTIVOS DE AGREGADO A CALENDARIO */}
-                  <div className="space-y-2 pt-2">
-                    <a
-                      href={googleCalUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="w-full py-2.5 px-4 rounded-xl text-black font-bold text-xs font-mono flex items-center justify-center gap-2 shadow-[0_0_15px_var(--neon-glow)] transition-transform hover:scale-[1.01] active:scale-98"
-                      style={{ backgroundColor: accentColor }}
-                    >
-                      <Calendar className="w-4 h-4" />
-                      <span>{ctaButtonText}</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {emailConfig?.includeIcs !== false && (
-                        <button
-                          type="button"
-                          onClick={handleDownloadIcs}
-                          className="py-2 px-3 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] border border-[var(--border-color)] font-bold text-xs font-mono flex items-center justify-center gap-2 transition-all"
-                        >
-                          <Download className="w-3.5 h-3.5 text-blue-500" />
-                          <span>Descargar Archivo .ICS</span>
-                        </button>
-                      )}
-
-                      {emailConfig?.includeWhatsapp !== false && (
-                        <button
-                          type="button"
-                          onClick={handleShareWhatsapp}
-                          className="py-2 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-bold text-xs font-mono flex items-center justify-center gap-2 transition-all"
-                        >
-                          <MessageCircle className="w-3.5 h-3.5" />
-                          <span>Enviar por WhatsApp</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Archivo Adjunto Simulado */}
-                  {emailConfig?.includeIcs !== false && (
-                    <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-between text-xs font-mono">
-                      <div className="flex items-center gap-2 text-[var(--text-main)]">
-                        <Paperclip className="w-4 h-4 text-neon" />
-                        <div>
-                          <span className="block font-bold">confirmacion-cita-{appointment.id}.ics</span>
-                          <span className="text-[10px] text-[var(--text-muted)]">
-                            Archivo iCalendar estándar compatible con Android, iPhone y Outlook
-                          </span>
-                        </div>
-                      </div>
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">
-                        Adjunto
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Footer & Políticas */}
-                  <div className="pt-3 border-t border-[var(--border-color)] text-center text-[10px] text-[var(--text-muted)] font-mono space-y-1">
-                    <p>{cancellationPolicy}</p>
-                    <p className="opacity-80">
-                      © 2026 {tenantName} • Confirmación generada por Vector Inside OS
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
+          {/* Contenedor del Preview WYSIWYG compartido */}
+          <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar">
+            <EmailTemplatePreview
+              tenant={tenant}
+              appointment={appointment}
+              emailConfig={emailConfig}
+              recipientEmail={recipientEmail}
+              customNotes={customNotes}
+              googleCalendarUrl={googleCalUrl}
+              deviceView={deviceView}
+              onDeviceViewChange={setDeviceView}
+              showDeviceToggle={false}
+              showThemeToggle={true}
+              onDownloadIcs={handleDownloadIcs}
+              onShareWhatsapp={handleShareWhatsapp}
+            />
           </div>
 
           {/* Error de Envío SMTP */}
           {sendError && (
-            <div className="my-2 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 dark:text-rose-300 text-xs font-mono flex items-center gap-2 animate-fadeIn shrink-0">
-              <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
+            <div className="my-2 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-mono flex items-center gap-2 animate-fadeIn shrink-0">
+              <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
               <span>{sendError}</span>
             </div>
           )}
 
           {/* Estado de Envío Exitoso */}
           {sentSuccess && (
-            <div className="my-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-300 text-xs font-mono flex items-center gap-2 animate-fadeIn shrink-0">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+            <div className="my-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-mono flex items-center gap-2 animate-fadeIn shrink-0">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span>
                 ¡Correo de confirmación membretado despachado con éxito a <strong>{recipientEmail}</strong>!
               </span>
@@ -553,8 +367,8 @@ export const AppointmentConfirmationEmailModal = ({
           {/* Modal Footer Actions */}
           <div className="pt-3 border-t border-[var(--border-color)] flex flex-wrap items-center justify-between gap-3 shrink-0">
             <div className="text-[11px] text-[var(--text-muted)] font-mono flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-emerald-500" />
-              <span>SMTP Oficial Verificado • DKIM & SPF Firmados</span>
+              <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <span>SMTP Oficial Verificado • DKIM &amp; SPF Firmados</span>
             </div>
 
             <div className="flex items-center gap-2">

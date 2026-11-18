@@ -91,8 +91,8 @@ export const LiveTelemetryDemo = ({ lang = 'es' }) => {
         title: lang === 'es' ? '🔥 Conversión de Alto Valor Ingestada' : '🔥 High-Ticket Conversion Ingested',
         details:
           lang === 'es'
-            ? 'Mensaje en Instagram DM cerrado -> Pago en Stripe ($2,450.00 USD). Evento de servidor Meta CAPI despachado.'
-            : 'Instagram DM conversation closed -> Stripe checkout ($2,450.00). Meta CAPI server event dispatched.',
+            ? 'Mensaje en Instagram DM cerrado -> Pago confirmado ($2,450.00 MXN). Evento de servidor Meta CAPI despachado.'
+            : 'Instagram DM conversation closed -> Checkout verified ($2,450.00 MXN). Meta CAPI server event dispatched.',
         type: 'success',
       });
       setData((prev) => [

@@ -17,8 +17,8 @@ export default function ConfigPage() {
     <Suspense
       fallback={
         <div className="p-8 flex items-center justify-center min-h-[50vh]">
-          <div className="text-xs font-mono text-zinc-400 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-neon animate-pulse" />
+          <div className="text-xs font-mono text-[var(--text-muted)] flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[var(--neon-primary)] animate-pulse" />
             <span>Cargando Entorno de Configuración...</span>
           </div>
         </div>

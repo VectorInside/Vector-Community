@@ -17,8 +17,8 @@ export default function ConnectionsPage() {
     <Suspense
       fallback={
         <div className="p-8 flex items-center justify-center min-h-[50vh]">
-          <div className="text-xs font-mono text-zinc-400 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-lime-400 animate-pulse" />
+          <div className="text-xs font-mono text-[var(--text-muted)] flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[var(--neon-primary)] animate-pulse" />
             <span>Cargando Conexiones y Base RAG...</span>
           </div>
         </div>

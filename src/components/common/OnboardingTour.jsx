@@ -549,6 +549,7 @@ export const OnboardingTour = () => {
         <div
           role="dialog"
           aria-modal="true"
+          onClick={() => setIsTutorModalOpen(false)}
           className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-6 bg-black/60 dark:bg-black/80 backdrop-blur-md animate-fade-in"
         >
           <div
@@ -558,14 +559,14 @@ export const OnboardingTour = () => {
             {/* Header del Modal */}
             <div className="p-5 sm:p-6 border-b border-[var(--border-color)] flex items-center justify-between gap-4 bg-[var(--bg-card)]/50 transition-colors">
               <div className="flex items-center gap-3.5">
-                <div className="w-11 h-11 rounded-2xl bg-neon/15 border border-neon/40 flex items-center justify-center text-neon shadow-[0_0_15px_rgba(231,249,0,0.2)]">
+                <div className="w-11 h-11 rounded-2xl bg-[var(--neon-primary)]/15 border border-[var(--neon-primary)]/40 flex items-center justify-center text-lime-700 dark:text-neon shadow-neon-sm">
                   <GraduationCap className="w-6 h-6" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <h2 className="text-base sm:text-lg font-black text-[var(--text-main)] uppercase tracking-tight flex items-center gap-2">
                       <span>Tutor IA & Centro de Guías</span>
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-neon/15 text-neon border border-neon/30 uppercase font-bold">
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[var(--neon-primary)]/15 text-lime-700 dark:text-neon border border-[var(--neon-primary)]/30 uppercase font-bold">
                         Vector OS 2.0
                       </span>
                     </h2>
@@ -604,7 +605,7 @@ export const OnboardingTour = () => {
                     onClick={() => setActiveCategory(cat.id)}
                     className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all whitespace-nowrap ${
                       activeCategory === cat.id
-                        ? 'bg-neon text-black shadow-sm font-black'
+                        ? 'bg-[var(--neon-primary)] text-black shadow-sm font-black'
                         : 'bg-[var(--bg-card)] hover:bg-[var(--bg-panel)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)]'
                     }`}
                   >
@@ -621,7 +622,7 @@ export const OnboardingTour = () => {
                   placeholder="Buscar guía o flujo..."
                   value={searchFilter}
                   onChange={(e) => setSearchFilter(e.target.value)}
-                  className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl pl-9 pr-3 py-1.5 text-xs text-[var(--text-main)] placeholder-[var(--text-muted)] focus:border-neon outline-none font-mono transition-colors"
+                  className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl pl-9 pr-3 py-1.5 text-xs text-[var(--text-main)] placeholder-[var(--text-muted)] focus:border-[var(--neon-primary)] outline-none font-mono transition-colors"
                 />
               </div>
             </div>
@@ -630,10 +631,10 @@ export const OnboardingTour = () => {
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 scrollbar-thin">
               {/* Sección A: Recomendado en la pantalla actual si coincide */}
               {recommendedForCurrentRoute.length > 0 && activeCategory === 'all' && (
-                <div className="p-4 rounded-2xl bg-gradient-to-r from-neon/15 via-neon/5 to-transparent border border-neon/30 space-y-3">
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-[var(--neon-primary)]/15 via-[var(--neon-primary)]/5 to-transparent border border-[var(--neon-primary)]/30 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-mono font-bold text-neon flex items-center gap-1.5 uppercase">
-                      <Flame className="w-4 h-4 text-neon animate-pulse" />
+                    <span className="text-xs font-mono font-bold text-lime-700 dark:text-neon flex items-center gap-1.5 uppercase">
+                      <Flame className="w-4 h-4 text-lime-700 dark:text-neon animate-pulse" />
                       Recomendado para esta pantalla ({pathname})
                     </span>
                     <span className="text-[10px] font-mono text-[var(--text-muted)]">
@@ -645,16 +646,16 @@ export const OnboardingTour = () => {
                     {recommendedForCurrentRoute.map((item) => (
                       <div
                         key={item.id}
-                        className="p-4 rounded-xl bg-[var(--bg-card)] border border-neon/30 hover:border-neon transition-all flex flex-col justify-between gap-3 group shadow-sm"
+                        className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--neon-primary)]/30 hover:border-[var(--neon-primary)] transition-all flex flex-col justify-between gap-3 group shadow-sm"
                       >
                         <div className="space-y-1.5">
                           <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neon/15 text-neon font-bold uppercase border border-neon/30">
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--neon-primary)]/15 text-lime-700 dark:text-neon font-bold uppercase border border-[var(--neon-primary)]/30">
                               {item.badge}
                             </span>
-                            <item.icon className="w-4 h-4 text-neon" />
+                            <item.icon className="w-4 h-4 text-lime-700 dark:text-neon" />
                           </div>
-                          <h4 className="text-sm font-bold text-[var(--text-main)] group-hover:text-neon transition-colors">
+                          <h4 className="text-sm font-bold text-[var(--text-main)] group-hover:text-lime-700 dark:group-hover:text-neon transition-colors">
                             {item.title}
                           </h4>
                           <p className="text-xs text-[var(--text-muted)] line-clamp-2 leading-relaxed font-sans">
@@ -665,7 +666,7 @@ export const OnboardingTour = () => {
                         <button
                           type="button"
                           onClick={() => launchTour(item.id)}
-                          className="w-full py-2 px-3 rounded-lg bg-neon text-black font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-[var(--neon-hover)] transition-all shadow-sm active:scale-95"
+                          className="w-full py-2 px-3 rounded-lg bg-[var(--neon-primary)] text-black font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-[var(--neon-hover)] transition-all shadow-sm active:scale-95"
                         >
                           <Play className="w-3.5 h-3.5 fill-black" />
                           <span>Iniciar Este Tour Ahora</span>
@@ -691,31 +692,33 @@ export const OnboardingTour = () => {
                     return (
                       <div
                         key={item.id}
-                        className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon/60 transition-all flex flex-col justify-between gap-3.5 group shadow-sm hover:shadow-[0_0_20px_rgba(231,249,0,0.08)]"
+                        className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-[var(--neon-primary)]/60 transition-all flex flex-col justify-between gap-3.5 group shadow-sm hover:shadow-neon-sm"
                       >
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
                             <span
                               className={`text-[10px] font-mono px-2 py-0.5 rounded uppercase font-bold border ${
                                 item.badgeColor === 'neon'
-                                  ? 'bg-neon/15 text-neon border-neon/30'
+                                  ? 'bg-[var(--neon-primary)]/15 text-lime-700 dark:text-neon border-[var(--neon-primary)]/30'
                                   : item.badgeColor === 'cyan'
-                                  ? 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30'
+                                  ? 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-400 border-cyan-500/30'
                                   : item.badgeColor === 'emerald'
-                                  ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                                  ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30'
                                   : item.badgeColor === 'purple'
-                                  ? 'bg-purple-500/15 text-purple-400 border-purple-500/30'
+                                  ? 'bg-purple-500/15 text-purple-700 dark:text-purple-400 border-purple-500/30'
+                                  : item.badgeColor === 'amber'
+                                  ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30'
                                   : 'bg-[var(--bg-panel)] text-[var(--text-muted)] border-[var(--border-color)]'
                               }`}
                             >
                               {item.badge}
                             </span>
-                            <div className="w-8 h-8 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] flex items-center justify-center text-[var(--text-muted)] group-hover:text-neon group-hover:border-neon/40 transition-colors">
+                            <div className="w-8 h-8 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] flex items-center justify-center text-[var(--text-muted)] group-hover:text-lime-700 dark:group-hover:text-neon group-hover:border-[var(--neon-primary)]/40 transition-colors">
                               <IconComponent className="w-4 h-4" />
                             </div>
                           </div>
 
-                          <h3 className="text-sm font-bold text-[var(--text-main)] group-hover:text-neon transition-colors flex items-center gap-1.5">
+                          <h3 className="text-sm font-bold text-[var(--text-main)] group-hover:text-lime-700 dark:group-hover:text-neon transition-colors flex items-center gap-1.5">
                             <span>{item.title}</span>
                           </h3>
 
@@ -731,7 +734,7 @@ export const OnboardingTour = () => {
                           <button
                             type="button"
                             onClick={() => launchTour(item.id)}
-                            className="px-3.5 py-1.5 rounded-lg bg-[var(--bg-panel)] hover:bg-neon hover:text-black text-[var(--text-main)] border border-[var(--border-color)] hover:border-neon text-xs font-bold font-mono transition-all flex items-center gap-1.5 active:scale-95 shrink-0"
+                            className="px-3.5 py-1.5 rounded-lg bg-[var(--bg-panel)] hover:bg-[var(--neon-primary)] hover:text-black text-[var(--text-main)] border border-[var(--border-color)] hover:border-[var(--neon-primary)] text-xs font-bold font-mono transition-all flex items-center gap-1.5 active:scale-95 shrink-0"
                           >
                             <Play className="w-3 h-3" />
                             <span>Iniciar</span>
@@ -747,7 +750,7 @@ export const OnboardingTour = () => {
               <div className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-neon" />
+                    <Sparkles className="w-4 h-4 text-lime-700 dark:text-neon" />
                     <span className="text-xs font-bold uppercase text-[var(--text-main)]">
                       Guías Directas por Paso del Wizard de Alta de Negocio
                     </span>
@@ -770,12 +773,12 @@ export const OnboardingTour = () => {
                       key={step.num}
                       type="button"
                       onClick={() => launchTour(step.id)}
-                      className="p-2.5 rounded-xl bg-[var(--bg-panel)] hover:bg-neon/15 border border-[var(--border-color)] hover:border-neon text-left transition-all group active:scale-95"
+                      className="p-2.5 rounded-xl bg-[var(--bg-panel)] hover:bg-[var(--neon-primary)]/15 border border-[var(--border-color)] hover:border-[var(--neon-primary)] text-left transition-all group active:scale-95"
                     >
-                      <span className="block text-[10px] text-[var(--text-muted)] group-hover:text-neon font-bold uppercase">
+                      <span className="block text-[10px] text-[var(--text-muted)] group-hover:text-lime-700 dark:group-hover:text-neon font-bold uppercase">
                         Paso {step.num}
                       </span>
-                      <span className="block text-xs font-bold text-[var(--text-main)] group-hover:text-neon truncate">
+                      <span className="block text-xs font-bold text-[var(--text-main)] group-hover:text-lime-700 dark:group-hover:text-neon truncate">
                         {step.title.split('. ')[1]}
                       </span>
                     </button>
@@ -787,10 +790,10 @@ export const OnboardingTour = () => {
             {/* Footer Informativo */}
             <div className="p-4 sm:px-6 border-t border-[var(--border-color)] bg-[var(--bg-card-subtle)] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[var(--text-muted)] transition-colors">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-emerald-600 dark:bg-emerald-400 animate-pulse" />
                 <span>
                   Tip: Puedes abrir este Centro de Guías en cualquier momento pulsando el botón{' '}
-                  <strong className="text-neon">🎓 Tutor IA</strong> en la barra superior.
+                  <strong className="text-lime-700 dark:text-neon">🎓 Tutor IA</strong> en la barra superior.
                 </span>
               </div>
               <button

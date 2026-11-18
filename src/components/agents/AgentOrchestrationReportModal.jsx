@@ -64,6 +64,23 @@ export const AgentOrchestrationReportModal = ({
     };
   }, [isOpen, currentTenant.id]);
 
+  // Cerrar con Escape y bloquear scroll de fondo cuando está abierto
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handlePrint = () => {
@@ -190,7 +207,7 @@ export const AgentOrchestrationReportModal = ({
             </div>
 
             <div className="text-left sm:text-right space-y-1 font-mono text-xs bg-zinc-50 dark:bg-zinc-900/60 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800/80 shrink-0">
-              <p className="text-[10px] uppercase text-zinc-400 dark:text-zinc-500 font-bold">
+              <p className="text-[10px] uppercase text-zinc-500 dark:text-zinc-400 font-bold">
                 {hasSpecificTenant ? 'Cliente / Tenant Auditado:' : 'Ámbito de Gobernanza:'}
               </p>
               <p className="text-sm font-heading font-black text-lime-700 dark:text-neon print:text-black">
@@ -289,13 +306,13 @@ export const AgentOrchestrationReportModal = ({
           </div>
 
           {/* Security & Multi-Tenant Protocol Box */}
-          <div className="p-5 rounded-2xl bg-gradient-to-r from-emerald-950/20 via-zinc-950/80 to-zinc-950/80 border border-emerald-500/30 space-y-2 font-sans text-xs">
+          <div className="p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 space-y-2 font-sans text-xs">
             <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-mono font-bold text-xs uppercase">
-              <ShieldCheck className="w-4 h-4 text-emerald-500" />
+              <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-500" />
               <span>Protocolo de Seguridad & No-Fuga de Datos (RLS Inviolable)</span>
             </div>
             <p className="text-zinc-700 dark:text-zinc-300 leading-relaxed font-sans text-xs">
-              El Lobo Vectorial inyecta forzosamente la variable <code className="text-lime-700 dark:text-neon print:text-black font-bold font-mono">{`tenant_id: "${currentTenant.id || 'sin_negocio_activo'}"`}</code> en cada nodo de LangGraph. Los sub-bots carecen de permisos para consultar datos cruzados entre clientes. Si el usuario escribe lenguaje agresivo o solicita un agente humano, el sistema ejecuta el protocolo <strong>Sutura Arcángel</strong>, pausando la IA en menos de 300ms.
+              El Lobo Vectorial inyecta forzosamente la variable <code className="text-lime-700 dark:text-neon print:text-black font-bold font-mono">{`tenant_id: "${currentTenant.id || 'sin_negocio_activo'}"`}</code> en cada nodo de LangGraph. Los sub-bots carecen de permisos para consultar datos cruzados entre clientes. Si el usuario escribe lenguaje agresivo o solicita un agente humano, el sistema activa la <strong>Atención Humana Prioritaria</strong>, pausando la IA en menos de 300ms.
             </p>
           </div>
 

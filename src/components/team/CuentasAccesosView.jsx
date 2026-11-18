@@ -349,8 +349,9 @@ export const CuentasAccesosView = () => {
       tempPassword: finalPassword,
       mustChangePassword: true, // Forces immediate pop-up on first client login
       phone: cleanPhone || '',
-      status: 'ACTIVE',
-      lastLogin: 'Invitación enviada (Listo para ingresar)',
+      status: 'PENDING_INVITE',
+      isPending: true,
+      lastLogin: 'Invitación pendiente (Primer ingreso pendiente)',
       twoFactorEnabled: false,
       createdAt: new Date().toISOString(),
       notes: newAccountForm.notes || 'Cuenta de acceso maestro para el dueño del negocio.',
@@ -408,7 +409,12 @@ export const CuentasAccesosView = () => {
     const targetAccount = accounts.find((acc) => acc.tenantId === tenantId);
     if (!targetAccount) return;
     const prevStatus = targetAccount.status;
-    const nextStatus = prevStatus === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
+    const nextStatus =
+      prevStatus === 'SUSPENDED'
+        ? targetAccount.isPending
+          ? 'PENDING_INVITE'
+          : 'ACTIVE'
+        : 'SUSPENDED';
 
     setAccounts((prev) =>
       prev.map((acc) => {
@@ -508,8 +514,8 @@ export const CuentasAccesosView = () => {
     <div className="w-full px-4 sm:px-6 lg:px-8 py-4 block animate-fade-in space-y-6 font-sans">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-950 border border-neon/50 text-white text-xs font-mono shadow-[0_0_20px_rgba(195,244,0,0.25)] animate-fade-in">
-          <CheckCircle2 className="w-4 h-4 text-neon shrink-0" />
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--bg-panel)] border border-neon/50 text-[var(--text-main)] text-xs font-mono shadow-[0_0_20px_rgba(195,244,0,0.25)] animate-fade-in">
+          <CheckCircle2 className="w-4 h-4 text-lime-700 dark:text-neon shrink-0" />
           <span>{toastMessage}</span>
         </div>
       )}
@@ -554,7 +560,7 @@ export const CuentasAccesosView = () => {
           }}
           className={`font-mono font-bold text-xs px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 shrink-0 min-h-[44px] ${
             availableTenantsWithoutAccount.length === 0
-              ? 'bg-zinc-800 text-zinc-400 border border-zinc-700/60 hover:border-neon hover:text-white cursor-pointer'
+              ? 'bg-[var(--bg-card)] text-[var(--text-muted)] border border-[var(--border-color)] hover:border-neon hover:text-[var(--text-main)] cursor-pointer'
               : 'bg-neon text-black hover:bg-[var(--neon-hover)] shadow-[0_0_15px_rgba(195,244,0,0.3)] active:scale-95'
           }`}
           title={
@@ -722,8 +728,8 @@ export const CuentasAccesosView = () => {
               }
               className={`px-3 py-2 rounded-xl text-xs font-mono font-bold border transition-all flex items-center gap-1.5 ${
                 selectedTenantFilter === currentTenant.id
-                  ? 'bg-neon/15 text-neon border-neon/40 shadow-[0_0_10px_rgba(195,244,0,0.2)]'
-                  : 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-muted)] hover:text-white'
+                  ? 'bg-neon/15 text-lime-700 dark:text-neon border-neon/40 shadow-[0_0_10px_rgba(195,244,0,0.2)]'
+                  : 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
               }`}
               title="Filtrar por el negocio seleccionado en la barra superior"
             >
@@ -766,7 +772,7 @@ export const CuentasAccesosView = () => {
               className={`p-1.5 rounded-lg transition-colors ${
                 viewMode === 'grid'
                   ? 'bg-neon text-black font-bold'
-                  : 'text-[var(--text-muted)] hover:text-white'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
               }`}
               title="Vista Detallada (Tarjetas)"
             >
@@ -778,7 +784,7 @@ export const CuentasAccesosView = () => {
               className={`p-1.5 rounded-lg transition-colors ${
                 viewMode === 'table'
                   ? 'bg-neon text-black font-bold'
-                  : 'text-[var(--text-muted)] hover:text-white'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
               }`}
               title="Vista Compacta (Tabla Matriz)"
             >
@@ -804,7 +810,46 @@ export const CuentasAccesosView = () => {
       </div>
 
       {/* Accounts List (Cards or Table) */}
-      {filteredAccounts.length === 0 ? (
+      {accounts.length === 0 ? (
+        <div className="p-12 text-center rounded-2xl bg-[var(--bg-panel)] border border-dashed border-[var(--border-color)] space-y-4 font-sans">
+          <Building2 className="w-10 h-10 text-[var(--text-muted)] mx-auto opacity-50" />
+          <div className="space-y-1">
+            <h4 className="text-base font-bold text-[var(--text-main)]">
+              No hay cuentas de dueños de negocio registradas
+            </h4>
+            <p className="text-xs text-[var(--text-muted)] font-mono max-w-md mx-auto">
+              Asigna la primera cuenta maestra (regla 1:1 por negocio) para generar credenciales provisionales y habilitar el acceso al portal.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (availableTenantsWithoutAccount.length === 0) {
+                setIsLimitNoticeOpen(true);
+                return;
+              }
+              const firstAvailable = availableTenantsWithoutAccount[0];
+              setNewAccountForm({
+                tenantId: firstAvailable ? firstAvailable.id : '',
+                ownerName: '',
+                email: '',
+                password: generateSecurePassword(),
+                phone: '',
+                notes: '',
+              });
+              setIsCreateModalOpen(true);
+            }}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-neon text-black font-mono font-bold text-xs hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_15px_rgba(195,244,0,0.3)] active:scale-95"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>
+              {availableTenantsWithoutAccount.length > 0
+                ? 'Asignar Primera Cuenta Maestra'
+                : 'Registrar Negocio / Ver Límite 1:1'}
+            </span>
+          </button>
+        </div>
+      ) : filteredAccounts.length === 0 ? (
         <div className="p-12 text-center rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-3 font-sans">
           <Building2 className="w-10 h-10 text-[var(--text-muted)] mx-auto opacity-40" />
           <h4 className="text-base font-bold text-[var(--text-main)]">
@@ -813,6 +858,18 @@ export const CuentasAccesosView = () => {
           <p className="text-xs text-[var(--text-muted)] font-mono max-w-md mx-auto">
             Intenta cambiar la búsqueda o restablecer los filtros para ver las cuentas de los negocios.
           </p>
+          <button
+            type="button"
+            onClick={() => {
+              setSearchQuery('');
+              setSelectedTenantFilter('all');
+              setSelectedStatusFilter('all');
+            }}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon text-xs font-mono font-bold text-[var(--text-main)] transition-colors"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Limpiar Filtros</span>
+          </button>
         </div>
       ) : viewMode === 'table' ? (
         /* VISTA TABLA COMPACTA */
@@ -850,7 +907,7 @@ export const CuentasAccesosView = () => {
                             <div className="flex items-center gap-1.5">
                               <span className="font-heading font-black">{account.tenantName}</span>
                               {isCurrentTenant && (
-                                <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-neon/15 text-neon border border-neon/30 font-bold">
+                                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-neon/15 text-lime-700 dark:text-neon border border-neon/30 font-bold">
                                   Activo
                                 </span>
                               )}
@@ -881,13 +938,13 @@ export const CuentasAccesosView = () => {
 
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-1.5">
-                          <span className="font-mono font-bold text-neon bg-zinc-900 px-2 py-0.5 rounded border border-zinc-700/50">
+                          <span className="font-mono font-bold bg-[var(--bg-card-subtle)] text-[var(--text-main)] px-2 py-0.5 rounded border border-[var(--border-color)]">
                             {isPassVisible ? account.tempPassword : '••••••••••••'}
                           </span>
                           <button
                             type="button"
                             onClick={() => togglePasswordVisibility(account.tenantId)}
-                            className="text-[var(--text-muted)] hover:text-white p-1"
+                            className="text-[var(--text-muted)] hover:text-[var(--text-main)] p-1"
                             title={isPassVisible ? 'Ocultar contraseña' : 'Ver contraseña'}
                           >
                             {isPassVisible ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
@@ -1060,7 +1117,7 @@ export const CuentasAccesosView = () => {
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs pt-1">
                         <div className="flex items-center gap-1.5">
                           <Mail className="w-3.5 h-3.5 text-[var(--text-muted)] shrink-0" />
-                          <span className="text-[var(--text-muted)] hover:text-white transition-colors">
+                          <span className="text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors">
                             {account.email}
                           </span>
                           <button
@@ -1093,7 +1150,7 @@ export const CuentasAccesosView = () => {
                         <button
                           type="button"
                           onClick={() => togglePasswordVisibility(account.tenantId)}
-                          className="text-[10px] text-[var(--text-muted)] hover:text-white flex items-center gap-1"
+                          className="text-[10px] text-[var(--text-muted)] hover:text-[var(--text-main)] flex items-center gap-1"
                           title={isPassVisible ? 'Ocultar' : 'Mostrar'}
                         >
                           {isPassVisible ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
@@ -1102,11 +1159,11 @@ export const CuentasAccesosView = () => {
                         <button
                           type="button"
                           onClick={() => handleCopy(account.tempPassword, `pass-${account.tenantId}`)}
-                          className="text-[10px] text-neon hover:underline font-bold flex items-center gap-1"
+                          className="text-[10px] text-lime-700 dark:text-neon hover:underline font-bold flex items-center gap-1"
                         >
                           {copiedField === `pass-${account.tenantId}` ? (
                             <>
-                              <Check className="w-3 h-3 text-neon" />
+                              <Check className="w-3 h-3 text-lime-700 dark:text-neon" />
                               <span>Copiada</span>
                             </>
                           ) : (
@@ -1119,7 +1176,7 @@ export const CuentasAccesosView = () => {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between bg-zinc-900 text-neon px-3 py-1.5 rounded-lg border border-zinc-700/50 shadow-inner">
+                    <div className="flex items-center justify-between bg-[var(--bg-card-subtle)] text-[var(--text-main)] px-3 py-1.5 rounded-lg border border-[var(--border-color)] shadow-inner">
                       <span className="font-mono font-bold tracking-wider">
                         {isPassVisible ? account.tempPassword : '••••••••••••'}
                       </span>
@@ -1241,7 +1298,7 @@ export const CuentasAccesosView = () => {
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="p-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-white transition-colors"
+                  className="p-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1372,7 +1429,7 @@ export const CuentasAccesosView = () => {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-3 text-[var(--text-muted)] hover:text-white"
+                      className="absolute right-3 top-3 text-[var(--text-muted)] hover:text-[var(--text-main)]"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -1380,13 +1437,13 @@ export const CuentasAccesosView = () => {
                 </div>
 
                 {/* Aviso: Cambio Obligatorio al Entrar */}
-                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2.5 text-amber-300">
-                  <KeyRound className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2.5 text-amber-800 dark:text-amber-300">
+                  <KeyRound className="w-4 h-4 text-amber-700 dark:text-amber-400 shrink-0 mt-0.5" />
                   <div>
-                    <span className="text-xs font-bold text-amber-400 block font-sans">
+                    <span className="text-xs font-bold text-amber-700 dark:text-amber-400 block font-sans">
                       Contraseña Provisional con Pop-up Obligatorio
                     </span>
-                    <span className="text-[10px] text-zinc-300 block font-sans leading-relaxed">
+                    <span className="text-[10px] text-[var(--text-muted)] block font-sans leading-relaxed">
                       Al iniciar sesión por primera vez con esta clave, el sistema le desplegará automáticamente al cliente el pop-up de cambio obligatorio para que defina su contraseña personal definitiva.
                     </span>
                   </div>
@@ -1394,7 +1451,7 @@ export const CuentasAccesosView = () => {
 
                 {/* Rol Fijo: Dueño de Negocio (Informativo, sin selector superfluo) */}
                 <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-emerald-500/30 flex items-center gap-3">
-                  <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
+                  <ShieldCheck className="w-5 h-5 text-emerald-700 dark:text-emerald-400 shrink-0" />
                   <div>
                     <span className="text-xs font-bold text-[var(--text-main)] block font-sans">
                       Rol: Dueño de Negocio (Cliente Final)
@@ -1410,7 +1467,7 @@ export const CuentasAccesosView = () => {
                   <button
                     type="button"
                     onClick={() => setIsCreateModalOpen(false)}
-                    className="px-4 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-muted)] hover:text-white transition-colors"
+                    className="px-4 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
                   >
                     Cancelar
                   </button>
@@ -1454,7 +1511,7 @@ export const CuentasAccesosView = () => {
                 <button
                   type="button"
                   onClick={() => setShareCredentialsUser(null)}
-                  className="p-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-white"
+                  className="p-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)]"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1462,12 +1519,12 @@ export const CuentasAccesosView = () => {
 
               {/* Shareable Card Content */}
               <div className="p-4 rounded-2xl bg-[var(--bg-base)] border border-[var(--border-color)] font-mono text-xs space-y-3">
-                <div className="text-neon font-bold text-xs">
+                <div className="text-lime-700 dark:text-neon font-bold text-xs">
                   👋 Hola {shareCredentialsUser.ownerName},
                 </div>
                 <p className="text-[var(--text-muted)] font-sans text-xs leading-relaxed">
                   Aquí tienes tus credenciales maestras para ingresar al panel de control de{' '}
-                  <strong className="text-white font-bold">{shareCredentialsUser.tenantName}</strong>:
+                  <strong className="text-[var(--text-main)] font-bold">{shareCredentialsUser.tenantName}</strong>:
                 </p>
 
                 {/* Feedback de envío de correo */}
@@ -1475,14 +1532,14 @@ export const CuentasAccesosView = () => {
                   <div
                     className={`p-3 rounded-xl border text-xs font-mono animate-fade-in ${
                       clientEmailResult.success
-                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                        : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400'
+                        : 'bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400'
                     }`}
                   >
                     <p className="font-bold">{clientEmailResult.message}</p>
                     {clientEmailResult.messageId && (
-                      <p className="text-[10px] text-zinc-400 mt-1">
-                        ID de Transmisión Oficial: <code className="text-white">{clientEmailResult.messageId}</code>
+                      <p className="text-[10px] text-[var(--text-muted)] mt-1">
+                        ID de Transmisión Oficial: <code className="text-[var(--text-main)]">{clientEmailResult.messageId}</code>
                       </p>
                     )}
                   </div>
@@ -1491,17 +1548,17 @@ export const CuentasAccesosView = () => {
                 <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1.5 text-xs">
                   <div className="flex items-center gap-2">
                     <span className="text-[var(--text-muted)]">🔗 Enlace:</span>
-                    <span className="font-bold text-white">
+                    <span className="font-bold text-[var(--text-main)]">
                       {typeof window !== 'undefined' ? `${window.location.origin}/login` : 'https://vector-community.vercel.app/login'}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-[var(--text-muted)]">✉️ Usuario:</span>
-                    <span className="font-bold text-neon">{shareCredentialsUser.email}</span>
+                    <span className="font-bold text-lime-700 dark:text-neon">{shareCredentialsUser.email}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-[var(--text-muted)]">🔑 Contraseña:</span>
-                    <span className="font-bold text-white tracking-wider">{shareCredentialsUser.tempPassword}</span>
+                    <span className="font-bold text-[var(--text-main)] tracking-wider">{shareCredentialsUser.tempPassword}</span>
                   </div>
                 </div>
 
@@ -1519,7 +1576,7 @@ export const CuentasAccesosView = () => {
                     setShareCredentialsUser(null);
                     setClientEmailResult(null);
                   }}
-                  className="px-3 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-muted)] hover:text-white"
+                  className="px-3 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-muted)] hover:text-[var(--text-main)]"
                 >
                   Cerrar
                 </button>
@@ -1547,7 +1604,7 @@ export const CuentasAccesosView = () => {
                   <button
                     type="button"
                     onClick={() => handleSendWhatsApp(shareCredentialsUser)}
-                    className="px-3 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 hover:text-white hover:bg-emerald-500/25 transition-all text-xs flex items-center gap-1.5 cursor-pointer"
+                    className="px-3 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:text-[var(--text-main)] hover:bg-emerald-500/25 transition-all text-xs flex items-center gap-1.5 cursor-pointer"
                   >
                     <Share2 className="w-3.5 h-3.5" />
                     <span>WhatsApp</span>
@@ -1594,7 +1651,7 @@ export const CuentasAccesosView = () => {
                 <button
                   type="button"
                   onClick={() => setIsLimitNoticeOpen(false)}
-                  className="p-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-white"
+                  className="p-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)]"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1605,11 +1662,11 @@ export const CuentasAccesosView = () => {
                   Todos los negocios registrados en la plataforma ({accounts.length}/{tenantsList.length}) ya cuentan con su usuario maestro oficial asignado.
                 </p>
                 <p>
-                  La arquitectura de seguridad de Vector Inside establece estrictamente <strong className="text-white">1 usuario por negocio</strong> para garantizar aislamiento de datos (Multi-Tenant) y evitar cuentas duplicadas o huérfanas.
+                  La arquitectura de seguridad de Vector Inside establece estrictamente <strong className="text-[var(--text-main)]">1 usuario por negocio</strong> para garantizar aislamiento de datos (Multi-Tenant) y evitar cuentas duplicadas o huérfanas.
                 </p>
-                <div className="p-2.5 rounded-xl bg-neon/10 border border-neon/30 text-neon font-mono text-[11px] flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 shrink-0 text-neon" />
-                  <span>Para actualizar credenciales o emitir una contraseña temporal, usa el botón <strong>"Clave"</strong> en la tarjeta del negocio.</span>
+                <div className="p-2.5 rounded-xl bg-neon/10 border border-neon/30 text-lime-700 dark:text-neon font-mono text-[11px] flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 shrink-0 text-lime-700 dark:text-neon" />
+                  <span>Para actualizar credenciales o emitir una contraseña temporal, usa el botón <strong>&quot;Clave&quot;</strong> en la tarjeta del negocio.</span>
                 </div>
               </div>
 
@@ -1688,7 +1745,7 @@ const ResetPasswordModal = ({ user, onClose, onSubmit }) => {
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-white"
+              className="p-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)]"
             >
               <X className="w-4 h-4" />
             </button>
@@ -1696,13 +1753,13 @@ const ResetPasswordModal = ({ user, onClose, onSubmit }) => {
 
           <div className="space-y-3 font-mono text-xs">
             {/* Notice regarding provisional password and mandatory pop-up */}
-            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-sans space-y-1">
-              <div className="flex items-center gap-1.5 font-bold font-mono text-[11px] text-amber-400">
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs font-sans space-y-1">
+              <div className="flex items-center gap-1.5 font-bold font-mono text-[11px] text-amber-700 dark:text-amber-400">
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
                 <span>Activación de Pop-up Obligatorio</span>
               </div>
-              <p className="text-[11px] text-zinc-300 leading-relaxed">
-                Esta contraseña es <strong className="text-white">provisional</strong>. En cuanto el cliente inicie sesión en la plataforma, el sistema le desplegará automáticamente el pop-up de cambio obligatorio para que defina su clave personal definitiva.
+              <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
+                Esta contraseña es <strong className="text-[var(--text-main)]">provisional</strong>. En cuanto el cliente inicie sesión en la plataforma, el sistema le desplegará automáticamente el pop-up de cambio obligatorio para que defina su clave personal definitiva.
               </p>
             </div>
 
@@ -1711,7 +1768,7 @@ const ResetPasswordModal = ({ user, onClose, onSubmit }) => {
               <button
                 type="button"
                 onClick={handleGenerate}
-                className="text-[10px] text-neon hover:underline font-bold flex items-center gap-1"
+                className="text-[10px] text-lime-700 dark:text-neon hover:underline font-bold flex items-center gap-1"
               >
                 <Sparkles className="w-3 h-3" />
                 <span>Generar otra</span>
@@ -1728,7 +1785,7 @@ const ResetPasswordModal = ({ user, onClose, onSubmit }) => {
               <button
                 type="button"
                 onClick={() => setShow(!show)}
-                className="absolute right-3 top-3 text-[var(--text-muted)] hover:text-white"
+                className="absolute right-3 top-3 text-[var(--text-muted)] hover:text-[var(--text-main)]"
               >
                 {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -1743,7 +1800,7 @@ const ResetPasswordModal = ({ user, onClose, onSubmit }) => {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-muted)] hover:text-white"
+              className="px-4 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-muted)] hover:text-[var(--text-main)]"
             >
               Cancelar
             </button>
@@ -1798,7 +1855,7 @@ const DeleteAccountModal = ({
               type="button"
               onClick={onClose}
               disabled={isDeleting}
-              className="p-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-white transition-colors disabled:opacity-50"
+              className="p-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors disabled:opacity-50"
             >
               <X className="w-4 h-4" />
             </button>
@@ -1816,20 +1873,20 @@ const DeleteAccountModal = ({
               <div className="text-xs text-[var(--text-muted)] truncate">
                 {account.ownerName} &bull; {account.email}
               </div>
-              <div className="text-[10px] font-mono text-neon mt-0.5">
+              <div className="text-[10px] font-mono text-lime-700 dark:text-neon mt-0.5">
                 {account.giro || 'Servicios'}
               </div>
             </div>
           </div>
 
           {/* Governance Notice */}
-          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-sans space-y-1.5">
-            <div className="flex items-center gap-1.5 font-bold font-mono text-[11px] text-rose-400">
-              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-sans space-y-1.5">
+            <div className="flex items-center gap-1.5 font-bold font-mono text-[11px] text-rose-600 dark:text-rose-400">
+              <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
               <span>Consecuencias de la Operación</span>
             </div>
-            <p className="text-[11px] text-zinc-300 leading-relaxed">
-              El negocio pasará a estado <strong className="text-rose-400">ARCHIVED</strong>. Se suspenderán de inmediato las automatizaciones de IA, campañas y acceso del cliente al portal. Los registros de auditoría y métricas previas permanecerán sellados de forma inmutable bajo gobernanza WORM.
+            <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
+              El negocio pasará a estado <strong className="text-rose-600 dark:text-rose-400">ARCHIVED</strong>. Se suspenderán de inmediato las automatizaciones de IA, campañas y acceso del cliente al portal. Los registros de auditoría y métricas previas permanecerán sellados de forma inmutable bajo gobernanza WORM.
             </p>
           </div>
 
@@ -1858,7 +1915,7 @@ const DeleteAccountModal = ({
               type="button"
               onClick={onClose}
               disabled={isDeleting}
-              className="px-4 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-muted)] hover:text-white transition-colors disabled:opacity-50"
+              className="px-4 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors disabled:opacity-50"
             >
               Cancelar
             </button>
@@ -1868,8 +1925,8 @@ const DeleteAccountModal = ({
               disabled={!isMatch || isDeleting}
               className={`px-4 py-2.5 rounded-xl font-mono font-bold text-xs transition-all shadow-sm flex items-center gap-1.5 ${
                 isMatch && !isDeleting
-                  ? 'bg-rose-600 hover:bg-rose-500 text-white cursor-pointer shadow-rose-900/30'
-                  : 'bg-zinc-800 text-zinc-500 border border-zinc-700/50 cursor-not-allowed opacity-60'
+                  ? 'bg-rose-600 hover:bg-rose-500 text-rose-50 cursor-pointer shadow-rose-900/30'
+                  : 'bg-[var(--bg-card-subtle)] text-[var(--text-muted)] border border-[var(--border-color)] cursor-not-allowed opacity-60'
               }`}
             >
               <Trash2 className="w-3.5 h-3.5" />

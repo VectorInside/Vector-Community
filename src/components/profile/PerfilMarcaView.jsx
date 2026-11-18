@@ -5,28 +5,28 @@ import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import {
   resolveBrandPreset,
-  TENANT_BRAND_PRESETS,
   QUICK_TONE_TEMPLATES,
   BRAND_AVATAR_PRESETS,
 } from '@/utils/brandPresets';
-import { normalizePhone10, formatPhoneDisplay } from '@/utils/formatters';
+import { normalizePhone10 } from '@/utils/formatters';
+import {
+  BuyerPersona4PsForm,
+  EMPTY_BUYER_PERSONA,
+  EMPTY_MARKETING_MIX_4P,
+} from '@/components/shared/BuyerPersona4PsEditor';
+import { InviolableRulesEditor } from '@/components/shared/InviolableRulesEditor';
 import {
   Sparkles,
   Clock,
   ShieldCheck,
   Save,
   CheckCircle2,
-  Building,
-  Building2,
   Target,
   Palette,
   Check,
-  Smartphone,
   Globe,
   Share2,
   RefreshCw,
-  Plus,
-  Trash2,
   MessageSquare,
   Instagram,
   Facebook,
@@ -34,22 +34,110 @@ import {
   Linkedin,
   Youtube,
   ExternalLink,
-  FileText,
   AlertCircle,
   AlertTriangle,
-  ArrowRight,
-  ChevronRight,
-  ChevronLeft,
-  Lock,
   Sliders,
-  Eye,
-  Copy,
-  Zap,
   Layers,
-  ShieldAlert,
-  Loader2,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+
+const XLogoIcon = ({ className = 'w-3.5 h-3.5' }) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className={className}>
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
+
+const EMPTY_SOCIAL_LINKS = {
+  youtube: '',
+  tiktok: '',
+  linkedin: '',
+  instagram: '',
+  facebook: '',
+  x: '',
+  website: '',
+};
+
+const SOCIAL_CHANNEL_FIELDS = [
+  {
+    key: 'youtube',
+    label: 'YouTube (Canal Oficial)',
+    placeholder: 'https://youtube.com/@minegocio',
+    helper: 'La IA ofrecerá este canal cuando soliciten videos o tutoriales.',
+    icon: Youtube,
+    iconColor: 'text-rose-600 dark:text-rose-400',
+    linkColor: 'text-rose-600 dark:text-rose-400',
+    focusClass: 'focus-within:border-rose-500/60',
+    inputFocusClass: 'focus:border-rose-500',
+  },
+  {
+    key: 'tiktok',
+    label: 'TikTok (Cuenta Oficial)',
+    placeholder: 'https://tiktok.com/@minegocio',
+    helper: 'Conectado con ideas de Reels en el Estudio de Contenido.',
+    icon: Video,
+    iconColor: 'text-cyan-600 dark:text-cyan-400',
+    linkColor: 'text-cyan-600 dark:text-cyan-400',
+    focusClass: 'focus-within:border-cyan-500/60',
+    inputFocusClass: 'focus:border-cyan-500',
+  },
+  {
+    key: 'linkedin',
+    label: 'LinkedIn (Empresa / Perfil)',
+    placeholder: 'https://linkedin.com/company/minegocio',
+    helper: 'Autoridad corporativa e interacciones B2B.',
+    icon: Linkedin,
+    iconColor: 'text-blue-600 dark:text-blue-400',
+    linkColor: 'text-blue-600 dark:text-blue-400',
+    focusClass: 'focus-within:border-blue-500/60',
+    inputFocusClass: 'focus:border-blue-500',
+  },
+  {
+    key: 'instagram',
+    label: 'Instagram (Perfil Oficial)',
+    placeholder: 'https://instagram.com/minegocio',
+    helper: 'Publicado en Micro-Landing y derivación directa a mensajes.',
+    icon: Instagram,
+    iconColor: 'text-pink-600 dark:text-pink-400',
+    linkColor: 'text-pink-600 dark:text-pink-400',
+    focusClass: 'focus-within:border-pink-500/60',
+    inputFocusClass: 'focus:border-pink-500',
+  },
+  {
+    key: 'facebook',
+    label: 'Facebook (Página Oficial)',
+    placeholder: 'https://facebook.com/minegocio',
+    helper: 'Vinculado con campañas publicitarias y comunidad.',
+    icon: Facebook,
+    iconColor: 'text-blue-600 dark:text-blue-400',
+    linkColor: 'text-blue-600 dark:text-blue-400',
+    focusClass: 'focus-within:border-blue-600/60',
+    inputFocusClass: 'focus:border-blue-600',
+  },
+  {
+    key: 'x',
+    label: 'X / Twitter (Perfil Oficial)',
+    placeholder: 'https://x.com/minegocio',
+    helper: 'Comunicados rápidos, hilos y atención pública en X.',
+    icon: XLogoIcon,
+    iconColor: 'text-[var(--text-main)]',
+    linkColor: 'text-lime-700 dark:text-neon',
+    focusClass: 'focus-within:border-neon/60',
+    inputFocusClass: 'focus:border-neon',
+  },
+  {
+    key: 'website',
+    label: 'Sitio Web / Portal',
+    placeholder: 'https://minegocio.com',
+    helper: 'URL principal de referencia para el modelo dual de tráfico.',
+    icon: Globe,
+    iconColor: 'text-lime-700 dark:text-neon',
+    linkColor: 'text-lime-700 dark:text-neon',
+    focusClass: 'focus-within:border-neon/60',
+    inputFocusClass: 'focus:border-neon',
+  },
+];
+
+const PROFILE_TABS = ['visual', 'ai', 'strategy', 'ops'];
 
 export const PerfilMarcaView = () => {
   const {
@@ -58,9 +146,7 @@ export const PerfilMarcaView = () => {
     tenantsData,
     switchTenantContext,
     updateTenantPolicy,
-    triggerModal,
     isAdmin,
-    isClient,
   } = useAuth();
 
   // Resolver preset inteligente según vertical o ID del tenant activo
@@ -68,7 +154,7 @@ export const PerfilMarcaView = () => {
     return resolveBrandPreset(activeTenant || activeTenantKey);
   }, [activeTenant, activeTenantKey]);
 
-  // Form State sincronizado desde activeTenant
+  // Form State sincronizado desde activeTenant (23 campos totales)
   const [brandPurpose, setBrandPurpose] = useState('');
   const [toneOfVoice, setToneOfVoice] = useState('');
   const [emojiPolicy, setEmojiPolicy] = useState('Moderado (según contexto)');
@@ -84,34 +170,13 @@ export const PerfilMarcaView = () => {
 
   // Reglas Inviolables
   const [inviolableRules, setInviolableRules] = useState([]);
-  const [newRuleInput, setNewRuleInput] = useState('');
 
-  // Buyer Persona
-  const [buyerName, setBuyerName] = useState('');
-  const [buyerAgeRange, setBuyerAgeRange] = useState('');
-  const [buyerMaritalStatus, setBuyerMaritalStatus] = useState('');
-  const [buyerLocation, setBuyerLocation] = useState('');
-  const [buyerHabits, setBuyerHabits] = useState('');
-  const [buyerPainPoint, setBuyerPainPoint] = useState('');
-  const [buyerBuyingTrigger, setBuyerBuyingTrigger] = useState('');
+  // Buyer Persona (7 campos) & Marketing Mix (4 Ps)
+  const [buyerPersona, setBuyerPersona] = useState(EMPTY_BUYER_PERSONA);
+  const [marketingMix4P, setMarketingMix4P] = useState(EMPTY_MARKETING_MIX_4P);
 
-  // Marketing Mix 4 Ps
-  const [mixProduct, setMixProduct] = useState('');
-  const [mixPrice, setMixPrice] = useState('');
-  const [mixPlace, setMixPlace] = useState('');
-  const [mixPromotion, setMixPromotion] = useState('');
-  const [isInferringBuyer, setIsInferringBuyer] = useState(false);
-
-  // Redes Sociales Oficiales (YouTube, TikTok, LinkedIn, Instagram, Facebook, etc.)
-  const [socialLinks, setSocialLinks] = useState({
-    youtube: '',
-    tiktok: '',
-    linkedin: '',
-    instagram: '',
-    facebook: '',
-    x: '',
-    website: '',
-  });
+  // Redes Sociales Oficiales (YouTube, TikTok, LinkedIn, Instagram, Facebook, X, Website)
+  const [socialLinks, setSocialLinks] = useState(EMPTY_SOCIAL_LINKS);
 
   // Categoría activa de selector de avatar
   const [selectedAvatarCategory, setSelectedAvatarCategory] = useState(0);
@@ -120,11 +185,11 @@ export const PerfilMarcaView = () => {
   const searchParams = useSearchParams();
   const queryTab = searchParams ? searchParams.get('tab') : null;
   const [activeTab, setActiveTab] = useState(
-    queryTab && ['visual', 'ai', 'strategy', 'ops'].includes(queryTab) ? queryTab : 'visual'
+    queryTab && PROFILE_TABS.includes(queryTab) ? queryTab : 'visual'
   );
 
   useEffect(() => {
-    if (queryTab && ['visual', 'ai', 'strategy', 'ops'].includes(queryTab)) {
+    if (queryTab && PROFILE_TABS.includes(queryTab)) {
       setActiveTab(queryTab);
     }
   }, [queryTab]);
@@ -144,56 +209,60 @@ export const PerfilMarcaView = () => {
     if (brandPurpose && brandPurpose.trim().length > 15) score += 20;
     if (toneOfVoice && toneOfVoice.trim().length > 10) score += 15;
     if (offerHook && offerHook.trim().length > 5) score += 15;
-    if (buyerName || buyerPainPoint) score += 10;
+    if (buyerPersona.name || buyerPersona.mainPainPoint) score += 10;
     if (ownerPhone && normalizePhone10(ownerPhone).length === 10) score += 10;
     return Math.min(100, score);
-  }, [customAvatar, brandColors, brandPurpose, toneOfVoice, offerHook, buyerName, buyerPainPoint, ownerPhone]);
+  }, [customAvatar, brandColors, brandPurpose, toneOfVoice, offerHook, buyerPersona.name, buyerPersona.mainPainPoint, ownerPhone]);
 
-  // Sincronizar estado cuando cambie el negocio activo (activeTenant o activeTenantKey)
-  useEffect(() => {
-    if (activeTenant) {
-      setBrandPurpose(activeTenant.brandPurpose || '');
-      setToneOfVoice(activeTenant.toneOfVoice || '');
-      setEmojiPolicy(activeTenant.emojiPolicy || 'Moderado (según contexto)');
-      setSlaTarget(activeTenant.slaTarget || activeTenant.slaHitlMinutes || 15);
-      const isGenericB2B = activeTenant.brandColors?.length === 5 && activeTenant.brandColors[0]?.hex === '#0F172A';
+  // Sincronización única (usada al cambiar activeTenant y al pulsar "Descartar")
+  const resetFormFromTenant = useCallback((tenant, preset) => {
+    if (tenant) {
+      setBrandPurpose(tenant.brandPurpose || '');
+      setToneOfVoice(tenant.toneOfVoice || '');
+      setEmojiPolicy(tenant.emojiPolicy || 'Moderado (según contexto)');
+      setSlaTarget(tenant.slaTarget || tenant.slaHitlMinutes || 15);
+      const isGenericB2B = tenant.brandColors?.length === 5 && tenant.brandColors[0]?.hex === '#0F172A';
       setBrandColors(
-        activeTenant.brandColors && activeTenant.brandColors.length > 0 && !isGenericB2B
-          ? activeTenant.brandColors
-          : (currentPreset.colors || [])
+        tenant.brandColors && tenant.brandColors.length > 0 && !isGenericB2B
+          ? tenant.brandColors
+          : (preset.colors || [])
       );
       setCustomAvatar(
-        (activeTenant.avatar && activeTenant.avatar !== '💼' && activeTenant.avatar !== '🏢')
-          ? activeTenant.avatar
-          : (currentPreset.avatar || '🐺')
+        (tenant.avatar && tenant.avatar !== '💼' && tenant.avatar !== '🏢')
+          ? tenant.avatar
+          : (preset.avatar || '🐺')
       );
-      setOwnerPhone(activeTenant.phone || '');
+      setOwnerPhone(tenant.phone || '');
 
       // Oferta comercial
-      setOfferHook(activeTenant.commercialOffer?.hook || '');
-      setOfferCta(activeTenant.commercialOffer?.cta || '');
-      setOfferValidity(activeTenant.commercialOffer?.validity || '');
+      setOfferHook(tenant.commercialOffer?.hook || '');
+      setOfferCta(tenant.commercialOffer?.cta || '');
+      setOfferValidity(tenant.commercialOffer?.validity || '');
 
       // Reglas inviolables
       setInviolableRules(
-        Array.isArray(activeTenant.inviolableRules) ? activeTenant.inviolableRules : []
+        Array.isArray(tenant.inviolableRules) ? tenant.inviolableRules : []
       );
 
-      // Buyer Persona & Marketing Mix (4 Ps)
-      setBuyerName(activeTenant.buyerPersona?.name || '');
-      setBuyerAgeRange(activeTenant.buyerPersona?.ageRange || '');
-      setBuyerMaritalStatus(activeTenant.buyerPersona?.maritalStatus || '');
-      setBuyerLocation(activeTenant.buyerPersona?.location || '');
-      setBuyerHabits(activeTenant.buyerPersona?.digitalHabits || '');
-      setBuyerPainPoint(activeTenant.buyerPersona?.mainPainPoint || '');
-      setBuyerBuyingTrigger(activeTenant.buyerPersona?.buyingTrigger || '');
+      // Buyer Persona (7 campos) & Marketing Mix (4 Ps)
+      setBuyerPersona({
+        name: tenant.buyerPersona?.name || '',
+        ageRange: tenant.buyerPersona?.ageRange || '',
+        maritalStatus: tenant.buyerPersona?.maritalStatus || '',
+        location: tenant.buyerPersona?.location || '',
+        digitalHabits: tenant.buyerPersona?.digitalHabits || '',
+        mainPainPoint: tenant.buyerPersona?.mainPainPoint || '',
+        buyingTrigger: tenant.buyerPersona?.buyingTrigger || '',
+      });
 
-      setMixProduct(activeTenant.marketingMix4P?.product || '');
-      setMixPrice(activeTenant.marketingMix4P?.price || '');
-      setMixPlace(activeTenant.marketingMix4P?.place || '');
-      setMixPromotion(activeTenant.marketingMix4P?.promotion || '');
+      setMarketingMix4P({
+        product: tenant.marketingMix4P?.product || '',
+        price: tenant.marketingMix4P?.price || '',
+        place: tenant.marketingMix4P?.place || '',
+        promotion: tenant.marketingMix4P?.promotion || '',
+      });
 
-      const tenantSocial = activeTenant.socialLinks || {};
+      const tenantSocial = tenant.socialLinks || {};
       setSocialLinks({
         youtube: tenantSocial.youtube || '',
         tiktok: tenantSocial.tiktok || '',
@@ -201,7 +270,7 @@ export const PerfilMarcaView = () => {
         instagram: tenantSocial.instagram || '',
         facebook: tenantSocial.facebook || '',
         x: tenantSocial.x || '',
-        website: tenantSocial.website || activeTenant.websiteUrl || '',
+        website: tenantSocial.website || tenant.websiteUrl || '',
       });
 
       setIsDirty(false);
@@ -219,32 +288,20 @@ export const PerfilMarcaView = () => {
       setOfferCta('');
       setOfferValidity('');
       setInviolableRules([]);
-      setBuyerName('');
-      setBuyerAgeRange('');
-      setBuyerMaritalStatus('');
-      setBuyerLocation('');
-      setBuyerHabits('');
-      setBuyerPainPoint('');
-      setBuyerBuyingTrigger('');
-      setMixProduct('');
-      setMixPrice('');
-      setMixPlace('');
-      setMixPromotion('');
-      setSocialLinks({
-        youtube: '',
-        tiktok: '',
-        linkedin: '',
-        instagram: '',
-        facebook: '',
-        x: '',
-        website: '',
-      });
+      setBuyerPersona(EMPTY_BUYER_PERSONA);
+      setMarketingMix4P(EMPTY_MARKETING_MIX_4P);
+      setSocialLinks(EMPTY_SOCIAL_LINKS);
       setIsDirty(false);
       setPhoneError(null);
     }
-  }, [activeTenantKey, activeTenant, currentPreset]);
+  }, []);
 
-  // Manejador de guardado persistente con confirmación real hacia PostgreSQL 17
+  // Sincronizar estado cuando cambie el negocio activo (activeTenant o activeTenantKey)
+  useEffect(() => {
+    resetFormFromTenant(activeTenant, currentPreset);
+  }, [activeTenantKey, activeTenant, currentPreset, resetFormFromTenant]);
+
+  // Manejador de guardado persistente con confirmación real en servidor
   const handleSave = useCallback(async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     setPhoneError(null);
@@ -281,19 +338,19 @@ export const PerfilMarcaView = () => {
           },
           inviolableRules,
           buyerPersona: {
-            name: buyerName,
-            ageRange: buyerAgeRange,
-            maritalStatus: buyerMaritalStatus,
-            location: buyerLocation,
-            digitalHabits: buyerHabits,
-            mainPainPoint: buyerPainPoint,
-            buyingTrigger: buyerBuyingTrigger,
+            name: buyerPersona.name,
+            ageRange: buyerPersona.ageRange,
+            maritalStatus: buyerPersona.maritalStatus,
+            location: buyerPersona.location,
+            digitalHabits: buyerPersona.digitalHabits,
+            mainPainPoint: buyerPersona.mainPainPoint,
+            buyingTrigger: buyerPersona.buyingTrigger,
           },
           marketingMix4P: {
-            product: mixProduct,
-            price: mixPrice,
-            place: mixPlace,
-            promotion: mixPromotion,
+            product: marketingMix4P.product,
+            price: marketingMix4P.price,
+            place: marketingMix4P.place,
+            promotion: marketingMix4P.promotion,
           },
           socialLinks: {
             youtube: socialLinks.youtube || '',
@@ -330,17 +387,8 @@ export const PerfilMarcaView = () => {
     offerCta,
     offerValidity,
     inviolableRules,
-    buyerName,
-    buyerAgeRange,
-    buyerMaritalStatus,
-    buyerLocation,
-    buyerHabits,
-    buyerPainPoint,
-    buyerBuyingTrigger,
-    mixProduct,
-    mixPrice,
-    mixPlace,
-    mixPromotion,
+    buyerPersona,
+    marketingMix4P,
     socialLinks,
   ]);
 
@@ -374,65 +422,6 @@ export const PerfilMarcaView = () => {
     } catch (e) {}
   };
 
-  // Inferencia y auto-completado de Buyer Persona & 4 Ps con IA DeepSeek
-  const handleAiAutoInferBuyerAndMix = async () => {
-    setIsInferringBuyer(true);
-    try {
-      const res = await fetch('/api/rag/infer-buyer', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          businessName: activeTenant?.name || 'Vector Inside',
-          giro: activeTenant?.giro || activeTenant?.verticalLabel || 'Agencias de Marketing, Software SaaS & Consultoría B2B',
-          brandPurpose: brandPurpose || activeTenant?.brandPurpose || '',
-          toneOfVoice: toneOfVoice || activeTenant?.toneOfVoice || '',
-          offerHook: offerHook || activeTenant?.commercialOffer?.hook || '',
-          offerCta: offerCta || activeTenant?.commercialOffer?.cta || '',
-          offerValidity: offerValidity || activeTenant?.commercialOffer?.validity || '',
-          inviolableRules: inviolableRules || [],
-          verticalId: activeTenant?.vertical || 'b2b',
-          socialLinks: socialLinks || activeTenant?.socialLinks || {},
-          connectedSocialNetworks: activeTenant?.connectedSocialNetworks || ['WHATSAPP', 'INSTAGRAM', 'FACEBOOK'],
-        }),
-      });
-
-      const json = await res.json();
-      if (json?.success) {
-        if (json.buyerPersona) {
-          setBuyerName(json.buyerPersona.name || '');
-          setBuyerAgeRange(json.buyerPersona.ageRange || '');
-          setBuyerMaritalStatus(json.buyerPersona.maritalStatus || '');
-          setBuyerLocation(json.buyerPersona.location || '');
-          setBuyerHabits(json.buyerPersona.digitalHabits || '');
-          setBuyerPainPoint(json.buyerPersona.mainPainPoint || '');
-          setBuyerBuyingTrigger(json.buyerPersona.buyingTrigger || '');
-        }
-        if (json.marketingMix4P) {
-          const cleanPrefix = (str) =>
-            (str || '')
-              .replace(/^[1-4]\.\s*(PRODUCTO|PRECIO|PLAZA|PROMOCI[OÓ]N)?\s*[:\-–—]?\s*/i, '')
-              .trim();
-          setMixProduct(cleanPrefix(json.marketingMix4P.product));
-          setMixPrice(cleanPrefix(json.marketingMix4P.price));
-          setMixPlace(cleanPrefix(json.marketingMix4P.place));
-          setMixPromotion(cleanPrefix(json.marketingMix4P.promotion));
-        }
-        setIsDirty(true);
-        try {
-          confetti({
-            particleCount: 50,
-            spread: 60,
-            colors: ['#E7F900', '#06B6D4', '#FFFFFF'],
-          });
-        } catch (e) {}
-      }
-    } catch (err) {
-      console.error('[PerfilMarcaView.handleAiAutoInferBuyerAndMix] Error:', err);
-    } finally {
-      setIsInferringBuyer(false);
-    }
-  };
-
   // Restablecer paleta o valores predeterminados de la vertical
   const handleResetDefaults = () => {
     setBrandPurpose(currentPreset.defaultPurpose);
@@ -443,35 +432,36 @@ export const PerfilMarcaView = () => {
     setIsDirty(true);
   };
 
-  // Agregar Regla Inviolable
-  const handleAddRule = () => {
-    if (!newRuleInput.trim()) return;
-    setInviolableRules((prev) => [...prev, newRuleInput.trim()]);
-    setNewRuleInput('');
-    setIsDirty(true);
-  };
-
-  // Eliminar Regla Inviolable
-  const handleDeleteRule = (index) => {
-    setInviolableRules((prev) => prev.filter((_, i) => i !== index));
-    setIsDirty(true);
-  };
-
   // Lista de tenants disponibles para cambio rápido de contexto
   const tenantList = useMemo(() => {
     if (!tenantsData) return [];
     return Object.values(tenantsData);
   }, [tenantsData]);
 
+  const currentTabIndex = PROFILE_TABS.indexOf(activeTab);
+  const isFirstTab = currentTabIndex <= 0;
+  const isLastTab = currentTabIndex >= PROFILE_TABS.length - 1;
+
   return (
     <div className="w-full p-4 sm:p-6 lg:p-8 block animate-fade-in space-y-6 font-sans pb-28">
+      {/* Toast flotante fijo (evita desplazamiento CLS del header) */}
+      {savedNotification && (
+        <div
+          role="status"
+          className="fixed top-20 right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--bg-panel)] border border-emerald-500/40 text-emerald-700 dark:text-emerald-400 text-xs font-mono font-bold animate-fade-in shadow-xl"
+        >
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
+          <span>Cambios Guardados Correctamente</span>
+        </div>
+      )}
+
       {/* =================================================================== */}
       {/* HEADER PRINCIPAL & SELECTOR DE TENANT ACTIVO                        */}
       {/* =================================================================== */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border-color)] pb-5 gap-4">
         <div className="space-y-1.5 min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-neon font-extrabold bg-neon/10 px-2.5 py-0.5 rounded border border-neon/30">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-lime-700 dark:text-neon font-extrabold bg-neon/10 px-2.5 py-0.5 rounded border border-neon/30">
               IDENTIDAD & ADN DE MARCA
             </span>
             <span className="text-xs text-[var(--text-muted)] font-mono flex items-center gap-1.5">
@@ -480,14 +470,14 @@ export const PerfilMarcaView = () => {
               <span>{activeTenant?.giro || activeTenant?.verticalLabel || 'Modo Global (Sin Negocio)'}</span>
             </span>
             {activeTenant ? (
-              <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-bold flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Sincronizado con PostgreSQL 17 & RLS
+              <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 font-bold flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
+                Sincronizado y Protegido
               </span>
             ) : (
-              <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-amber-500/15 text-amber-500 border border-amber-500/30 font-bold flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                Aislamiento RLS: En Espera de Selección
+              <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 font-bold flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 dark:bg-amber-400" />
+                En Espera de Selección de Negocio
               </span>
             )}
           </div>
@@ -530,22 +520,15 @@ export const PerfilMarcaView = () => {
                 <strong className="text-[var(--text-main)]">{activeTenant?.shortName || activeTenant?.name}</strong>
               </div>
               {activeTenant?.giro && (
-                <span className="ml-1 text-[10px] px-2 py-0.5 rounded bg-neon/10 text-neon font-bold uppercase border border-neon/20">
+                <span className="ml-1 text-[10px] px-2 py-0.5 rounded bg-neon/10 text-lime-700 dark:text-neon font-bold uppercase border border-neon/20">
                   {activeTenant.giro}
                 </span>
               )}
             </div>
           ) : (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-500 text-xs font-mono font-bold">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 text-xs font-mono font-bold">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>Ningún Negocio Seleccionado</span>
-            </div>
-          )}
-
-          {savedNotification && (
-            <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-mono font-bold animate-fade-in shadow-sm">
-              <CheckCircle2 className="w-4 h-4 shrink-0" />
-              <span>Cambios Guardados en PostgreSQL 17</span>
             </div>
           )}
         </div>
@@ -555,7 +538,7 @@ export const PerfilMarcaView = () => {
       {!activeTenant && (
         <div className="p-4 sm:p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-700 dark:text-amber-400 shrink-0">
               <AlertTriangle className="w-5 h-5" />
             </div>
             <div>
@@ -620,7 +603,7 @@ export const PerfilMarcaView = () => {
                 <Icon className="w-3.5 h-3.5" />
                 <span>{tab.label}</span>
                 <span
-                  className={`text-[9px] px-1.5 py-0.2 rounded font-mono ${
+                  className={`text-[9px] px-1.5 py-0.5 rounded font-mono ${
                     isActive ? 'bg-black/20 text-black' : 'bg-[var(--bg-panel)] text-[var(--text-muted)] border border-[var(--border-color)]'
                   }`}
                 >
@@ -637,7 +620,7 @@ export const PerfilMarcaView = () => {
             <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase block leading-none">
               Completitud de Marca
             </span>
-            <strong className="text-xs font-mono text-neon font-black">
+            <strong className="text-xs font-mono text-lime-700 dark:text-neon font-black">
               {brandHealthScore}% {brandHealthScore >= 80 ? 'Excelente' : brandHealthScore >= 50 ? 'En Progreso' : 'Básico'}
             </strong>
           </div>
@@ -657,15 +640,15 @@ export const PerfilMarcaView = () => {
         {/* =================================================================== */}
         {activeTab === 'visual' && (
           <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-5 shadow-sm animate-fade-in">
-            <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
+            <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3 gap-2 flex-wrap">
               <div className="flex items-center gap-2">
-                <Palette className="w-4 h-4 text-neon" />
+                <Palette className="w-4 h-4 text-lime-700 dark:text-neon" />
                 <h3 className="font-heading font-black text-sm text-[var(--text-main)] uppercase tracking-wide">
                   1. Identidad Visual del Negocio
                 </h3>
               </div>
               <span className="text-[10px] font-mono text-[var(--text-muted)]">
-                Activos aplicados en Micro-Landing, Meta Pixel y Respuestas
+                Activos aplicados en Página Oficial, Analítica y Respuestas
               </span>
             </div>
 
@@ -677,7 +660,7 @@ export const PerfilMarcaView = () => {
                     <span className="text-[10px] font-mono font-bold text-[var(--text-muted)] uppercase block">
                       Logotipo / Isotipo de Marca
                     </span>
-                    <span className="text-[9px] font-mono text-neon font-bold">
+                    <span className="text-[9px] font-mono text-lime-700 dark:text-neon font-bold">
                       Activo en Micro-Landing & WhatsApp
                     </span>
                   </div>
@@ -774,7 +757,7 @@ export const PerfilMarcaView = () => {
                       <span className="text-[10px] font-mono font-bold text-[var(--text-muted)] uppercase block">
                         Paleta Cromática Oficial
                       </span>
-                      <span className="text-[9px] font-mono px-2 py-0.2 rounded bg-neon/10 text-neon font-bold">
+                      <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-neon/10 text-lime-700 dark:text-neon font-bold">
                         5 Tonos
                       </span>
                     </div>
@@ -784,7 +767,7 @@ export const PerfilMarcaView = () => {
                         setBrandColors(currentPreset.colors);
                         setIsDirty(true);
                       }}
-                      className="text-[9px] font-mono text-neon hover:underline flex items-center gap-1"
+                      className="text-[9px] font-mono text-lime-700 dark:text-neon hover:underline flex items-center gap-1"
                       title="Restablecer a los colores recomendados de este giro"
                     >
                       <RefreshCw className="w-3 h-3" />
@@ -814,11 +797,11 @@ export const PerfilMarcaView = () => {
                           <button
                             type="button"
                             onClick={() => handleCopyHex(color.hex)}
-                            className="text-[8px] font-mono font-bold text-[var(--text-main)] uppercase hover:text-neon transition-colors flex items-center gap-0.5"
+                            className="text-[8px] font-mono font-bold text-[var(--text-main)] uppercase hover:text-lime-700 dark:hover:text-neon transition-colors flex items-center gap-0.5"
                             title="Click para copiar HEX"
                           >
                             <span>{color.hex}</span>
-                            {copiedHex === color.hex && <Check className="w-2.5 h-2.5 text-neon" />}
+                            {copiedHex === color.hex && <Check className="w-2.5 h-2.5 text-lime-700 dark:text-neon" />}
                           </button>
                         </div>
                       ))
@@ -832,7 +815,7 @@ export const PerfilMarcaView = () => {
                             setBrandColors(currentPreset.colors);
                             setIsDirty(true);
                           }}
-                          className="px-2.5 py-1 rounded-lg bg-neon/15 hover:bg-neon text-neon hover:text-black font-mono font-bold text-[10px] transition-colors border border-neon/30"
+                          className="px-2.5 py-1 rounded-lg bg-neon/15 hover:bg-neon text-lime-800 dark:text-neon hover:text-black font-mono font-bold text-[10px] transition-colors border border-neon/30"
                         >
                           Cargar Paleta Oficial
                         </button>
@@ -842,8 +825,8 @@ export const PerfilMarcaView = () => {
                 </div>
 
                 <div className="pt-2 border-t border-[var(--border-color)] flex items-center justify-between text-[10px] font-mono">
-                  <span className="text-[var(--text-muted)]">Aplicado en botones y micro-landing:</span>
-                  <span className="font-bold text-neon flex items-center gap-1">
+                  <span className="text-[var(--text-muted)]">Aplicado en botones y página oficial:</span>
+                  <span className="font-bold text-lime-700 dark:text-neon flex items-center gap-1">
                     <ShieldCheck className="w-3.5 h-3.5" />
                     Contraste WCAG AAA
                   </span>
@@ -860,15 +843,15 @@ export const PerfilMarcaView = () => {
           <div className="space-y-6 animate-fade-in">
             {/* SECCIÓN 2: PROPÓSITO DE MARCA (CÍRCULO DORADO) & TONO DE VOZ */}
             <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-4 shadow-sm">
-              <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
+              <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3 gap-2 flex-wrap">
                 <div className="flex items-center gap-2">
-                  <Target className="w-4 h-4 text-neon" />
+                  <Target className="w-4 h-4 text-lime-700 dark:text-neon" />
                   <h3 className="font-heading font-black text-sm text-[var(--text-main)] uppercase tracking-wide">
                     2. Propósito de Marca (Círculo Dorado) & Tono de Voz
                   </h3>
                 </div>
-                <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-neon/10 text-neon border border-neon/30 font-bold">
-                  Inyectado como Contexto Base en IA (ADR-001)
+                <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-neon/10 text-lime-700 dark:text-neon border border-neon/30 font-bold">
+                  Contexto Base para Asistentes IA
                 </span>
               </div>
 
@@ -877,7 +860,7 @@ export const PerfilMarcaView = () => {
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="font-mono text-[10px] text-[var(--text-muted)] uppercase font-bold flex items-center gap-1.5">
-                      <span>Propósito Central del Negocio (El "Por Qué") *</span>
+                      <span>Propósito Central del Negocio (El &quot;Por Qué&quot;) *</span>
                     </label>
                     <span className="text-[10px] font-mono text-[var(--text-muted)]">
                       {brandPurpose.length} caracteres
@@ -923,7 +906,7 @@ export const PerfilMarcaView = () => {
                         }}
                         className={`px-2.5 py-1 rounded-lg text-[10px] font-mono transition-all border disabled:opacity-40 disabled:cursor-not-allowed ${
                           toneOfVoice === tpl.tone
-                            ? 'bg-neon/15 border-neon text-neon font-bold shadow-sm'
+                            ? 'bg-neon/15 border-neon text-lime-700 dark:text-neon font-bold shadow-sm'
                             : 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-muted)] hover:border-neon/40 hover:text-[var(--text-main)]'
                         }`}
                       >
@@ -963,7 +946,7 @@ export const PerfilMarcaView = () => {
                       Controla la frecuencia de emojis que la IA insertará en los mensajes de chat.
                     </span>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     {['Moderado (según contexto)', 'Estricto (Cero Emojis)', 'Expresivo (Alto Engagement)'].map((pol) => (
                       <button
                         key={pol}
@@ -986,48 +969,48 @@ export const PerfilMarcaView = () => {
               </div>
             </div>
 
-            {/* SECCIÓN 4: 4 PILARES RAG & REGLAS INVIOLABLES */}
+            {/* SECCIÓN 3: PILARES DE CONOCIMIENTO & REGLAS INVIOLABLES */}
             <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-4 shadow-sm">
               <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
                 <div className="flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-neon" />
+                  <Layers className="w-4 h-4 text-lime-700 dark:text-neon" />
                   <h3 className="font-heading font-black text-sm text-[var(--text-main)] uppercase tracking-wide">
-                    4. Memoria RAG & Reglas Inviolables
+                    3. Directrices de Conocimiento & Reglas Inviolables
                   </h3>
                 </div>
-                <span className="text-[10px] font-mono text-neon font-bold bg-neon/10 px-2.5 py-0.5 rounded border border-neon/20">
+                <span className="text-[10px] font-mono text-lime-700 dark:text-neon font-bold bg-neon/10 px-2.5 py-0.5 rounded border border-neon/20">
                   {inviolableRules.length} Reglas Activas
                 </span>
               </div>
 
-              {/* Resumen de los 4 Pilares RAG */}
+              {/* Resumen de los 4 Pilares de Operación */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
                 <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1">
-                  <span className="text-[10px] font-mono text-neon font-bold uppercase block">
+                  <span className="text-[10px] font-mono text-lime-700 dark:text-neon font-bold uppercase block">
                     Pilar 1: Financiero
                   </span>
                   <p className="text-[11px] text-[var(--text-main)] font-semibold">
                     CAC Máx: {activeTenant?.leadPriceMXN ? `$${activeTenant.leadPriceMXN} MXN` : (activeTenant?.cacMax || 'Sin definir')}
                   </p>
                   <span className="text-[9px] font-mono text-[var(--text-muted)] block">
-                    Aislamiento RLS en PostgreSQL
+                    Datos aislados por negocio
                   </span>
                 </div>
 
                 <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1">
-                  <span className="text-[10px] font-mono text-cyan-400 font-bold uppercase block">
+                  <span className="text-[10px] font-mono text-cyan-600 dark:text-cyan-400 font-bold uppercase block">
                     Pilar 2: Identidad & Reglas
                   </span>
                   <p className="text-[11px] text-[var(--text-main)] font-semibold truncate">
                     {toneOfVoice ? toneOfVoice.split(',')[0] : (activeTenant ? 'Por configurar' : 'Sin configurar')}
                   </p>
                   <span className="text-[9px] font-mono text-[var(--text-muted)] block">
-                    Guardrails activados
+                    Límites de seguridad activos
                   </span>
                 </div>
 
                 <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1">
-                  <span className="text-[10px] font-mono text-amber-400 font-bold uppercase block">
+                  <span className="text-[10px] font-mono text-amber-600 dark:text-amber-400 font-bold uppercase block">
                     Pilar 3: Protocolo Crisis
                   </span>
                   <p className="text-[11px] text-[var(--text-main)] font-semibold">
@@ -1039,7 +1022,7 @@ export const PerfilMarcaView = () => {
                 </div>
 
                 <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1">
-                  <span className="text-[10px] font-mono text-emerald-400 font-bold uppercase block">
+                  <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold uppercase block">
                     Pilar 4: Conversión & Leads
                   </span>
                   <p className="text-[11px] text-[var(--text-main)] font-semibold">
@@ -1051,67 +1034,19 @@ export const PerfilMarcaView = () => {
                 </div>
               </div>
 
-              {/* Gestor interactivo de Reglas Inviolables */}
-              <div className="pt-2 border-t border-[var(--border-color)] space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono font-bold text-[var(--text-muted)] uppercase block">
-                    Reglas Inviolables (Límites Estrictos para la IA)
-                  </span>
-                  <span className="text-[9px] font-mono text-[var(--text-muted)]">
-                    La IA jamás violará estas directivas
-                  </span>
-                </div>
-
-                {/* Lista de Reglas */}
-                <div className="space-y-1.5">
-                  {inviolableRules.map((rule, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between gap-2 p-2.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] text-xs"
-                    >
-                      <div className="flex items-start gap-2 min-w-0">
-                        <Lock className="w-3.5 h-3.5 text-neon shrink-0 mt-0.5" />
-                        <span className="text-[11px] text-[var(--text-main)] font-mono leading-tight">
-                          {rule}
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteRule(idx)}
-                        className="text-[var(--text-muted)] hover:text-rose-400 p-1 rounded transition-colors shrink-0"
-                        title="Eliminar regla"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Input para agregar nueva regla */}
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={newRuleInput}
-                    onChange={(e) => setNewRuleInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddRule();
-                      }
-                    }}
-                    placeholder="Escribe una regla estricta (ej. Jamás prometer descuentos superiores al 15% sin autorización)..."
-                    className="flex-1 p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs font-mono"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddRule}
-                    disabled={!newRuleInput.trim()}
-                    className="px-3.5 py-2.5 rounded-xl bg-neon/15 hover:bg-neon text-black font-mono font-bold text-xs flex items-center gap-1.5 transition-all border border-neon/30 disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Agregar Regla</span>
-                  </button>
-                </div>
+              {/* Editor compartido de Reglas Inviolables */}
+              <div className="pt-2 border-t border-[var(--border-color)]">
+                <InviolableRulesEditor
+                  rules={inviolableRules}
+                  onChange={(nextRules) => {
+                    setInviolableRules(nextRules);
+                    setIsDirty(true);
+                  }}
+                  title="Reglas Inviolables de Atención"
+                  subtitle="Directrices inquebrantables que la IA respetará obligatoriamente en todas las interacciones."
+                  placeholder="Escribe una regla estricta (ej. Jamás prometer descuentos superiores al 15% sin autorización)..."
+                  disabled={!activeTenant}
+                />
               </div>
             </div>
           </div>
@@ -1122,16 +1057,16 @@ export const PerfilMarcaView = () => {
         {/* =================================================================== */}
         {activeTab === 'strategy' && (
           <div className="space-y-6 animate-fade-in">
-            {/* SECCIÓN 3: PROPUESTA COMERCIAL & GANCHO DE CAPTACIÓN */}
+            {/* SECCIÓN 4: PROPUESTA COMERCIAL & GANCHO DE CAPTACIÓN */}
             <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-4 shadow-sm">
               <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-neon" />
+                  <Sparkles className="w-4 h-4 text-lime-700 dark:text-neon" />
                   <h3 className="font-heading font-black text-sm text-[var(--text-main)] uppercase tracking-wide">
-                    3. Propuesta Comercial & Gancho de Captación
+                    4. Propuesta Comercial & Gancho de Captación
                   </h3>
                 </div>
-                <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-neon/10 text-neon font-bold">
+                <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-neon/10 text-lime-700 dark:text-neon font-bold">
                   Oferta Activa de Conversión
                 </span>
               </div>
@@ -1196,231 +1131,61 @@ export const PerfilMarcaView = () => {
               </div>
             </div>
 
-        {/* =================================================================== */}
-        {/* SECCIÓN 5: DELIMITACIÓN DEL BUYER PERSONA & MARKETING MIX (4 Ps)    */}
-        {/* =================================================================== */}
-        <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-6 shadow-sm font-sans">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[var(--border-color)] pb-3 gap-3">
-            <div className="flex items-center gap-2">
-              <Target className="w-5 h-5 text-neon" />
-              <div>
-                <h3 className="font-heading font-black text-sm text-[var(--text-main)] uppercase tracking-wide">
-                  5. Delimitación del Buyer Persona & Marketing Mix (4 Ps)
-                </h3>
-                <span className="text-[10px] text-[var(--text-muted)] font-mono">
-                  Extraído del manual de identidad para alimentar el bot y los copys de venta
+            {/* SECCIÓN 5: DELIMITACIÓN DEL BUYER PERSONA & MARKETING MIX (4 Ps) */}
+            <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-5 shadow-sm font-sans">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[var(--border-color)] pb-3 gap-3">
+                <div className="flex items-center gap-2">
+                  <Target className="w-5 h-5 text-lime-700 dark:text-neon" />
+                  <div>
+                    <h3 className="font-heading font-black text-sm text-[var(--text-main)] uppercase tracking-wide">
+                      5. Delimitación del Buyer Persona & Marketing Mix (4 Ps)
+                    </h3>
+                    <span className="text-[10px] text-[var(--text-muted)] font-mono">
+                      Extraído del manual de identidad para alimentar el asistente y los guiones de venta
+                    </span>
+                  </div>
+                </div>
+                <span className="px-2.5 py-0.5 rounded-full bg-neon/10 text-lime-700 dark:text-neon font-mono text-[10px] font-bold border border-neon/20 self-start sm:self-auto">
+                  Calificación Comercial & AIDA
                 </span>
               </div>
-            </div>
-            <div className="flex items-center gap-2 self-start sm:self-auto">
-              <button
-                type="button"
-                onClick={handleAiAutoInferBuyerAndMix}
-                disabled={isInferringBuyer}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neon/15 hover:bg-neon/25 text-neon font-mono text-[11px] font-bold border border-neon/40 shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 cursor-pointer"
-                title="Extrae o autocompleta los 11 campos usando IA DeepSeek a partir de la identidad de la marca"
-              >
-                {isInferringBuyer ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Analizando con IA...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Auto-Extraer con IA</span>
-                  </>
-                )}
-              </button>
-              <span className="px-2.5 py-0.5 rounded-full bg-neon/10 text-neon font-mono text-[10px] font-bold border border-neon/20">
-                Auditoría BANT & AIDA
-              </span>
-            </div>
-          </div>
 
-          {/* Banner de Ayuda Rápida si el bloque está vacío */}
-          {(!buyerName || !buyerPainPoint || !mixProduct) && (
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-neon/5 border border-neon/20">
-              <div className="flex items-start sm:items-center gap-2.5 text-xs text-[var(--text-muted)]">
-                <Sparkles className="w-4 h-4 text-neon flex-shrink-0 mt-0.5 sm:mt-0" />
-                <span>
-                  El Bloque 5 está sin poblar. Haz clic en <strong className="text-neon font-bold">Auto-Extraer con IA</strong> para delimitar el Buyer Persona y las 4 Ps de Marketing en 1 clic.
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={handleAiAutoInferBuyerAndMix}
-                disabled={isInferringBuyer}
-                className="px-3 py-1 rounded-lg bg-neon text-black font-bold text-[10px] uppercase tracking-wider hover:opacity-90 flex-shrink-0 transition-opacity self-start sm:self-auto cursor-pointer"
-              >
-                Auto-Extraer Ahora
-              </button>
-            </div>
-          )}
-
-          {/* Formulario del Buyer Persona */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 text-xs font-mono font-bold text-neon uppercase">
-              <span>🎯 Perfil Demográfico & Psicográfico</span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 text-xs font-sans">
-              <div className="space-y-1">
-                <label className="text-[11px] font-bold text-[var(--text-muted)]">Nombre del Arquetipo</label>
-                <input
-                  type="text"
-                  value={buyerName}
-                  onChange={(e) => {
-                    setBuyerName(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[11px] font-bold text-[var(--text-muted)]">Rango de Edad</label>
-                <input
-                  type="text"
-                  value={buyerAgeRange}
-                  onChange={(e) => {
-                    setBuyerAgeRange(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[11px] font-bold text-[var(--text-muted)]">Estado Civil & Entorno</label>
-                <input
-                  type="text"
-                  value={buyerMaritalStatus}
-                  onChange={(e) => {
-                    setBuyerMaritalStatus(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs"
-                />
-              </div>
-
-              <div className="space-y-1 sm:col-span-2 lg:col-span-3">
-                <label className="text-[11px] font-bold text-[var(--text-muted)]">Geolocalización & Códigos Postales Prioritarios</label>
-                <input
-                  type="text"
-                  value={buyerLocation}
-                  onChange={(e) => {
-                    setBuyerLocation(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs"
-                />
-              </div>
-
-              <div className="space-y-1 sm:col-span-2 lg:col-span-3">
-                <label className="text-[11px] font-bold text-[var(--text-muted)]">Hábitos Digitales & Canales de Consumo</label>
-                <input
-                  type="text"
-                  value={buyerHabits}
-                  onChange={(e) => {
-                    setBuyerHabits(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs"
-                />
-              </div>
-
-              <div className="space-y-1 sm:col-span-1 lg:col-span-1.5">
-                <label className="text-[11px] font-bold text-amber-400">Dolor Principal (Struggling Moment)</label>
-                <textarea
-                  rows={2}
-                  value={buyerPainPoint}
-                  onChange={(e) => {
-                    setBuyerPainPoint(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-amber-500/30 text-[var(--text-main)] focus:border-amber-400 outline-none text-xs leading-relaxed"
-                />
-              </div>
-
-              <div className="space-y-1 sm:col-span-1 lg:col-span-1.5">
-                <label className="text-[11px] font-bold text-emerald-400">Disparador de Compra (Gancho Irresistible)</label>
-                <textarea
-                  rows={2}
-                  value={buyerBuyingTrigger}
-                  onChange={(e) => {
-                    setBuyerBuyingTrigger(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-emerald-500/30 text-[var(--text-main)] focus:border-emerald-400 outline-none text-xs leading-relaxed"
-                />
-              </div>
+              <BuyerPersona4PsForm
+                buyerPersona={buyerPersona}
+                marketingMix4P={marketingMix4P}
+                onChangeBuyerPersona={(next) => {
+                  setBuyerPersona(next);
+                  setIsDirty(true);
+                }}
+                onChangeMarketingMix4P={(next) => {
+                  setMarketingMix4P(next);
+                  setIsDirty(true);
+                }}
+                onApplyAiInference={() => {
+                  setIsDirty(true);
+                  try {
+                    confetti({
+                      particleCount: 50,
+                      spread: 60,
+                      colors: ['#E7F900', '#06B6D4', '#FFFFFF'],
+                    });
+                  } catch (e) {}
+                }}
+                tenant={activeTenant}
+                contextOverrides={{
+                  brandPurpose,
+                  toneOfVoice,
+                  offerHook,
+                  offerCta,
+                  offerValidity,
+                  inviolableRules,
+                  socialLinks,
+                }}
+                disabled={!activeTenant}
+              />
             </div>
           </div>
-
-          {/* Formulario del Marketing Mix (4 Ps) */}
-          <div className="space-y-4 pt-3 border-t border-[var(--border-color)]">
-            <div className="flex items-center gap-2 text-xs font-mono font-bold text-cyan-400 uppercase">
-              <span>📦 Estructura del Marketing Mix (4 Ps Oficiales)</span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs font-sans">
-              <div className="space-y-1">
-                <label className="text-[11px] font-bold text-[var(--text-muted)]">1. PRODUCTO (Propuesta de Valor & Alcance)</label>
-                <textarea
-                  rows={2}
-                  value={mixProduct}
-                  onChange={(e) => {
-                    setMixProduct(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs leading-relaxed"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[11px] font-bold text-[var(--text-muted)]">2. PRECIO (Aranceles, Rangos & MSI)</label>
-                <textarea
-                  rows={2}
-                  value={mixPrice}
-                  onChange={(e) => {
-                    setMixPrice(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs leading-relaxed"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[11px] font-bold text-[var(--text-muted)]">3. PLAZA (Canales de Entrega & Locaciones)</label>
-                <textarea
-                  rows={2}
-                  value={mixPlace}
-                  onChange={(e) => {
-                    setMixPlace(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs leading-relaxed"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[11px] font-bold text-[var(--text-muted)]">4. PROMOCIÓN (Ofertas del Mes, Cupones & 2x1)</label>
-                <textarea
-                  rows={2}
-                  value={mixPromotion}
-                  onChange={(e) => {
-                    setMixPromotion(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  className="w-full p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none text-xs leading-relaxed"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    )}
+        )}
 
         {/* =================================================================== */}
         {/* PESTAÑA 4: OPERACIONES, SLA & CANALES CONECTADOS                    */}
@@ -1431,12 +1196,12 @@ export const PerfilMarcaView = () => {
             <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-4 shadow-sm">
               <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
                 <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-neon" />
+                  <Clock className="w-4 h-4 text-lime-700 dark:text-neon" />
                   <h3 className="font-heading font-black text-sm text-[var(--text-main)] uppercase tracking-wide">
                     6. Contactabilidad, SLA & Atención Humana
                   </h3>
                 </div>
-                <span className="text-[10px] font-mono text-neon font-bold bg-neon/10 px-2.5 py-0.5 rounded border border-neon/20">
+                <span className="text-[10px] font-mono text-lime-700 dark:text-neon font-bold bg-neon/10 px-2.5 py-0.5 rounded border border-neon/20">
                   SLA Máximo: {slaTarget} Minutos
                 </span>
               </div>
@@ -1464,13 +1229,13 @@ export const PerfilMarcaView = () => {
                       }`}
                     />
                     {phoneError && (
-                      <p className="text-[10px] font-mono text-rose-400 mt-1.5 flex items-center gap-1.5 font-bold animate-fade-in">
+                      <p className="text-[10px] font-mono text-rose-600 dark:text-rose-400 mt-1.5 flex items-center gap-1.5 font-bold animate-fade-in">
                         <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                         <span>{phoneError}</span>
                       </p>
                     )}
                     <span className="text-[9px] font-mono text-[var(--text-muted)] mt-1 block">
-                      Ingresa 10 dígitos locales. A este número se transfieren solicitudes prioritarias, quejas de clientes o prospectos que solicitan hablar con un humano (HITL).
+                      Ingresa 10 dígitos locales. A este número se transfieren solicitudes prioritarias, quejas de clientes o prospectos que solicitan hablar con un asesor humano.
                     </span>
                   </div>
 
@@ -1480,7 +1245,7 @@ export const PerfilMarcaView = () => {
                       <label className="font-mono text-[10px] text-[var(--text-muted)] uppercase font-bold block">
                         Tiempo Máximo de Primera Respuesta
                       </label>
-                      <div className="flex items-baseline gap-1 px-2.5 py-0.5 rounded-lg bg-neon/15 border border-neon/30 text-neon font-mono font-bold">
+                      <div className="flex items-baseline gap-1 px-2.5 py-0.5 rounded-lg bg-neon/15 border border-neon/30 text-lime-700 dark:text-neon font-mono font-bold">
                         <span>{slaTarget}</span>
                         <span className="text-[9px]">min</span>
                       </div>
@@ -1507,7 +1272,7 @@ export const PerfilMarcaView = () => {
                               : 'bg-[var(--bg-card)] border-[var(--border-color)] hover:border-neon/40'
                           }`}
                         >
-                          <span className={`text-xs font-mono font-bold block ${slaTarget === preset.val ? 'text-neon' : 'text-[var(--text-main)]'}`}>
+                          <span className={`text-xs font-mono font-bold block ${slaTarget === preset.val ? 'text-lime-700 dark:text-neon' : 'text-[var(--text-main)]'}`}>
                             {preset.lbl}
                           </span>
                           <span className="text-[8px] font-mono text-[var(--text-muted)] block truncate">
@@ -1531,7 +1296,7 @@ export const PerfilMarcaView = () => {
                       setSlaTarget(Number(e.target.value));
                       setIsDirty(true);
                     }}
-                    className="w-full accent-neon cursor-pointer h-2 bg-[var(--bg-card)] rounded-lg border border-[var(--border-color)]"
+                    className="w-full accent-[#C3F400] cursor-pointer h-2 bg-[var(--bg-card)] rounded-lg border border-[var(--border-color)]"
                   />
                   <div className="flex justify-between text-[9px] font-mono text-[var(--text-muted)] mt-1">
                     <span>5 min (Ultra rápido)</span>
@@ -1547,231 +1312,74 @@ export const PerfilMarcaView = () => {
             <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-5 shadow-sm font-sans">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[var(--border-color)] pb-3 gap-2">
                 <div className="flex items-center gap-2">
-                  <Share2 className="w-4 h-4 text-neon" />
+                  <Share2 className="w-4 h-4 text-lime-700 dark:text-neon" />
                   <div>
                     <h3 className="font-heading font-black text-sm text-[var(--text-main)] uppercase tracking-wide">
                       7. Presencia Digital & Redes Sociales Oficiales
                     </h3>
                     <span className="text-[10px] text-[var(--text-muted)] font-mono">
-                      URLs y perfiles inyectados en la Micro-Landing, el Content Planner y el Motor de IA (ADR-001)
+                      URLs y perfiles inyectados en la Página Oficial, el Estudio de Contenido y el Asistente IA
                     </span>
                   </div>
                 </div>
                 <a
                   href="/connections?tab=channels"
-                  className="px-3 py-1 rounded-xl bg-[var(--bg-card)] hover:bg-neon/15 text-[var(--text-muted)] hover:text-neon border border-[var(--border-color)] hover:border-neon/40 text-[10px] font-mono font-bold transition-all flex items-center gap-1.5 self-start sm:self-auto"
+                  className="px-3 py-1 rounded-xl bg-[var(--bg-card)] hover:bg-neon/15 text-[var(--text-muted)] hover:text-lime-700 dark:hover:text-neon border border-[var(--border-color)] hover:border-neon/40 text-[10px] font-mono font-bold transition-all flex items-center gap-1.5 self-start sm:self-auto"
                 >
-                  <Sliders className="w-3 h-3 text-neon" />
+                  <Sliders className="w-3 h-3 text-lime-700 dark:text-neon" />
                   <span>Configurar Tokens de APIs & Webhooks</span>
                   <ExternalLink className="w-2.5 h-2.5" />
                 </a>
               </div>
 
-              {/* Grid de Redes Sociales Públicas para el Community Manager IA */}
+              {/* Grid unificado de Redes Sociales Públicas (7 canales incluyendo X / Twitter) */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 text-xs">
-                {/* YouTube */}
-                <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1.5 group focus-within:border-rose-500/60 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <label className="font-mono text-[10px] uppercase font-bold text-[var(--text-muted)] flex items-center gap-1.5">
-                      <Youtube className="w-3.5 h-3.5 text-rose-500" />
-                      <span>YouTube (Canal Oficial)</span>
-                    </label>
-                    {socialLinks.youtube && (
-                      <a
-                        href={socialLinks.youtube.startsWith('http') ? socialLinks.youtube : `https://${socialLinks.youtube}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-[9px] font-mono text-rose-400 hover:underline flex items-center gap-0.5"
-                      >
-                        <span>Ver</span>
-                        <ExternalLink className="w-2.5 h-2.5" />
-                      </a>
-                    )}
-                  </div>
-                  <input
-                    type="text"
-                    value={socialLinks.youtube}
-                    onChange={(e) => {
-                      setSocialLinks({ ...socialLinks, youtube: e.target.value });
-                      setIsDirty(true);
-                    }}
-                    placeholder="https://youtube.com/@minegocio"
-                    className="w-full p-2 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-rose-500 outline-none font-mono text-xs"
-                  />
-                  <span className="text-[9px] font-mono text-[var(--text-muted)] block">
-                    La IA ofrecerá este canal cuando soliciten videos o tutoriales.
-                  </span>
-                </div>
+                {SOCIAL_CHANNEL_FIELDS.map((field) => {
+                  const Icon = field.icon;
+                  const rawValue =
+                    field.key === 'website'
+                      ? socialLinks.website || activeTenant?.websiteUrl || ''
+                      : socialLinks[field.key] || '';
+                  const inputValue = socialLinks[field.key] || '';
 
-                {/* TikTok */}
-                <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1.5 group focus-within:border-cyan-400/60 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <label className="font-mono text-[10px] uppercase font-bold text-[var(--text-muted)] flex items-center gap-1.5">
-                      <Video className="w-3.5 h-3.5 text-cyan-400" />
-                      <span>TikTok (Cuenta Oficial)</span>
-                    </label>
-                    {socialLinks.tiktok && (
-                      <a
-                        href={socialLinks.tiktok.startsWith('http') ? socialLinks.tiktok : `https://${socialLinks.tiktok}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-[9px] font-mono text-cyan-400 hover:underline flex items-center gap-0.5"
-                      >
-                        <span>Ver</span>
-                        <ExternalLink className="w-2.5 h-2.5" />
-                      </a>
-                    )}
-                  </div>
-                  <input
-                    type="text"
-                    value={socialLinks.tiktok}
-                    onChange={(e) => {
-                      setSocialLinks({ ...socialLinks, tiktok: e.target.value });
-                      setIsDirty(true);
-                    }}
-                    placeholder="https://tiktok.com/@minegocio"
-                    className="w-full p-2 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-cyan-400 outline-none font-mono text-xs"
-                  />
-                  <span className="text-[9px] font-mono text-[var(--text-muted)] block">
-                    Conectado con ideas de Reels en el Content Planner.
-                  </span>
-                </div>
-
-                {/* LinkedIn */}
-                <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1.5 group focus-within:border-blue-400/60 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <label className="font-mono text-[10px] uppercase font-bold text-[var(--text-muted)] flex items-center gap-1.5">
-                      <Linkedin className="w-3.5 h-3.5 text-blue-400" />
-                      <span>LinkedIn (Empresa / Perfil)</span>
-                    </label>
-                    {socialLinks.linkedin && (
-                      <a
-                        href={socialLinks.linkedin.startsWith('http') ? socialLinks.linkedin : `https://${socialLinks.linkedin}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-[9px] font-mono text-blue-400 hover:underline flex items-center gap-0.5"
-                      >
-                        <span>Ver</span>
-                        <ExternalLink className="w-2.5 h-2.5" />
-                      </a>
-                    )}
-                  </div>
-                  <input
-                    type="text"
-                    value={socialLinks.linkedin}
-                    onChange={(e) => {
-                      setSocialLinks({ ...socialLinks, linkedin: e.target.value });
-                      setIsDirty(true);
-                    }}
-                    placeholder="https://linkedin.com/company/minegocio"
-                    className="w-full p-2 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-blue-400 outline-none font-mono text-xs"
-                  />
-                  <span className="text-[9px] font-mono text-[var(--text-muted)] block">
-                    Autoridad corporativa e interacciones B2B.
-                  </span>
-                </div>
-
-                {/* Instagram */}
-                <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1.5 group focus-within:border-pink-500/60 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <label className="font-mono text-[10px] uppercase font-bold text-[var(--text-muted)] flex items-center gap-1.5">
-                      <Instagram className="w-3.5 h-3.5 text-pink-500" />
-                      <span>Instagram (Perfil Oficial)</span>
-                    </label>
-                    {socialLinks.instagram && (
-                      <a
-                        href={socialLinks.instagram.startsWith('http') ? socialLinks.instagram : `https://${socialLinks.instagram}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-[9px] font-mono text-pink-400 hover:underline flex items-center gap-0.5"
-                      >
-                        <span>Ver</span>
-                        <ExternalLink className="w-2.5 h-2.5" />
-                      </a>
-                    )}
-                  </div>
-                  <input
-                    type="text"
-                    value={socialLinks.instagram}
-                    onChange={(e) => {
-                      setSocialLinks({ ...socialLinks, instagram: e.target.value });
-                      setIsDirty(true);
-                    }}
-                    placeholder="https://instagram.com/minegocio"
-                    className="w-full p-2 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-pink-500 outline-none font-mono text-xs"
-                  />
-                  <span className="text-[9px] font-mono text-[var(--text-muted)] block">
-                    Publicado en Micro-Landing y derivación directa a DMs.
-                  </span>
-                </div>
-
-                {/* Facebook */}
-                <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1.5 group focus-within:border-blue-600/60 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <label className="font-mono text-[10px] uppercase font-bold text-[var(--text-muted)] flex items-center gap-1.5">
-                      <Facebook className="w-3.5 h-3.5 text-blue-600" />
-                      <span>Facebook (Página Oficial)</span>
-                    </label>
-                    {socialLinks.facebook && (
-                      <a
-                        href={socialLinks.facebook.startsWith('http') ? socialLinks.facebook : `https://${socialLinks.facebook}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-[9px] font-mono text-blue-500 hover:underline flex items-center gap-0.5"
-                      >
-                        <span>Ver</span>
-                        <ExternalLink className="w-2.5 h-2.5" />
-                      </a>
-                    )}
-                  </div>
-                  <input
-                    type="text"
-                    value={socialLinks.facebook}
-                    onChange={(e) => {
-                      setSocialLinks({ ...socialLinks, facebook: e.target.value });
-                      setIsDirty(true);
-                    }}
-                    placeholder="https://facebook.com/minegocio"
-                    className="w-full p-2 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-blue-600 outline-none font-mono text-xs"
-                  />
-                  <span className="text-[9px] font-mono text-[var(--text-muted)] block">
-                    Vinculado con campañas de Meta Ads y comunidad.
-                  </span>
-                </div>
-
-                {/* Sitio Web Principal */}
-                <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1.5 group focus-within:border-neon/60 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <label className="font-mono text-[10px] uppercase font-bold text-[var(--text-muted)] flex items-center gap-1.5">
-                      <Globe className="w-3.5 h-3.5 text-neon" />
-                      <span>Sitio Web / Portal</span>
-                    </label>
-                    {(socialLinks.website || activeTenant?.websiteUrl) && (
-                      <a
-                        href={(socialLinks.website || activeTenant?.websiteUrl).startsWith('http') ? (socialLinks.website || activeTenant?.websiteUrl) : `https://${socialLinks.website || activeTenant?.websiteUrl}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-[9px] font-mono text-neon hover:underline flex items-center gap-0.5"
-                      >
-                        <span>Ver</span>
-                        <ExternalLink className="w-2.5 h-2.5" />
-                      </a>
-                    )}
-                  </div>
-                  <input
-                    type="text"
-                    value={socialLinks.website}
-                    onChange={(e) => {
-                      setSocialLinks({ ...socialLinks, website: e.target.value });
-                      setIsDirty(true);
-                    }}
-                    placeholder="https://minegocio.com"
-                    className="w-full p-2 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] text-[var(--text-main)] focus:border-neon outline-none font-mono text-xs"
-                  />
-                  <span className="text-[9px] font-mono text-[var(--text-muted)] block">
-                    URL principal de referencia para el modelo dual de tráfico.
-                  </span>
-                </div>
+                  return (
+                    <div
+                      key={field.key}
+                      className={`p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1.5 group transition-colors ${field.focusClass}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <label className="font-mono text-[10px] uppercase font-bold text-[var(--text-muted)] flex items-center gap-1.5">
+                          <Icon className={`w-3.5 h-3.5 ${field.iconColor}`} />
+                          <span>{field.label}</span>
+                        </label>
+                        {rawValue && (
+                          <a
+                            href={rawValue.startsWith('http') ? rawValue : `https://${rawValue}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className={`text-[9px] font-mono ${field.linkColor} hover:underline flex items-center gap-0.5`}
+                          >
+                            <span>Ver</span>
+                            <ExternalLink className="w-2.5 h-2.5" />
+                          </a>
+                        )}
+                      </div>
+                      <input
+                        type="text"
+                        value={inputValue}
+                        onChange={(e) => {
+                          setSocialLinks((prev) => ({ ...prev, [field.key]: e.target.value }));
+                          setIsDirty(true);
+                        }}
+                        placeholder={field.placeholder}
+                        className={`w-full p-2 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] text-[var(--text-main)] outline-none font-mono text-xs ${field.inputFocusClass}`}
+                      />
+                      <span className="text-[9px] font-mono text-[var(--text-muted)] block">
+                        {field.helper}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Estado de Conductos de Mensajería Activos */}
@@ -1811,43 +1419,43 @@ export const PerfilMarcaView = () => {
                   return (
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                       <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-2">
-                        <MessageSquare className={`w-3.5 h-3.5 shrink-0 ${isWaConnected ? 'text-emerald-500' : 'text-[var(--text-muted)]'}`} />
+                        <MessageSquare className={`w-3.5 h-3.5 shrink-0 ${isWaConnected ? 'text-emerald-600 dark:text-emerald-400' : 'text-[var(--text-muted)]'}`} />
                         <div className="min-w-0">
                           <span className="text-[11px] font-bold text-[var(--text-main)] block truncate">WhatsApp Cloud</span>
-                          <span className={`text-[8px] font-mono font-bold ${isWaConnected ? 'text-emerald-500' : 'text-[var(--text-muted)]'}`}>
-                            {isWaConnected ? 'Activo (Event-Driven)' : 'Sin conectar'}
+                          <span className={`text-[8px] font-mono font-bold ${isWaConnected ? 'text-emerald-600 dark:text-emerald-400' : 'text-[var(--text-muted)]'}`}>
+                            {isWaConnected ? 'Activo en Tiempo Real' : 'Sin conectar'}
                           </span>
                         </div>
                       </div>
 
                       <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-2">
-                        <Instagram className={`w-3.5 h-3.5 shrink-0 ${isIgConnected ? 'text-pink-500' : 'text-[var(--text-muted)]'}`} />
+                        <Instagram className={`w-3.5 h-3.5 shrink-0 ${isIgConnected ? 'text-pink-600 dark:text-pink-400' : 'text-[var(--text-muted)]'}`} />
                         <div className="min-w-0">
                           <span className="text-[11px] font-bold text-[var(--text-main)] block truncate">Instagram DM</span>
-                          <span className={`text-[8px] font-mono font-bold ${isIgConnected ? 'text-emerald-500' : 'text-[var(--text-muted)]'}`}>
+                          <span className={`text-[8px] font-mono font-bold ${isIgConnected ? 'text-emerald-600 dark:text-emerald-400' : 'text-[var(--text-muted)]'}`}>
                             {isIgConnected ? 'Sincronizado' : 'Sin conectar'}
                           </span>
                         </div>
                       </div>
 
                       <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-2">
-                        <Facebook className={`w-3.5 h-3.5 shrink-0 ${isFbConnected ? 'text-blue-500' : 'text-[var(--text-muted)]'}`} />
+                        <Facebook className={`w-3.5 h-3.5 shrink-0 ${isFbConnected ? 'text-blue-600 dark:text-blue-400' : 'text-[var(--text-muted)]'}`} />
                         <div className="min-w-0">
                           <span className="text-[11px] font-bold text-[var(--text-main)] block truncate">Facebook Page</span>
-                          <span className={`text-[8px] font-mono font-bold ${isFbConnected ? 'text-emerald-500' : 'text-[var(--text-muted)]'}`}>
+                          <span className={`text-[8px] font-mono font-bold ${isFbConnected ? 'text-emerald-600 dark:text-emerald-400' : 'text-[var(--text-muted)]'}`}>
                             {isFbConnected ? 'Conectado' : 'Sin conectar'}
                           </span>
                         </div>
                       </div>
 
                       <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-2">
-                        <Globe className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                        <Globe className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
                         <div className="min-w-0">
                           <span className="text-[11px] font-bold text-[var(--text-main)] block truncate">
-                            {activeTenant?.hasWebsite ? 'Sitio Web' : 'Micro-Landing'}
+                            {activeTenant?.hasWebsite ? 'Sitio Web' : 'Página Oficial'}
                           </span>
-                          <span className="text-[8px] font-mono text-cyan-400 font-bold">
-                            {activeTenant?.hasWebsite ? 'GA4 Activo' : 'Alojada en Vector'}
+                          <span className="text-[8px] font-mono text-cyan-600 dark:text-cyan-400 font-bold">
+                            {activeTenant?.hasWebsite ? 'Analítica Activa' : 'Alojada en Vector'}
                           </span>
                         </div>
                       </div>
@@ -1865,13 +1473,13 @@ export const PerfilMarcaView = () => {
         {isDirty && (
           <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 p-3.5 sm:p-4 rounded-2xl bg-[var(--bg-panel)]/95 backdrop-blur-md border-2 border-neon shadow-[0_10px_35px_rgba(0,0,0,0.6)] flex items-center justify-between gap-4 animate-fade-in w-[92vw] max-w-lg">
             <div className="flex items-center gap-2.5">
-              <AlertCircle className="w-5 h-5 text-neon shrink-0 animate-pulse" />
+              <AlertCircle className="w-5 h-5 text-lime-700 dark:text-neon shrink-0 animate-pulse" />
               <div>
                 <p className="text-xs font-bold text-[var(--text-main)] leading-tight">
                   Tienes cambios sin guardar
                 </p>
                 <span className="text-[10px] font-mono text-[var(--text-muted)]">
-                  Pulsa Guardar o presiona <kbd className="px-1 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--border-color)] text-neon">Ctrl+S</kbd>
+                  Pulsa Guardar o presiona <kbd className="px-1 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--border-color)] text-lime-700 dark:text-neon">Ctrl+S</kbd>
                 </span>
               </div>
             </div>
@@ -1879,59 +1487,7 @@ export const PerfilMarcaView = () => {
             <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
-                onClick={() => {
-                  // Revertir todos los estados del formulario a los valores actuales de activeTenant
-                  if (activeTenant) {
-                    setBrandPurpose(activeTenant.brandPurpose || '');
-                    setToneOfVoice(activeTenant.toneOfVoice || '');
-                    setEmojiPolicy(activeTenant.emojiPolicy || 'Moderado (según contexto)');
-                    setSlaTarget(activeTenant.slaTarget || activeTenant.slaHitlMinutes || 15);
-                    const isGenericB2B =
-                      activeTenant.brandColors?.length === 5 &&
-                      activeTenant.brandColors[0]?.hex === '#0F172A';
-                    setBrandColors(
-                      activeTenant.brandColors && activeTenant.brandColors.length > 0 && !isGenericB2B
-                        ? activeTenant.brandColors
-                        : currentPreset.colors || []
-                    );
-                    setCustomAvatar(
-                      activeTenant.avatar && activeTenant.avatar !== '💼' && activeTenant.avatar !== '🏢'
-                        ? activeTenant.avatar
-                        : currentPreset.avatar || '🐺'
-                    );
-                    setOwnerPhone(activeTenant.phone || '');
-                    setOfferHook(activeTenant.commercialOffer?.hook || '');
-                    setOfferCta(activeTenant.commercialOffer?.cta || '');
-                    setOfferValidity(activeTenant.commercialOffer?.validity || '');
-                    setInviolableRules(
-                      Array.isArray(activeTenant.inviolableRules) ? activeTenant.inviolableRules : []
-                    );
-                    setNewRuleInput('');
-                    setBuyerName(activeTenant.buyerPersona?.name || '');
-                    setBuyerAgeRange(activeTenant.buyerPersona?.ageRange || '');
-                    setBuyerMaritalStatus(activeTenant.buyerPersona?.maritalStatus || '');
-                    setBuyerLocation(activeTenant.buyerPersona?.location || '');
-                    setBuyerHabits(activeTenant.buyerPersona?.digitalHabits || '');
-                    setBuyerPainPoint(activeTenant.buyerPersona?.mainPainPoint || '');
-                    setBuyerBuyingTrigger(activeTenant.buyerPersona?.buyingTrigger || '');
-                    setMixProduct(activeTenant.marketingMix4P?.product || '');
-                    setMixPrice(activeTenant.marketingMix4P?.price || '');
-                    setMixPlace(activeTenant.marketingMix4P?.place || '');
-                    setMixPromotion(activeTenant.marketingMix4P?.promotion || '');
-                    const tenantSocial = activeTenant.socialLinks || {};
-                    setSocialLinks({
-                      youtube: tenantSocial.youtube || '',
-                      tiktok: tenantSocial.tiktok || '',
-                      linkedin: tenantSocial.linkedin || '',
-                      instagram: tenantSocial.instagram || '',
-                      facebook: tenantSocial.facebook || '',
-                      x: tenantSocial.x || '',
-                      website: tenantSocial.website || activeTenant.websiteUrl || '',
-                    });
-                    setPhoneError(null);
-                    setIsDirty(false);
-                  }
-                }}
+                onClick={() => resetFormFromTenant(activeTenant, currentPreset)}
                 className="px-3 py-1.5 rounded-xl border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)] text-xs font-mono transition-colors"
               >
                 Descartar
@@ -1957,49 +1513,43 @@ export const PerfilMarcaView = () => {
           </div>
         )}
 
-        {/* Acciones del Formulario Footer Estático */}
+        {/* Acciones del Formulario Footer Estático (slots estables sin CLS) */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-[var(--border-color)]">
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <button
               type="button"
               onClick={handleResetDefaults}
-              className="text-xs font-mono text-[var(--text-muted)] hover:text-neon flex items-center gap-1.5 transition-colors px-3 py-2 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)]"
+              className="text-xs font-mono text-[var(--text-muted)] hover:text-lime-700 dark:hover:text-neon flex items-center gap-1.5 transition-colors px-3 py-2 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)]"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               <span>Restablecer Preset de Vertical</span>
             </button>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-            {/* Navegación ergonómica entre pestañas */}
-            {activeTab !== 'visual' && (
-              <button
-                type="button"
-                onClick={() => {
-                  const tabs = ['visual', 'ai', 'strategy', 'ops'];
-                  const idx = tabs.indexOf(activeTab);
-                  if (idx > 0) setActiveTab(tabs[idx - 1]);
-                }}
-                className="px-3.5 py-2 rounded-xl border border-[var(--border-color)] bg-[var(--bg-panel)] text-[var(--text-muted)] hover:text-[var(--text-main)] font-mono font-bold text-xs transition-colors"
-              >
-                ← Anterior
-              </button>
-            )}
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
+            {/* Navegación ergonómica entre pestañas con slots estables */}
+            <button
+              type="button"
+              disabled={isFirstTab}
+              onClick={() => {
+                if (!isFirstTab) setActiveTab(PROFILE_TABS[currentTabIndex - 1]);
+              }}
+              className="min-w-[110px] px-3.5 py-2 rounded-xl border border-[var(--border-color)] bg-[var(--bg-panel)] text-[var(--text-muted)] hover:text-[var(--text-main)] font-mono font-bold text-xs transition-colors flex items-center justify-center disabled:opacity-35 disabled:cursor-not-allowed"
+            >
+              ← Anterior
+            </button>
 
-            {activeTab !== 'ops' && (
-              <button
-                type="button"
-                onClick={() => {
-                  const tabs = ['visual', 'ai', 'strategy', 'ops'];
-                  const idx = tabs.indexOf(activeTab);
-                  if (idx < tabs.length - 1) setActiveTab(tabs[idx + 1]);
-                }}
-                className="px-4 py-2 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] hover:border-neon text-[var(--text-main)] font-mono font-bold text-xs transition-colors flex items-center gap-1"
-              >
-                <span>Siguiente Pestaña</span>
-                <span>→</span>
-              </button>
-            )}
+            <button
+              type="button"
+              disabled={isLastTab}
+              onClick={() => {
+                if (!isLastTab) setActiveTab(PROFILE_TABS[currentTabIndex + 1]);
+              }}
+              className="min-w-[165px] px-4 py-2 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] hover:border-neon text-[var(--text-main)] font-mono font-bold text-xs transition-colors flex items-center justify-center gap-1 disabled:opacity-35 disabled:cursor-not-allowed"
+            >
+              <span>Siguiente Pestaña</span>
+              <span>→</span>
+            </button>
 
             <button
               type="submit"
@@ -2009,7 +1559,7 @@ export const PerfilMarcaView = () => {
               {isSaving ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin text-black" />
-                  <span>Guardando en BD...</span>
+                  <span>Guardando...</span>
                 </>
               ) : (
                 <>

@@ -29,11 +29,11 @@ function TeamPageContent() {
     return (
       <div className="min-h-[75vh] flex items-center justify-center p-4">
         <div className="max-w-md w-full p-6 sm:p-8 rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] text-center space-y-4 shadow-2xl animate-scale-up font-sans">
-          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto shadow-neon-sm">
+          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto shadow-neon-sm">
             <Lock className="w-7 h-7" />
           </div>
           <div className="space-y-1">
-            <span className="text-[10px] font-mono font-bold uppercase text-amber-400 tracking-wider">
+            <span className="text-[10px] font-mono font-bold uppercase text-amber-700 dark:text-amber-400 tracking-wider">
               Control de Acceso RBAC · Solo Agencia
             </span>
             <h2 className="text-xl font-heading font-black text-[var(--text-main)] uppercase">
@@ -126,8 +126,8 @@ function TeamPageContent() {
           )}
 
           {!isSuperAdmin && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-[10px] font-mono text-cyan-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-[10px] font-mono text-cyan-700 dark:text-cyan-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-600 dark:bg-cyan-400" />
               <span>ROL: ADMINISTRADOR DE NEGOCIOS ASIGNADOS</span>
             </div>
           )}
@@ -178,8 +178,8 @@ export default function TeamPage() {
     <Suspense
       fallback={
         <div className="p-8 flex items-center justify-center min-h-[50vh]">
-          <div className="text-xs font-mono text-zinc-400 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-neon animate-pulse" />
+          <div className="text-xs font-mono text-[var(--text-muted)] flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[var(--neon-primary)] animate-pulse" />
             <span>Cargando Consola de Equipo y Control...</span>
           </div>
         </div>

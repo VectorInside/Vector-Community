@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Portal } from '@/components/common/Portal';
+import api from '@/services/api';
 import { userService } from '@/services/userService';
 import { isValidEmail, normalizePhone10, formatPhoneDisplay, getEmailDomainTypoSuggestion } from '@/utils/formatters';
 import { StaffInvitationModal } from './StaffInvitationModal';
@@ -40,14 +41,20 @@ const ROLE_DEFINITIONS = {
   SUPER_ADMIN: {
     label: 'Super Admin',
     description: 'Control total de la agencia, configuración de IA, credenciales, finanzas y acceso global a todos los negocios.',
-    color: 'bg-neon/15 text-neon border-neon/30',
+    color: 'bg-neon/15 text-lime-700 dark:text-neon border-neon/30',
     badgeText: 'Super Admin',
   },
   ADMIN: {
     label: 'Administrador',
     description: 'Gestión operativa, supervisión de campañas, conversaciones y prospectos de los negocios asignados.',
-    color: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
+    color: 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30',
     badgeText: 'Administrador',
+  },
+  ANALYST: {
+    label: 'Analista / Auditor',
+    description: 'Lectura de métricas, rendimiento de pauta, conversaciones y auditoría sin permisos de edición destructiva ni llaves BYOK.',
+    color: 'bg-purple-500/15 text-purple-700 dark:text-purple-400 border-purple-500/30',
+    badgeText: 'Analista',
   },
 };
 
@@ -327,10 +334,11 @@ export const AgencyStaffView = () => {
       phone: cleanPhone,
       role: inviteForm.role,
       roleLabel: ROLE_DEFINITIONS[inviteForm.role]?.label || 'Administrador',
-      avatar: inviteForm.role === 'SUPER_ADMIN' ? '⚡' : '💼',
-      status: 'ACTIVE',
+      avatar: inviteForm.role === 'SUPER_ADMIN' ? '⚡' : inviteForm.role === 'ANALYST' ? '📊' : '💼',
+      status: 'PENDING_INVITE',
+      mustChangePassword: true,
       assignedTenants: assigned,
-      lastLogin: 'Invitación enviada (Listo para ingresar)',
+      lastLogin: 'Invitación pendiente (Primer ingreso pendiente)',
       createdAt: new Date().toISOString(),
       twoFactorEnabled: false,
       tempPassword,
@@ -498,12 +506,65 @@ export const AgencyStaffView = () => {
     }
   };
 
+  // Reenviar invitación garantizando que la clave provisional exista en PostgreSQL
+  const [resendingMemberId, setResendingMemberId] = useState(null);
+  const handleResendInvitation = async (member) => {
+    if (!member) return;
+    const assignedSummary =
+      member.assignedTenants === 'all'
+        ? 'Todos los Negocios'
+        : Array.isArray(member.assignedTenants)
+        ? `${member.assignedTenants.length} Negocios Asignados`
+        : 'Negocios Asignados';
+
+    let resolvedPassword = member.tempPassword;
+    if (!resolvedPassword) {
+      const nextTempPass = generateSecureStaffPassword();
+      setResendingMemberId(member.id);
+      try {
+        await api.patch(`/users/${member.id}/reset-password`, {
+          newPassword: nextTempPass,
+          mustChangePassword: true,
+        });
+        resolvedPassword = nextTempPass;
+        setStaffList((prev) =>
+          prev.map((m) =>
+            m.id === member.id
+              ? { ...m, tempPassword: nextTempPass, mustChangePassword: true }
+              : m
+          )
+        );
+        showToast(`Nueva clave provisional persistida en PostgreSQL para ${member.name}`);
+      } catch (err) {
+        showToast(
+          err?.response?.data?.message ||
+            err?.message ||
+            'No se pudo generar y persistir la clave provisional en PostgreSQL.'
+        );
+        return;
+      } finally {
+        setResendingMemberId(null);
+      }
+    }
+
+    setInvitationModalData({
+      name: member.name,
+      email: member.email,
+      phone: member.phone,
+      role: member.role,
+      roleLabel: member.roleLabel || ROLE_DEFINITIONS[member.role]?.label || member.role,
+      assignedSummary,
+      tempPassword: resolvedPassword,
+      isPendingSave: false,
+    });
+  };
+
   return (
     <div className="w-full px-4 sm:px-6 lg:px-8 py-4 block animate-fade-in space-y-6 font-sans">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-950 border border-neon/50 text-white text-xs font-mono shadow-[0_0_20px_rgba(195,244,0,0.25)] animate-fade-in">
-          <CheckCircle2 className="w-4 h-4 text-neon shrink-0" />
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--bg-panel)] border border-neon/50 text-[var(--text-main)] text-xs font-mono shadow-[0_0_20px_rgba(195,244,0,0.25)] animate-fade-in">
+          <CheckCircle2 className="w-4 h-4 text-lime-700 dark:text-neon shrink-0" />
           <span>{toastMessage}</span>
         </div>
       )}
@@ -678,6 +739,7 @@ export const AgencyStaffView = () => {
             <option value="all">Todos los Roles</option>
             <option value="SUPER_ADMIN">Super Admins (Control Global)</option>
             <option value="ADMIN">Administradores (Por Negocio)</option>
+            <option value="ANALYST">Analistas (Solo Lectura / BI)</option>
           </select>
 
           <select
@@ -709,7 +771,27 @@ export const AgencyStaffView = () => {
 
       {/* Staff Members List */}
       <div className="space-y-3 font-sans">
-        {filteredStaff.length === 0 ? (
+        {staffList.length === 0 ? (
+          <div className="p-12 text-center rounded-2xl bg-[var(--bg-panel)] border border-dashed border-[var(--border-color)] space-y-4">
+            <Users className="w-10 h-10 text-[var(--text-muted)] mx-auto opacity-50" />
+            <div className="space-y-1">
+              <h4 className="text-base font-bold text-[var(--text-main)]">
+                Aún no hay colaboradores registrados en el equipo
+              </h4>
+              <p className="text-xs text-[var(--text-muted)] font-mono max-w-md mx-auto">
+                Invita a administradores o analistas para asignarles negocios y habilitar su acceso seguro con cambio obligatorio de contraseña.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsInviteModalOpen(true)}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-neon text-black font-mono font-bold text-xs hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_15px_rgba(195,244,0,0.3)] active:scale-95"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>Invitar Primer Colaborador</span>
+            </button>
+          </div>
+        ) : filteredStaff.length === 0 ? (
           <div className="p-12 text-center rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-3">
             <Users className="w-10 h-10 text-[var(--text-muted)] mx-auto opacity-40" />
             <h4 className="text-base font-bold text-[var(--text-main)]">
@@ -718,13 +800,26 @@ export const AgencyStaffView = () => {
             <p className="text-xs text-[var(--text-muted)] font-mono max-w-md mx-auto">
               Intenta cambiar los términos de búsqueda o añade un nuevo miembro del equipo.
             </p>
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery('');
+                setRoleFilter('all');
+                setStatusFilter('all');
+              }}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon text-xs font-mono font-bold text-[var(--text-main)] transition-colors"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Limpiar Filtros</span>
+            </button>
           </div>
         ) : (
           filteredStaff.map((member) => {
             const roleInfo = ROLE_DEFINITIONS[member.role] || ROLE_DEFINITIONS.SUPER_ADMIN;
             const isSuspended = member.status === 'SUSPENDED';
-            const isCurrentUser = member.id === currentUser?.id ||
-              (currentUser?.id === 'usr-admin-01' && member.email?.toLowerCase() === currentUser?.email?.toLowerCase());
+            const isCurrentUser =
+              member.id === currentUser?.id ||
+              (currentUser?.email && member.email?.toLowerCase() === currentUser.email.toLowerCase());
 
             // Colaborador pendiente de primer acceso / activación si no es el usuario en sesión y aún no ha ingresado
             const isPending = !isCurrentUser && (
@@ -739,7 +834,9 @@ export const AgencyStaffView = () => {
               <div
                 key={member.id}
                 className={`p-4 sm:p-5 rounded-2xl border transition-all duration-200 relative overflow-hidden group ${
-                  isSuspended
+                  isCurrentUser
+                    ? 'border-neon/60 bg-[var(--bg-panel)] shadow-[0_0_20px_rgba(195,244,0,0.12)] ring-1 ring-neon/30'
+                    : isSuspended
                     ? 'bg-red-950/10 border-red-900/30 opacity-75'
                     : 'bg-[var(--bg-panel)] border-[var(--border-color)] hover:border-neon/50 shadow-sm'
                 }`}
@@ -761,18 +858,23 @@ export const AgencyStaffView = () => {
                         >
                           {roleInfo.badgeText}
                         </span>
+                        {isCurrentUser && (
+                          <span className="text-[9px] font-mono px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-neon/20 text-lime-700 dark:text-neon border border-neon/40 flex items-center gap-1 shadow-sm">
+                            <Sparkles className="w-2.5 h-2.5 text-lime-700 dark:text-neon" /> Tu Sesión
+                          </span>
+                        )}
                         {member.twoFactorEnabled && (
-                          <span className="text-[9px] font-mono px-2 py-0.5 rounded-full font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                          <span className="text-[9px] font-mono px-2 py-0.5 rounded-full font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
                             <ShieldCheck className="w-2.5 h-2.5" /> 2FA Activo
                           </span>
                         )}
                         {isPending && (
-                          <span className="text-[9px] font-mono px-2 py-0.5 rounded-full font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                          <span className="text-[9px] font-mono px-2 py-0.5 rounded-full font-bold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
                             Invitación Pendiente
                           </span>
                         )}
                         {isSuspended && (
-                          <span className="text-[9px] font-mono px-2 py-0.5 rounded-full font-bold bg-red-500/20 text-red-400 border border-red-500/30">
+                          <span className="text-[9px] font-mono px-2 py-0.5 rounded-full font-bold bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30">
                             Acceso Suspendido
                           </span>
                         )}
@@ -868,29 +970,15 @@ export const AgencyStaffView = () => {
                     {isPending && (
                       <button
                         type="button"
-                        onClick={() => {
-                          const assignedSummary =
-                            member.assignedTenants === 'all'
-                              ? 'Todos los Negocios'
-                              : Array.isArray(member.assignedTenants)
-                              ? `${member.assignedTenants.length} Negocios Asignados`
-                              : 'Negocios Asignados';
-                          setInvitationModalData({
-                            name: member.name,
-                            email: member.email,
-                            phone: member.phone,
-                            role: member.role,
-                            roleLabel: member.roleLabel || member.role,
-                            assignedSummary,
-                            tempPassword: member.tempPassword || generateSecureStaffPassword(),
-                            isPendingSave: false,
-                          });
-                        }}
-                        className="px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 hover:border-amber-400 text-amber-400 hover:text-white transition-all flex items-center gap-1.5 min-h-[44px]"
+                        disabled={resendingMemberId === member.id}
+                        onClick={() => handleResendInvitation(member)}
+                        className="px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 hover:border-amber-400 text-amber-700 dark:text-amber-400 hover:text-[var(--text-main)] transition-all flex items-center gap-1.5 min-h-[44px] disabled:opacity-50"
                         title="Reenviar correo de invitación o enviar credenciales provisionales por WhatsApp"
                       >
-                        <Mail className="w-3.5 h-3.5 text-amber-400" />
-                        <span className="font-bold">Reenviar Invitación</span>
+                        <Mail className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+                        <span className="font-bold">
+                          {resendingMemberId === member.id ? 'Generando clave...' : 'Reenviar Invitación'}
+                        </span>
                       </button>
                     )}
 
@@ -984,7 +1072,7 @@ export const AgencyStaffView = () => {
                 <button
                   type="button"
                   onClick={() => setIsInviteModalOpen(false)}
-                  className="p-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-white transition-colors"
+                  className="p-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1070,6 +1158,7 @@ export const AgencyStaffView = () => {
                   >
                     <option value="SUPER_ADMIN">Super Admin - Control Total Global</option>
                     <option value="ADMIN">Administrador - Negocios Asignados</option>
+                    <option value="ANALYST">Analista / Auditor - Solo Lectura (BI & Bitácora)</option>
                   </select>
                   <p className="text-[11px] text-[var(--text-muted)] mt-1 font-sans">
                     {ROLE_DEFINITIONS[inviteForm.role]?.description}
@@ -1146,10 +1235,10 @@ export const AgencyStaffView = () => {
                   <button
                     type="button"
                     onClick={handlePreviewInvite}
-                    className="px-3.5 py-2.5 rounded-xl bg-[var(--bg-card)] border border-cyan-500/30 text-cyan-400 hover:text-white hover:border-cyan-400 text-xs font-mono font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                    className="px-3.5 py-2.5 rounded-xl bg-[var(--bg-card)] border border-cyan-500/30 text-cyan-700 dark:text-cyan-400 hover:text-[var(--text-main)] hover:border-cyan-400 text-xs font-mono font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
                     title="Previsualizar el formato HTML oficial que recibirá el colaborador"
                   >
-                    <Eye className="w-3.5 h-3.5 text-cyan-400" />
+                    <Eye className="w-3.5 h-3.5 text-cyan-700 dark:text-cyan-400" />
                     <span>Previsualizar Correo</span>
                   </button>
 
@@ -1157,7 +1246,7 @@ export const AgencyStaffView = () => {
                     <button
                       type="button"
                       onClick={() => setIsInviteModalOpen(false)}
-                      className="px-4 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-muted)] hover:text-white font-mono cursor-pointer"
+                      className="px-4 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-muted)] hover:text-[var(--text-main)] font-mono cursor-pointer"
                     >
                       Cancelar
                     </button>
@@ -1260,7 +1349,7 @@ const EditStaffProfileModal = ({ staffMember, onClose, onSave }) => {
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-white"
+              className="p-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)]"
             >
               <X className="w-4 h-4" />
             </button>
@@ -1302,7 +1391,7 @@ const EditStaffProfileModal = ({ staffMember, onClose, onSave }) => {
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-muted)] hover:text-white"
+                className="px-4 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-muted)] hover:text-[var(--text-main)]"
               >
                 Cancelar
               </button>
@@ -1354,7 +1443,7 @@ const EditAssignedTenantsModal = ({ staffMember, allTenants, onClose, onSave }) 
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-white"
+              className="p-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)]"
             >
               <X className="w-4 h-4" />
             </button>
@@ -1403,7 +1492,7 @@ const EditAssignedTenantsModal = ({ staffMember, allTenants, onClose, onSave }) 
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-muted)] hover:text-white"
+                className="px-4 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-muted)] hover:text-[var(--text-main)]"
               >
                 Cancelar
               </button>
@@ -1449,7 +1538,7 @@ const DeleteStaffModal = ({ staffMember, isDeleting, onConfirm, onClose }) => {
               type="button"
               onClick={onClose}
               disabled={isDeleting}
-              className="p-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-white transition-colors disabled:opacity-50"
+              className="p-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors disabled:opacity-50"
             >
               <X className="w-4 h-4" />
             </button>
@@ -1467,19 +1556,19 @@ const DeleteStaffModal = ({ staffMember, isDeleting, onConfirm, onClose }) => {
               <div className="text-xs text-[var(--text-muted)] truncate">
                 {staffMember.email}
               </div>
-              <div className="text-[10px] font-mono text-blue-400 mt-0.5">
+              <div className="text-[10px] font-mono text-blue-700 dark:text-blue-400 mt-0.5">
                 {staffMember.roleLabel || staffMember.role}
               </div>
             </div>
           </div>
 
           {/* Security Alert Notice */}
-          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-sans space-y-1.5">
-            <div className="flex items-center gap-1.5 font-bold font-mono text-[11px] text-rose-400">
-              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-sans space-y-1.5">
+            <div className="flex items-center gap-1.5 font-bold font-mono text-[11px] text-rose-600 dark:text-rose-400">
+              <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
               <span>Acción de Seguridad IAM</span>
             </div>
-            <p className="text-[11px] text-zinc-300 leading-relaxed">
+            <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
               Se revocarán inmediatamente todos los tokens JWT activos y se cancelarán los permisos en los negocios asignados. Por gobernanza y auditoría criptográfica, los registros de actividad histórica permanecerán preservados en la base de datos PostgreSQL 17.
             </p>
           </div>
@@ -1490,7 +1579,7 @@ const DeleteStaffModal = ({ staffMember, isDeleting, onConfirm, onClose }) => {
               type="button"
               onClick={onClose}
               disabled={isDeleting}
-              className="px-4 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-muted)] hover:text-white transition-colors disabled:opacity-50"
+              className="px-4 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors disabled:opacity-50"
             >
               Cancelar
             </button>

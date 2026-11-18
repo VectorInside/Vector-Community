@@ -148,6 +148,23 @@ export const OrchestrationView = () => {
     setSimulationError(null);
   };
 
+  // Cerrar inspector con Escape y bloquear scroll de fondo cuando está abierto
+  useEffect(() => {
+    if (!selectedAgentKey) return undefined;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        handleCloseInspector();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [selectedAgentKey]);
+
   const handleCopyCode = (text) => {
     navigator.clipboard.writeText(text);
     setCopiedCode(true);
@@ -301,11 +318,11 @@ export const OrchestrationView = () => {
               <Network className="w-5 h-5" />
             </span>
             <h2 className="text-3xl font-heading font-black uppercase tracking-tight text-[var(--text-main)]">
-              Orquestación <span className="text-neon">Multi-Agente</span>
+              Pruebas, Agentes <span className="text-lime-700 dark:text-neon">&amp; Laboratorio (Lab)</span>
             </h2>
           </div>
           <p className="text-xs font-mono text-[var(--text-muted)] mt-1">
-            Supervisión del Lobo Vectorial (LangGraph), los 4 Sub-Agentes especializados y su política de costo $0 USD.
+            Laboratorio de pruebas en vivo, supervisión del Lobo Vectorial (LangGraph) y los 4 Sub-Agentes especializados.
           </p>
         </div>
 
@@ -468,7 +485,7 @@ export const OrchestrationView = () => {
                 {/* Rama 2: Re-engagement */}
                 <div className="flex flex-col items-center -mt-0.5">
                   <div className="h-4 w-0.5 bg-purple-500/80" />
-                  <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-[var(--bg-base)] border border-purple-500/40 text-purple-400 font-bold shadow-xs">
+                  <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-[var(--bg-base)] border border-purple-500/40 text-purple-700 dark:text-purple-400 font-bold shadow-xs">
                     ⏱️ Upstash Redis 24h
                   </span>
                 </div>
@@ -476,7 +493,7 @@ export const OrchestrationView = () => {
                 {/* Rama 3: Analyst */}
                 <div className="flex flex-col items-center -mt-0.5">
                   <div className="h-4 w-0.5 bg-cyan-500/80" />
-                  <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-[var(--bg-base)] border border-cyan-500/40 text-cyan-400 font-bold shadow-xs">
+                  <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-[var(--bg-base)] border border-cyan-500/40 text-cyan-700 dark:text-cyan-400 font-bold shadow-xs">
                     📊 Batch Programado
                   </span>
                 </div>
@@ -923,7 +940,7 @@ export const OrchestrationView = () => {
                       onClick={() => handleRunSimulation(selectedAgentKey)}
                       className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shrink-0 ${
                         !activeTenant
-                          ? 'bg-zinc-800 text-zinc-500 border border-zinc-700 cursor-not-allowed opacity-60'
+                          ? 'bg-[var(--bg-card-subtle)] text-[var(--text-muted)] border border-[var(--border-color)] cursor-not-allowed opacity-60'
                           : 'bg-neon text-black shadow-[0_0_15px_var(--neon-glow)] hover:scale-105 active:scale-95'
                       }`}
                       title={!activeTenant ? 'Selecciona un negocio para probar' : 'Ejecutar prueba real en backend'}
@@ -947,8 +964,8 @@ export const OrchestrationView = () => {
                     <div className="space-y-3 animate-fade-in">
                       {/* Previsualización Conversacional Humanizada si hay mensaje */}
                       {(simulationOutput.message_response || simulationOutput.followup_message) && (
-                        <div className="p-4 rounded-2xl bg-[#0b141a] border border-emerald-500/30 text-white space-y-2">
-                          <div className="flex items-center justify-between text-[10px] font-mono text-emerald-400">
+                        <div className="p-4 rounded-2xl bg-[var(--bg-base)] dark:bg-[#0b141a] border border-emerald-500/30 text-[var(--text-main)] space-y-2">
+                          <div className="flex items-center justify-between text-[10px] font-mono text-emerald-700 dark:text-emerald-400">
                             <span className="font-bold flex items-center gap-1.5">
                               💬 Respuesta Real de WhatsApp (DeepSeek + Brand DNA):
                             </span>
@@ -957,11 +974,11 @@ export const OrchestrationView = () => {
                               {simulationOutput.total_tokens ? ` • ${simulationOutput.total_tokens} tokens` : ''}
                             </span>
                           </div>
-                          <div className="p-3 rounded-xl bg-[#005c4b]/30 border border-[#00a884]/40 text-emerald-100 text-xs leading-relaxed font-sans whitespace-pre-wrap">
+                          <div className="p-3 rounded-xl bg-emerald-500/10 dark:bg-[#005c4b]/30 border border-emerald-500/30 dark:border-[#00a884]/40 text-[var(--text-main)] dark:text-emerald-100 text-xs leading-relaxed font-sans whitespace-pre-wrap">
                             {simulationOutput.message_response || simulationOutput.followup_message}
                           </div>
                           {simulationOutput.framework_applied && (
-                            <div className="text-[10px] font-mono text-zinc-400 flex items-center justify-between pt-1 border-t border-zinc-800">
+                            <div className="text-[10px] font-mono text-[var(--text-muted)] flex items-center justify-between pt-1 border-t border-[var(--border-color)]">
                               <span>Origen: <strong>{simulationOutput.framework_applied}</strong></span>
                               <span>Modelo: <strong>{simulationOutput.model}</strong></span>
                             </div>

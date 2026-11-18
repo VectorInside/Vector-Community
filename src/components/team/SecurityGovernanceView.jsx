@@ -54,8 +54,8 @@ const ROLE_DEFINITIONS = [
     key: 'ADMIN',
     label: 'Admin Agencia',
     badge: 'Gestión Multi-Negocio Asignada',
-    accent: 'text-cyan-400 border-cyan-500/30 bg-cyan-500/10',
-    dotColor: 'bg-cyan-400',
+    accent: 'text-cyan-700 dark:text-cyan-400 border-cyan-500/30 bg-cyan-500/10',
+    dotColor: 'bg-cyan-500 dark:bg-cyan-400',
     description:
       'Account Manager o líder operativo de agencia. Opera y configura exclusivamente las carteras de clientes que le han sido asignadas.',
     modules: [
@@ -68,11 +68,28 @@ const ROLE_DEFINITIONS = [
     ],
   },
   {
+    key: 'ANALYST',
+    label: 'Analista / Auditor',
+    badge: 'Lectura BI & Auditoría (SDD §4.1b)',
+    accent: 'text-purple-700 dark:text-purple-400 border-purple-500/30 bg-purple-500/10',
+    dotColor: 'bg-purple-500 dark:bg-purple-400',
+    description:
+      'Especialista de inteligencia de negocio y auditoría. Consulta métricas, embudos y bitácoras sin capacidad de modificación ni acceso a credenciales BYOK.',
+    modules: [
+      { name: 'Centro de Mando & KPIs Financieros', access: 'READ', label: 'Lectura de KPIs & Reportes BI' },
+      { name: 'Inbox Omnicanal & Takeover HITL', access: 'READ', label: 'Supervisión de Conversaciones (Solo Lectura)' },
+      { name: 'Arquitectura RAG & Campañas Meta Ads', access: 'READ', label: 'Auditoría de Catálogo & Rendimiento Meta' },
+      { name: 'Motor de IA, Prompts & Bóveda AES-256', access: 'BLOCKED', label: 'Sin acceso a edición de Prompts ni Llaves' },
+      { name: 'Reglas de Negocio & Split 70/30', access: 'READ', label: 'Consulta de Tarifas y Conciliación' },
+      { name: 'Gobernanza IAM, Roles & Auditoría WORM', access: 'READ', label: 'Consulta & Exportación de Bitácora WORM' },
+    ],
+  },
+  {
     key: 'CLIENT_OWNER',
     label: 'Dueño de Negocio (Cliente)',
     badge: 'Aislamiento Multi-Tenant 1:1',
-    accent: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10',
-    dotColor: 'bg-emerald-400',
+    accent: 'text-emerald-700 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/10',
+    dotColor: 'bg-emerald-500 dark:bg-emerald-400',
     description:
       'Titular del negocio cliente con aislamiento estricto Row-Level Security (1 Cuenta = 1 Tenant). Audita sus citas calificadas, su calendario y su inversión.',
     modules: [
@@ -90,36 +107,42 @@ const PERMISSION_MATRIX = [
   {
     module: 'Centro de Mando & Métricas Generales',
     owner: 'Solo su negocio (RLS 1:1)',
+    analyst: 'Lectura BI (Negocios asignados)',
     admin: 'Negocios asignados',
     superAdmin: 'Todos los negocios (Global)',
   },
   {
     module: 'Conversaciones WhatsApp & Takeover HITL',
     owner: 'Supervisión & Atención de su negocio',
+    analyst: 'Solo lectura (Auditoría)',
     admin: 'Control activo (Intervención en vivo)',
     superAdmin: 'Control activo & Auditoría total',
   },
   {
-    module: 'Campañas Meta Ads & RAG Wizard',
+    module: 'Campañas Meta Ads & Cerebro de Marca',
     owner: 'Lectura de reportes & KPIs',
+    analyst: 'Lectura de rendimiento & embudos',
     admin: 'Edición & Carga de Conocimiento',
     superAdmin: 'Edición total, Creación & Borrado',
   },
   {
     module: 'Configuración de Bot IA & API Keys (AES-256)',
     owner: 'Lectura de estado IA (Llaves protegidas)',
-    admin: 'Ajuste de Prompts & Base RAG',
+    analyst: 'Sin acceso a llaves ni prompts',
+    admin: 'Ajuste de Prompts & Conocimiento',
     superAdmin: 'Configuración de LLMs, Llaves & Modelos',
   },
   {
     module: 'Políticas de Leads & Desglose Financiero',
     owner: 'Solo su tarifa acordada por lead',
+    analyst: 'Lectura de conciliación & KPIs',
     admin: 'Métricas de negocios asignados',
     superAdmin: 'Margen de agencia & Split 70/30 global',
   },
   {
     module: 'Gestión de Accesos IAM & Bitácora WORM',
     owner: 'Sin acceso (Aislado por RLS)',
+    analyst: 'Lectura & Exportación de Bitácora',
     admin: 'Consulta de equipo asignado',
     superAdmin: 'Invitar, revocar y exportar auditoría',
   },
@@ -128,46 +151,46 @@ const PERMISSION_MATRIX = [
 const CATEGORY_META = {
   AUTH: {
     label: 'Autenticación & Sesión',
-    badgeClass: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30',
+    badgeClass: 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30',
   },
   IAM_RBAC: {
     label: 'Identidad & Roles (IAM)',
-    badgeClass: 'bg-purple-500/15 text-purple-300 border-purple-500/30',
+    badgeClass: 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30',
   },
   TENANT_POLICY: {
     label: 'Políticas & Precios',
-    badgeClass: 'bg-neon/15 text-neon border-neon/30',
+    badgeClass: 'bg-neon/15 text-lime-700 dark:text-neon border-neon/30',
   },
   AI_CONFIG: {
     label: 'Motor IA & Bóveda BYOK',
-    badgeClass: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
+    badgeClass: 'bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30',
   },
   SECURITY: {
     label: 'Seguridad & Integridad WORM',
-    badgeClass: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+    badgeClass: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
   },
   DATA_EXPORT: {
     label: 'Exportación Forense',
-    badgeClass: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+    badgeClass: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30',
   },
 };
 
 const ACCESS_BADGE_STYLES = {
   FULL: {
     label: 'Control Total',
-    className: 'bg-neon/15 text-neon border-neon/30',
+    className: 'bg-neon/15 text-lime-700 dark:text-neon border-neon/30',
   },
   ASSIGNED: {
     label: 'Operación Asignada',
-    className: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30',
+    className: 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30',
   },
   READ: {
     label: 'Solo Lectura',
-    className: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+    className: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
   },
   BLOCKED: {
     label: 'Bloqueado por Seguridad',
-    className: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
+    className: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30',
   },
 };
 
@@ -211,6 +234,7 @@ export const SecurityGovernanceView = () => {
   const [expandedLogId, setExpandedLogId] = useState(null);
   const [copiedHashId, setCopiedHashId] = useState(null);
   const [isDistributionCollapsed, setIsDistributionCollapsed] = useState(false);
+  const [isAuditKpisCollapsed, setIsAuditKpisCollapsed] = useState(false);
 
   const showToast = useCallback((message, type = 'success') => {
     setToastBanner({ message, type });
@@ -518,7 +542,7 @@ export const SecurityGovernanceView = () => {
               className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                 activeSubTab === 'matrix'
                   ? 'bg-neon text-black shadow-sm'
-                  : 'text-[var(--text-muted)] hover:text-white'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
               }`}
             >
               <Sliders className="w-3.5 h-3.5" />
@@ -530,7 +554,7 @@ export const SecurityGovernanceView = () => {
               className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                 activeSubTab === 'logs'
                   ? 'bg-neon text-black shadow-sm'
-                  : 'text-[var(--text-muted)] hover:text-white'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
               }`}
             >
               <History className="w-3.5 h-3.5" />
@@ -564,13 +588,13 @@ export const SecurityGovernanceView = () => {
       {/* =================================================================== */}
       {activeSubTab === 'matrix' && (
         <div className="space-y-6 animate-fade-in">
-          {/* 1. Tarjetas de Distribución en Vivo por Rol (3 Roles Canónicos) */}
+          {/* 1. Tarjetas de Distribución en Vivo por Rol (4 Roles Canónicos) */}
           <div className="space-y-2.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Users className="w-4 h-4 text-neon" />
                 <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-[var(--text-main)]">
-                  Distribución en Vivo por Rol en PostgreSQL (3 Roles Canónicos)
+                  Distribución en Vivo por Rol en PostgreSQL (4 Roles Canónicos)
                 </h2>
               </div>
               <div className="flex items-center gap-2">
@@ -599,7 +623,7 @@ export const SecurityGovernanceView = () => {
             </div>
 
             {!isDistributionCollapsed && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono animate-fade-in">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 font-mono animate-fade-in">
                 {roleDistribution.map((roleItem) => {
                   const isSelected = selectedRoleSimulator === roleItem.key;
                   return (
@@ -610,13 +634,13 @@ export const SecurityGovernanceView = () => {
                       className={`text-left p-4 rounded-2xl border transition-all cursor-pointer space-y-3 ${
                         isSelected
                           ? 'bg-[var(--bg-card)] border-neon shadow-[0_0_20px_rgba(231,249,0,0.08)] ring-1 ring-neon/40'
-                          : 'bg-[var(--bg-panel)] border-[var(--border-color)] hover:border-zinc-700'
+                          : 'bg-[var(--bg-panel)] border-[var(--border-color)] hover:border-zinc-400 dark:hover:border-zinc-700'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <span
-                            className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded border ${roleItem.accent}`}
+                            className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${roleItem.accent}`}
                           >
                             <span className={`w-1.5 h-1.5 rounded-full ${roleItem.dotColor}`} />
                             {roleItem.key}
@@ -710,7 +734,7 @@ export const SecurityGovernanceView = () => {
                           {mod.name}
                         </span>
                         <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded border shrink-0 ${styleMeta.className}`}
+                          className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border shrink-0 ${styleMeta.className}`}
                         >
                           {styleMeta.label}
                         </span>
@@ -728,7 +752,7 @@ export const SecurityGovernanceView = () => {
                     <span className="text-[11px] font-bold text-[var(--text-main)] uppercase">
                       Cuentas Reales en este Rol
                     </span>
-                    <span className="px-2 py-0.5 rounded bg-neon/10 text-neon text-[10px] font-bold">
+                    <span className="px-2.5 py-0.5 rounded-full bg-neon/10 text-lime-700 dark:text-neon text-[10px] font-bold">
                       {activeSimulatorRole.users.length} registradas
                     </span>
                   </div>
@@ -755,10 +779,10 @@ export const SecurityGovernanceView = () => {
                               </div>
                             </div>
                             <span
-                              className={`text-[10px] px-2 py-0.5 rounded font-bold shrink-0 border ${
+                              className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold shrink-0 border ${
                                 pending
-                                  ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-                                  : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                                  ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30'
+                                  : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30'
                               }`}
                             >
                               {pending ? 'Inv. Pendiente' : 'Activo'}
@@ -835,9 +859,10 @@ export const SecurityGovernanceView = () => {
                 <thead>
                   <tr className="border-b border-[var(--border-color)] bg-[var(--bg-base)] text-[var(--text-muted)] text-[10px] uppercase tracking-wider">
                     <th className="py-3 px-4 sm:px-6 font-bold">Módulo / Capacidad</th>
-                    <th className="py-3 px-4 font-bold text-emerald-400">Dueño Negocio (Cliente)</th>
-                    <th className="py-3 px-4 font-bold text-cyan-400">Admin Agencia</th>
-                    <th className="py-3 px-4 font-bold text-neon">Super Admin (Global)</th>
+                    <th className="py-3 px-4 font-bold text-emerald-700 dark:text-emerald-400">Dueño Negocio (Cliente)</th>
+                    <th className="py-3 px-4 font-bold text-purple-700 dark:text-purple-400">Analista / Auditor</th>
+                    <th className="py-3 px-4 font-bold text-cyan-700 dark:text-cyan-400">Admin Agencia</th>
+                    <th className="py-3 px-4 font-bold text-lime-700 dark:text-neon">Super Admin (Global)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--border-color)]">
@@ -847,17 +872,22 @@ export const SecurityGovernanceView = () => {
                         {row.module}
                       </td>
                       <td className="py-3.5 px-4 text-[var(--text-muted)]">
-                        <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[11px]">
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 text-[11px]">
                           {row.owner}
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-[var(--text-muted)]">
-                        <span className="px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 text-[11px]">
+                        <span className="px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20 text-[11px]">
+                          {row.analyst}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-[var(--text-muted)]">
+                        <span className="px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20 text-[11px]">
                           {row.admin}
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-[var(--text-muted)]">
-                        <span className="px-2 py-0.5 rounded bg-neon/10 text-neon border border-neon/20 font-bold text-[11px]">
+                        <span className="px-2.5 py-0.5 rounded-full bg-neon/10 text-lime-700 dark:text-neon border border-neon/20 font-bold text-[11px]">
                           {row.superAdmin}
                         </span>
                       </td>
@@ -875,73 +905,104 @@ export const SecurityGovernanceView = () => {
       {/* =================================================================== */}
       {activeSubTab === 'logs' && (
         <div className="space-y-5 animate-fade-in">
-          {/* 1. 4 KPIs Superiores de Salud de Seguridad */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-mono">
-            <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-bold">
-                  Eventos WORM Registrados
-                </span>
-                <Fingerprint className="w-4 h-4 text-neon" />
+          {/* 1. Header colapsable + 4 KPIs Superiores de Salud de Seguridad */}
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Activity className="w-4 h-4 text-lime-700 dark:text-neon" />
+                <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-[var(--text-main)]">
+                  Salud de Auditoría & Integridad WORM
+                </h2>
               </div>
-              <div className="flex items-baseline justify-between pt-1">
-                <span className="text-2xl font-heading font-black text-[var(--text-main)]">
-                  {auditKpis.total}
-                </span>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-neon/15 text-neon border border-neon/30 font-bold">
-                  Trigger PostgreSQL Activo
-                </span>
-              </div>
+              <button
+                type="button"
+                onClick={() => setIsAuditKpisCollapsed((prev) => !prev)}
+                className="px-2.5 py-1 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon text-[10px] font-mono text-[var(--text-main)] flex items-center gap-1 transition-all cursor-pointer"
+                title={isAuditKpisCollapsed ? 'Expandir indicadores de auditoría' : 'Contraer indicadores de auditoría'}
+              >
+                {isAuditKpisCollapsed ? (
+                  <>
+                    <span>Expandir KPIs</span>
+                    <ChevronDown className="w-3.5 h-3.5 text-lime-700 dark:text-neon" />
+                  </>
+                ) : (
+                  <>
+                    <span>Contraer</span>
+                    <ChevronUp className="w-3.5 h-3.5 text-lime-700 dark:text-neon" />
+                  </>
+                )}
+              </button>
             </div>
 
-            <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-bold">
-                  Operaciones Autorizadas
-                </span>
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              </div>
-              <div className="flex items-baseline justify-between pt-1">
-                <span className="text-2xl font-heading font-black text-emerald-400">
-                  {auditKpis.authorized}
-                </span>
-                <span className="text-[10px] text-[var(--text-muted)]">Estado SUCCESS</span>
-              </div>
-            </div>
+            {!isAuditKpisCollapsed && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-mono animate-fade-in">
+                <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-bold">
+                      Eventos WORM Registrados
+                    </span>
+                    <Fingerprint className="w-4 h-4 text-lime-700 dark:text-neon" />
+                  </div>
+                  <div className="flex items-baseline justify-between pt-1">
+                    <span className="text-2xl font-heading font-black text-[var(--text-main)]">
+                      {auditKpis.total}
+                    </span>
+                    <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-neon/15 text-lime-700 dark:text-neon border border-neon/30 font-bold">
+                      Trigger PostgreSQL Activo
+                    </span>
+                  </div>
+                </div>
 
-            <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-bold">
-                  Cambios Gobernanza & Equipo
-                </span>
-                <Activity className="w-4 h-4 text-cyan-400" />
-              </div>
-              <div className="flex items-baseline justify-between pt-1">
-                <span className="text-2xl font-heading font-black text-cyan-400">
-                  {auditKpis.governanceChanges}
-                </span>
-                <span className="text-[10px] text-[var(--text-muted)]">
-                  IAM + Políticas + IA
-                </span>
-              </div>
-            </div>
+                <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-bold">
+                      Operaciones Autorizadas
+                    </span>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
+                  </div>
+                  <div className="flex items-baseline justify-between pt-1">
+                    <span className="text-2xl font-heading font-black text-emerald-700 dark:text-emerald-400">
+                      {auditKpis.authorized}
+                    </span>
+                    <span className="text-[10px] text-[var(--text-muted)]">Estado SUCCESS</span>
+                  </div>
+                </div>
 
-            <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-bold">
-                  Alertas & Intentos Bloqueados
-                </span>
-                <ShieldAlert className="w-4 h-4 text-rose-400" />
+                <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-bold">
+                      Cambios Gobernanza & Equipo
+                    </span>
+                    <Activity className="w-4 h-4 text-cyan-700 dark:text-cyan-400" />
+                  </div>
+                  <div className="flex items-baseline justify-between pt-1">
+                    <span className="text-2xl font-heading font-black text-cyan-700 dark:text-cyan-400">
+                      {auditKpis.governanceChanges}
+                    </span>
+                    <span className="text-[10px] text-[var(--text-muted)]">
+                      IAM + Políticas + IA
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-bold">
+                      Alertas & Intentos Bloqueados
+                    </span>
+                    <ShieldAlert className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+                  </div>
+                  <div className="flex items-baseline justify-between pt-1">
+                    <span className="text-2xl font-heading font-black text-rose-600 dark:text-rose-400">
+                      {auditKpis.alertsAndBlocked}
+                    </span>
+                    <span className="text-[10px] text-[var(--text-muted)]">
+                      BLOCKED + WARNING
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-baseline justify-between pt-1">
-                <span className="text-2xl font-heading font-black text-rose-400">
-                  {auditKpis.alertsAndBlocked}
-                </span>
-                <span className="text-[10px] text-[var(--text-muted)]">
-                  BLOCKED + WARNING
-                </span>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* 2. Barra de Filtros y Acciones Ejecutivas */}
@@ -985,6 +1046,20 @@ export const SecurityGovernanceView = () => {
                 <option value="WARNING">WARNING (Advertencias)</option>
                 <option value="BLOCKED">BLOCKED (Bloqueados)</option>
               </select>
+
+              {(searchLog || filterCategory !== 'all' || filterStatus !== 'all') && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchLog('');
+                    setFilterCategory('all');
+                    setFilterStatus('all');
+                  }}
+                  className="px-3 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon text-xs font-mono font-bold text-lime-700 dark:text-neon transition-colors shrink-0 cursor-pointer"
+                >
+                  Limpiar
+                </button>
+              )}
             </div>
 
             {/* Acciones Ejecutivas Forenses */}
@@ -1057,7 +1132,7 @@ export const SecurityGovernanceView = () => {
                       const isExpanded = expandedLogId === log.id;
                       const catMeta = CATEGORY_META[log.eventCategory] || {
                         label: log.eventCategory || 'SECURITY',
-                        badgeClass: 'bg-zinc-800 text-zinc-300 border-zinc-700',
+                        badgeClass: 'bg-[var(--bg-card-subtle)] text-[var(--text-main)] border-[var(--border-color)]',
                       };
                       const metadataEntries = Object.entries(log.metadata || {});
 
@@ -1083,7 +1158,7 @@ export const SecurityGovernanceView = () => {
                             <td className="py-3.5 px-4 font-bold text-[var(--text-main)] whitespace-nowrap">
                               <div className="flex items-center gap-1.5">
                                 <span>{log.actorName || log.user}</span>
-                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700">
+                                <span className="text-[9px] px-2 py-0.5 rounded-full bg-[var(--bg-card-subtle)] text-[var(--text-muted)] border border-[var(--border-color)]">
                                   {log.actorRole || log.role}
                                 </span>
                               </div>
@@ -1094,7 +1169,7 @@ export const SecurityGovernanceView = () => {
 
                             <td className="py-3.5 px-4 whitespace-nowrap">
                               <span
-                                className={`inline-flex items-center px-2 py-0.5 rounded border text-[10px] font-bold ${catMeta.badgeClass}`}
+                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full border text-[10px] font-bold ${catMeta.badgeClass}`}
                               >
                                 {log.eventCategory}
                               </span>
@@ -1160,34 +1235,34 @@ export const SecurityGovernanceView = () => {
                             </td>
                           </tr>
 
-                          {/* Inspector Forense WORM Expandible */}
+                          {/* Inspector Forense WORM Expandible (Dual Theme) */}
                           {isExpanded && (
-                            <tr className="bg-black/40 border-b border-[var(--border-color)]">
+                            <tr className="bg-[var(--bg-card-subtle)] border-b border-[var(--border-color)]">
                               <td colSpan={7} className="p-4 sm:p-5">
                                 <div className="rounded-2xl bg-[var(--bg-base)] border border-neon/30 p-4 space-y-4">
                                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--border-color)] pb-3">
                                     <div className="flex items-center gap-2">
-                                      <Terminal className="w-4 h-4 text-neon" />
+                                      <Terminal className="w-4 h-4 text-lime-700 dark:text-neon" />
                                       <span className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider">
                                         Inspector Forense WORM // Evidencia Criptográfica Inmutable
                                       </span>
                                     </div>
 
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 flex-wrap">
                                       <span className="text-[10px] text-[var(--text-muted)]">
                                         Sello SHA-256 WORM:
                                       </span>
-                                      <code className="text-[11px] px-2 py-0.5 rounded bg-black border border-zinc-800 text-neon">
+                                      <code className="text-[11px] px-2 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--border-color)] text-lime-700 dark:text-neon font-bold">
                                         {log.wormHash}
                                       </code>
                                       <button
                                         type="button"
                                         onClick={() => handleCopyWormHash(log.wormHash, log.id)}
-                                        className="p-1 rounded bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white"
+                                        className="p-1 rounded bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
                                         title="Copiar Sello WORM"
                                       >
                                         {copiedHashId === log.id ? (
-                                          <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                          <Check className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400" />
                                         ) : (
                                           <Copy className="w-3.5 h-3.5" />
                                         )}
@@ -1201,14 +1276,14 @@ export const SecurityGovernanceView = () => {
                                         Contexto de Red & Agente
                                       </span>
                                       <div>
-                                        <span className="text-zinc-500">IP / Ubicación: </span>
+                                        <span className="text-[var(--text-muted)]">IP / Ubicación: </span>
                                         <span className="text-[var(--text-main)] font-bold">
                                           {log.ipAddress} ({log.location})
                                         </span>
                                       </div>
                                       <div>
-                                        <span className="text-zinc-500">User-Agent: </span>
-                                        <span className="text-zinc-300 break-all text-[11px]">
+                                        <span className="text-[var(--text-muted)]">User-Agent: </span>
+                                        <span className="text-[var(--text-main)] break-all text-[11px]">
                                           {log.userAgent}
                                         </span>
                                       </div>
@@ -1219,7 +1294,7 @@ export const SecurityGovernanceView = () => {
                                         <span className="text-[10px] text-[var(--text-muted)] uppercase font-bold">
                                           Payload & Metadata JSONB (`security_audit_logs.metadata`)
                                         </span>
-                                        <span className="text-[10px] text-emerald-400 font-bold">
+                                        <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold">
                                           {metadataEntries.length} atributos registrados
                                         </span>
                                       </div>
@@ -1233,12 +1308,12 @@ export const SecurityGovernanceView = () => {
                                           {metadataEntries.map(([k, v]) => (
                                             <div
                                               key={k}
-                                              className="p-2 rounded-lg bg-black/40 border border-zinc-800/80"
+                                              className="p-2 rounded-lg bg-[var(--bg-base)] border border-[var(--border-color)]"
                                             >
-                                              <span className="text-[10px] text-zinc-400 block truncate">
+                                              <span className="text-[10px] text-[var(--text-muted)] block truncate">
                                                 {k}:
                                               </span>
-                                              <span className="text-[11px] font-bold text-neon break-all">
+                                              <span className="text-[11px] font-bold text-[var(--text-main)] break-all">
                                                 {typeof v === 'object'
                                                   ? JSON.stringify(v)
                                                   : String(v)}

@@ -1,20 +1,15 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Portal } from '@/components/common/Portal';
 import { VectorInsideLogo } from '@/components/common/VectorInsideLogo';
 import {
   Printer,
-  Copy,
+  Check,
   X,
-  CheckCircle2,
   TrendingUp,
-  DollarSign,
-  Users,
   CalendarCheck,
   ShieldCheck,
-  Sparkles,
-  ArrowUpRight,
   BrainCircuit,
   Hash,
   Share2,
@@ -28,6 +23,22 @@ export const ExecutiveMonthlyReportModal = ({
   reportData,
 }) => {
   const printAreaRef = useRef(null);
+  const [copiedFeedback, setCopiedFeedback] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    document.body.style.overflow = 'hidden';
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = 'unset';
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -35,24 +46,24 @@ export const ExecutiveMonthlyReportModal = ({
     id: '',
     name: 'Sin Negocio Seleccionado',
     industry: 'General',
-    mer: '0.0x',
-    cac: '$0 MXN',
-    ltv: '$0 MXN',
+    mer: 'N/D',
+    cac: 'N/D',
+    ltv: 'N/D',
     citas: 0,
   };
 
   const zeroMetrics = {
     period: new Intl.DateTimeFormat('es-MX', { month: 'long', year: 'numeric' }).format(new Date()),
-    adSpend: '$0 MXN',
-    realRevenue: '$0 MXN',
-    mer: '0.0x',
-    cac: '$0 MXN',
-    ltv: '$0 MXN',
+    adSpend: 'N/D',
+    realRevenue: 'N/D',
+    mer: 'N/D',
+    cac: 'N/D',
+    ltv: 'N/D',
     closedConversions: 0,
     conversionsLabel: 'Conversiones / Citas Concluidas',
-    avgTicket: '$0 MXN',
-    capiMatchRate: '0.0%',
-    humanHoursSaved: '0 hrs',
+    avgTicket: 'N/D',
+    capiMatchRate: 'En espera de eventos',
+    humanHoursSaved: 'N/D',
     messagesProcessed: '0 mensajes',
     topChannel: 'Sin actividad registrada',
     deepSeekSummary: 'Sin registros de telemetría previos para este negocio.',
@@ -83,19 +94,23 @@ export const ExecutiveMonthlyReportModal = ({
       `• *CAC Real:* ${metrics.cac}\n` +
       `• *${metrics.conversionsLabel}:* ${metrics.closedConversions} concluidas\n` +
       `• *Horas Humanas Ahorradas:* ${metrics.humanHoursSaved}\n\n` +
-      `💡 *Dictamen Estratégico IA:*\n"${metrics.deepSeekSummary}"\n\n` +
+      `💡 *Resumen Estratégico IA:*\n"${metrics.deepSeekSummary}"\n\n` +
       `_Folio de reporte oficial: ${reportId}_`;
 
     navigator.clipboard.writeText(text);
+    setCopiedFeedback(true);
+    setTimeout(() => setCopiedFeedback(false), 3000);
     try {
       confetti({ particleCount: 40, spread: 60, colors: ['#00F0FF', '#E7F900'] });
     } catch (e) {}
-    alert('¡Resumen ejecutivo copiado al portapapeles listo para enviar por WhatsApp al Director/Cliente!');
   };
 
   return (
     <Portal>
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Informe Ejecutivo Mensual"
         className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-md animate-fade-in overflow-y-auto"
         onClick={(e) => {
           if (e.target === e.currentTarget) onClose();
@@ -112,15 +127,24 @@ export const ExecutiveMonthlyReportModal = ({
               <span>Reporte Conciliado S2S • Folio: <strong>{reportId}</strong></span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={handleCopySummaryWhatsApp}
                 className="px-3.5 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-700 text-xs font-mono font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
                 title="Copiar texto formateado para WhatsApp"
               >
-                <Share2 className="w-3.5 h-3.5 text-emerald-500" />
-                <span>Copiar para WhatsApp</span>
+                {copiedFeedback ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-emerald-700 dark:text-emerald-400">¡Copiado para WhatsApp!</span>
+                  </>
+                ) : (
+                  <>
+                    <Share2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span>Copiar para WhatsApp</span>
+                  </>
+                )}
               </button>
 
               <button
@@ -136,12 +160,22 @@ export const ExecutiveMonthlyReportModal = ({
                 type="button"
                 onClick={onClose}
                 className="p-2 rounded-xl bg-zinc-100 dark:bg-zinc-900 text-zinc-500 hover:text-black dark:hover:text-white transition-colors"
-                title="Cerrar modal"
+                title="Cerrar modal (Esc)"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
           </div>
+
+          {copiedFeedback && (
+            <div
+              role="status"
+              className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-mono flex items-center gap-2 print:hidden"
+            >
+              <Check className="w-4 h-4 shrink-0" />
+              <span>¡Resumen ejecutivo copiado al portapapeles, listo para enviar por WhatsApp al Director/Cliente!</span>
+            </div>
+          )}
 
           {/* Official Letterhead Header */}
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 pb-6 border-b border-zinc-200 dark:border-zinc-800/80">
@@ -162,7 +196,7 @@ export const ExecutiveMonthlyReportModal = ({
 
             <div className="text-left sm:text-right space-y-1 font-mono text-xs bg-zinc-50 dark:bg-zinc-900/60 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800/80 shrink-0">
               <p className="text-[10px] uppercase text-zinc-400 dark:text-zinc-500 font-bold">Entidad Auditada:</p>
-              <p className="text-sm font-heading font-black text-neon">{currentTenant.name}</p>
+              <p className="text-sm font-heading font-black text-lime-700 dark:text-neon">{currentTenant.name}</p>
               <p className="text-zinc-500 dark:text-zinc-400 text-[11px]">{metrics.period}</p>
               <div className="flex items-center sm:justify-end gap-1.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold pt-1">
                 <ShieldCheck className="w-3.5 h-3.5" />
@@ -172,7 +206,7 @@ export const ExecutiveMonthlyReportModal = ({
           </div>
 
           {/* Key Financial KPIs Grid (6 Cards) */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 space-y-1">
               <span className="text-[10px] uppercase font-mono font-bold text-zinc-500 dark:text-zinc-400">
                 Inversión Meta Ads
@@ -199,7 +233,7 @@ export const ExecutiveMonthlyReportModal = ({
               <span className="text-[10px] uppercase font-mono font-bold text-zinc-700 dark:text-zinc-300">
                 MER / ROAS Global Real
               </span>
-              <p className="text-2xl font-heading font-black text-neon">
+              <p className="text-2xl font-heading font-black text-lime-700 dark:text-neon">
                 {metrics.mer}
               </p>
               <span className="text-[10px] text-zinc-500 font-mono">Retorno global sobre inversión</span>
@@ -230,7 +264,7 @@ export const ExecutiveMonthlyReportModal = ({
                 {metrics.conversionsLabel}
               </span>
               <p className="text-2xl font-heading font-black text-cyan-600 dark:text-cyan-400 flex items-center gap-2">
-                <CalendarCheck className="w-5 h-5 text-cyan-500" />
+                <CalendarCheck className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
                 <span>{metrics.closedConversions}</span>
               </p>
               <span className="text-[10px] text-zinc-500 font-mono">Confirmadas en agenda</span>
@@ -240,7 +274,7 @@ export const ExecutiveMonthlyReportModal = ({
           {/* Channel Attribution Breakdown Table */}
           <div className="space-y-3">
             <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-neon" />
+              <TrendingUp className="w-4 h-4 text-lime-700 dark:text-neon" />
               <span>Desglose de Atribución por Canal de Conversión</span>
             </h3>
 
@@ -255,30 +289,38 @@ export const ExecutiveMonthlyReportModal = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800/80 bg-white dark:bg-zinc-950/60 text-xs">
-                  {metrics.channelBreakdown.map((row, idx) => (
-                    <tr key={idx} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/40">
-                      <td className="p-3.5 font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-neon" />
-                        {row.channel}
+                  {(!metrics.channelBreakdown || metrics.channelBreakdown.length === 0) ? (
+                    <tr>
+                      <td colSpan={4} className="p-6 text-center text-zinc-500 dark:text-zinc-400">
+                        Sin canales con actividad registrada en este periodo.
                       </td>
-                      <td className="p-3.5 text-zinc-600 dark:text-zinc-300">{row.leads} eventos</td>
-                      <td className="p-3.5 font-bold text-emerald-600 dark:text-emerald-400">{row.revenue}</td>
-                      <td className="p-3.5 text-right font-bold text-zinc-900 dark:text-white">{row.share}</td>
                     </tr>
-                  ))}
+                  ) : (
+                    metrics.channelBreakdown.map((row, idx) => (
+                      <tr key={idx} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/40">
+                        <td className="p-3.5 font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-neon" />
+                          {row.channel}
+                        </td>
+                        <td className="p-3.5 text-zinc-600 dark:text-zinc-300">{row.leads} eventos</td>
+                        <td className="p-3.5 font-bold text-emerald-600 dark:text-emerald-400">{row.revenue}</td>
+                        <td className="p-3.5 text-right font-bold text-zinc-900 dark:text-white">{row.share}</td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
           </div>
 
           {/* DeepSeek R1 AI Executive Analysis & Recommendations */}
-          <div className="p-5 rounded-2xl bg-gradient-to-r from-purple-950/20 via-zinc-950/80 to-zinc-950/80 border border-purple-500/30 space-y-3 font-sans text-xs">
-            <div className="flex items-center justify-between">
+          <div className="p-5 rounded-2xl bg-gradient-to-r from-purple-50 via-zinc-50 to-white dark:from-purple-950/20 dark:via-zinc-950/80 dark:to-zinc-950/80 border border-purple-500/30 space-y-3 font-sans text-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-purple-700 dark:text-purple-300 font-mono font-bold text-xs uppercase">
                 <BrainCircuit className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                <span>Dictamen Ejecutivo & Recomendación Estratégica (DeepSeek R1)</span>
+                <span>Resumen Estratégico & Recomendación (DeepSeek R1)</span>
               </div>
-              <span className="text-[10px] font-mono text-zinc-500">
+              <span className="text-[10px] font-mono text-zinc-500 dark:text-zinc-400">
                 Horas humanas ahorradas: <strong>{metrics.humanHoursSaved}</strong>
               </span>
             </div>
@@ -289,12 +331,12 @@ export const ExecutiveMonthlyReportModal = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-zinc-200 dark:border-zinc-800 font-mono text-[11px]">
               <div>
-                <span className="text-zinc-500">Volumen Procesado: </span>
+                <span className="text-zinc-500 dark:text-zinc-400">Volumen Procesado: </span>
                 <strong className="text-zinc-800 dark:text-zinc-200">{metrics.messagesProcessed}</strong>
               </div>
               <div className="sm:text-right">
-                <span className="text-zinc-500">Canal Estrella: </span>
-                <strong className="text-neon">{metrics.topChannel}</strong>
+                <span className="text-zinc-500 dark:text-zinc-400">Canal Estrella: </span>
+                <strong className="text-lime-700 dark:text-neon">{metrics.topChannel}</strong>
               </div>
             </div>
           </div>
@@ -302,7 +344,7 @@ export const ExecutiveMonthlyReportModal = ({
           {/* Report Identifier Footer */}
           <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-[10px] font-mono text-zinc-500">
             <div className="flex items-center gap-2">
-              <Hash className="w-3.5 h-3.5 text-neon" />
+              <Hash className="w-3.5 h-3.5 text-lime-700 dark:text-neon" />
               <span>Folio de Reporte: <code>{reportId}</code></span>
             </div>
             <div>

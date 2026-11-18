@@ -35,6 +35,12 @@ import {
 import confetti from 'canvas-confetti';
 import { normalizePhone10, formatPhoneDisplay } from '@/utils/formatters';
 
+const XLogoIcon = ({ className = 'w-3.5 h-3.5' }) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className={className}>
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
+
 const DEFAULT_GENERIC_THEME = {
   cover: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&auto=format&fit=crop&q=80',
   tagline: 'Atención personalizada e inmediata directo en tu WhatsApp.',
@@ -80,16 +86,28 @@ export default function MicroLandingPage() {
           ? found.microLandingConfig
           : null;
 
+      const resolvedSocialLinks =
+        found.socialLinks && typeof found.socialLinks === 'object'
+          ? found.socialLinks
+          : dbConfig?.socialLinks && typeof dbConfig.socialLinks === 'object'
+          ? dbConfig.socialLinks
+          : {};
+
       const nextTenant = {
         id: found.id || slug,
         name: found.name || 'Negocio',
         shortName: found.shortName || found.name,
         phone: found.phone || '',
         giro: found.giro || found.verticalLabel || '',
+        vertical: found.vertical || '',
+        avatar: found.avatar || '',
+        websiteUrl: found.websiteUrl || '',
+        socialLinks: resolvedSocialLinks,
         avgTicketMXN: Number(found.avgTicketMXN || found.leadPriceMXN || 0),
         leadPriceMXN: Number(found.leadPriceMXN || 0),
         microLandingSlug: found.microLandingSlug || slug,
         microLandingEnabled: found.microLandingEnabled !== false,
+        microLandingStatus: found.microLandingStatus || '',
         microLandingConfig: dbConfig,
         metaPixelId: found.metaPixelId || '',
         ga4MeasurementId: found.ga4MeasurementId || '',
@@ -100,6 +118,11 @@ export default function MicroLandingPage() {
         ...(dbConfig || {}),
         name: dbConfig?.name || (prev.name === 'Negocio' || !prev.name ? nextTenant.name : prev.name),
         phone: dbConfig?.phone || nextTenant.phone || prev.phone,
+        socialLinks: {
+          ...(prev.socialLinks || {}),
+          ...resolvedSocialLinks,
+          ...(dbConfig?.socialLinks && typeof dbConfig.socialLinks === 'object' ? dbConfig.socialLinks : {}),
+        },
         metaPixelId: dbConfig?.metaPixelId || nextTenant.metaPixelId || prev.metaPixelId || '',
         ga4MeasurementId: dbConfig?.ga4MeasurementId || nextTenant.ga4MeasurementId || prev.ga4MeasurementId || '',
       }));
@@ -321,8 +344,8 @@ export default function MicroLandingPage() {
   const primaryWaUrl = cleanPhone
     ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
         vertical === 'hospitality' || baseTenant.id === 'polanco'
-          ? `¡Hola ${customData.name}! 👋 Vi su micro-landing y me gustaría reservar una mesa o consultar el menú.`
-          : `¡Hola ${customData.name}! 👋 Vi su micro-landing y me gustaría agendar una cita / solicitar informes.`
+          ? `¡Hola ${customData.name}! 👋 Vi su página oficial y me gustaría reservar una mesa o consultar el menú.`
+          : `¡Hola ${customData.name}! 👋 Vi su página oficial y me gustaría agendar una cita / solicitar informes.`
       )}`
     : '#lead-capture-form';
 
@@ -419,27 +442,27 @@ export default function MicroLandingPage() {
               <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
               {activeTenantData?.microLandingStatus === 'suspended'
                 ? 'Página en Actualización Temporal'
-                : 'Micro-Landing Inactiva'}
+                : 'Página Inactiva'}
             </span>
             <h1 className="text-xl font-bold text-white tracking-tight">
               {activeTenantData?.name || customData.name}
             </h1>
-            <p className="text-xs text-white/60 leading-relaxed font-sans">
-              Esta micro-landing de atención y captación se encuentra temporalmente en pausa por actualización de servicios.
+            <p className="text-xs text-zinc-300 leading-relaxed font-sans">
+              Esta página de atención y captación se encuentra temporalmente en pausa por actualización de servicios.
             </p>
           </div>
 
           {/* Info Box */}
           <div className="p-4 rounded-2xl bg-black/40 border border-white/5 text-left space-y-2 text-xs font-mono">
-            <div className="flex items-center justify-between text-white/40 text-[11px]">
+            <div className="flex items-center justify-between text-zinc-300 text-[11px]">
               <span>Estado del Servicio:</span>
               <span className="text-amber-400 font-bold">En Pausa Temporal</span>
             </div>
-            <div className="flex items-center justify-between text-white/40 text-[11px]">
+            <div className="flex items-center justify-between text-zinc-300 text-[11px]">
               <span>Canal de Atención:</span>
               <span className="text-emerald-400 font-bold">WhatsApp Directo</span>
             </div>
-            <div className="flex items-center justify-between text-white/40 text-[11px]">
+            <div className="flex items-center justify-between text-zinc-300 text-[11px]">
               <span>Disponibilidad:</span>
               <span className="text-white font-bold">Inmediata</span>
             </div>
@@ -476,7 +499,7 @@ export default function MicroLandingPage() {
             {activeTenantData?.phone && (
               <a
                 href={`tel:${activeTenantData.phone}`}
-                className="w-full py-2.5 px-4 rounded-xl text-white/50 hover:text-white text-xs font-mono flex items-center justify-center gap-1.5 transition-colors"
+                className="w-full py-2.5 px-4 rounded-xl text-zinc-300 hover:text-white text-xs font-mono flex items-center justify-center gap-1.5 transition-colors"
               >
                 <Phone className="w-3.5 h-3.5" />
                 <span>Contacto directo: {activeTenantData.phone}</span>
@@ -485,8 +508,8 @@ export default function MicroLandingPage() {
           </div>
 
           <div className="pt-2 border-t border-white/5">
-            <span className="text-[10px] text-white/30 font-mono">
-              Vector Inside • Plataforma de Adquisición & RAG
+            <span className="text-[10px] text-zinc-400 font-mono">
+              Vector Inside • Plataforma Digital de Atención
             </span>
           </div>
         </div>
@@ -649,57 +672,66 @@ export default function MicroLandingPage() {
         </a>
 
         {/* Services & Highlights Catalogue (Dynamic & Editable) */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between px-1">
-            <h3 className="text-xs font-bold text-white font-mono uppercase tracking-wider flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-[#D4FF00]" />
-              <span>Servicios & Promociones</span>
-            </h3>
-            <span className="text-[10px] text-zinc-500 font-mono">Disponibilidad Inmediata</span>
-          </div>
+        {(() => {
+          const servicesList = Array.isArray(customData.services)
+            ? customData.services
+            : baseTheme.services || [];
+          if (servicesList.length === 0) return null;
 
-          <div className="space-y-2">
-            {(customData.services || baseTheme.services).map((srv, idx) => (
-              <a
-                key={idx}
-                href={`https://wa.me/${cleanPhone}?text=${encodeURIComponent(
-                  `¡Hola ${customData.name}! Me interesa solicitar informes o agendar sobre: *${srv.title}*.`
-                )}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => handleWhatsAppClick('Service_Inquiry')}
-                className="group p-3 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800/90 border border-white/5 hover:border-[#D4FF00]/40 transition-all flex items-center justify-between gap-2.5 block active:scale-[0.99]"
-              >
-                <div className="flex-1 min-w-0 space-y-1">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-xs font-bold text-white group-hover:text-[#D4FF00] transition-colors line-clamp-1">
-                      {srv.title}
-                    </span>
-                    {srv.badge && (
-                      <span
-                        className={`text-[8.5px] font-mono px-1.5 py-0.5 rounded font-bold uppercase tracking-wider ${
-                          srv.tone === 'emerald'
-                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                            : srv.tone === 'blue'
-                            ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
-                            : 'bg-[#D4FF00]/15 text-[#D4FF00] border border-[#D4FF00]/30'
-                        }`}
-                      >
-                        {srv.badge}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[10.5px] text-zinc-400 leading-snug line-clamp-2">
-                    {srv.desc}
-                  </p>
-                </div>
-                <div className="w-7 h-7 rounded-xl bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-[#D4FF00] group-hover:text-black transition-colors">
-                  <ArrowRight className="w-3.5 h-3.5 text-zinc-400 group-hover:text-black transition-colors" />
-                </div>
-              </a>
-            ))}
-          </div>
-        </div>
+          return (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between px-1">
+                <h3 className="text-xs font-bold text-white font-mono uppercase tracking-wider flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-[#D4FF00]" />
+                  <span>Servicios & Promociones</span>
+                </h3>
+                <span className="text-[10px] text-zinc-400 font-mono">Disponibilidad Inmediata</span>
+              </div>
+
+              <div className="space-y-2">
+                {servicesList.map((srv, idx) => (
+                  <a
+                    key={idx}
+                    href={`https://wa.me/${cleanPhone}?text=${encodeURIComponent(
+                      `¡Hola ${customData.name}! Me interesa solicitar informes o agendar sobre: *${srv.title}*.`
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => handleWhatsAppClick('Service_Inquiry')}
+                    className="group p-3 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800/90 border border-white/5 hover:border-[#D4FF00]/40 transition-all flex items-center justify-between gap-2.5 block active:scale-[0.99]"
+                  >
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-xs font-bold text-white group-hover:text-[#D4FF00] transition-colors line-clamp-1">
+                          {srv.title}
+                        </span>
+                        {srv.badge && (
+                          <span
+                            className={`text-[8.5px] font-mono px-1.5 py-0.5 rounded font-bold uppercase tracking-wider ${
+                              srv.tone === 'emerald'
+                                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                                : srv.tone === 'blue'
+                                ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
+                                : 'bg-[#D4FF00]/15 text-[#D4FF00] border border-[#D4FF00]/30'
+                            }`}
+                          >
+                            {srv.badge}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[10.5px] text-zinc-400 leading-snug line-clamp-2">
+                        {srv.desc}
+                      </p>
+                    </div>
+                    <div className="w-7 h-7 rounded-xl bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-[#D4FF00] group-hover:text-black transition-colors">
+                      <ArrowRight className="w-3.5 h-3.5 text-zinc-400 group-hover:text-black transition-colors" />
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Quick Lead / 1-Tap Booking Form (Vertical-Aware) */}
         <div className="p-3.5 rounded-3xl bg-zinc-950 border border-white/10 space-y-3 relative overflow-hidden shadow-xl">
@@ -730,7 +762,7 @@ export default function MicroLandingPage() {
                   placeholder="ej. Carlos Mendoza"
                   value={bookingName}
                   onChange={(e) => setBookingName(e.target.value)}
-                  className="w-full p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-500 focus:border-[#D4FF00] outline-none text-sm font-sans transition-colors"
+                  className="w-full p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-400 focus:border-[#D4FF00] outline-none text-sm font-sans transition-colors"
                 />
               </div>
 
@@ -748,7 +780,7 @@ export default function MicroLandingPage() {
                     setBookingPhone(e.target.value);
                     if (bookingError) setBookingError('');
                   }}
-                  className="w-full p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-500 focus:border-[#D4FF00] outline-none text-sm font-mono transition-colors"
+                  className="w-full p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-400 focus:border-[#D4FF00] outline-none text-sm font-mono transition-colors"
                 />
                 {bookingError && (
                   <p className="text-rose-400 text-[11px] font-mono mt-1 flex items-center gap-1">
@@ -827,11 +859,12 @@ export default function MicroLandingPage() {
         {(() => {
           const links = customData.socialLinks || baseTenant.socialLinks || {};
           const activeLinks = [
-            links.youtube && { name: 'YouTube', url: links.youtube, icon: Youtube, color: 'text-rose-500 hover:border-rose-500/50' },
+            links.youtube && { name: 'YouTube', url: links.youtube, icon: Youtube, color: 'text-rose-400 hover:border-rose-400/50' },
             links.tiktok && { name: 'TikTok', url: links.tiktok, icon: Video, color: 'text-cyan-400 hover:border-cyan-400/50' },
             links.instagram && { name: 'Instagram', url: links.instagram, icon: Instagram, color: 'text-pink-400 hover:border-pink-400/50' },
             links.linkedin && { name: 'LinkedIn', url: links.linkedin, icon: Linkedin, color: 'text-blue-400 hover:border-blue-400/50' },
-            links.facebook && { name: 'Facebook', url: links.facebook, icon: Facebook, color: 'text-blue-600 hover:border-blue-600/50' },
+            links.facebook && { name: 'Facebook', url: links.facebook, icon: Facebook, color: 'text-blue-400 hover:border-blue-400/50' },
+            links.x && { name: 'X', url: links.x, icon: XLogoIcon, color: 'text-zinc-200 hover:border-zinc-400/50' },
             links.website && { name: 'Web', url: links.website, icon: Globe, color: 'text-[#D4FF00] hover:border-[#D4FF00]/50' },
           ].filter(Boolean);
 
@@ -878,8 +911,8 @@ export default function MicroLandingPage() {
             </strong>
             <ExternalLink className="w-2.5 h-2.5 text-[#D4FF00] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
           </a>
-          <p className="text-[9.5px] text-zinc-500 font-mono">
-            ¿Quieres tu propia Micro-Landing o Página Web Oficial?{' '}
+          <p className="text-[9.5px] text-zinc-400 font-mono">
+            ¿Quieres tu propia Página Oficial de Atención Directa?{' '}
             <a
               href="https://vectorinside.com/"
               target="_blank"

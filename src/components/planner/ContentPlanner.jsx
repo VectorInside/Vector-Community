@@ -61,6 +61,8 @@ import { Portal } from '@/components/common/Portal';
 import { SOCIAL_NETWORKS_CATALOG } from '@/utils/constants';
 import { resolveBrandPreset } from '@/utils/brandPresets';
 import { MetaConnectModal } from '@/components/inbox/MetaConnectModal';
+import { CommercialOfferBanner } from '@/components/planner/CommercialOfferBanner';
+import { parseAiJsonResponse, buildProfileAuditChecks } from '@/components/planner/plannerUtils';
 
 // Mapa seguro de iconos de formato (garantiza compatibilidad con persistencia JSON / SSR)
 const POST_TYPE_ICONS = {
@@ -251,6 +253,7 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [isSyncingMeta, setIsSyncingMeta] = useState(false);
   const [isAuditingBrand, setIsAuditingBrand] = useState(false);
+  const [isLoadingAudit, setIsLoadingAudit] = useState(Boolean(tenantKey));
 
   // Estados para Laboratorio Viral y Conexión Meta
   const [showMetaConnectModal, setShowMetaConnectModal] = useState(false);
@@ -471,6 +474,7 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
       });
 
     // 3. Sync Profile Audit with Real Meta Brand Audit (/api/v1/meta/brand-audit)
+    setIsLoadingAudit(true);
     metaCommentService
       .getBrandAudit(tenantKey)
       .then((auditRes) => {
@@ -480,45 +484,13 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
           : `@${activeTenant?.shortName?.toLowerCase() || 'vector_inside'}`;
         const realHookRate = auditRes?.hookRateAvg ?? auditRes?.avgHookRate ?? null;
 
-        const checks = [
-          {
-            id: 'chk-1',
-            title: 'Biografía con Disparador BANT y Oferta Activa',
-            status: tenantDna.leadMagnetHook ? 'PASSED' : 'WARNING',
-            diagnosis: tenantDna.leadMagnetHook
-              ? `Biografía alineada con la oferta activa: "${tenantDna.leadMagnetHook}".`
-              : 'La biografía no tiene un gancho de conversión directo definido.',
-            recommendation: 'Inyectar el CTA comercial directo con palabra clave hacia WhatsApp Cloud API.',
-          },
-          {
-            id: 'chk-2',
-            title: 'Consistencia con Manual de Identidad & Taboo Words',
-            status: (auditRes?.tabooViolationsCount || 0) === 0 ? 'PASSED' : 'WARNING',
-            diagnosis: (auditRes?.tabooViolationsCount || 0) === 0
-              ? '0 infracciones de palabras tabú detectadas en el feed analizado.'
-              : `${auditRes.tabooViolationsCount} publicaciones contienen términos del glosario prohibido.`,
-            recommendation: 'Mantener la verificación del filtro léxico activo en todas las publicaciones programadas.',
-          },
-          {
-            id: 'chk-3',
-            title: 'Enlace Soberano a WhatsApp Cloud API',
-            status: activeTenant?.phone ? 'PASSED' : 'WARNING',
-            diagnosis: activeTenant?.phone
-              ? `Canal de destino validado: ${activeTenant.phone}.`
-              : 'Sin número de WhatsApp verificado en la ficha de configuración.',
-            recommendation: 'Asegurar que el enlace en bio dirija al protocolo de agendamiento 24/7.',
-          },
-          {
-            id: 'chk-4',
-            title: 'Hook Rate Promedio Superior al Benchmark (25%)',
-            status: realHookRate != null ? (Number(realHookRate) >= 25 ? 'PASSED' : 'WARNING') : 'WARNING',
-            diagnosis:
-              realHookRate != null
-                ? `Retención promedio de los primeros 3 segundos en Reels: ${realHookRate}% (Benchmark del sector: 25.0%).`
-                : 'Sin datos suficientes de retención en Reels sincronizados desde Meta.',
-            recommendation: 'Continuar empleando el Laboratorio Viral para iterar sobre las fórmulas con mayor tracción.',
-          },
-        ];
+        const checks = buildProfileAuditChecks({
+          offerHook: tenantDna.leadMagnetHook,
+          tabooViolationsCount: auditRes?.tabooViolationsCount || 0,
+          phone: activeTenant?.phone,
+          realHookRate,
+          hasLiveAuditData: true,
+        });
 
         setProfileAudit({
           score,
@@ -539,6 +511,9 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
             'No se pudo obtener la auditoría de perfil desde el servidor.',
           checks: [],
         });
+      })
+      .finally(() => {
+        setIsLoadingAudit(false);
       });
   }, [activeTenant, tenantKey]);
 
@@ -610,6 +585,68 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
 
   const [showOfferModal, setShowOfferModal] = useState(false);
 
+  // Listener global de Escape y bloqueo de scroll para los modales locales del Estudio
+  const hasAnyModalOpen = Boolean(
+    showOfferModal ||
+      previewPost ||
+      editingPost ||
+      postToDelete ||
+      showAiGenModal ||
+      rerollPost ||
+      showWeeklyCronModal ||
+      showExternalReelModal ||
+      showBioGeneratorModal
+  );
+
+  useEffect(() => {
+    if (!hasAnyModalOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (e) => {
+      if (e.key !== 'Escape') return;
+      if (showBioGeneratorModal) {
+        setShowBioGeneratorModal(false);
+      } else if (showExternalReelModal && !isAnalyzingExternalReel) {
+        setShowExternalReelModal(false);
+      } else if (showWeeklyCronModal) {
+        setShowWeeklyCronModal(false);
+      } else if (rerollPost && !rerollingPostId) {
+        setRerollPost(null);
+      } else if (showAiGenModal && !isGeneratingAi) {
+        setShowAiGenModal(false);
+      } else if (postToDelete) {
+        setPostToDelete(null);
+      } else if (editingPost) {
+        setEditingPost(null);
+      } else if (previewPost) {
+        setPreviewPost(null);
+      } else if (showOfferModal) {
+        setShowOfferModal(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = prevOverflow || '';
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [
+    hasAnyModalOpen,
+    showOfferModal,
+    previewPost,
+    editingPost,
+    postToDelete,
+    showAiGenModal,
+    isGeneratingAi,
+    rerollPost,
+    rerollingPostId,
+    showWeeklyCronModal,
+    showExternalReelModal,
+    isAnalyzingExternalReel,
+    showBioGeneratorModal,
+  ]);
+
   const handleUpdateCommercialOffer = async (e) => {
     e.preventDefault();
     if (!tenantKey) return;
@@ -649,7 +686,7 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
 
       triggerModal(
         'Oferta Comercial del Mes Sincronizada',
-        `La oferta comercial para <b>${activeTenant?.name}</b> ha sido guardada en base de datos PostgreSQL.<br><br>Todas las próximas sugerencias de DeepSeek R1 integrarán automáticamente este gancho: <i>"${updatedOffer.hook || 'Oferta activa'}"</i>.`
+        `La oferta comercial para <b>${activeTenant?.name}</b> ha sido guardada correctamente.<br><br>Todas las próximas sugerencias de IA integrarán automáticamente este gancho: <i>"${updatedOffer.hook || 'Oferta activa'}"</i>.`
       );
     } catch (err) {
       console.error('Error al actualizar oferta comercial:', err);
@@ -947,18 +984,7 @@ Palabras tabú prohibidas: [${brandDna?.tabooWords || 'ninguna'}].`;
             topicPrompt,
           });
 
-          let parsed = null;
-          if (res?.generatedRawJson) {
-            try {
-              parsed = typeof res.generatedRawJson === 'string' ? JSON.parse(res.generatedRawJson) : res.generatedRawJson;
-            } catch (e) {}
-          } else if (res?.content) {
-            try {
-              parsed = typeof res.content === 'string' ? JSON.parse(res.content) : res.content;
-            } catch (e) {}
-          } else if (typeof res === 'object') {
-            parsed = res;
-          }
+          const parsed = parseAiJsonResponse(res);
 
           const generatedTitle = parsed?.title || `Estrategia ${targetNet}: ${activeTenant?.name}`;
           const generatedHook = parsed?.hookText || effectiveHook || `¿Por qué elegir a ${activeTenant?.name}?`;
@@ -1019,7 +1045,7 @@ Palabras tabú prohibidas: [${brandDna?.tabooWords || 'ninguna'}].`;
         `✨ ${generatedPostsList.length} Guion(es) Publicitario(s) Generado(s)`,
         `<div class="space-y-3 font-mono text-xs">
           <div class="p-3 rounded-xl bg-neon/10 border border-neon/30 text-lime-700 dark:text-neon">
-            <b>🧠 Parámetros RAG Inyectados en Tiempo Real:</b><br>
+            <b>🧠 Parámetros de Marca Inyectados en Tiempo Real:</b><br>
             • <b>Negocio:</b> ${activeTenant?.name} (${activeTenant?.giro || activeTenant?.verticalLabel})<br>
             • <b>Plataforma:</b> ${network === 'OMNI_PACK' ? 'Pack Omnicanal (Varias Redes)' : network}<br>
             • <b>Objetivo:</b> ${aiGenConfig.objective}<br>
@@ -1030,10 +1056,10 @@ Palabras tabú prohibidas: [${brandDna?.tabooWords || 'ninguna'}].`;
         </div>`
       );
     } catch (err) {
-      console.error('[ContentPlanner] Error al generar con DeepSeek:', err);
+      console.error('[ContentPlanner] Error al generar contenido con IA:', err);
       triggerModal(
         'Error de Generación IA',
-        `No fue posible generar el guion con DeepSeek R1: ${err?.message || 'Error de red o timeout'}. Por favor verifica tu API Key en Configuración > Motores & Sub-Bots AI.`
+        `No fue posible generar el guion con el asistente IA: ${err?.message || 'Error de red o tiempo de espera agotado'}. Por favor verifica tu configuración en Conexiones.`
       );
     } finally {
       setIsGeneratingAi(false);
@@ -1069,17 +1095,17 @@ Palabras tabú prohibidas: [${brandDna?.tabooWords || 'ninguna'}].`;
     const effectiveCta = commercialOffer?.cta || brandDna?.leadMagnetCta || '';
     const formatInfo = getPlatformFormatInfo(targetPost.network);
 
-    const topicPrompt = `RE-ROLL / REGENERACIÓN TÁCTICA DE CONTENIDO para ${activeTenant?.name}.
+    const topicPrompt = `REGENERACIÓN TÁCTICA DE CONTENIDO para ${activeTenant?.name}.
 Red: ${targetPost.network} (${formatInfo.type}).
 Título previo: "${targetPost.title}".
 Gancho previo: "${targetPost.hookText}".
 Copy previo: "${targetPost.copy}".
 
-DIRECTIVA DE RE-ROLL:
+DIRECTIVA DE AJUSTE:
 ${angleInstruction}
 
 Oferta del mes de respaldo: "${effectiveHook}". CTA: "${effectiveCta}".
-Palabras tabú prohibidas: [${brandDna?.tabooWords || 'ninguna'}].`;
+Palabras prohibidas: [${brandDna?.tabooWords || 'ninguna'}].`;
 
     try {
       const res = await aiService.generateContent({
@@ -1089,18 +1115,7 @@ Palabras tabú prohibidas: [${brandDna?.tabooWords || 'ninguna'}].`;
         topicPrompt,
       });
 
-      let parsed = null;
-      if (res?.generatedRawJson) {
-        try {
-          parsed = typeof res.generatedRawJson === 'string' ? JSON.parse(res.generatedRawJson) : res.generatedRawJson;
-        } catch (e) {}
-      } else if (res?.content) {
-        try {
-          parsed = typeof res.content === 'string' ? JSON.parse(res.content) : res.content;
-        } catch (e) {}
-      } else if (typeof res === 'object') {
-        parsed = res;
-      }
+      const parsed = parseAiJsonResponse(res);
 
       const updatedPost = {
         ...targetPost,
@@ -1117,7 +1132,7 @@ Palabras tabú prohibidas: [${brandDna?.tabooWords || 'ninguna'}].`;
       try {
         await contentService.updatePost(targetPost.id, updatedPost);
       } catch (e) {
-        console.warn('Error syncing rerolled post to backend:', e);
+        console.warn('Error syncing regenerated post to backend:', e);
       }
 
       try {
@@ -1129,14 +1144,14 @@ Palabras tabú prohibidas: [${brandDna?.tabooWords || 'ninguna'}].`;
       } catch (e) {}
 
       triggerModal(
-        '🎲 Guión Regenerado con Éxito (Re-roll IA)',
+        '✨ Guión Regenerado con Éxito',
         `Se ha aplicado el ajuste: <b>${rerollAngle}</b>.<br><br>
         <b>Nuevo Gancho (0-3s):</b> <i>"${updatedPost.hookText}"</i><br><br>
         La publicación se mantiene en <b>Pendiente Cliente</b> para tu validación final.`
       );
     } catch (err) {
-      console.error('Error al hacer re-roll:', err);
-      triggerModal('Error en Re-roll', err?.message || 'No se pudo regenerar el guión.');
+      console.error('Error al regenerar guión:', err);
+      triggerModal('Error al Regenerar', err?.message || 'No se pudo regenerar el guión.');
     } finally {
       setRerollingPostId(null);
       setRerollCustomNote('');
@@ -1200,7 +1215,7 @@ Palabras tabú prohibidas: [${brandDna?.tabooWords || 'ninguna'}].`;
           '⚠️ Error al Persistir Disparador Semanal',
           err?.response?.data?.message ||
             err?.message ||
-            'No se pudo guardar la configuración en PostgreSQL. Se conservó únicamente en caché local.'
+            'No se pudo guardar la configuración en el servidor. Se conservó únicamente en caché local.'
         );
         return;
       }
@@ -1214,10 +1229,10 @@ Palabras tabú prohibidas: [${brandDna?.tabooWords || 'ninguna'}].`;
 
     triggerModal(
       '⚡ Disparador Semanal Configurado',
-      `El motor autónomo de DeepSeek R1 generará una propuesta de <b>${weeklyCronConfig.volume} publicaciones</b> cada <b>${weeklyCronConfig.dayOfWeek} a las ${weeklyCronConfig.time} hrs</b>.<br><br>
-      • <b>Estado:</b> ${weeklyCronConfig.enabled ? '<span class="text-emerald-400 font-bold">ACTIVO</span>' : '<span class="text-zinc-400 font-bold">PAUSADO</span>'}<br>
-      • <b>Feedback Loop:</b> ${weeklyCronConfig.useViralHooks ? 'Replicar mejores Hooks' : ''} ${weeklyCronConfig.useCommercialOffer ? '+ Oferta RAG' : ''} ${weeklyCronConfig.useWhatsappObjections ? '+ Dudas WhatsApp' : ''}<br>
-      • <b>Human-In-The-Loop:</b> Todas las piezas se depositarán como <i>Pendientes de Aprobación</i>.`
+      `El motor autónomo de IA generará una propuesta de <b>${weeklyCronConfig.volume} publicaciones</b> cada <b>${weeklyCronConfig.dayOfWeek} a las ${weeklyCronConfig.time} hrs</b>.<br><br>
+      • <b>Estado:</b> ${weeklyCronConfig.enabled ? '<span class="text-emerald-600 dark:text-emerald-400 font-bold">ACTIVO</span>' : '<span class="text-[var(--text-muted)] font-bold">PAUSADO</span>'}<br>
+      • <b>Aprendizaje Continuo:</b> ${weeklyCronConfig.useViralHooks ? 'Replicar mejores Hooks' : ''} ${weeklyCronConfig.useCommercialOffer ? '+ Oferta del Mes' : ''} ${weeklyCronConfig.useWhatsappObjections ? '+ Dudas WhatsApp' : ''}<br>
+      • <b>Revisión y Aprobación:</b> Todas las piezas se depositarán como <i>Pendientes de Aprobación</i>.`
     );
   };
 
@@ -1240,7 +1255,7 @@ Palabras tabú prohibidas: [${brandDna?.tabooWords || 'ninguna'}].`;
     } catch (e) {}
     triggerModal(
       'Directrices de Marca Sincronizadas',
-      `Los parámetros de Arquetipo, Tono, Glosario Prohibido y Dolores del ICP para <b>${activeTenant?.name}</b> han sido guardados y sincronizados con la memoria RAG de DeepSeek R1.`
+      `Los parámetros de Arquetipo, Tono, Glosario Prohibido y Dolores del Cliente Ideal para <b>${activeTenant?.name}</b> han sido guardados y sincronizados con el contexto inteligente de la IA.`
     );
   };
 
@@ -1295,17 +1310,10 @@ Devuelve un JSON estrictamente estructurado con:
         topicPrompt: promptDirective,
       });
 
-      let parsed = null;
-      if (aiRes?.generatedRawJson) {
-        parsed = typeof aiRes.generatedRawJson === 'string' ? JSON.parse(aiRes.generatedRawJson) : aiRes.generatedRawJson;
-      } else if (aiRes?.content) {
-        parsed = typeof aiRes.content === 'string' ? JSON.parse(aiRes.content) : aiRes.content;
-      } else if (aiRes?.hookText || aiRes?.copy || aiRes?.title) {
-        parsed = aiRes;
-      }
+      const parsed = parseAiJsonResponse(aiRes);
 
       if (!parsed || (!parsed.deconstructedFormula && !parsed.title && !parsed.hookText && !parsed.copy)) {
-        throw new Error('DeepSeek R1 no devolvió un análisis válido para el video.');
+        throw new Error('El asistente de IA no devolvió un análisis válido para el video.');
       }
 
       const snippet = rawText || rawUrl;
@@ -1313,29 +1321,21 @@ Devuelve un JSON estrictamente estructurado con:
 
       let extractedFormula = parsed?.deconstructedFormula;
       if (!extractedFormula && (parsed?.hookText || parsed?.copy)) {
-        try {
-          const inner = typeof parsed.copy === 'string' && parsed.copy.trim().startsWith('{') ? JSON.parse(parsed.copy) : null;
-          if (inner?.deconstructedFormula) {
-            extractedFormula = inner.deconstructedFormula;
-          }
-        } catch (e) {}
-        if (!extractedFormula) {
-          const copyParts = String(parsed.copy || '')
-            .split(/\n+/)
-            .map((line) => line.trim())
-            .filter(Boolean);
-          if (parsed.hookText || copyParts.length > 0) {
-            extractedFormula = {
-              hook0to3s: parsed.hookText || copyParts[0],
-              retention3to15s: copyParts[1] || copyParts[0] || '',
-              cta15to30s: copyParts[2] || commercialOffer?.cta || '',
-            };
-          }
+        const copyParts = String(parsed.copy || '')
+          .split(/\n+/)
+          .map((line) => line.trim())
+          .filter(Boolean);
+        if (parsed.hookText || copyParts.length > 0) {
+          extractedFormula = {
+            hook0to3s: parsed.hookText || copyParts[0],
+            retention3to15s: copyParts[1] || copyParts[0] || '',
+            cta15to30s: copyParts[2] || commercialOffer?.cta || '',
+          };
         }
       }
 
       if (!extractedFormula || !extractedFormula.hook0to3s) {
-        throw new Error('DeepSeek R1 no pudo extraer la fórmula de retención del video.');
+        throw new Error('El motor de IA no pudo extraer la fórmula de retención del video.');
       }
 
       const newReel = {
@@ -1345,8 +1345,8 @@ Devuelve un JSON estrictamente estructurado con:
         views: parsed?.views || 'N/D',
         hookRate: parsed?.hookRate || 'N/D',
         dmsGenerated: parsed?.dmsGenerated || 'N/D',
-        visualHook: parsed?.visualHook || 'Analizado por DeepSeek R1',
-        psychologicalTrigger: parsed?.psychologicalTrigger || 'Detectado por DeepSeek R1',
+        visualHook: parsed?.visualHook || 'Analizado por Asistente IA',
+        psychologicalTrigger: parsed?.psychologicalTrigger || 'Detectado por Asistente IA',
         whyItWorked: parsed?.whyItWorked || parsed?.copy || '',
         isExternal: true,
         externalUrl: rawUrl || null,
@@ -1370,13 +1370,13 @@ Devuelve un JSON estrictamente estructurado con:
 
       triggerModal(
         '🎯 Video Externo Deconstruido con Éxito',
-        `DeepSeek R1 ha analizado la anatomía algorítmica de <b>"${titleCandidate}"</b>.<br><br>Ya está disponible en tu laboratorio; pulsa <b>"🧬 Replicar Fórmula en 3 Nuevos Guiones"</b> para inyectar su estructura a tu negocio.`
+        `El asistente IA ha analizado la anatomía algorítmica de <b>"${titleCandidate}"</b>.<br><br>Ya está disponible en tu laboratorio; pulsa <b>"🧬 Replicar Fórmula en 3 Nuevos Guiones"</b> para inyectar su estructura a tu negocio.`
       );
     } catch (err) {
       console.error('Error al deconstruir reel externo:', err);
       triggerModal(
-        '⚠️ Error de Análisis DeepSeek R1',
-        'No se pudo conectar con DeepSeek R1 para analizar el video. Verifica tu API Key de IA en Conexiones.'
+        '⚠️ Error de Análisis IA',
+        'No se pudo conectar con el motor de IA para analizar el video. Verifica tu configuración en Conexiones.'
       );
     } finally {
       setIsAnalyzingExternalReel(false);
@@ -1436,24 +1436,11 @@ Genera exactamente 3 variantes de guion para Instagram Reels 9:16 en JSON estric
         topicPrompt: promptDirective,
       });
 
-      let parsed = null;
-      if (aiRes?.generatedRawJson) {
-        parsed = typeof aiRes.generatedRawJson === 'string' ? JSON.parse(aiRes.generatedRawJson) : aiRes.generatedRawJson;
-      } else if (aiRes?.content) {
-        parsed = typeof aiRes.content === 'string' ? JSON.parse(aiRes.content) : aiRes.content;
-      } else if (aiRes && typeof aiRes === 'object') {
-        parsed = aiRes;
-      }
-
-      if (parsed?.copy && typeof parsed.copy === 'string' && parsed.copy.trim().startsWith('{')) {
-        try {
-          parsed = JSON.parse(parsed.copy);
-        } catch (e) {}
-      }
+      const parsed = parseAiJsonResponse(aiRes);
 
       const variants = Array.isArray(parsed?.variants) ? parsed.variants.filter((v) => v?.hookText || v?.copy) : [];
       if (variants.length === 0) {
-        throw new Error('DeepSeek R1 no devolvió variantes de guion válidas.');
+        throw new Error('El motor de IA no devolvió variantes de guion válidas.');
       }
 
       const variantsDisplay = variants.map(
@@ -1462,15 +1449,15 @@ Genera exactamente 3 variantes de guion para Instagram Reels 9:16 en JSON estric
 
       triggerModal(
         `Ingeniería Inversa Viral: ${reel.title}`,
-        `<b>Fórmula Psicológica Detectada (DeepSeek R1):</b><br>
-      • <b>Disparador:</b> ${reel.psychologicalTrigger || 'Analizado por DeepSeek R1'}<br>
+        `<b>Fórmula Psicológica Detectada (Asistente IA):</b><br>
+      • <b>Disparador:</b> ${reel.psychologicalTrigger || 'Analizado por Asistente IA'}<br>
       • <b>Hook Rate:</b> ${reel.hookRate || 'N/D'}<br>
-      • <b>Estímulo Visual:</b> ${reel.visualHook || 'Analizado por DeepSeek R1'}<br><br>
-      <div style="background:#0D0F12; padding:12px; border-radius:12px; border:1px solid #1F242D; font-family:monospace; font-size:11px;">
-        <span style="color:#D4FF00; font-weight:bold;">🎬 ${variants.length} VARIANTES ADAPTADAS A ${activeTenant?.name?.toUpperCase() || 'TU NEGOCIO'}:</span><br><br>
+      • <b>Estímulo Visual:</b> ${reel.visualHook || 'Analizado por Asistente IA'}<br><br>
+      <div class="p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] font-mono text-[11px] text-[var(--text-main)]">
+        <span class="text-lime-700 dark:text-neon font-bold">🎬 ${variants.length} VARIANTES ADAPTADAS A ${activeTenant?.name?.toUpperCase() || 'TU NEGOCIO'}:</span><br><br>
         ${variantsDisplay.join('<br>')}
       </div>
-      <p style="margin-top:10px; font-size:11px; color:#94A3B8;">Al confirmar, se insertarán automáticamente estas ${variants.length} publicaciones en la <b>Parrilla Multiplataforma</b> en estado <b>Pendiente Cliente</b> para su revisión.</p>`,
+      <p class="mt-2.5 text-[11px] text-[var(--text-muted)]">Al confirmar, se insertarán automáticamente estas ${variants.length} publicaciones en la <b>Parrilla Multiplataforma</b> en estado <b>Pendiente Cliente</b> para su revisión.</p>`,
         async () => {
           try {
             const defaultDates = ['Próx. Lunes · 19:00 hrs', 'Próx. Miércoles · 19:00 hrs', 'Próx. Viernes · 19:00 hrs'];
@@ -1518,7 +1505,7 @@ Genera exactamente 3 variantes de guion para Instagram Reels 9:16 en JSON estric
 
             triggerModal(
               `🧬 ${newlyCreated.length} Guiones Inyectados en la Parrilla`,
-              `Se han insertado exitosamente las variantes generadas por DeepSeek R1 para <b>"${reel.title}"</b> en la <b>Parrilla Multiplataforma</b>.`
+              `Se han insertado exitosamente las variantes generadas por IA para <b>"${reel.title}"</b> en la <b>Parrilla Multiplataforma</b>.`
             );
           } catch (err) {
             console.error('Error insertando variantes:', err);
@@ -1527,10 +1514,10 @@ Genera exactamente 3 variantes de guion para Instagram Reels 9:16 en JSON estric
         'Insertar Variantes en la Parrilla'
       );
     } catch (err) {
-      console.error('Error replicando reel viral con DeepSeek R1:', err);
+      console.error('Error replicando reel viral con IA:', err);
       triggerModal(
-        '⚠️ Error de Replicación DeepSeek R1',
-        'No se pudo conectar con DeepSeek R1 para replicar la fórmula viral. Verifica tu API Key de IA en Conexiones.'
+        '⚠️ Error de Replicación IA',
+        'No se pudo conectar con el motor de IA para replicar la fórmula viral. Verifica tu configuración en Conexiones.'
       );
     }
   };
@@ -1629,43 +1616,25 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
         tenantId: tenantKey,
         targetNetwork: 'INSTAGRAM',
         postType: 'Bio Instagram',
-        tone: 'Persuasivo, conciso, BANT',
+        tone: 'Persuasivo, conciso, orientado a conversión',
         topicPrompt: promptDirective,
       });
 
-      let raw = null;
-      if (aiRes?.generatedRawJson) {
-        raw = typeof aiRes.generatedRawJson === 'string' ? JSON.parse(aiRes.generatedRawJson) : aiRes.generatedRawJson;
-      } else if (aiRes?.content) {
-        raw = typeof aiRes.content === 'string' ? JSON.parse(aiRes.content) : aiRes.content;
-      } else if (aiRes?.hookText || aiRes?.copy || aiRes?.title) {
-        raw = aiRes;
-      }
-
-      let parsedBios = null;
-      if (Array.isArray(raw?.bios)) {
-        parsedBios = raw.bios;
-      } else if (raw?.copy || raw?.hookText) {
-        try {
-          const inner = typeof raw.copy === 'string' && raw.copy.trim().startsWith('{') ? JSON.parse(raw.copy) : null;
-          if (Array.isArray(inner?.bios)) {
-            parsedBios = inner.bios;
-          }
-        } catch (e) {}
-      }
+      const raw = parseAiJsonResponse(aiRes);
+      const parsedBios = Array.isArray(raw?.bios) ? raw.bios : null;
 
       if (Array.isArray(parsedBios) && parsedBios.length > 0) {
         setGeneratedBios(parsedBios);
       } else {
-        throw new Error('DeepSeek R1 no devolvió biografías válidas.');
+        throw new Error('El motor de IA no devolvió biografías válidas.');
       }
     } catch (e) {
-      console.error('Error generando bios con DeepSeek R1:', e);
+      console.error('Error generando bios con IA:', e);
       setGeneratedBios([]);
       setShowBioGeneratorModal(false);
       triggerModal(
-        '⚠️ Error de Generación DeepSeek R1',
-        'No se pudo conectar con DeepSeek R1 para generar las biografías. Verifica tu API Key de IA en Conexiones.'
+        '⚠️ Error de Generación IA',
+        'No se pudo conectar con el motor de IA para generar las biografías. Verifica tu configuración en Conexiones.'
       );
     } finally {
       setIsGeneratingBios(false);
@@ -1718,9 +1687,9 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
       triggerModal(
         '✅ 0 Infracciones Léxicas Detectadas',
         `<div class="space-y-2 font-mono text-xs">
-          <p class="text-emerald-400 font-bold">¡Auditoría de Glosario Aprobada con Honores!</p>
-          <p>Se escanearon <b>${posts.length} publicaciones</b> de la parrilla contra tus ${tabooList.length} palabras tabú registradas: <i>[${tabooList.join(', ')}]</i>.</p>
-          <div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300">
+          <p class="text-emerald-600 dark:text-emerald-400 font-bold">¡Auditoría de Glosario Aprobada con Honores!</p>
+          <p>Se escanearon <b>${posts.length} publicaciones</b> de la parrilla contra tus ${tabooList.length} palabras prohibidas registradas: <i>[${tabooList.join(', ')}]</i>.</p>
+          <div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300">
             Ninguna publicación programada infringe el Manual de Identidad de <b>${activeTenant?.name}</b>.
           </div>
         </div>`
@@ -1729,16 +1698,16 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
       triggerModal(
         '⚠️ Infracciones Léxicas Detectadas',
         `<div class="space-y-3 font-mono text-xs">
-          <p class="text-amber-400 font-bold">Se encontraron palabras tabú en ${violations.length} publicaciones:</p>
-          <div class="space-y-2 max-h-48 overflow-y-auto p-2 rounded-xl bg-black/40 border border-amber-500/30">
+          <p class="text-amber-600 dark:text-amber-400 font-bold">Se encontraron palabras prohibidas en ${violations.length} publicaciones:</p>
+          <div class="space-y-2 max-h-48 overflow-y-auto p-2.5 rounded-xl bg-[var(--bg-card-subtle)] border border-amber-500/30 text-[var(--text-main)]">
             ${violations
               .map(
                 (v) =>
-                  `<div>• <b>${v.postTitle}</b> (${v.network}): Infracción de: <span style="color:#EF4444; font-weight:bold;">${v.words.join(', ')}</span></div>`
+                  `<div>• <b>${v.postTitle}</b> (${v.network}): Infracción de: <span class="text-rose-600 dark:text-rose-400 font-bold">${v.words.join(', ')}</span></div>`
               )
               .join('')}
           </div>
-          <p class="text-[var(--text-muted)]">Recomendamos editar estas piezas en la Parrilla o regenerarlas con el Re-roll táctico.</p>
+          <p class="text-[var(--text-muted)]">Recomendamos editar estas piezas en la Parrilla o regenerarlas con el asistente IA.</p>
         </div>`
       );
     }
@@ -1770,45 +1739,13 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
       const score = auditRes?.brandAlignmentScore ?? auditRes?.score ?? null;
       const realHookRate = auditRes?.hookRateAvg ?? auditRes?.avgHookRate ?? null;
       const effectiveOfferHook = commercialOffer?.hook || brandDna?.leadMagnetHook || '';
-      const updatedChecks = [
-        {
-          id: 'chk-1',
-          title: 'Biografía con Disparador BANT y Oferta Activa',
-          status: effectiveOfferHook ? 'PASSED' : 'WARNING',
-          diagnosis: effectiveOfferHook
-            ? `Biografía alineada con la oferta activa: "${effectiveOfferHook}".`
-            : 'La biografía no tiene un gancho de conversión directo definido.',
-          recommendation: 'Inyectar el CTA comercial directo con palabra clave hacia WhatsApp Cloud API.',
-        },
-        {
-          id: 'chk-2',
-          title: 'Consistencia con Manual de Identidad & Taboo Words',
-          status: (auditRes?.tabooViolationsCount || 0) === 0 ? 'PASSED' : 'WARNING',
-          diagnosis: (auditRes?.tabooViolationsCount || 0) === 0
-            ? '0 infracciones de palabras tabú detectadas en el feed analizado.'
-            : `${auditRes.tabooViolationsCount} publicaciones contienen términos del glosario prohibido.`,
-          recommendation: 'Mantener la verificación del filtro léxico activo en todas las publicaciones programadas.',
-        },
-        {
-          id: 'chk-3',
-          title: 'Enlace Soberano a WhatsApp Cloud API',
-          status: activeTenant?.phone ? 'PASSED' : 'WARNING',
-          diagnosis: activeTenant?.phone
-            ? `Canal de destino validado: ${activeTenant.phone}.`
-            : 'Sin número de WhatsApp verificado en la ficha de configuración.',
-          recommendation: 'Asegurar que el enlace en bio dirija al protocolo de agendamiento 24/7.',
-        },
-        {
-          id: 'chk-4',
-          title: 'Hook Rate Promedio Superior al Benchmark (25%)',
-          status: realHookRate != null ? (Number(realHookRate) >= 25 ? 'PASSED' : 'WARNING') : 'WARNING',
-          diagnosis:
-            realHookRate != null
-              ? `Retención promedio de los primeros 3 segundos en Reels: ${realHookRate}% (Benchmark del sector: 25.0%).`
-              : 'Sin datos suficientes de retención en Reels sincronizados desde Meta.',
-          recommendation: 'Continuar empleando el Laboratorio Viral para iterar sobre las fórmulas con mayor tracción.',
-        },
-      ];
+      const updatedChecks = buildProfileAuditChecks({
+        offerHook: effectiveOfferHook,
+        tabooViolationsCount: auditRes?.tabooViolationsCount || 0,
+        phone: activeTenant?.phone,
+        realHookRate,
+        hasLiveAuditData: true,
+      });
       const summaryText =
         auditRes?.auditSummary ||
         (score != null
@@ -1869,18 +1806,18 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
         <header className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border-color)] pb-4 gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="p-1.5 rounded-lg bg-neon/10 text-neon border border-neon/30">
+              <span className="p-1.5 rounded-lg bg-neon/10 text-lime-700 dark:text-neon border border-neon/30">
                 <Calendar className="w-4 h-4" />
               </span>
               <span className="text-xs font-mono text-[var(--text-muted)] uppercase tracking-wider">
-                Content Ops & Creative Intelligence
+                Estudio de Contenido & Estrategia Editorial
               </span>
             </div>
             <h2 className="text-3xl font-black uppercase tracking-tighter text-[var(--text-main)]">
-              Estudio de <span className="text-neon">Contenidos & Crecimiento</span>
+              Estudio de <span className="text-lime-700 dark:text-neon">Contenido</span>
             </h2>
             <p className="text-xs font-mono text-[var(--text-muted)] mt-1">
-              Parrilla editorial, ADN de negocio, deconstrucción viral de reels y auditoría de perfiles para:{' '}
+              Parrilla editorial, ADN de negocio, laboratorio de reels y auditoría de perfiles para:{' '}
               <strong className="text-[var(--text-main)]">{activeTenant?.name}</strong>
             </p>
           </div>
@@ -1893,7 +1830,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
               className="px-3 py-2 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] text-xs font-mono border border-[var(--border-color)] hover:border-neon/40 flex items-center gap-2 transition-all shadow-sm"
               title="Configurar Autogenerador Semanal con IA"
             >
-              <Zap className={`w-3.5 h-3.5 ${weeklyCronConfig.enabled ? 'text-lime-700 dark:text-neon animate-pulse' : 'text-zinc-500'}`} />
+              <Zap className={`w-3.5 h-3.5 ${weeklyCronConfig.enabled ? 'text-lime-700 dark:text-neon animate-pulse' : 'text-[var(--text-muted)]'}`} />
               <div className="text-left hidden sm:block">
                 <span className="text-[10px] text-[var(--text-muted)] block leading-none">Autogenerador</span>
                 <span className="text-[11px] font-bold text-lime-700 dark:text-neon leading-none">
@@ -1903,18 +1840,16 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
               <Settings className="w-3.5 h-3.5 text-[var(--text-muted)] ml-1" />
             </button>
 
-            {/* Botón Generar Guion IA (Abre Modal Quirúrgico) - Solo visible en la Parrilla */}
-            {activeTab === 'grid' && (
-              <button
-                type="button"
-                onClick={handleGenerateAiPost}
-                disabled={isGeneratingAi}
-                className="bg-neon text-black text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_15px_var(--neon-glow)] flex items-center gap-2 active:scale-95 disabled:opacity-50"
-              >
-                <Sparkles className={`w-4 h-4 ${isGeneratingAi ? 'animate-spin' : ''}`} />
-                <span>{isGeneratingAi ? 'Pensando con DeepSeek R1...' : 'Generar Guion IA (DeepSeek R1)'}</span>
-              </button>
-            )}
+            {/* Botón Generar Guion IA estable en todos los tabs para evitar CLS */}
+            <button
+              type="button"
+              onClick={handleGenerateAiPost}
+              disabled={isGeneratingAi}
+              className="min-w-[180px] bg-neon text-black text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_15px_var(--neon-glow)] flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+            >
+              <Sparkles className={`w-4 h-4 ${isGeneratingAi ? 'animate-spin' : ''}`} />
+              <span>{isGeneratingAi ? 'Generando Guion...' : 'Generar Guion IA'}</span>
+            </button>
           </div>
         </header>
       )}
@@ -1934,9 +1869,9 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
           <LayoutGrid className="w-4 h-4" />
           <span>Parrilla Multiplataforma</span>
           <span
-            className={`text-[10px] font-mono px-1.5 py-0.2 rounded-md font-black ${
+            className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md font-black ${
               activeTab === 'grid'
-                ? 'bg-black text-neon'
+                ? 'bg-black/15 text-black'
                 : 'bg-[var(--bg-card-subtle)] text-[var(--text-muted)] border border-[var(--border-color)]'
             }`}
           >
@@ -1958,11 +1893,11 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
           <span
             className={`text-[9px] font-mono uppercase px-1.5 py-0.5 rounded font-black tracking-wider ${
               activeTab === 'dna'
-                ? 'bg-black text-neon'
-                : 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/30'
+                ? 'bg-black/15 text-black'
+                : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30'
             }`}
           >
-            RAG Listo
+            ADN Listo
           </span>
         </button>
 
@@ -1978,9 +1913,9 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
           <Flame className="w-4 h-4" />
           <span>Laboratorio de Reels Virales</span>
           <span
-            className={`text-[10px] font-mono px-1.5 py-0.2 rounded-md font-black ${
+            className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md font-black ${
               activeTab === 'viral_lab'
-                ? 'bg-black text-neon'
+                ? 'bg-black/15 text-black'
                 : 'bg-[var(--bg-card-subtle)] text-[var(--text-muted)] border border-[var(--border-color)]'
             }`}
           >
@@ -2000,10 +1935,10 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
           <Search className="w-4 h-4" />
           <span>Auditoría de Perfiles</span>
           <span
-            className={`text-[10px] font-mono px-1.5 py-0.2 rounded-md font-bold ${
+            className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md font-bold ${
               activeTab === 'audit'
-                ? 'bg-black text-neon'
-                : 'bg-lime-500/15 text-lime-600 dark:text-lime-400 border border-lime-500/30'
+                ? 'bg-black/15 text-black'
+                : 'bg-lime-500/15 text-lime-700 dark:text-lime-400 border border-lime-500/30'
             }`}
           >
             {profileAudit.score != null ? `${profileAudit.score}%` : 'N/D'}
@@ -2011,12 +1946,12 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
         </button>
         </div>
 
-        {embedded && activeTab === 'grid' && (
+        {embedded && (
           <button
             type="button"
             onClick={handleGenerateAiPost}
             disabled={isGeneratingAi}
-            className="bg-neon text-black text-xs font-bold px-3.5 py-1.5 rounded-xl hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_12px_var(--neon-glow)] flex items-center gap-1.5 active:scale-95 shrink-0 disabled:opacity-50"
+            className="min-w-[155px] bg-neon text-black text-xs font-bold px-3.5 py-1.5 rounded-xl hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_12px_var(--neon-glow)] flex items-center justify-center gap-1.5 active:scale-95 shrink-0 disabled:opacity-50"
           >
             <Sparkles className={`w-3.5 h-3.5 ${isGeneratingAi ? 'animate-spin' : ''}`} />
             <span>{isGeneratingAi ? 'Generando...' : 'Generar Guion IA'}</span>
@@ -2025,11 +1960,11 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
       </div>
 
       {/* ========================================================================= */}
-      {/* TAB 1: PARRILLA DE CONTENIDO MULTIPLATAFORMA (IDEA 5)                     */}
+      {/* TAB 1: PARRILLA DE CONTENIDO MULTIPLATAFORMA                              */}
       {/* ========================================================================= */}
       {activeTab === 'grid' && (
         <div className="space-y-6 animate-fade-in">
-          {/* BANNER HERO: REVISIÓN DE PARRILLA HITL (HUMAN-IN-THE-LOOP) */}
+          {/* BANNER HERO: REVISIÓN DE PARRILLA ASISTIDA */}
           {!dismissBatchBanner && posts.length > 0 && (() => {
             const pendingCount = posts.filter(
               (p) => p.status === 'PENDIENTE_CLIENTE' || p.status === 'PENDIENTE_APROBACION' || p.status === 'PENDING'
@@ -2043,23 +1978,23 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
               <div className="rounded-2xl bg-gradient-to-r from-[var(--bg-card)] via-[var(--bg-card)] to-neon/5 border border-neon/40 p-4 sm:p-5 relative overflow-hidden shadow-sm animate-fade-in">
                 <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
                   <div className="space-y-1.5 flex-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-md bg-neon text-black flex items-center gap-1 shadow-neon-sm">
                         <Bot className="w-3 h-3" />
-                        Parrilla Semanal HITL
+                        Parrilla Semanal Asistida
                       </span>
                       <span className="text-[11px] font-mono text-[var(--text-muted)]">
-                        DeepSeek R1 • Feedback de Métricas & Oferta Activa
+                        Asistente IA • Feedback de Métricas & Oferta Activa
                       </span>
                     </div>
                     <h3 className="text-sm sm:text-base font-bold text-[var(--text-main)] flex items-center gap-2">
                       <span>Lote de Contenido Pendiente de Revisión</span>
-                      <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                      <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
                         {pendingCount} por validar
                       </span>
                     </h3>
                     <p className="text-xs text-[var(--text-muted)] font-mono">
-                      Revisa los guiones generados por la IA. Puedes regenerar (re-roll) cualquier pieza individual o dar el visto bueno general.
+                      Revisa los guiones generados por la IA. Puedes regenerar cualquier pieza individual o dar el visto bueno general.
                     </p>
 
                     {/* Barra de progreso de aprobación */}
@@ -2107,67 +2042,14 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
             );
           })()}
 
-          {/* BANNER: OFERTA COMERCIAL VIGENTE & CEREBRO RAG */}
-          <div className="rounded-2xl bg-[var(--bg-card)] border-2 border-neon/50 p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm relative overflow-hidden">
-            <div className="space-y-2 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[10px] font-mono font-black uppercase px-2.5 py-1 rounded-md bg-neon text-black shadow-neon-sm">
-                  OFERTA COMERCIAL DEL MES
-                </span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 flex items-center gap-1 font-bold">
-                  <Sparkles className="w-3 h-3 text-cyan-400" />
-                  Cerebro RAG Activo (DeepSeek R1)
-                </span>
-                <span className="text-xs font-mono text-[var(--text-muted)]">
-                  Doc Activo:{' '}
-                  <strong className="text-[var(--text-main)] underline font-bold">
-                    {commercialOffer.docName || 'Sin documento cargado'}
-                  </strong>
-                </span>
-                {!(commercialOffer.hook || brandDna.leadMagnetHook) && (
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-500 border border-amber-500/30 font-bold">
-                    Sin gancho configurado
-                  </span>
-                )}
-              </div>
-
-              {(commercialOffer.hook || brandDna.leadMagnetHook) ? (
-                <div className="space-y-1">
-                  <p className="text-xs text-[var(--text-main)] font-bold font-mono">
-                    Gancho Rector:{' '}
-                    <span className="text-lime-700 dark:text-neon font-black">
-                      "{commercialOffer.hook || brandDna.leadMagnetHook}"
-                    </span>
-                  </p>
-                  <p className="text-[11px] text-[var(--text-muted)] font-mono font-medium">
-                    CTA de Cierre:{' '}
-                    <span className="text-cyan-600 dark:text-cyan-400 font-bold">
-                      {commercialOffer.cta || brandDna.leadMagnetCta || 'Sin llamado a la acción'}
-                    </span>
-                    {commercialOffer.validity && (
-                      <span> • Vigencia: <strong className="text-[var(--text-main)]">{commercialOffer.validity}</strong></span>
-                    )}
-                  </p>
-                  <p className="text-[10px] font-mono text-[var(--text-muted)] pt-0.5">
-                    💡 <em>Este gancho y CTA se inyectan como anclas comerciales directas en cada guion generado abajo.</em>
-                  </p>
-                </div>
-              ) : (
-                <p className="text-xs text-[var(--text-muted)] font-mono italic">
-                  Define el gancho comercial del mes para que los guiones de DeepSeek R1 promuevan tu oferta insignia con autoridad.
-                </p>
-              )}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setShowOfferModal(true)}
-              className="px-4 py-2 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-xs font-mono font-bold text-[var(--text-main)] border border-[var(--border-color)] transition-all shrink-0 flex items-center gap-1.5 shadow-sm"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-lime-700 dark:text-neon" />
-              <span>{commercialOffer.hook || brandDna.leadMagnetHook ? 'Actualizar Oferta del Mes' : 'Configurar Oferta del Mes'}</span>
-            </button>
-          </div>
+          {/* BANNER UNIFICADO: OFERTA COMERCIAL VIGENTE */}
+          <CommercialOfferBanner
+            variant="grid"
+            commercialOffer={commercialOffer}
+            leadMagnetHook={brandDna.leadMagnetHook}
+            leadMagnetCta={brandDna.leadMagnetCta}
+            onEditOffer={() => setShowOfferModal(true)}
+          />
 
           {/* Social Networks Filter Bar & Status Bar */}
           <div className="space-y-3 pb-2">
@@ -2258,7 +2140,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                       className="px-4 py-2.5 rounded-xl bg-neon text-black font-bold text-xs font-mono shadow-[0_0_12px_var(--neon-glow)] hover:bg-[var(--neon-hover)] transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
                     >
                       <Sparkles className={`w-4 h-4 ${isGeneratingAi ? 'animate-spin' : ''}`} />
-                      <span>{isGeneratingAi ? 'Pensando con DeepSeek...' : 'Generar Guion IA con DeepSeek R1'}</span>
+                      <span>{isGeneratingAi ? 'Generando Guion...' : 'Generar Guion con IA'}</span>
                     </button>
                     <button
                       type="button"
@@ -2273,7 +2155,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                       onClick={() => setShowOfferModal(true)}
                       className="px-4 py-2.5 rounded-xl bg-[var(--bg-card-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)] font-bold text-xs font-mono border border-[var(--border-color)] transition-all flex items-center gap-2"
                     >
-                      <Sparkles className="w-4 h-4 text-cyan-500" />
+                      <Sparkles className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
                       <span>Configurar Oferta Comercial</span>
                     </button>
                   </div>
@@ -2299,15 +2181,15 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                       : 'border-emerald-500/30 bg-emerald-500/[0.02]'
                   }`}
                 >
-                  {/* Overlay durante Re-roll individual */}
+                  {/* Overlay durante regeneración individual */}
                   {rerollingPostId === post.id && (
-                    <div className="absolute inset-0 bg-black/85 backdrop-blur-xs z-20 flex flex-col items-center justify-center gap-2.5 p-4 animate-fade-in text-center">
+                    <div className="absolute inset-0 bg-[var(--bg-panel)]/90 backdrop-blur-sm z-20 flex flex-col items-center justify-center gap-2.5 p-4 animate-fade-in text-center">
                       <Sparkles className="w-6 h-6 text-lime-700 dark:text-neon animate-spin" />
                       <span className="text-xs font-mono font-bold text-lime-700 dark:text-neon">
-                        DeepSeek R1 re-escribiendo guión...
+                        Asistente IA re-escribiendo guión...
                       </span>
-                      <span className="text-[10px] font-mono text-zinc-400 max-w-xs">
-                        Aplicando ajuste táctico y preservando Brand DNA
+                      <span className="text-[10px] font-mono text-[var(--text-muted)] max-w-xs">
+                        Aplicando ajuste táctico y preservando ADN de Marca
                       </span>
                     </div>
                   )}
@@ -2361,7 +2243,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                         Inyectado de Oferta del Mes
                       </span>
                       {post.aiConfidence != null && (
-                        <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-bold">
+                        <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border border-cyan-500/20 font-bold">
                           {post.aiConfidence}% Match con ADN
                         </span>
                       )}
@@ -2385,7 +2267,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                           className="opacity-70 hover:opacity-100 text-[10px] font-mono text-lime-700 dark:text-neon font-bold flex items-center gap-1"
                           title="Copiar únicamente el Gancho"
                         >
-                          {copiedHookId === post.id ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                          {copiedHookId === post.id ? <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> : <Copy className="w-3 h-3" />}
                           <span>{copiedHookId === post.id ? '¡Copiado!' : 'Copiar Gancho'}</span>
                         </button>
                       </div>
@@ -2416,7 +2298,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                         <span>{post.estimatedReach || 'Sin medición'}</span>
                       </span>
                       {post.hookRate && (
-                        <span className="text-emerald-400 font-bold" title="Hook Rate de retención en 0-3 segundos">
+                        <span className="text-emerald-600 dark:text-emerald-400 font-bold" title="Hook Rate de retención en 0-3 segundos">
                           {post.hookRate} Retención
                         </span>
                       )}
@@ -2430,7 +2312,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                         className="px-2.5 py-1.5 rounded-lg bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-main)] text-xs font-mono border border-[var(--border-color)] flex items-center gap-1 transition-colors"
                         title="Simular visualización en pantalla de smartphone"
                       >
-                        <Smartphone className="w-3.5 h-3.5 text-cyan-400" />
+                        <Smartphone className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
                         <span className="text-[10px] font-bold">Preview</span>
                       </button>
 
@@ -2445,7 +2327,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                         <span className="text-[10px] font-bold">Editar</span>
                       </button>
 
-                      {/* Re-roll / Regenerar con IA */}
+                      {/* Regenerar con IA */}
                       {isPending && (
                         <button
                           type="button"
@@ -2456,11 +2338,11 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                           }}
                           disabled={rerollingPostId === post.id}
                           className="px-2.5 py-1.5 rounded-lg bg-[var(--bg-card-subtle)] hover:bg-neon/10 hover:border-neon/40 text-[var(--text-muted)] hover:text-lime-700 dark:hover:text-neon text-xs font-mono border border-[var(--border-color)] flex items-center gap-1 transition-all"
-                          title="Regenerar este guión con otro ángulo psicológico (Re-roll)"
+                          title="Regenerar este guión con otro ángulo psicológico"
                         >
                           <RotateCcw className={`w-3.5 h-3.5 text-lime-700 dark:text-neon ${rerollingPostId === post.id ? 'animate-spin' : ''}`} />
                           <span className="text-[10px] font-bold">
-                            {rerollingPostId === post.id ? 'Re-roll...' : 'Re-roll IA'}
+                            {rerollingPostId === post.id ? 'Regenerando...' : 'Regenerar'}
                           </span>
                         </button>
                       )}
@@ -2472,7 +2354,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                         className="px-2.5 py-1.5 rounded-lg bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-main)] text-xs font-mono border border-[var(--border-color)] flex items-center gap-1 transition-colors"
                         title="Copiar Copy Completo y Hashtags al Portapapeles"
                       >
-                        {copiedPostId === post.id ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                        {copiedPostId === post.id ? <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                         <span className="text-[10px] font-bold">{copiedPostId === post.id ? '¡Copiado!' : 'Copiar'}</span>
                       </button>
 
@@ -2480,7 +2362,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                       <button
                         type="button"
                         onClick={() => setPostToDelete(post)}
-                        className="p-1.5 rounded-lg bg-[var(--bg-card-subtle)] hover:bg-rose-500/15 hover:border-rose-500/40 text-[var(--text-muted)] hover:text-rose-400 border border-[var(--border-color)] transition-colors"
+                        className="p-1.5 rounded-lg bg-[var(--bg-card-subtle)] hover:bg-rose-500/15 hover:border-rose-500/40 text-[var(--text-muted)] hover:text-rose-600 dark:hover:text-rose-400 border border-[var(--border-color)] transition-colors"
                         title="Descartar y eliminar publicación de la parrilla"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -2518,10 +2400,10 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                         <button
                           type="button"
                           onClick={() => handleToggleApprovePost(post.id)}
-                          className="px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-mono font-bold flex items-center gap-1 hover:bg-emerald-500/20 transition-all"
+                          className="px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 text-xs font-mono font-bold flex items-center gap-1 hover:bg-emerald-500/20 transition-all"
                           title="Clic para regresar a estado pendiente si requieres ajustes"
                         >
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                           <span>Aprobado ✓</span>
                         </button>
                       )}
@@ -2562,10 +2444,10 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
             <div className="flex flex-wrap items-center gap-2">
               <Link
                 href="/crm?tab=persona_strategy"
-                className="px-3.5 py-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 text-xs font-mono border border-cyan-500/30 flex items-center gap-1.5 transition-colors font-bold"
+                className="px-3.5 py-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-700 dark:text-cyan-400 text-xs font-mono border border-cyan-500/30 flex items-center gap-1.5 transition-colors font-bold"
                 title="Abrir la delimitación canónica del Buyer Persona y Matriz 4Ps"
               >
-                <span>Buyer Persona & 4Ps (SSOT)</span>
+                <span>Buyer Persona & 4 Ps</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
               <button
@@ -2699,11 +2581,11 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
             {/* 3. Glosario Prohibido (Palabras Tabú) */}
             <div className="p-5 rounded-2xl bg-rose-500/5 border border-rose-500/30 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] text-rose-500 font-bold uppercase tracking-wider block flex items-center gap-1.5">
+                <span className="text-[10px] text-rose-600 dark:text-rose-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
                   <AlertTriangle className="w-3.5 h-3.5" />
-                  3. Glosario Prohibido (Palabras Tabú & Guardrails)
+                  3. Glosario Prohibido (Palabras Tabú & Límites)
                 </span>
-                <span className="text-[9px] text-rose-400 font-bold">Regla Inviolable IA</span>
+                <span className="text-[9px] text-rose-600 dark:text-rose-400 font-bold">Regla Inviolable IA</span>
               </div>
 
               {/* Renderizado de Tags de Palabras Tabú */}
@@ -2715,7 +2597,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                   .map((word) => (
                     <span
                       key={word}
-                      className="px-2 py-0.5 rounded-md bg-rose-500/15 text-rose-400 border border-rose-500/30 text-[10px] font-bold flex items-center gap-1"
+                      className="px-2 py-0.5 rounded-md bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30 text-[10px] font-bold flex items-center gap-1"
                     >
                       <span>{word}</span>
                       <button
@@ -2728,7 +2610,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                             .join(', ');
                           setBrandDna((prev) => ({ ...prev, tabooWords: remaining }));
                         }}
-                        className="hover:text-rose-200"
+                        className="hover:text-rose-900 dark:hover:text-rose-200"
                         title={`Eliminar "${word}"`}
                       >
                         <X className="w-3 h-3" />
@@ -2782,11 +2664,11 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                         }}
                         className={`text-[9px] px-2 py-0.5 rounded border transition-colors ${
                           isAdded
-                            ? 'opacity-40 line-through border-zinc-700 bg-zinc-900 text-zinc-500 cursor-not-allowed'
-                            : 'border-rose-500/20 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20'
+                            ? 'opacity-40 line-through border-[var(--border-color)] bg-[var(--bg-card-subtle)] text-[var(--text-faint)] cursor-not-allowed'
+                            : 'border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-400 hover:bg-rose-500/20'
                         }`}
                       >
-                        + "{sug}"
+                        + &quot;{sug}&quot;
                       </button>
                     );
                   })}
@@ -2794,13 +2676,13 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
               </div>
             </div>
 
-            {/* 4. Audiencia & Dolores del Cliente Ideal (ICP) */}
+            {/* 4. Audiencia & Dolores del Cliente Ideal */}
             <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] text-lime-700 dark:text-neon font-bold uppercase tracking-wider block">
                   4. Audiencia & Dolores Clave (Buyer Persona)
                 </span>
-                <span className="text-[9px] text-cyan-400 font-bold">Sincronizado</span>
+                <span className="text-[9px] text-cyan-700 dark:text-cyan-400 font-bold">Sincronizado</span>
               </div>
 
               {/* Ficha Resumen del Buyer Persona */}
@@ -2840,71 +2722,20 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
               </div>
             </div>
 
-            {/* 5. Ancla Comercial Activa (Oferta del Mes Vinculada - Single Source of Truth) */}
-            <div className="p-5 rounded-2xl bg-gradient-to-r from-[var(--bg-card)] via-[var(--bg-card)] to-neon/5 border-2 border-neon/50 space-y-3 md:col-span-2">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[var(--border-color)]">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded bg-neon text-black">
-                    5. ANCLA COMERCIAL ACTIVA (OFERTA DEL MES VINCULADA)
-                  </span>
-                  <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 font-bold">
-                    Single Source of Truth
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowOfferModal(true)}
-                  className="px-3 py-1.5 rounded-xl bg-neon text-black font-bold text-xs font-mono shadow-[0_0_12px_var(--neon-glow)] hover:bg-[var(--neon-hover)] transition-all flex items-center gap-1.5 self-start sm:self-auto active:scale-95"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Actualizar Oferta Comercial & Documento</span>
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
-                <div className="p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-1">
-                  <span className="text-[9px] uppercase text-[var(--text-muted)] font-bold block flex items-center gap-1">
-                    <FileText className="w-3 h-3 text-cyan-400" />
-                    Documento de Respaldo RAG:
-                  </span>
-                  <p className="text-xs font-bold text-[var(--text-main)] truncate">
-                    {commercialOffer.docName || 'Sin documento cargado'}
-                  </p>
-                  <span className="text-[9px] font-mono text-emerald-400 block">
-                    {commercialOffer.docSize ? `Tamaño: ${commercialOffer.docSize} • Listo para IA` : 'Puedes adjuntar PDF/Word'}
-                  </span>
-                </div>
-
-                <div className="p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-1">
-                  <span className="text-[9px] uppercase text-[var(--text-muted)] font-bold block flex items-center gap-1">
-                    <Flame className="w-3 h-3 text-lime-700 dark:text-neon" />
-                    Gancho Rector Activo:
-                  </span>
-                  <p className="text-xs italic font-bold text-[var(--text-main)] line-clamp-2">
-                    "{commercialOffer.hook || 'Sin gancho definido'}"
-                  </p>
-                </div>
-
-                <div className="p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-1">
-                  <span className="text-[9px] uppercase text-[var(--text-muted)] font-bold block flex items-center gap-1">
-                    <MessageSquare className="w-3 h-3 text-emerald-400" />
-                    CTA & Vigencia:
-                  </span>
-                  <p className="text-xs font-bold text-[var(--text-main)] line-clamp-1">
-                    "{commercialOffer.cta || 'Escríbenos por WhatsApp'}"
-                  </p>
-                  <span className="text-[9px] font-mono text-zinc-400 block">
-                    Vigencia: {commercialOffer.validity || 'Mes en curso'}
-                  </span>
-                </div>
-              </div>
-            </div>
+            {/* 5. Ancla Comercial Activa (Banner Unificado) */}
+            <CommercialOfferBanner
+              variant="dna"
+              commercialOffer={commercialOffer}
+              leadMagnetHook={brandDna.leadMagnetHook}
+              leadMagnetCta={brandDna.leadMagnetCta}
+              onEditOffer={() => setShowOfferModal(true)}
+            />
           </div>
         </div>
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 3: LABORATORIO DE REELS VIRALES (IDEAS 3 Y 6)                         */}
+      {/* TAB 3: LABORATORIO DE REELS VIRALES                                       */}
       {/* ========================================================================= */}
       {activeTab === 'viral_lab' && (
         <div className="space-y-6 animate-fade-in">
@@ -2917,7 +2748,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                 </span>
                 <div>
                   <h3 className="text-xl font-bold text-[var(--text-main)] tracking-tight flex items-center gap-2">
-                    Laboratorio de Deconstrucción & Replicación Viral (DeepSeek R1)
+                    Laboratorio de Deconstrucción & Replicación Viral
                   </h3>
                   <p className="text-xs text-[var(--text-muted)] font-mono">
                     Análisis de videos con mayor alcance, fórmulas por vertical y clonación algorítmica hacia la Parrilla Multiplataforma
@@ -2930,9 +2761,9 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
               <button
                 type="button"
                 onClick={() => setShowExternalReelModal(true)}
-                className="px-3.5 py-2 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-xs font-mono font-bold text-cyan-400 border border-cyan-500/30 transition-all flex items-center gap-1.5 active:scale-95"
+                className="px-3.5 py-2 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-xs font-mono font-bold text-cyan-700 dark:text-cyan-400 border border-cyan-500/30 transition-all flex items-center gap-1.5 active:scale-95"
               >
-                <Search className="w-3.5 h-3.5 text-cyan-400" />
+                <Search className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
                 <span>Deconstruir Reel Externo</span>
               </button>
 
@@ -2949,10 +2780,10 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
               <button
                 type="button"
                 onClick={() => setShowMetaConnectModal(true)}
-                className="px-3 py-2 rounded-xl bg-pink-500/10 hover:bg-pink-500/20 text-xs font-mono font-bold text-pink-400 border border-pink-500/30 transition-all flex items-center gap-1.5 active:scale-95"
+                className="px-3 py-2 rounded-xl bg-pink-500/10 hover:bg-pink-500/20 text-xs font-mono font-bold text-pink-700 dark:text-pink-400 border border-pink-500/30 transition-all flex items-center gap-1.5 active:scale-95"
                 title="Configurar credenciales de Meta Graph API"
               >
-                <Instagram className="w-3.5 h-3.5 text-pink-400" />
+                <Instagram className="w-3.5 h-3.5 text-pink-600 dark:text-pink-400" />
                 <span>Conexión Meta</span>
               </button>
             </div>
@@ -2969,7 +2800,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                   Laboratorio de Reels Virales Listo para Activación
                 </h4>
                 <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                  DeepSeek R1 deconstruye ganchos visuales y retención algorítmica. Sincroniza tus Reels desde Meta Graph API, analiza videos de referencia o genera nuevos guiones con IA.
+                  Nuestro asistente IA deconstruye ganchos visuales y retención algorítmica. Sincroniza tus Reels desde Meta, analiza videos de referencia o genera nuevos guiones con IA.
                 </p>
               </div>
 
@@ -3005,17 +2836,17 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                 {/* Pathway 2: Deconstruir Reel de Competidor */}
                 <div className="p-5 rounded-2xl bg-[var(--bg-card-subtle)] border border-cyan-500/30 flex flex-col justify-between space-y-4 hover:border-cyan-500 transition-all">
                   <div className="space-y-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center">
+                    <div className="w-9 h-9 rounded-xl bg-cyan-500/15 text-cyan-700 dark:text-cyan-400 flex items-center justify-center">
                       <Search className="w-5 h-5" />
                     </div>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-400 font-bold uppercase">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-700 dark:text-cyan-400 font-bold uppercase">
                       Ingeniería Inversa
                     </span>
                     <h5 className="text-sm font-bold text-[var(--text-main)]">
                       Deconstruir Reel de Competidor
                     </h5>
                     <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                      Pega la URL o el gancho de cualquier Reel o TikTok viral y DeepSeek R1 descompondrá su estructura y psicología.
+                      Pega la URL o el gancho de cualquier Reel o TikTok viral y la IA descompondrá su estructura y psicología.
                     </p>
                   </div>
                   <button
@@ -3031,10 +2862,10 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                 {/* Pathway 3: Conectar Instagram Business */}
                 <div className="p-5 rounded-2xl bg-[var(--bg-card-subtle)] border border-pink-500/30 flex flex-col justify-between space-y-4 hover:border-pink-500 transition-all">
                   <div className="space-y-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-pink-500/15 text-pink-400 flex items-center justify-center">
+                    <div className="w-9 h-9 rounded-xl bg-pink-500/15 text-pink-600 dark:text-pink-400 flex items-center justify-center">
                       <Instagram className="w-5 h-5" />
                     </div>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-pink-500/15 text-pink-400 font-bold uppercase">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-pink-500/15 text-pink-700 dark:text-pink-400 font-bold uppercase">
                       Meta Graph API v21.0
                     </span>
                     <h5 className="text-sm font-bold text-[var(--text-main)]">
@@ -3066,8 +2897,8 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                     <div className="flex items-center justify-between">
                       <span className={`text-[10px] font-mono px-2.5 py-1 rounded-full font-bold uppercase border ${
                         reel.isExternal
-                          ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
-                          : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                          ? 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-500/30'
+                          : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30'
                       }`}>
                         {reel.badge || (reel.isExternal ? 'Outlier Externo Analizado' : 'Viral Outlier Confirmado')}
                       </span>
@@ -3075,7 +2906,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                     </div>
 
                     <h4 className="text-base font-bold text-[var(--text-main)] font-sans line-clamp-2">
-                      "{reel.title}"
+                      &quot;{reel.title}&quot;
                     </h4>
 
                     {/* Telemetry Metrics */}
@@ -3089,16 +2920,16 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                         <span className="text-xs font-bold text-lime-700 dark:text-neon">{reel.hookRate}</span>
                       </div>
                       <div className="p-2.5 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-center">
-                        <span className="text-[10px] text-[var(--text-muted)] block">DMs CAPI</span>
+                        <span className="text-[10px] text-[var(--text-muted)] block">Mensajes (DMs)</span>
                         <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{reel.dmsGenerated}</span>
                       </div>
                     </div>
 
-                    {/* DeepSeek R1 Reverse Engineering Card */}
+                    {/* Reverse Engineering Card */}
                     <div className="p-4 rounded-2xl bg-[var(--bg-card-subtle)] border border-neon/30 space-y-2.5 text-xs font-mono">
                       <span className="text-[10px] text-lime-700 dark:text-neon font-bold uppercase flex items-center gap-1.5">
                         <Bot className="w-3.5 h-3.5" />
-                        Deconstrucción Algorítmica (DeepSeek R1):
+                        Deconstrucción Algorítmica (Asistente IA):
                       </span>
                       <p className="text-[var(--text-main)] font-sans text-xs leading-relaxed">
                         {reel.whyItWorked}
@@ -3112,14 +2943,14 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                         {reel.visualHook && (
                           <div>
                             <span className="text-[var(--text-muted)]">Estímulo 0-3s: </span>
-                            <span className="text-zinc-300">{reel.visualHook}</span>
+                            <span className="text-[var(--text-main)]">{reel.visualHook}</span>
                           </div>
                         )}
                         {reel.deconstructedFormula?.hook0to3s && (
-                          <div className="p-2.5 rounded-xl bg-black/40 border border-zinc-800 text-[10px] text-zinc-300 space-y-1">
-                            <div><strong className="text-lime-700 dark:text-neon">Gancho 0-3s:</strong> "{reel.deconstructedFormula.hook0to3s}"</div>
-                            <div><strong className="text-cyan-400">Retención 3-15s:</strong> {reel.deconstructedFormula.retention3to15s}</div>
-                            <div><strong className="text-emerald-400">CTA:</strong> {reel.deconstructedFormula.cta15to30s}</div>
+                          <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[10px] text-[var(--text-main)] space-y-1">
+                            <div><strong className="text-lime-700 dark:text-neon">Gancho 0-3s:</strong> &quot;{reel.deconstructedFormula.hook0to3s}&quot;</div>
+                            <div><strong className="text-cyan-700 dark:text-cyan-400">Retención 3-15s:</strong> {reel.deconstructedFormula.retention3to15s}</div>
+                            <div><strong className="text-emerald-700 dark:text-emerald-400">CTA:</strong> {reel.deconstructedFormula.cta15to30s}</div>
                           </div>
                         )}
                       </div>
@@ -3144,10 +2975,40 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 4: AUDITORÍA DE PERFILES SOCIALES (IDEA 4)                             */}
+      {/* TAB 4: AUDITORÍA DE PERFILES SOCIALES                                     */}
       {/* ========================================================================= */}
       {activeTab === 'audit' && (
         <div className="space-y-6 animate-fade-in">
+          {(isLoadingAudit || isAuditingBrand) ? (
+            <div className="space-y-6" aria-busy="true" aria-label="Cargando auditoría de perfil">
+              <div className="p-6 rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-5 animate-pulse">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-2xl bg-[var(--bg-card)]" />
+                    <div className="space-y-2">
+                      <div className="h-5 w-64 rounded-lg bg-[var(--bg-card)]" />
+                      <div className="h-3.5 w-80 rounded-lg bg-[var(--bg-card)]" />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-40 rounded-xl bg-[var(--bg-card)]" />
+                    <div className="h-16 w-36 rounded-2xl bg-[var(--bg-card)]" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {[0, 1, 2, 3].map((i) => (
+                    <div key={i} className="h-20 rounded-xl bg-[var(--bg-card)]" />
+                  ))}
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {[0, 1, 2, 3].map((i) => (
+                  <div key={i} className="h-48 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] animate-pulse" />
+                ))}
+              </div>
+            </div>
+          ) : (
+            <>
           {/* Main Audit Header Panel */}
           <div className="p-6 rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-5">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -3156,14 +3017,14 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                   <Search className="w-6 h-6" />
                 </span>
                 <div>
-                  <h3 className="text-xl font-bold text-[var(--text-main)] tracking-tight flex items-center gap-2">
+                  <h3 className="text-xl font-bold text-[var(--text-main)] tracking-tight flex items-center gap-2 flex-wrap">
                     Auditoría de Perfil Social:{' '}
                     <span className="text-lime-700 dark:text-neon">
                       {profileAudit.handle || (activeTenant?.socialLinks?.instagram ? `@${activeTenant.socialLinks.instagram.replace(/.*instagram\.com\//, '').replace(/\/$/, '')}` : `@${activeTenant?.shortName?.toLowerCase() || 'vector_inside'}`)}
                     </span>
                   </h3>
                   <p className="text-xs text-[var(--text-muted)] font-mono">
-                    Optimización de biografía, enlaces y conversión directa hacia WhatsApp Cloud API
+                    Optimización de biografía, enlaces y conversión directa hacia WhatsApp oficial
                   </p>
                 </div>
               </div>
@@ -3176,7 +3037,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                   className="px-3.5 py-2.5 rounded-xl bg-neon/15 hover:bg-neon/25 text-xs font-mono font-bold text-lime-700 dark:text-neon border border-neon/30 transition-all flex items-center gap-1.5 active:scale-95 disabled:opacity-50"
                 >
                   <Sparkles className={`w-3.5 h-3.5 ${isAuditingBrand ? 'animate-spin' : ''}`} />
-                  <span>{isAuditingBrand ? 'Auditando con DeepSeek...' : 'Auditar Marca con IA'}</span>
+                  <span>{isAuditingBrand ? 'Auditando con IA...' : 'Auditar Marca con IA'}</span>
                 </button>
                 <div className="p-3 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-right font-mono min-w-[140px]">
                   <span className="text-[10px] text-[var(--text-muted)] block uppercase font-bold">Health Score de Perfil:</span>
@@ -3219,7 +3080,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                       >
                         <span
                           className={`text-[10px] block font-bold truncate ${
-                            isPassed ? 'text-emerald-400' : 'text-amber-500'
+                            isPassed ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'
                           }`}
                         >
                           {idx + 1}. {chk.title}
@@ -3229,7 +3090,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                         </span>
                         <span
                           className={`text-[9px] block mt-0.5 ${
-                            isPassed ? 'text-emerald-400' : 'text-amber-500'
+                            isPassed ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'
                           }`}
                         >
                           {isPassed ? 'Optimizado' : 'Requiere Ajuste'}
@@ -3248,7 +3109,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
               <div className="pt-2 border-t border-[var(--border-color)] text-[11px] text-[var(--text-muted)] flex items-start gap-2">
                 <Bot className="w-4 h-4 text-lime-700 dark:text-neon shrink-0 mt-0.5" />
                 {profileAudit.error ? (
-                  <p className="font-sans leading-relaxed text-red-400">
+                  <p className="font-sans leading-relaxed text-rose-600 dark:text-rose-400">
                     {profileAudit.error}
                   </p>
                 ) : (
@@ -3264,40 +3125,10 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {(Array.isArray(profileAudit.checks) && profileAudit.checks.length > 0
               ? profileAudit.checks
-              : [
-                  {
-                    id: 'chk-1',
-                    title: 'Biografía con Disparador BANT y Oferta Activa',
-                    status: (commercialOffer?.hook || brandDna?.leadMagnetHook) ? 'PASSED' : 'WARNING',
-                    diagnosis: (commercialOffer?.hook || brandDna?.leadMagnetHook)
-                      ? `Biografía alineada con la oferta activa: "${commercialOffer?.hook || brandDna?.leadMagnetHook}".`
-                      : 'La biografía no tiene un gancho de conversión directo definido.',
-                    recommendation: 'Inyectar el CTA comercial directo con palabra clave hacia WhatsApp Cloud API.',
-                  },
-                  {
-                    id: 'chk-2',
-                    title: 'Consistencia con Manual de Identidad & Taboo Words',
-                    status: 'PASSED',
-                    diagnosis: 'Filtro léxico configurado para validar publicaciones frente a tus palabras tabú.',
-                    recommendation: 'Mantener la verificación del filtro léxico activa en todas las publicaciones programadas.',
-                  },
-                  {
-                    id: 'chk-3',
-                    title: 'Enlace Soberano a WhatsApp Cloud API',
-                    status: activeTenant?.phone ? 'PASSED' : 'WARNING',
-                    diagnosis: activeTenant?.phone
-                      ? `Canal de destino validado: ${activeTenant.phone}.`
-                      : 'Sin número de WhatsApp verificado en la ficha de configuración.',
-                    recommendation: 'Asegurar que el enlace en bio dirija al protocolo de agendamiento 24/7.',
-                  },
-                  {
-                    id: 'chk-4',
-                    title: 'Hook Rate Promedio Superior al Benchmark (25%)',
-                    status: 'WARNING',
-                    diagnosis: 'Sin datos suficientes de retención en Reels sincronizados desde Meta.',
-                    recommendation: 'Continuar empleando el Laboratorio Viral para iterar sobre las fórmulas con mayor tracción.',
-                  },
-                ]
+              : buildProfileAuditChecks({
+                  offerHook: commercialOffer?.hook || brandDna?.leadMagnetHook || '',
+                  phone: activeTenant?.phone,
+                })
             ).map((check, idx) => {
               const isPassed = check.status === 'PASSED';
               const cleanTenantPhone = (activeTenant?.phone || '').replace(/\D/g, '');
@@ -3312,17 +3143,17 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-bold text-[var(--text-main)] text-sm flex items-center gap-2 font-sans">
                         {isPassed ? (
-                          <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                         ) : (
-                          <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+                          <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
                         )}
                         <span>{check.title}</span>
                       </span>
                       <span
                         className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase shrink-0 border ${
                           isPassed
-                            ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                            : 'bg-amber-500/15 text-amber-500 border-amber-500/30'
+                            ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30'
+                            : 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30'
                         }`}
                       >
                         {isPassed ? 'Optimizado' : 'Requiere Ajuste'}
@@ -3336,16 +3167,16 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                     {check.id === 'chk-3' ? (
                       <div className="p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-[var(--text-muted)]">Palabra Clave BANT:</span>
+                          <span className="text-[10px] text-[var(--text-muted)]">Palabra Clave de Activación:</span>
                           <input
                             type="text"
                             value={waKeyword}
                             onChange={(e) => setWaKeyword(e.target.value.toUpperCase().replace(/\s+/g, ''))}
-                            className="px-2 py-0.5 rounded bg-black/50 border border-zinc-700 text-lime-700 dark:text-neon text-[10px] font-bold w-24 text-center"
+                            className="px-2 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--border-color)] text-lime-700 dark:text-neon text-[10px] font-bold w-24 text-center"
                             placeholder="AUDITORIA"
                           />
                         </div>
-                        <div className="p-2 rounded-lg bg-black/40 border border-zinc-800 text-[10px] text-zinc-400 truncate font-mono">
+                        <div className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] text-[10px] text-[var(--text-muted)] truncate font-mono">
                           {cleanTenantPhone
                             ? `https://wa.me/${cleanTenantPhone}?text=...${waKeyword}`
                             : 'Configura un teléfono en el negocio para generar el enlace wa.me'}
@@ -3371,7 +3202,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                           className="px-3.5 py-2 rounded-xl bg-neon text-black font-bold text-xs font-mono shadow-[0_0_12px_var(--neon-glow)] hover:bg-[var(--neon-hover)] transition-all flex items-center gap-1.5 active:scale-95"
                         >
                           <Sparkles className="w-3.5 h-3.5" />
-                          <span>✨ Generar 3 Bios BANT (DeepSeek R1)</span>
+                          <span>✨ Generar 3 Bios de Conversión</span>
                         </button>
                         <button
                           type="button"
@@ -3398,7 +3229,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                           onClick={() => setActiveTab('dna')}
                           className="px-3 py-2 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)] font-mono text-xs transition-all"
                         >
-                          Ver Brand DNA
+                          Ver ADN de Marca
                         </button>
                       </>
                     )}
@@ -3409,7 +3240,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                           type="button"
                           disabled={!cleanTenantPhone}
                           onClick={() => handleCopyWaLink()}
-                          className="px-3.5 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 disabled:opacity-50 text-emerald-400 border border-emerald-500/30 font-bold text-xs font-mono transition-all flex items-center gap-1.5 active:scale-95"
+                          className="px-3.5 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 disabled:opacity-50 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 font-bold text-xs font-mono transition-all flex items-center gap-1.5 active:scale-95"
                         >
                           <Copy className="w-3.5 h-3.5" />
                           <span>{copiedWaLink ? '¡Enlace Copiado!' : 'Copiar Enlace wa.me'}</span>
@@ -3443,6 +3274,8 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
               );
             })}
           </div>
+            </>
+          )}
         </div>
       )}
 
@@ -3458,13 +3291,13 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
             <div className="w-full max-w-lg rounded-3xl bg-[var(--bg-panel)] border border-neon/40 shadow-2xl p-6 sm:p-8 relative space-y-4 my-auto animate-scale-up">
             <div className="space-y-1">
               <span className="text-[10px] font-mono font-bold uppercase text-lime-700 dark:text-neon">
-                Sincronización con DeepSeek R1 & PostgreSQL
+                Sincronización con Asistente IA
               </span>
               <h3 className="text-xl font-black text-[var(--text-main)]">
                 Editar Oferta Comercial del Mes
               </h3>
               <p className="text-xs text-[var(--text-muted)] font-mono">
-                Al guardar, todas las nuevas ideas de contenido y llamadas a la acción se sincronizarán con la base de datos y la memoria de la IA.
+                Al guardar, todas las nuevas ideas de contenido y llamadas a la acción se sincronizarán con la base de datos y el contexto de marca de la IA.
               </p>
             </div>
 
@@ -3499,11 +3332,11 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                           {commercialOffer.docName}
                         </p>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[10px] font-mono text-zinc-400">
+                          <span className="text-[10px] font-mono text-[var(--text-muted)]">
                             {uploadedFileSize || commercialOffer.docSize || 'Documento adjunto'}
                           </span>
-                          <span className="text-[9px] font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.2 rounded-full">
-                            ✓ Listo para RAG
+                          <span className="text-[9px] font-mono font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-full">
+                            ✓ Listo para IA
                           </span>
                         </div>
                       </div>
@@ -3520,7 +3353,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                       <button
                         type="button"
                         onClick={handleRemoveUploadedFile}
-                        className="p-1 rounded-lg hover:bg-rose-500/15 text-[var(--text-muted)] hover:text-rose-400 border border-transparent hover:border-rose-500/30 transition-colors"
+                        className="p-1 rounded-lg hover:bg-rose-500/15 text-[var(--text-muted)] hover:text-rose-600 dark:hover:text-rose-400 border border-transparent hover:border-rose-500/30 transition-colors"
                         title="Remover documento"
                       >
                         <X className="w-4 h-4" />
@@ -3560,7 +3393,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                         o haz clic para explorar en tu computadora (.pdf, .docx, .md, .txt)
                       </p>
                     </div>
-                    <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-[var(--bg-card)] border border-[var(--border-color)] text-zinc-400">
+                    <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)]">
                       Tamaño máx: 25 MB
                     </span>
                   </div>
@@ -3653,7 +3486,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
               {/* Header de la Simulación Móvil */}
               <div className="pt-9 px-4 pb-2 z-20 flex items-center justify-between bg-gradient-to-b from-black/80 via-black/40 to-transparent">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-neon/20 border border-neon/50 text-neon font-black text-[10px] flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-full bg-[#C3F400]/20 border border-[#C3F400]/50 text-[#C3F400] font-black text-[10px] flex items-center justify-center">
                     {(activeTenant?.name || 'V').slice(0, 1)}
                   </div>
                   <div>
@@ -3681,7 +3514,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
 
                 {/* Gancho Viral Display (Subtítulo Cinemático Central) */}
                 <div className="my-auto text-center px-2 py-4 z-10">
-                  <span className="inline-block px-2 py-0.5 rounded-full bg-black/60 border border-neon/40 text-[9px] font-mono font-bold text-neon uppercase mb-3">
+                  <span className="inline-block px-2 py-0.5 rounded-full bg-black/60 border border-[#C3F400]/40 text-[9px] font-mono font-bold text-[#C3F400] uppercase mb-3">
                     🔥 Gancho (Primeros 3 Segundos)
                   </span>
                   <p className="text-lg sm:text-xl font-black text-white leading-snug drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
@@ -3757,7 +3590,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
               <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)]">
                 <div>
                   <h3 className="text-lg font-black text-[var(--text-main)] flex items-center gap-2">
-                    <Edit3 className="w-4 h-4 text-neon" />
+                    <Edit3 className="w-4 h-4 text-lime-700 dark:text-neon" />
                     <span>Editar Publicación & Copy</span>
                   </h3>
                   <p className="text-xs text-[var(--text-muted)] font-mono">
@@ -3820,7 +3653,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                 </div>
 
                 <div>
-                  <label className="block text-cyan-500 font-bold mb-1">
+                  <label className="block text-cyan-700 dark:text-cyan-400 font-bold mb-1">
                     Hashtags Estratégicos
                   </label>
                   <input
@@ -3863,7 +3696,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
           >
             <div className="w-full max-w-md rounded-3xl bg-[var(--bg-panel)] border border-rose-500/40 shadow-2xl p-6 relative space-y-4 my-auto animate-scale-up">
               <div className="flex items-center gap-3">
-                <span className="p-3 rounded-2xl bg-rose-500/15 text-rose-500 border border-rose-500/30 shrink-0">
+                <span className="p-3 rounded-2xl bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 shrink-0">
                   <Trash2 className="w-5 h-5" />
                 </span>
                 <div>
@@ -3877,7 +3710,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
               </div>
 
               <div className="p-3.5 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-xs font-mono space-y-1">
-                <span className="text-[10px] text-zinc-400 uppercase font-bold block">
+                <span className="text-[10px] text-[var(--text-muted)] uppercase font-bold block">
                   Pieza a descartar:
                 </span>
                 <p className="text-[var(--text-main)] font-bold truncate">
@@ -3929,7 +3762,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                       <Sparkles className="w-4 h-4" />
                     </span>
                     <h3 className="text-lg font-bold text-[var(--text-main)] font-mono">
-                      Generador Estratégico de Contenido (DeepSeek R1)
+                      Generador Estratégico de Contenido IA
                     </h3>
                   </div>
                   <p className="text-xs text-[var(--text-muted)] font-mono">
@@ -3971,12 +3804,12 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                           className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all ${
                             isSelected
                               ? 'bg-neon/15 border-neon text-lime-700 dark:text-neon font-bold shadow-[0_0_12px_rgba(212,255,0,0.15)]'
-                              : 'bg-[var(--bg-card-subtle)] border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)] hover:border-zinc-700'
+                              : 'bg-[var(--bg-card-subtle)] border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)] hover:border-neon/40'
                           }`}
                         >
                           <div className="flex items-center justify-between mb-1">
                             <IconComp className="w-4 h-4 shrink-0" />
-                            <span className="text-[9px] uppercase px-1.5 py-0.2 rounded bg-black/40 border border-white/10">
+                            <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)]">
                               {ch.format}
                             </span>
                           </div>
@@ -4045,29 +3878,29 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                   </div>
                 </div>
 
-                {/* 4. Inyección RAG Oferta Comercial del Mes */}
+                {/* 4. Inyección de Oferta Comercial del Mes */}
                 <div className="p-3.5 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-2">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={aiGenConfig.injectCommercialOffer}
                       onChange={(e) => setAiGenConfig((prev) => ({ ...prev, injectCommercialOffer: e.target.checked }))}
-                      className="accent-[#D4FF00] w-4 h-4 rounded"
+                      className="accent-[#C3F400] w-4 h-4 rounded"
                     />
                     <span className="text-xs font-bold text-[var(--text-main)] flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5 text-lime-700 dark:text-neon" />
-                      Inyectar Oferta del Mes Activa (Memoria RAG)
+                      Inyectar Oferta del Mes Activa
                     </span>
                   </label>
                   {aiGenConfig.injectCommercialOffer && (
                     <div className="pl-6 text-[11px] text-[var(--text-muted)] space-y-1">
                       <p>
-                        <b className="text-[var(--text-main)]">Gancho Activo:</b> "{commercialOffer.hook || brandDna.leadMagnetHook || 'Sin gancho definido'}"
+                        <b className="text-[var(--text-main)]">Gancho Activo:</b> &quot;{commercialOffer.hook || brandDna.leadMagnetHook || 'Sin gancho definido'}&quot;
                       </p>
                       <p>
-                        <b className="text-[var(--text-main)]">CTA Destino:</b> "{commercialOffer.cta || brandDna.leadMagnetCta || 'WhatsApp'}"
+                        <b className="text-[var(--text-main)]">CTA Destino:</b> &quot;{commercialOffer.cta || brandDna.leadMagnetCta || 'WhatsApp'}&quot;
                       </p>
-                      <p className="text-[10px] text-cyan-400">
+                      <p className="text-[10px] text-cyan-700 dark:text-cyan-400">
                         Doc Respaldo: {commercialOffer.docName || 'Cargado en sistema'}
                       </p>
                     </div>
@@ -4137,7 +3970,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                     className="px-5 py-2.5 rounded-xl bg-neon text-black font-bold text-xs font-mono shadow-[0_0_15px_var(--neon-glow)] hover:bg-[var(--neon-hover)] transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
                   >
                     <Sparkles className={`w-4 h-4 ${isGeneratingAi ? 'animate-spin' : ''}`} />
-                    <span>{isGeneratingAi ? 'Pensando con DeepSeek R1...' : 'Generar con DeepSeek R1'}</span>
+                    <span>{isGeneratingAi ? 'Generando Guion...' : 'Generar Guion con IA'}</span>
                   </button>
                 </div>
               </form>
@@ -4147,12 +3980,12 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL 2: RE-ROLL IA (REGENERACIÓN TÁCTICA DE TARJETA INDIVIDUAL)          */}
+      {/* MODAL 2: REGENERACIÓN TÁCTICA DE TARJETA INDIVIDUAL                       */}
       {/* ========================================================================= */}
       {rerollPost && (
         <Portal>
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in"
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto"
             onClick={(e) => {
               if (e.target === e.currentTarget && !rerollingPostId) setRerollPost(null);
             }}
@@ -4165,7 +3998,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                       <RotateCcw className="w-4 h-4" />
                     </span>
                     <h3 className="text-base font-bold text-[var(--text-main)] font-mono">
-                      Re-roll IA: Regenerar Guión
+                      Regenerar Guión con IA
                     </h3>
                   </div>
                   <p className="text-xs text-[var(--text-muted)] font-mono">
@@ -4183,11 +4016,11 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
 
               {/* Gancho Actual */}
               <div className="p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-xs font-mono space-y-1">
-                <span className="text-[10px] text-zinc-400 uppercase font-bold block">
+                <span className="text-[10px] text-[var(--text-muted)] uppercase font-bold block">
                   Gancho Actual (0-3s):
                 </span>
                 <p className="text-[var(--text-main)] italic font-bold">
-                  "{rerollPost.hookText}"
+                  &quot;{rerollPost.hookText}&quot;
                 </p>
               </div>
 
@@ -4214,7 +4047,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                             : 'bg-[var(--bg-card-subtle)] border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
                         }`}
                       >
-                        <span className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${rerollAngle === opt.id ? 'bg-neon' : 'bg-zinc-600'}`} />
+                        <span className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${rerollAngle === opt.id ? 'bg-neon' : 'bg-[var(--text-faint)]'}`} />
                         <div>
                           <span className="text-xs font-bold block">{opt.label}</span>
                           <span className="text-[10px] text-[var(--text-muted)] block">{opt.desc}</span>
@@ -4250,7 +4083,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                     className="px-5 py-2 rounded-xl bg-neon text-black font-bold text-xs font-mono shadow-[0_0_12px_var(--neon-glow)] hover:bg-[var(--neon-hover)] transition-all flex items-center gap-1.5 active:scale-95"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
-                    <span>Aplicar Re-roll IA</span>
+                    <span>Aplicar Regeneración IA</span>
                   </button>
                 </div>
               </form>
@@ -4260,12 +4093,12 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL 3: CONFIGURACIÓN DE AUTOGENERACIÓN SEMANAL (CRON SCHEDULER HITL)    */}
+      {/* MODAL 3: CONFIGURACIÓN DE AUTOGENERACIÓN SEMANAL                          */}
       {/* ========================================================================= */}
       {showWeeklyCronModal && (
         <Portal>
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in"
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto"
             onClick={(e) => {
               if (e.target === e.currentTarget) setShowWeeklyCronModal(false);
             }}
@@ -4278,11 +4111,11 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                       <Zap className="w-4 h-4" />
                     </span>
                     <h3 className="text-lg font-bold text-[var(--text-main)] font-mono">
-                      Configurar Autogenerador Semanal (Cron IA)
+                      Configurar Autogenerador Semanal IA
                     </h3>
                   </div>
                   <p className="text-xs text-[var(--text-muted)] font-mono">
-                    DeepSeek R1 estructurará tu lote semanal de contenidos en modo Human-In-The-Loop.
+                    El asistente IA estructurará tu lote semanal de contenidos sujeto a tu revisión previa.
                   </p>
                 </div>
                 <button
@@ -4311,7 +4144,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                     className={`px-3.5 py-1.5 rounded-xl font-bold text-xs border transition-all ${
                       weeklyCronConfig.enabled
                         ? 'bg-neon text-black border-neon shadow-[0_0_12px_var(--neon-glow)]'
-                        : 'bg-zinc-800 text-zinc-400 border-zinc-700'
+                        : 'bg-[var(--bg-card)] text-[var(--text-muted)] border-[var(--border-color)]'
                     }`}
                   >
                     {weeklyCronConfig.enabled ? '● ACTIVADO' : '○ PAUSADO'}
@@ -4378,10 +4211,10 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                   </div>
                 </div>
 
-                {/* 4. Fuentes de Feedback & Aprendizaje Continuo */}
+                {/* 4. Fuentes de Aprendizaje Continuo */}
                 <div className="p-3.5 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-2.5">
                   <span className="text-[11px] font-bold text-[var(--text-main)] uppercase block">
-                    Fuentes de Telemetría & RAG Activo (Feedback Loop)
+                    Fuentes de Aprendizaje Activo
                   </span>
                   <div className="space-y-2">
                     <label className="flex items-center gap-2 cursor-pointer">
@@ -4389,7 +4222,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                         type="checkbox"
                         checked={weeklyCronConfig.useViralHooks}
                         onChange={(e) => setWeeklyCronConfig((prev) => ({ ...prev, useViralHooks: e.target.checked }))}
-                        className="accent-[#D4FF00] w-4 h-4 rounded"
+                        className="accent-[#C3F400] w-4 h-4 rounded"
                       />
                       <span className="text-xs text-[var(--text-main)]">
                         <b>Laboratorio Viral:</b> Replicar fórmulas de Reels con mayor retención de Meta (&gt;30% Hook Rate).
@@ -4401,7 +4234,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                         type="checkbox"
                         checked={weeklyCronConfig.useCommercialOffer}
                         onChange={(e) => setWeeklyCronConfig((prev) => ({ ...prev, useCommercialOffer: e.target.checked }))}
-                        className="accent-[#D4FF00] w-4 h-4 rounded"
+                        className="accent-[#C3F400] w-4 h-4 rounded"
                       />
                       <span className="text-xs text-[var(--text-main)]">
                         <b>Oferta Comercial del Mes:</b> Inyectar gancho activo y CTA del documento PDF cargado.
@@ -4413,7 +4246,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                         type="checkbox"
                         checked={weeklyCronConfig.useWhatsappObjections}
                         onChange={(e) => setWeeklyCronConfig((prev) => ({ ...prev, useWhatsappObjections: e.target.checked }))}
-                        className="accent-[#D4FF00] w-4 h-4 rounded"
+                        className="accent-[#C3F400] w-4 h-4 rounded"
                       />
                       <span className="text-xs text-[var(--text-main)]">
                         <b>Objeciones Frecuentes de WhatsApp:</b> Convertir dudas reales de clientes en ganchos de venta.
@@ -4422,11 +4255,11 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                   </div>
                 </div>
 
-                {/* Política HITL */}
-                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-500 flex items-start gap-2">
+                {/* Política de Revisión */}
+                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-700 dark:text-amber-400 flex items-start gap-2">
                   <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5" />
                   <span>
-                    <b>Human-In-The-Loop Garantizado:</b> Todas las publicaciones generadas por el disparador semanal se crearán exclusivamente en estado <i>"Pendiente Cliente"</i>. Ninguna pieza se transmitirá a redes sin tu visto bueno formal.
+                    <b>Control de Aprobación Garantizado:</b> Todas las publicaciones generadas por el disparador semanal se crearán exclusivamente en estado <i>&quot;Pendiente Cliente&quot;</i>. Ninguna pieza se transmitirá a redes sin tu visto bueno formal.
                   </span>
                 </div>
 
@@ -4454,15 +4287,22 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL: DECONSTRUIR REEL DE COMPETIDOR O TENDENCIA (DEEPSEEK R1)            */}
+      {/* MODAL: DECONSTRUIR REEL DE COMPETIDOR O TENDENCIA                        */}
       {/* ========================================================================= */}
       {showExternalReelModal && (
         <Portal>
-          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-            <div className="w-full max-w-xl rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-6 space-y-5 shadow-2xl">
+          <div
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in overflow-y-auto"
+            onClick={(e) => {
+              if (e.target === e.currentTarget && !isAnalyzingExternalReel) {
+                setShowExternalReelModal(false);
+              }
+            }}
+          >
+            <div className="w-full max-w-xl rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-6 space-y-5 shadow-2xl my-auto animate-scale-up">
               <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)]">
                 <div className="flex items-center gap-2.5">
-                  <span className="p-2 rounded-xl bg-cyan-500/15 text-cyan-400 border border-cyan-500/30">
+                  <span className="p-2 rounded-xl bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30">
                     <Search className="w-5 h-5" />
                   </span>
                   <div>
@@ -4470,7 +4310,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                       Deconstruir Reel de la Competencia
                     </h3>
                     <p className="text-xs text-[var(--text-muted)] font-mono">
-                      Ingeniería inversa algorítmica con DeepSeek R1
+                      Ingeniería inversa algorítmica asistida por IA
                     </p>
                   </div>
                 </div>
@@ -4537,7 +4377,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                     className="w-full p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-xs text-[var(--text-main)] focus:outline-none focus:border-cyan-400 font-mono resize-none"
                   />
                   <p className="text-[11px] text-[var(--text-muted)]">
-                    DeepSeek R1 detectará la interrupción de patrón, el gancho verbal y la mecánica de retención para crear 3 variantes para tu marca.
+                    La IA detectará la interrupción de patrón, el gancho verbal y la mecánica de retención para crear 3 variantes para tu marca.
                   </p>
                 </div>
 
@@ -4556,7 +4396,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                     className="px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs font-mono shadow-sm transition-all flex items-center gap-1.5 active:scale-95 disabled:opacity-50"
                   >
                     <Sparkles className={`w-3.5 h-3.5 ${isAnalyzingExternalReel ? 'animate-spin' : ''}`} />
-                    <span>{isAnalyzingExternalReel ? 'Deconstruyendo con DeepSeek...' : 'Deconstruir con DeepSeek R1'}</span>
+                    <span>{isAnalyzingExternalReel ? 'Deconstruyendo con IA...' : 'Deconstruir con IA'}</span>
                   </button>
                 </div>
               </form>
@@ -4566,7 +4406,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL: CONEXIÓN META GRAPH API V21.0                                       */}
+      {/* MODAL: CONEXIÓN META GRAPH API V21.0                                      */}
       {/* ========================================================================= */}
       <MetaConnectModal
         isOpen={showMetaConnectModal}
@@ -4590,12 +4430,17 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
       />
 
       {/* ========================================================================= */}
-      {/* MODAL: GENERADOR DE BIOGRAFÍAS BANT (DEEPSEEK R1)                         */}
+      {/* MODAL: GENERADOR DE BIOGRAFÍAS DE CONVERSIÓN                             */}
       {/* ========================================================================= */}
       {showBioGeneratorModal && (
         <Portal>
-          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-            <div className="w-full max-w-2xl rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-6 space-y-5 shadow-2xl max-h-[92vh] flex flex-col font-sans">
+          <div
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in overflow-y-auto"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setShowBioGeneratorModal(false);
+            }}
+          >
+            <div className="w-full max-w-2xl rounded-3xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-6 space-y-5 shadow-2xl max-h-[92vh] flex flex-col font-sans my-auto animate-scale-up">
               <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)]">
                 <div className="flex items-center gap-2.5">
                   <span className="p-2 rounded-xl bg-neon/15 text-lime-700 dark:text-neon border border-neon/30">
@@ -4603,7 +4448,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                   </span>
                   <div>
                     <h3 className="text-base font-bold text-[var(--text-main)]">
-                      Generador de Biografías BANT (DeepSeek R1)
+                      Generador de Biografías de Conversión IA
                     </h3>
                     <p className="text-xs text-[var(--text-muted)] font-mono">
                       Alineadas con la Oferta Comercial del Mes y límite estricto de 150 caracteres
@@ -4624,18 +4469,18 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                   <Sparkles className="w-10 h-10 text-lime-700 dark:text-neon animate-spin mx-auto" />
                   <div className="space-y-1">
                     <h4 className="text-sm font-bold text-[var(--text-main)] font-mono">
-                      DeepSeek R1 está deconstruyendo tu Oferta Comercial...
+                      El asistente IA está sintetizando tu Oferta Comercial...
                     </h4>
                     <p className="text-xs text-[var(--text-muted)]">
-                      Sintetizando propuesta de valor, gatillos BANT y límite de 150 caracteres para Instagram.
+                      Optimizando propuesta de valor, llamado a la acción y límite de 150 caracteres para Instagram.
                     </p>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-4 overflow-y-auto pr-1">
-                  <div className="p-3 rounded-xl bg-neon/10 border border-neon/30 text-[11px] font-mono text-lime-700 dark:text-neon flex items-center justify-between">
-                    <span>Oferta Activa Inyectada: <b>"{commercialOffer?.hook || 'Diagnóstico de Conversión'}"</b></span>
-                    <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-black/40">150 Chars Max</span>
+                  <div className="p-3 rounded-xl bg-neon/10 border border-neon/30 text-[11px] font-mono text-lime-700 dark:text-neon flex items-center justify-between gap-2 flex-wrap">
+                    <span>Oferta Activa Inyectada: <b>&quot;{commercialOffer?.hook || 'Diagnóstico de Conversión'}&quot;</b></span>
+                    <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)]">150 Chars Max</span>
                   </div>
 
                   <div className="space-y-3">
@@ -4648,13 +4493,13 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                           className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon/40 transition-all space-y-3"
                         >
                           <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-400 font-bold uppercase">
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-700 dark:text-cyan-400 font-bold uppercase">
                               {bio.style || `Variante ${idx + 1}`}
                             </span>
                             <span className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded ${
                               isOverLimit
-                                ? 'bg-red-500/15 text-red-400 border border-red-500/30'
-                                : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                                ? 'bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30'
+                                : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30'
                             }`}>
                               {charCount} / 150 caracteres
                             </span>

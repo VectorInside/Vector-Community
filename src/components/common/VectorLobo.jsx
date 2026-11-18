@@ -20,11 +20,14 @@ export const VectorLobo = ({
     xl: { width: 96, height: 96 },
   };
 
-  const currentSize = sizeMap[size] || sizeMap.md;
+  const currentSize =
+    typeof size === 'number'
+      ? { width: size, height: size }
+      : (sizeMap[size] || sizeMap.md);
 
   const glowColors = {
-    active: 'rgba(231, 249, 0, 0.3)',
-    analyzing: 'rgba(138, 149, 182, 0.4)',
+    active: 'var(--neon-glow)',
+    analyzing: 'var(--azul-cognitivo-glow)',
     alert: 'rgba(239, 68, 68, 0.4)',
   };
 
@@ -70,12 +73,12 @@ export const VectorLobo = ({
 
       {showStatusBadge && (
         <span
-          className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-black ${
+          className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-[var(--bg-panel)] ${
             status === 'alert'
               ? 'bg-red-500 animate-pulse'
               : status === 'analyzing'
               ? 'bg-cognitive animate-spin'
-              : 'bg-neon animate-pulse'
+              : 'bg-[var(--neon-primary)] animate-pulse'
           }`}
         />
       )}

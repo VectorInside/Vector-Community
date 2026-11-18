@@ -178,7 +178,7 @@ export const Header = () => {
           tenantName: tenantInfo?.shortName || tenantInfo?.name || 'Negocio',
           tenantAvatar: tenantInfo?.avatar || '🏢',
           channel: lead.channel || 'WHATSAPP',
-          channelColor: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+          channelColor: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30',
           sender: lead.name || 'Prospecto',
           title: lead.status || 'Lead reciente',
           snippet: lead.customerNeeds || lead.notes || 'Prospecto actualizado',
@@ -201,7 +201,7 @@ export const Header = () => {
           tenantName: tenantInfo?.shortName || tenantInfo?.name || 'Plataforma',
           tenantAvatar: tenantInfo?.avatar || '🛡️',
           channel: log.eventCategory || 'SECURITY',
-          channelColor: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30',
+          channelColor: 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30',
           sender: log.actorName || 'Sistema',
           title: log.action || 'Evento de auditoría',
           snippet: log.targetResource || 'Registro WORM',
@@ -339,7 +339,7 @@ export const Header = () => {
           <button
             type="button"
             onClick={toggleMobileSidebar}
-            className="p-1.5 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] text-[var(--text-main)] hover:border-lime-400 lg:hidden flex items-center justify-center shrink-0 transition-colors"
+            className="p-1.5 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] text-[var(--text-main)] hover:border-[var(--neon-primary)] lg:hidden flex items-center justify-center shrink-0 transition-colors"
             aria-label="Abrir menú de navegación"
             title="Abrir menú"
           >
@@ -368,8 +368,8 @@ export const Header = () => {
                 data-tour="header-tenant-switcher"
                 onClick={() => setIsOpen(!isOpen)}
                 className={`flex items-center gap-2 px-2.5 py-1 rounded-xl bg-[var(--bg-base)] border text-xs font-mono font-bold transition-all ${isOpen
-                  ? 'border-lime-400 ring-1 ring-lime-400/40 shadow-sm text-[var(--text-main)]'
-                  : 'border-[var(--border-color)] hover:border-lime-400 text-[var(--text-main)]'
+                  ? 'border-[var(--neon-primary)] ring-1 ring-[var(--neon-primary)]/40 shadow-sm text-[var(--text-main)]'
+                  : 'border-[var(--border-color)] hover:border-[var(--neon-primary)] text-[var(--text-main)]'
                   }`}
                 title="Cambiar espacio de negocio"
               >
@@ -378,7 +378,7 @@ export const Header = () => {
                   {activeTenant?.name || 'Seleccionar Negocio'}
                 </span>
                 <ChevronDown
-                  className={`w-3.5 h-3.5 text-[var(--text-muted)] transition-transform duration-200 ${isOpen ? 'rotate-180 text-lime-400' : ''
+                  className={`w-3.5 h-3.5 text-[var(--text-muted)] transition-transform duration-200 ${isOpen ? 'rotate-180 text-lime-700 dark:text-neon' : ''
                     }`}
                 />
               </button>
@@ -394,13 +394,13 @@ export const Header = () => {
                       placeholder="Buscar entre tus negocios..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full bg-[var(--bg-card-subtle)] border border-[var(--border-color)] focus:border-lime-400 rounded-xl pl-8 pr-7 py-1.5 text-xs text-[var(--text-main)] font-mono placeholder-[var(--text-muted)] outline-none"
+                      className="w-full bg-[var(--bg-card-subtle)] border border-[var(--border-color)] focus:border-[var(--neon-primary)] rounded-xl pl-8 pr-7 py-1.5 text-xs text-[var(--text-main)] font-mono placeholder-[var(--text-muted)] outline-none"
                     />
                     {searchQuery && (
                       <button
                         type="button"
                         onClick={() => setSearchQuery('')}
-                        className="absolute right-2.5 top-2 text-[var(--text-muted)] hover:text-[var(--text-main)]"
+                        className="absolute right-2.5 top-2 text-[var(--text-muted)] hover:text-[var(--text-main)] rounded-xl"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -421,7 +421,7 @@ export const Header = () => {
                           type="button"
                           onClick={() => handleSelectTenant(t.id)}
                           className={`w-full text-left p-2 rounded-xl text-xs font-mono flex items-center justify-between gap-2 transition-all ${isSelected
-                            ? 'bg-lime-400/15 text-[var(--text-main)] font-bold border border-lime-400/40 shadow-sm'
+                            ? 'bg-[var(--neon-primary)]/15 text-[var(--text-main)] font-bold border border-[var(--neon-primary)]/40 shadow-sm'
                             : 'text-[var(--text-muted)] hover:bg-[var(--bg-card-subtle)] hover:text-[var(--text-main)] border border-transparent'
                             }`}
                         >
@@ -437,18 +437,18 @@ export const Header = () => {
 
                           <div className="flex items-center gap-2 shrink-0">
                             {t.isAiActive ? (
-                              <span className="flex items-center gap-1 text-[9px] text-emerald-400 font-bold">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                              <span className="flex items-center gap-1 text-[9px] text-emerald-600 dark:text-emerald-400 font-bold">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400 animate-pulse" />
                                 <span className="hidden sm:inline">IA</span>
                               </span>
                             ) : (
-                              <span className="flex items-center gap-1 text-[9px] text-red-400 font-bold">
-                                <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                              <span className="flex items-center gap-1 text-[9px] text-rose-600 dark:text-rose-400 font-bold">
+                                <span className="w-1.5 h-1.5 rounded-full bg-rose-600 dark:bg-rose-400" />
                                 <span className="hidden sm:inline">PAUSA</span>
                               </span>
                             )}
 
-                            {isSelected && <Check className="w-4 h-4 text-lime-400 shrink-0" />}
+                            {isSelected && <Check className="w-4 h-4 text-lime-700 dark:text-neon shrink-0" />}
                           </div>
                         </button>
                       );
@@ -461,7 +461,7 @@ export const Header = () => {
                       id="tour-btn-alta-negocio"
                       data-tour="header-create-tenant-btn"
                       onClick={handleCreateNewTenant}
-                      className="w-full py-2 rounded-xl bg-lime-400 text-black font-mono font-black text-xs uppercase flex items-center justify-center gap-1.5 hover:bg-lime-300 transition-all shadow-sm"
+                      className="w-full py-2 rounded-xl bg-[var(--neon-primary)] text-black font-mono font-black text-xs uppercase flex items-center justify-center gap-1.5 hover:bg-[var(--neon-hover)] transition-all shadow-sm"
                     >
                       <Plus className="w-3.5 h-3.5 stroke-[3]" />
                       <span>Alta Nuevo Negocio</span>
@@ -486,12 +486,12 @@ export const Header = () => {
             id="tour-search"
             data-tour="header-search"
             onClick={() => setIsCommandPaletteOpen(true)}
-            className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] hover:border-lime-400 text-xs text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all cursor-pointer group shadow-sm active:scale-95"
+            className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] hover:border-[var(--neon-primary)] text-xs text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all cursor-pointer group shadow-sm active:scale-95"
             title="Abrir buscador global y comandos rápidos (⌘ K / Ctrl+K)"
           >
-            <Search className="w-3.5 h-3.5 text-lime-400 group-hover:scale-110 transition-transform" />
+            <Search className="w-3.5 h-3.5 text-lime-700 dark:text-neon group-hover:scale-110 transition-transform" />
             <span className="text-[11px]">Buscar contacto, campaña...</span>
-            <kbd className="px-1.5 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--border-color)] text-[9px] font-mono font-bold text-[var(--text-faint)] group-hover:text-lime-400">
+            <kbd className="px-1.5 py-0.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[9px] font-mono font-bold text-[var(--text-faint)] group-hover:text-lime-700 dark:group-hover:text-neon">
               ⌘ K
             </kbd>
           </button>
@@ -500,7 +500,7 @@ export const Header = () => {
           <button
             type="button"
             onClick={() => setIsCommandPaletteOpen(true)}
-            className="lg:hidden p-2 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-lime-400 hover:border-lime-400 transition-colors"
+            className="lg:hidden p-2 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-lime-700 dark:hover:text-neon hover:border-[var(--neon-primary)] transition-colors"
             title="Buscar (⌘ K)"
             aria-label="Abrir buscador rápido"
           >
@@ -514,9 +514,9 @@ export const Header = () => {
             id="tour-tutor-trigger"
             onClick={() => window.dispatchEvent(new CustomEvent('vector_open_tutor_hub'))}
             title="Centro de Guías & Tutor IA (Aprende cómo usar este módulo o dar de alta un negocio)"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[var(--bg-base)] border border-neon/30 text-neon hover:bg-neon/10 hover:border-neon transition-all font-mono text-xs font-bold shadow-sm group"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[var(--bg-base)] border border-[var(--neon-primary)]/30 text-lime-700 dark:text-neon hover:bg-[var(--neon-primary)]/10 hover:border-[var(--neon-primary)] transition-all font-mono text-xs font-bold shadow-sm group"
           >
-            <GraduationCap className="w-4 h-4 text-neon group-hover:scale-110 transition-transform" />
+            <GraduationCap className="w-4 h-4 text-lime-700 dark:text-neon group-hover:scale-110 transition-transform" />
             <span className="hidden sm:inline">Tutor IA</span>
           </button>
 
@@ -529,15 +529,15 @@ export const Header = () => {
               onClick={() => setIsNotifOpen((prev) => !prev)}
               title={`${unreadCount} notificaciones sin atender`}
               className={`p-2 rounded-xl bg-[var(--bg-base)] border transition-all relative ${isNotifOpen
-                ? 'border-lime-400 ring-1 ring-lime-400/40 text-lime-400 shadow-sm'
-                : 'border-[var(--border-color)] hover:border-lime-400 text-[var(--text-muted)] hover:text-lime-400'
+                ? 'border-[var(--neon-primary)] ring-1 ring-[var(--neon-primary)]/40 text-lime-700 dark:text-neon shadow-sm'
+                : 'border-[var(--border-color)] hover:border-[var(--neon-primary)] text-[var(--text-muted)] hover:text-lime-700 dark:hover:text-neon'
                 }`}
             >
               <Bell className="w-4 h-4" />
               {isHeaderMounted && unreadCount > 0 ? (
                 <span
                   suppressHydrationWarning
-                  className="absolute -top-1 -right-1 px-1.5 min-w-[18px] h-[18px] rounded-full text-[9px] font-mono font-black bg-lime-400 text-black flex items-center justify-center shadow-[0_0_8px_rgba(200,255,0,0.5)] animate-pulse"
+                  className="absolute -top-1 -right-1 px-1.5 min-w-[18px] h-[18px] rounded-full text-[9px] font-mono font-black bg-[var(--neon-primary)] text-black flex items-center justify-center shadow-[0_0_8px_var(--neon-glow)] animate-pulse"
                 >
                   {unreadCount}
                 </span>
@@ -552,7 +552,7 @@ export const Header = () => {
                 {/* Header */}
                 <div className="flex items-center justify-between pb-2 border-b border-[var(--border-color)]">
                   <div className="flex items-center gap-2">
-                    <span className="p-1 rounded-lg bg-lime-400/10 text-lime-400 border border-lime-400/20">
+                    <span className="p-1 rounded-xl bg-[var(--neon-primary)]/10 text-lime-700 dark:text-neon border border-[var(--neon-primary)]/20">
                       <Bell className="w-3.5 h-3.5" />
                     </span>
                     <span className="text-xs font-heading font-black text-[var(--text-main)] uppercase tracking-wider">
@@ -565,7 +565,7 @@ export const Header = () => {
                       <button
                         type="button"
                         onClick={handleMarkAllRead}
-                        className="text-[10px] font-mono text-[var(--text-muted)] hover:text-lime-400 transition-colors"
+                        className="text-[10px] font-mono text-[var(--text-muted)] hover:text-lime-700 dark:hover:text-neon transition-colors"
                       >
                         Marcar leídas
                       </button>
@@ -578,8 +578,8 @@ export const Header = () => {
                   <button
                     type="button"
                     onClick={() => setNotifFilter('all')}
-                    className={`px-2 py-0.5 rounded-md font-bold transition-all ${notifFilter === 'all'
-                      ? 'bg-lime-400 text-black'
+                    className={`px-2.5 py-1 rounded-xl font-bold transition-all ${notifFilter === 'all'
+                      ? 'bg-[var(--neon-primary)] text-black'
                       : 'bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
                       }`}
                   >
@@ -588,8 +588,8 @@ export const Header = () => {
                   <button
                     type="button"
                     onClick={() => setNotifFilter('unread')}
-                    className={`px-2 py-0.5 rounded-md font-bold transition-all ${notifFilter === 'unread'
-                      ? 'bg-lime-400 text-black'
+                    className={`px-2.5 py-1 rounded-xl font-bold transition-all ${notifFilter === 'unread'
+                      ? 'bg-[var(--neon-primary)] text-black'
                       : 'bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
                       }`}
                   >
@@ -614,7 +614,7 @@ export const Header = () => {
                         onClick={() => handleSelectNotification(notif)}
                         className={`w-full text-left p-2.5 rounded-xl transition-all flex items-start gap-2.5 pt-2.5 ${notif.isRead
                           ? 'hover:bg-[var(--bg-card)]/50 opacity-75'
-                          : 'bg-[var(--bg-card)]/80 hover:bg-[var(--bg-card)] border border-lime-400/20'
+                          : 'bg-[var(--bg-card)]/80 hover:bg-[var(--bg-card)] border border-[var(--neon-primary)]/20'
                           }`}
                       >
                         {/* Tenant Avatar */}
@@ -625,7 +625,7 @@ export const Header = () => {
                         {/* Content */}
                         <div className="flex-1 min-w-0 space-y-0.5">
                           <div className="flex items-center justify-between gap-1">
-                            <span className="text-[10px] font-mono font-bold text-lime-400 truncate">
+                            <span className="text-[10px] font-mono font-bold text-lime-700 dark:text-neon truncate">
                               {notif.tenantName}
                             </span>
                             <span className="text-[9px] font-mono text-[var(--text-faint)] shrink-0">
@@ -648,15 +648,15 @@ export const Header = () => {
 
                           <div className="flex items-center justify-between pt-1 text-[9px] font-mono">
                             {notif.slaRemaining != null ? (
-                              <span className="text-amber-400 font-bold">
+                              <span className="text-amber-600 dark:text-amber-400 font-bold">
                                 ⏳ {notif.slaRemaining} min SLA
                               </span>
                             ) : (
-                              <span className="text-cyan-400 font-bold">
+                              <span className="text-cyan-700 dark:text-cyan-400 font-bold">
                                 Auditoría WORM
                               </span>
                             )}
-                            <span className="text-[var(--text-faint)] hover:text-lime-400 flex items-center gap-0.5 font-bold">
+                            <span className="text-[var(--text-faint)] hover:text-lime-700 dark:hover:text-neon flex items-center gap-0.5 font-bold">
                               <span>{notif.threadId ? 'Atender lead' : 'Ver detalle'}</span>
                               <ArrowRight className="w-2.5 h-2.5" />
                             </span>
@@ -678,7 +678,7 @@ export const Header = () => {
                       setIsNotifOpen(false);
                       router.push('/inbox');
                     }}
-                    className="text-[10px] font-mono font-bold text-lime-400 hover:underline flex items-center gap-1"
+                    className="text-[10px] font-mono font-bold text-lime-700 dark:text-neon hover:underline flex items-center gap-1"
                   >
                     <span>Ir a Bandeja</span>
                     <ArrowRight className="w-3 h-3" />
@@ -697,8 +697,8 @@ export const Header = () => {
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
               title={`Perfil actual: ${role === 'admin' ? 'Administrador' : 'Usuario'} - Haz clic para ver opciones`}
               className={`w-8 h-8 rounded-xl border flex items-center justify-center font-mono font-black text-xs shrink-0 transition-all cursor-pointer ${isUserMenuOpen
-                ? 'bg-lime-400 text-black border-lime-400 shadow-neon-sm ring-2 ring-lime-400/30'
-                : 'bg-[var(--bg-card)] border-[var(--border-color)] text-lime-400 hover:border-lime-400/60 hover:bg-[var(--bg-panel)]'
+                ? 'bg-[var(--neon-primary)] text-black border-[var(--neon-primary)] shadow-neon-sm ring-2 ring-[var(--neon-primary)]/30'
+                : 'bg-[var(--bg-card)] border-[var(--border-color)] text-lime-700 dark:text-neon hover:border-[var(--neon-primary)]/60 hover:bg-[var(--bg-panel)]'
                 }`}
             >
               {role === 'admin' ? 'VI' : 'CL'}
@@ -710,7 +710,7 @@ export const Header = () => {
                 {/* User Identity Header */}
                 <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-2">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-lime-400/15 border border-lime-400/30 flex items-center justify-center font-mono font-black text-sm text-lime-400 shadow-neon-sm shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-[var(--neon-primary)]/15 border border-[var(--neon-primary)]/30 flex items-center justify-center font-mono font-black text-sm text-lime-700 dark:text-neon shadow-neon-sm shrink-0">
                       {role === 'admin' ? 'VI' : 'CL'}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -721,7 +721,7 @@ export const Header = () => {
                               ? 'Edgar Lobo Vectorial'
                               : activeTenant?.shortName || activeTenant?.name || 'Cliente')}
                         </span>
-                        <span className="text-[9px] font-mono px-1.5 py-0.5 bg-lime-400/10 text-lime-400 border border-lime-400/20 rounded font-semibold uppercase shrink-0">
+                        <span className="text-[9px] font-mono px-1.5 py-0.5 bg-[var(--neon-primary)]/10 text-lime-700 dark:text-neon border border-[var(--neon-primary)]/20 rounded font-semibold uppercase shrink-0">
                           {role === 'admin' ? 'Admin' : 'Cliente'}
                         </span>
                       </div>
@@ -733,7 +733,7 @@ export const Header = () => {
                       </p>
                       <div className="flex items-center justify-between gap-1 mt-0.5">
                         <span className="text-[10px] font-mono text-[var(--text-faint)] flex items-center gap-1 truncate">
-                          <Phone className="w-2.5 h-2.5 text-lime-400 shrink-0" />
+                          <Phone className="w-2.5 h-2.5 text-lime-700 dark:text-neon shrink-0" />
                           <span>
                             {currentUser?.phone && currentUser.phone !== '+52 55 1234 5678'
                               ? currentUser.phone
@@ -743,7 +743,7 @@ export const Header = () => {
                         <button
                           type="button"
                           onClick={handleOpenEditProfile}
-                          className="text-[10px] font-mono text-lime-400 hover:underline flex items-center gap-0.5 shrink-0 cursor-pointer"
+                          className="text-[10px] font-mono text-lime-700 dark:text-neon hover:underline flex items-center gap-0.5 shrink-0 cursor-pointer"
                         >
                           <Pencil className="w-2.5 h-2.5" />
                           <span>Editar</span>
@@ -773,7 +773,7 @@ export const Header = () => {
                           value={editProfileName}
                           onChange={(e) => setEditProfileName(e.target.value)}
                           placeholder="Tu nombre completo"
-                          className="w-full px-2.5 py-1.5 rounded-lg bg-[var(--bg-base)] border border-[var(--border-color)] text-xs text-[var(--text-main)] focus:border-lime-400 focus:outline-none"
+                          className="w-full px-2.5 py-1.5 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] text-xs text-[var(--text-main)] focus:border-[var(--neon-primary)] focus:outline-none"
                         />
                       </div>
                       <div>
@@ -785,24 +785,24 @@ export const Header = () => {
                           value={editProfilePhone}
                           onChange={(e) => setEditProfilePhone(e.target.value)}
                           placeholder="Ej: +52 55 8899 0011 (o vacío)"
-                          className="w-full px-2.5 py-1.5 rounded-lg bg-[var(--bg-base)] border border-[var(--border-color)] text-xs text-[var(--text-main)] focus:border-lime-400 focus:outline-none"
+                          className="w-full px-2.5 py-1.5 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] text-xs text-[var(--text-main)] focus:border-[var(--neon-primary)] focus:outline-none"
                         />
                       </div>
                       {profileSaveMsg && (
-                        <p className="text-[10px] text-lime-400 font-bold">{profileSaveMsg}</p>
+                        <p className="text-[10px] text-lime-700 dark:text-neon font-bold">{profileSaveMsg}</p>
                       )}
                       <div className="flex items-center justify-end gap-1.5 pt-1">
                         <button
                           type="button"
                           onClick={() => setIsEditProfileOpen(false)}
-                          className="px-2.5 py-1 rounded-lg bg-[var(--bg-base)] border border-[var(--border-color)] text-[10px] text-[var(--text-muted)] hover:text-white cursor-pointer"
+                          className="px-2.5 py-1 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] text-[10px] text-[var(--text-muted)] hover:text-[var(--text-main)] cursor-pointer"
                         >
                           Cancelar
                         </button>
                         <button
                           type="submit"
                           disabled={isSavingProfile}
-                          className="px-2.5 py-1 rounded-lg bg-lime-400 text-black font-bold text-[10px] hover:brightness-110 cursor-pointer disabled:opacity-60"
+                          className="px-2.5 py-1 rounded-xl bg-[var(--neon-primary)] text-black font-bold text-[10px] hover:bg-[var(--neon-hover)] cursor-pointer disabled:opacity-60"
                         >
                           {isSavingProfile ? 'Guardando...' : 'Guardar'}
                         </button>
@@ -817,9 +817,9 @@ export const Header = () => {
                   <button
                     type="button"
                     onClick={handleOpenEditProfile}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-mono text-[var(--text-main)] hover:bg-[var(--bg-card)] hover:text-lime-400 transition-colors cursor-pointer group text-left"
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-mono text-[var(--text-main)] hover:bg-[var(--bg-card)] hover:text-lime-700 dark:hover:text-neon transition-colors cursor-pointer group text-left"
                   >
-                    <div className="w-6 h-6 rounded-lg bg-lime-400/10 border border-lime-400/20 flex items-center justify-center text-lime-400 group-hover:bg-lime-400 group-hover:text-black transition-colors shrink-0">
+                    <div className="w-6 h-6 rounded-xl bg-[var(--neon-primary)]/10 border border-[var(--neon-primary)]/20 flex items-center justify-center text-lime-700 dark:text-neon group-hover:bg-[var(--neon-primary)] group-hover:text-black transition-colors shrink-0">
                       <Phone className="w-3.5 h-3.5" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -839,9 +839,9 @@ export const Header = () => {
                       setIsUserMenuOpen(false);
                       setIsChangePasswordOpen(true);
                     }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-mono text-[var(--text-main)] hover:bg-[var(--bg-card)] hover:text-lime-400 transition-colors cursor-pointer group text-left"
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-mono text-[var(--text-main)] hover:bg-[var(--bg-card)] hover:text-lime-700 dark:hover:text-neon transition-colors cursor-pointer group text-left"
                   >
-                    <div className="w-6 h-6 rounded-lg bg-lime-400/10 border border-lime-400/20 flex items-center justify-center text-lime-400 group-hover:bg-lime-400 group-hover:text-black transition-colors shrink-0">
+                    <div className="w-6 h-6 rounded-xl bg-[var(--neon-primary)]/10 border border-[var(--neon-primary)]/20 flex items-center justify-center text-lime-700 dark:text-neon group-hover:bg-[var(--neon-primary)] group-hover:text-black transition-colors shrink-0">
                       <KeyRound className="w-3.5 h-3.5" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -856,14 +856,14 @@ export const Header = () => {
                     onClick={() => {
                       setIsUserMenuOpen(false);
                       if (role === 'admin') {
-                        router.push('/settings');
+                        router.push('/connections?tab=policies');
                       } else {
                         router.push('/profile');
                       }
                     }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-mono text-[var(--text-main)] hover:bg-[var(--bg-card)] hover:text-lime-400 transition-colors cursor-pointer group text-left"
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-mono text-[var(--text-main)] hover:bg-[var(--bg-card)] hover:text-lime-700 dark:hover:text-neon transition-colors cursor-pointer group text-left"
                   >
-                    <div className="w-6 h-6 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-center text-[var(--text-muted)] group-hover:text-lime-400 transition-colors shrink-0">
+                    <div className="w-6 h-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-center text-[var(--text-muted)] group-hover:text-lime-700 dark:group-hover:text-neon transition-colors shrink-0">
                       <User className="w-3.5 h-3.5" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -885,7 +885,7 @@ export const Header = () => {
                     className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-mono text-[var(--text-main)] hover:bg-[var(--bg-card)] transition-colors cursor-pointer text-left"
                   >
                     <div className="flex items-center gap-2.5">
-                      <div className="w-6 h-6 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-center text-amber-400 shrink-0">
+                      <div className="w-6 h-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
                         {theme === 'dark' ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
                       </div>
                       <div>
@@ -902,7 +902,7 @@ export const Header = () => {
                 </div>
 
                 {/* Security Badge */}
-                <div className="px-3 py-2 rounded-xl bg-emerald-500/5 border border-emerald-500/20 flex items-center gap-2 text-[10px] font-mono text-emerald-400">
+                <div className="px-3 py-2 rounded-xl bg-emerald-500/5 border border-emerald-500/20 flex items-center gap-2 text-[10px] font-mono text-emerald-700 dark:text-emerald-400">
                   <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
                   <span className="leading-tight">Sesión activa y protegida</span>
                 </div>
@@ -916,7 +916,7 @@ export const Header = () => {
                       logout();
                       router.push('/login');
                     }}
-                    className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-mono font-bold transition-all cursor-pointer"
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-mono font-bold transition-all cursor-pointer"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     <span>Cerrar Sesión</span>
@@ -934,7 +934,7 @@ export const Header = () => {
               router.push('/login');
             }}
             title="Cerrar Sesión"
-            className="p-2 rounded-xl bg-[var(--bg-base)] hover:bg-rose-500/10 border border-[var(--border-color)] hover:border-rose-500/40 text-[var(--text-muted)] hover:text-rose-500 transition-colors"
+            className="p-2 rounded-xl bg-[var(--bg-base)] hover:bg-rose-500/10 border border-[var(--border-color)] hover:border-rose-500/40 text-[var(--text-muted)] hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
           >
             <LogOut className="w-4 h-4" />
           </button>
@@ -945,8 +945,14 @@ export const Header = () => {
       <ChangePasswordModal
         isOpen={isChangePasswordOpen}
         onClose={() => setIsChangePasswordOpen(false)}
-        userEmail={role === 'admin' ? 'Edgaradmin@vectorinside.com' : `gerencia@${activeTenant?.id || 'negocio'}.mx`}
-        userName={role === 'admin' ? 'Edgar Lobo Vectorial' : (activeTenant?.shortName || activeTenant?.name || 'Cliente')}
+        userEmail={
+          currentUser?.email ||
+          (role === 'admin' ? 'Edgaradmin@vectorinside.com' : `gerencia@${activeTenant?.id || 'negocio'}.mx`)
+        }
+        userName={
+          currentUser?.name ||
+          (role === 'admin' ? 'Edgar Lobo Vectorial' : (activeTenant?.shortName || activeTenant?.name || 'Cliente'))
+        }
       />
 
       {/* Global Command Palette Modal (⌘ K / Ctrl+K) */}
@@ -958,7 +964,7 @@ export const Header = () => {
       {/* Operational Status Bar */}
       <div className="flex items-center justify-between text-[10px] font-mono text-[var(--text-faint)] pt-1 border-t border-[var(--border-color)]/60">
         <div className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-lime-400" />
+          <span className="w-1.5 h-1.5 rounded-full bg-[var(--neon-primary)]" />
           <span className="text-[var(--text-muted)] font-semibold">SISTEMA OPERATIVO ACTIVO</span>
           <span className="hidden sm:inline">· Vector Inside OS</span>
         </div>

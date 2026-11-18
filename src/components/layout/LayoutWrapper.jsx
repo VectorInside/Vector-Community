@@ -88,9 +88,9 @@ export const LayoutWrapper = ({ children }) => {
   // Mientras se verifica la sesión con el servidor, mostrar indicador limpio
   if (authChecking || !isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#07080A] text-white flex flex-col items-center justify-center gap-3 font-mono text-xs">
-        <div className="w-6 h-6 border-2 border-[#c3f400] border-t-transparent rounded-full animate-spin" />
-        <span className="text-zinc-400">Verificando sesión...</span>
+      <div className="min-h-screen bg-[var(--bg-base)] text-[var(--text-main)] flex flex-col items-center justify-center gap-3 font-mono text-xs">
+        <div className="w-6 h-6 border-2 border-[var(--neon-primary)] border-t-transparent rounded-full animate-spin" />
+        <span className="text-[var(--text-muted)]">Verificando sesión...</span>
       </div>
     );
   }

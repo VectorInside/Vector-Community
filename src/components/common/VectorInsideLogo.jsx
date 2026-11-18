@@ -91,10 +91,10 @@ export const VectorInsideLogo = ({
     return (
       <div className={`relative inline-flex items-center justify-center p-4 select-none ${className}`}>
         <IsotypeSvg w={currentSize.width * 2.2} h={currentSize.height * 2.2} customClass="opacity-90" />
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[1px] px-2">
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[var(--bg-panel)]/70 backdrop-blur-[1px] px-2">
           <div className="flex items-center gap-1 font-heading font-black tracking-[0.2em] text-[var(--text-main)] uppercase text-center text-xs sm:text-sm drop-shadow-md">
             <span>VECTOR</span>
-            <span className="text-neon">INSIDE</span>
+            <span className="text-lime-700 dark:text-neon">INSIDE</span>
           </div>
           {showCommunity && (
             <span className="text-[8px] font-mono font-bold tracking-[0.25em] text-[var(--text-muted)] uppercase mt-0.5">
@@ -102,6 +102,46 @@ export const VectorInsideLogo = ({
             </span>
           )}
         </div>
+      </div>
+    );
+  }
+
+  // Variante 3: Official (Logotipo horizontal oficial adaptable claro/oscuro)
+  if (variant === 'official') {
+    const imgHeight = Math.round(currentSize.imgWidth * 0.25);
+    return (
+      <div className={`inline-flex flex-col justify-center select-none shrink-0 ${className}`}>
+        <div className="relative flex items-center shrink-0">
+          <Image
+            src="/assets/vector-logo-white.png"
+            alt="Vector Inside"
+            width={currentSize.imgWidth}
+            height={imgHeight}
+            priority
+            className="dark:block hidden object-contain h-auto select-none pointer-events-none"
+          />
+          <Image
+            src="/assets/vector-logo-light.png"
+            alt="Vector Inside"
+            width={currentSize.imgWidth}
+            height={imgHeight}
+            priority
+            className="dark:hidden block object-contain h-auto select-none pointer-events-none"
+          />
+        </div>
+        {showCommunity && (
+          <div className="flex items-center gap-1 mt-0.5 pl-0.5">
+            <span className="text-lime-700 dark:text-neon font-mono font-black text-[9px]">{`//`}</span>
+            <span className={`font-mono font-bold tracking-[0.22em] text-[var(--text-muted)] uppercase ${currentSize.subSize}`}>
+              COMMUNITY OS
+            </span>
+          </div>
+        )}
+        {showClaim && (
+          <div className="text-cognitive font-mono font-semibold tracking-wider text-[8px] mt-0.5 uppercase pl-0.5">
+            Aceleración Digital, Diseño desde el Núcleo
+          </div>
+        )}
       </div>
     );
   }

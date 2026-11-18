@@ -36,7 +36,7 @@ import { leadService } from '@/services/leadService';
 import { calendarService } from '@/services/calendarService';
 import { contentService } from '@/services/contentService';
 import { campaignService } from '@/services/campaignService';
-import { performanceService } from '@/services/performanceService';
+import { performanceService, computeExecutiveFinancialMetrics } from '@/services/performanceService';
 
 const formatNumber = (num) => {
   if (num === null || num === undefined || isNaN(num)) return '0';
@@ -131,32 +131,33 @@ export const CentroDeMando = () => {
     const posts = clientData.posts || [];
     const campaigns = clientData.campaigns || [];
 
+    const exec = computeExecutiveFinancialMetrics({
+      tenant: activeTenant,
+      leads,
+      appointments,
+      campaigns,
+      dualTelemetry: clientData.telemetry,
+    });
+
     const qualifiedLeads = leads.filter(
-      (l) => l.leadState === 'BILLABLE_LEAD' || l.leadState === 'LEAD_HOT_PREQUAL' || l.status === 'Calificado'
+      (l) =>
+        l.leadState === 'BILLABLE_LEAD' ||
+        l.leadState === 'LEAD_HOT_PREQUAL' ||
+        l.leadState === 'APPOINTMENT_SCHEDULED' ||
+        l.leadState === 'CONVERTED' ||
+        l.status === 'Calificado'
     );
 
     const confirmedAppts = appointments.filter((a) => {
-      const st = String(a.status || '').toUpperCase();
+      const st = String(a.status || 'CONFIRMED').toUpperCase();
       return st !== 'CANCELLED' && st !== 'CANCELADA' && st !== 'NO_SHOW';
     });
     const attendanceRate =
-      appointments.length > 0 ? Math.round((confirmedAppts.length / appointments.length) * 100) : 0;
+      appointments.length > 0 ? Math.round((confirmedAppts.length / appointments.length) * 100) : null;
 
-    const totalSpend = campaigns.reduce((acc, c) => acc + (Number(c.spend) || 0), 0);
-    const campaignLeadsSum = campaigns.reduce((acc, c) => acc + (Number(c.leadsCount) || 0), 0);
-    const totalLeadsCount = campaignLeadsSum > 0 ? campaignLeadsSum : leads.length;
     const activeCampaignsCount = campaigns.filter(
       (c) => String(c.status || '').toUpperCase() === 'ACTIVA' || String(c.status || '').toUpperCase() === 'ACTIVE'
     ).length;
-
-    const apptsRevenue = appointments.reduce(
-      (acc, a) => acc + (Number(a.ticketValue || a.price || a.estimatedValue) || 0),
-      0
-    );
-    const leadsRevenue = qualifiedLeads.reduce((acc, l) => acc + (Number(l.estimatedValue) || 0), 0);
-    const attributedRevenue = apptsRevenue + leadsRevenue;
-    const realRoas = totalSpend > 0 && attributedRevenue > 0 ? (attributedRevenue / totalSpend).toFixed(2) : '0.0';
-    const costPerLead = totalLeadsCount > 0 && totalSpend > 0 ? Math.round(totalSpend / totalLeadsCount) : 0;
 
     const channelCounts = leads.reduce((acc, l) => {
       const rawCh = String(l.channel || '').trim();
@@ -165,10 +166,7 @@ export const CentroDeMando = () => {
       return acc;
     }, {});
     const topChannelEntry = Object.entries(channelCounts).sort((a, b) => b[1] - a[1])[0];
-    const topChannel = topChannelEntry ? topChannelEntry[0] : 'Sin registros';
-
-    const conversionRate =
-      leads.length > 0 ? ((appointments.length / leads.length) * 100).toFixed(1) : '0.0';
+    const topChannel = topChannelEntry ? topChannelEntry[0] : null;
 
     const scheduledPostsCount = posts.filter((p) => {
       const st = String(p.status || '').toUpperCase();
@@ -178,6 +176,7 @@ export const CentroDeMando = () => {
     return {
       leads,
       qualifiedLeads,
+      qualifiedLeadsCount: exec.qualifiedLeads,
       appointments,
       confirmedAppts,
       attendanceRate,
@@ -185,17 +184,20 @@ export const CentroDeMando = () => {
       scheduledPostsCount,
       campaigns,
       activeCampaignsCount,
-      totalSpend,
-      totalLeadsCount,
-      apptsRevenue,
-      leadsRevenue,
-      attributedRevenue,
-      realRoas,
-      costPerLead,
+      totalSpend: exec.totalSpend,
+      totalLeadsCount: exec.totalLeads,
+      apptsRevenue: exec.appointmentsRevenue,
+      leadsRevenue: exec.leadsRevenue,
+      attributedRevenue: exec.attributedRevenue,
+      realRoas: exec.realRoas !== null ? exec.realRoas.toFixed(2) : null,
+      realCac: exec.realCac,
+      costPerLead: exec.cpl,
       topChannel,
-      conversionRate,
+      conversionRate: exec.conversionRate !== null ? exec.conversionRate.toFixed(1) : null,
+      adFatigueAlert: exec.adFatigueAlert,
+      hasEnoughData: exec.hasEnoughData,
     };
-  }, [clientData]);
+  }, [clientData, activeTenant]);
 
   // Tenants List & Totals
   const tenantsList = useMemo(() => Object.values(tenantsData || {}), [tenantsData]);
@@ -362,7 +364,7 @@ export const CentroDeMando = () => {
             ) : (
               <button
                 type="button"
-                onClick={() => router.push('/config?tab=rag&mode=wizard')}
+                onClick={() => router.push('/connections?tab=rag&mode=wizard')}
                 className="px-4 py-2 rounded-xl bg-neon text-black font-mono font-bold text-xs uppercase inline-flex items-center gap-2 hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_15px_var(--neon-glow)] active:scale-95"
               >
                 <Plus className="w-4 h-4 stroke-[3]" />
@@ -396,7 +398,7 @@ export const CentroDeMando = () => {
             <button
               type="button"
               onClick={() => setGuideMetricId('contactabilidad_ratio')}
-              className="p-1 rounded-md text-[var(--text-faint)] hover:text-neon hover:bg-[var(--bg-card)] transition-colors"
+              className="p-1 rounded-md text-[var(--text-faint)] hover:text-lime-700 dark:hover:text-neon hover:bg-[var(--bg-card)] transition-colors"
               title="Ver definición y metodología"
             >
               <Info className="w-3.5 h-3.5" />
@@ -404,32 +406,50 @@ export const CentroDeMando = () => {
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl sm:text-3xl font-heading font-black text-[var(--text-main)]">
-              {isClient ? clientMetrics.appointments.length : tenantsList.length}
+              {isClient
+                ? clientData.loading
+                  ? '...'
+                  : clientMetrics.appointments.length > 0
+                  ? clientMetrics.appointments.length
+                  : '—'
+                : tenantsList.length > 0
+                ? tenantsList.length
+                : '—'}
             </span>
             <span className="text-xs font-mono text-[var(--text-muted)]">
-              {isClient ? 'citas registradas' : 'negocios en cartera'}
+              {isClient
+                ? clientMetrics.appointments.length > 0
+                  ? 'citas registradas'
+                  : 'sin citas aún'
+                : tenantsList.length > 0
+                ? 'negocios en cartera'
+                : 'sin negocios'}
             </span>
           </div>
           <div className="flex items-center gap-2 text-xs font-mono pt-0.5">
             {isClient ? (
-              <>
-                <span className="text-emerald-500 font-bold flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  {clientMetrics.confirmedAppts.length} confirmadas
-                </span>
-                <span className="text-[var(--text-faint)]">·</span>
-                <span className="text-amber-500 font-bold">
-                  {clientMetrics.attendanceRate}% asistencia
-                </span>
-              </>
+              clientMetrics.appointments.length > 0 ? (
+                <>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    {clientMetrics.confirmedAppts.length} confirmadas
+                  </span>
+                  <span className="text-[var(--text-faint)]">·</span>
+                  <span className="text-amber-600 dark:text-amber-400 font-bold">
+                    {clientMetrics.attendanceRate !== null ? `${clientMetrics.attendanceRate}% asistencia` : 'N/D'}
+                  </span>
+                </>
+              ) : (
+                <span className="text-[var(--text-muted)]">Asistencia: N/D</span>
+              )
             ) : (
               <>
-                <span className="text-emerald-500 font-bold flex items-center gap-1">
+                <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   {activeAiCount} activos
                 </span>
                 <span className="text-[var(--text-faint)]">·</span>
-                <span className="text-amber-500 font-bold flex items-center gap-1">
+                <span className="text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                   {pausedAiCount} manual
                 </span>
@@ -447,20 +467,30 @@ export const CentroDeMando = () => {
             <button
               type="button"
               onClick={() => setGuideMetricId('lead_calificado')}
-              className="p-1 rounded-md text-[var(--text-faint)] hover:text-neon hover:bg-[var(--bg-card)] transition-colors"
+              className="p-1 rounded-md text-[var(--text-faint)] hover:text-lime-700 dark:hover:text-neon hover:bg-[var(--bg-card)] transition-colors"
               title="Ver definición y protocolo de calificación"
             >
               <Info className="w-3.5 h-3.5" />
             </button>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-heading font-black text-neon">
-              {isClient ? clientMetrics.qualifiedLeads.length : (totalBilledLeads || clientMetrics.qualifiedLeads.length)}
+            <span className="text-2xl sm:text-3xl font-heading font-black text-lime-700 dark:text-neon">
+              {isClient
+                ? clientData.loading
+                  ? '...'
+                  : clientMetrics.hasEnoughData || clientMetrics.qualifiedLeadsCount > 0
+                  ? clientMetrics.qualifiedLeadsCount
+                  : '—'
+                : (totalBilledLeads || clientMetrics.qualifiedLeadsCount) > 0
+                ? totalBilledLeads || clientMetrics.qualifiedLeadsCount
+                : '—'}
             </span>
-            <span className="text-xs font-mono text-neon font-bold">leads (mes)</span>
+            <span className="text-xs font-mono text-lime-700 dark:text-neon font-bold">leads (mes)</span>
           </div>
           <p className="text-xs font-mono text-[var(--text-muted)] pt-0.5" suppressHydrationWarning>
-            ${formatNumber(isClient ? clientMetrics.attributedRevenue : estimatedPipelineMXN)} MXN valor est. pipeline
+            {(isClient ? clientMetrics.attributedRevenue : estimatedPipelineMXN) > 0
+              ? `$${formatNumber(isClient ? clientMetrics.attributedRevenue : estimatedPipelineMXN)} MXN valor est. pipeline`
+              : 'Pipeline: N/D'}
           </p>
         </div>
 
@@ -473,22 +503,34 @@ export const CentroDeMando = () => {
             <button
               type="button"
               onClick={() => setGuideMetricId('venta_ganada')}
-              className="p-1 rounded-md text-[var(--text-faint)] hover:text-lime-400 hover:bg-[var(--bg-card)] transition-colors"
+              className="p-1 rounded-md text-[var(--text-faint)] hover:text-lime-700 dark:hover:text-neon hover:bg-[var(--bg-card)] transition-colors"
               title="Ver fórmula y reconciliación"
             >
               <Info className="w-3.5 h-3.5" />
             </button>
           </div>
           <div className="flex items-baseline gap-1.5">
-            <span className="text-2xl sm:text-3xl font-heading font-black text-lime-400" suppressHydrationWarning>
-              ${formatNumber(isClient ? clientMetrics.attributedRevenue : totalRevenueMXN)}
+            <span className="text-2xl sm:text-3xl font-heading font-black text-lime-700 dark:text-neon" suppressHydrationWarning>
+              {isClient
+                ? clientData.loading
+                  ? '...'
+                  : clientMetrics.attributedRevenue > 0
+                  ? `$${formatNumber(clientMetrics.attributedRevenue)}`
+                  : 'N/D'
+                : totalRevenueMXN > 0
+                ? `$${formatNumber(totalRevenueMXN)}`
+                : 'N/D'}
             </span>
-            <span className="text-xs font-mono text-[var(--text-faint)]">MXN</span>
+            {(isClient ? clientMetrics.attributedRevenue > 0 : totalRevenueMXN > 0) && (
+              <span className="text-xs font-mono text-[var(--text-faint)]">MXN</span>
+            )}
           </div>
-          <p className="text-xs font-mono text-emerald-500 dark:text-emerald-400 font-bold pt-0.5" suppressHydrationWarning>
+          <p className="text-xs font-mono text-emerald-600 dark:text-emerald-400 font-bold pt-0.5" suppressHydrationWarning>
             {isClient
-              ? `Inversión Ads: $${formatNumber(clientMetrics.totalSpend)} MXN · ROAS ${clientMetrics.realRoas}x`
-              : `Agencia: $${formatNumber(agencyRevenueMXN)} MXN`}
+              ? `Inversión Ads: ${clientMetrics.totalSpend > 0 ? `$${formatNumber(clientMetrics.totalSpend)} MXN` : 'N/D'} · ROAS ${clientMetrics.realRoas !== null ? `${clientMetrics.realRoas}x` : 'N/D'}`
+              : agencyRevenueMXN > 0
+              ? `Agencia: $${formatNumber(agencyRevenueMXN)} MXN`
+              : 'Agencia: N/D'}
           </p>
         </div>
 
@@ -501,25 +543,27 @@ export const CentroDeMando = () => {
             <button
               type="button"
               onClick={() => setGuideMetricId('tiempo_primera_respuesta')}
-              className="p-1 rounded-md text-[var(--text-faint)] hover:text-cyan-400 hover:bg-[var(--bg-card)] transition-colors"
+              className="p-1 rounded-md text-[var(--text-faint)] hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-[var(--bg-card)] transition-colors"
               title="Ver métricas de tiempo y p90"
             >
               <Info className="w-3.5 h-3.5" />
             </button>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-heading font-black text-cyan-400">
+            <span className="text-2xl sm:text-3xl font-heading font-black text-cyan-600 dark:text-cyan-400">
               {isClient
                 ? clientData.loading
                   ? '...'
-                  : `${clientMetrics.leads.length} leads`
+                  : clientMetrics.leads.length > 0
+                  ? `${clientMetrics.leads.length} leads`
+                  : '—'
                 : tenantsList.length === 0
-                ? 'Sin datos'
+                ? 'N/D'
                 : activeAiCount > 0
                 ? 'En vivo'
                 : 'En pausa'}
             </span>
-            <span className="text-xs font-mono text-emerald-500 font-bold">
+            <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400 font-bold">
               {isClient
                 ? activeTenant?.isAiActive
                   ? 'En vivo'
@@ -529,14 +573,26 @@ export const CentroDeMando = () => {
                 : 'En espera'}
             </span>
           </div>
-          {crisisCount > 0 ? (
-            <p className="text-xs font-mono text-red-500 font-bold flex items-center gap-1.5 pt-0.5 animate-pulse">
+          {isClient ? (
+            activeTenant?.crisisMode ? (
+              <p className="text-xs font-mono text-red-600 dark:text-red-400 font-bold flex items-center gap-1.5 pt-0.5 animate-pulse">
+                <AlertOctagon className="w-3.5 h-3.5" />
+                <span>Centinela: Alerta de crisis activa</span>
+              </p>
+            ) : (
+              <p className="text-xs font-mono text-[var(--text-muted)] flex items-center gap-1.5 pt-0.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span>Centinela de Crisis: Sin alertas</span>
+              </p>
+            )
+          ) : crisisCount > 0 ? (
+            <p className="text-xs font-mono text-red-600 dark:text-red-400 font-bold flex items-center gap-1.5 pt-0.5 animate-pulse">
               <AlertOctagon className="w-3.5 h-3.5" />
               <span>Centinela: {crisisCount} alerta(s) de crisis</span>
             </p>
           ) : (
             <p className="text-xs font-mono text-[var(--text-muted)] flex items-center gap-1.5 pt-0.5">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
               <span>Centinela de Crisis: 0 alertas</span>
             </p>
           )}
@@ -653,10 +709,10 @@ export const CentroDeMando = () => {
 
               <div className="pt-2 border-t border-[var(--border-color)] flex items-center justify-between text-xs font-mono">
                 <span className="text-[var(--text-muted)]">Tasa de Asistencia Pre-Cita:</span>
-                <span className={`font-bold ${clientMetrics.attendanceRate > 0 ? 'text-emerald-500' : 'text-[var(--text-muted)]'}`}>
-                  {clientMetrics.appointments.length > 0
+                <span className={`font-bold ${clientMetrics.attendanceRate && clientMetrics.attendanceRate > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-[var(--text-muted)]'}`}>
+                  {clientMetrics.appointments.length > 0 && clientMetrics.attendanceRate !== null
                     ? `${clientMetrics.attendanceRate}% (${clientMetrics.confirmedAppts.length}/${clientMetrics.appointments.length} citas)`
-                    : '0% (Sin citas registradas)'}
+                    : 'N/D (Sin citas registradas)'}
                 </span>
               </div>
             </div>
@@ -666,7 +722,7 @@ export const CentroDeMando = () => {
               <div>
                 <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
                   <div className="flex items-center gap-2">
-                    <div className="p-2 rounded-xl bg-purple-500/15 text-purple-400 border border-purple-500/30">
+                    <div className="p-2 rounded-xl bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30">
                       <CalendarDays className="w-4 h-4" />
                     </div>
                     <div>
@@ -681,7 +737,7 @@ export const CentroDeMando = () => {
                   <button
                     type="button"
                     onClick={() => router.push('/planner')}
-                    className="text-xs font-mono text-neon hover:underline flex items-center gap-1 font-bold"
+                    className="text-xs font-mono text-lime-700 dark:text-neon hover:underline flex items-center gap-1 font-bold"
                   >
                     <span>Ver Calendario</span>
                     <ChevronRight className="w-3.5 h-3.5" />
@@ -710,7 +766,7 @@ export const CentroDeMando = () => {
                         </div>
                         <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
                           <span className="text-[10px] text-[var(--text-muted)] uppercase block">Programadas / Listas</span>
-                          <span className="text-base font-bold text-purple-400">{clientMetrics.scheduledPostsCount}</span>
+                          <span className="text-base font-bold text-purple-600 dark:text-purple-400">{clientMetrics.scheduledPostsCount}</span>
                         </div>
                       </div>
 
@@ -728,7 +784,7 @@ export const CentroDeMando = () => {
                                 {post.network || post.channel || 'Redes'} · {post.format || post.postType || 'Post'}
                               </p>
                             </div>
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-purple-500/15 text-purple-400 border border-purple-500/30 shrink-0">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30 shrink-0">
                               {post.status || 'Borrador'}
                             </span>
                           </div>
@@ -754,7 +810,7 @@ export const CentroDeMando = () => {
           <div className="rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] p-5 space-y-4 shadow-sm">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-[var(--border-color)] pb-3">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-cyan-500/15 text-cyan-400 border border-cyan-500/30">
+                <div className="p-2 rounded-xl bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30">
                   <Megaphone className="w-4 h-4" />
                 </div>
                 <div>
@@ -770,7 +826,7 @@ export const CentroDeMando = () => {
               <button
                 type="button"
                 onClick={() => router.push('/campaigns')}
-                className="text-xs font-mono text-neon hover:underline flex items-center gap-1 font-bold"
+                className="text-xs font-mono text-lime-700 dark:text-neon hover:underline flex items-center gap-1 font-bold"
               >
                 <span>Ver Métricas de Campaña</span>
                 <ChevronRight className="w-3.5 h-3.5" />
@@ -781,26 +837,30 @@ export const CentroDeMando = () => {
               <div className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1">
                 <span className="text-[10px] text-[var(--text-muted)] uppercase">Inversión Devengada Mes</span>
                 <p className="text-xl font-bold text-[var(--text-main)]" suppressHydrationWarning>
-                  ${formatNumber(clientMetrics.totalSpend)} MXN
+                  {clientMetrics.totalSpend > 0 ? `$${formatNumber(clientMetrics.totalSpend)} MXN` : 'N/D'}
                 </p>
-                <span className="text-[10px] text-emerald-500 font-bold">
-                  ROAS Real: {clientMetrics.realRoas}x
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
+                  ROAS Real: {clientMetrics.realRoas !== null ? `${clientMetrics.realRoas}x` : 'N/D'}
                 </span>
               </div>
 
               <div className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1">
                 <span className="text-[10px] text-[var(--text-muted)] uppercase">Contactos Directos Captados</span>
-                <p className="text-xl font-bold text-neon">{clientMetrics.totalLeadsCount} Leads</p>
+                <p className="text-xl font-bold text-lime-700 dark:text-neon">
+                  {clientMetrics.totalLeadsCount > 0 ? `${clientMetrics.totalLeadsCount} Leads` : '—'}
+                </p>
                 <span className="text-[10px] text-[var(--text-muted)]" suppressHydrationWarning>
-                  Costo por Lead: ${formatNumber(clientMetrics.costPerLead)} MXN
+                  Costo por Lead: {clientMetrics.costPerLead !== null && clientMetrics.totalSpend > 0 ? `$${formatNumber(clientMetrics.costPerLead)} MXN` : 'N/D'}
                 </span>
               </div>
 
               <div className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-1">
                 <span className="text-[10px] text-[var(--text-muted)] uppercase">Canal Más Efectivo</span>
-                <p className="text-xl font-bold text-cyan-400 truncate">{clientMetrics.topChannel}</p>
+                <p className="text-xl font-bold text-cyan-600 dark:text-cyan-400 truncate">
+                  {clientMetrics.topChannel || 'N/D'}
+                </p>
                 <span className="text-[10px] text-[var(--text-muted)]">
-                  {clientMetrics.conversionRate}% de conversiones a cita
+                  {clientMetrics.conversionRate !== null ? `${clientMetrics.conversionRate}% de conversiones a cita` : 'Conversión: N/D'}
                 </span>
               </div>
             </div>
@@ -825,7 +885,7 @@ export const CentroDeMando = () => {
               </div>
 
               {tenantsList.length > 0 && attentionTenants.length > 0 && (
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-500 border border-amber-500/30 font-bold">
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-bold">
                   {attentionTenants.length} Pendiente{attentionTenants.length > 1 ? 's' : ''}
                 </span>
               )}
@@ -835,8 +895,8 @@ export const CentroDeMando = () => {
               /* Zero state motivador cuando no hay negocios en la cartera */
               <div className="p-4 sm:p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] flex items-center justify-between gap-3 shadow-sm">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-neon/10 text-neon flex items-center justify-center text-sm font-bold shrink-0">
-                    <Activity className="w-4 h-4 text-neon" />
+                  <div className="w-8 h-8 rounded-xl bg-neon/10 text-lime-700 dark:text-neon flex items-center justify-center text-sm font-bold shrink-0">
+                    <Activity className="w-4 h-4 text-lime-700 dark:text-neon" />
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wide">
@@ -855,8 +915,8 @@ export const CentroDeMando = () => {
               /* Banner de Paz Operativa */
               <div className="p-3.5 sm:p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between gap-3 shadow-sm">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm font-bold shrink-0">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-sm font-bold shrink-0">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">
@@ -900,17 +960,17 @@ export const CentroDeMando = () => {
 
                           <div className="flex flex-wrap gap-1 shrink-0">
                             {hasCrisis && (
-                              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-red-500/15 text-red-500 border border-red-500/30 font-bold animate-pulse">
+                              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30 font-bold animate-pulse">
                                 CRISIS
                               </span>
                             )}
                             {hasFriction && (
-                              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-500 border border-amber-500/30 font-bold">
+                              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-bold">
                                 FRICCIÓN WEB
                               </span>
                             )}
                             {isPaused && (
-                              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-red-500/15 text-red-400 border border-red-500/30 font-bold">
+                              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30 font-bold">
                                 IA PAUSADA
                               </span>
                             )}
@@ -931,7 +991,7 @@ export const CentroDeMando = () => {
                           <button
                             type="button"
                             onClick={() => toggleTenantAi(t.id)}
-                            className="px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500 text-emerald-400 hover:text-black font-bold border border-emerald-500/30 transition-all flex items-center gap-1"
+                            className="px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500 text-emerald-700 dark:text-emerald-400 hover:text-black font-bold border border-emerald-500/30 transition-all flex items-center gap-1"
                           >
                             <Power className="w-3 h-3" />
                             <span>Reactivar IA</span>
@@ -943,9 +1003,9 @@ export const CentroDeMando = () => {
                             type="button"
                             onClick={() => {
                               switchTenantContext(t.id);
-                              router.push('/performance');
+                              router.push('/contactability');
                             }}
-                            className="px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500 text-amber-400 hover:text-black font-bold border border-amber-500/30 transition-all flex items-center gap-1"
+                            className="px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500 text-amber-700 dark:text-amber-400 hover:text-black font-bold border border-amber-500/30 transition-all flex items-center gap-1"
                           >
                             <BarChart2 className="w-3 h-3" />
                             <span>Auditar en Contactabilidad</span>
@@ -958,7 +1018,7 @@ export const CentroDeMando = () => {
                             switchTenantContext(t.id);
                             router.push('/inbox');
                           }}
-                          className="px-2.5 py-1 rounded-lg bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] hover:text-neon border border-[var(--border-color)] hover:border-neon font-bold transition-all flex items-center gap-1"
+                          className="px-2.5 py-1 rounded-lg bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] hover:text-lime-700 dark:hover:text-neon border border-[var(--border-color)] hover:border-neon font-bold transition-all flex items-center gap-1"
                         >
                           <span>Tomar Control</span>
                           <ChevronRight className="w-3 h-3" />
@@ -1011,7 +1071,7 @@ export const CentroDeMando = () => {
                   </div>
 
                   {/* Status Filters */}
-                  <div className="flex items-center bg-[var(--bg-card)] p-1 rounded-xl border border-[var(--border-color)] text-[10px] font-mono">
+                  <div className="flex flex-wrap items-center bg-[var(--bg-card)] p-1 rounded-xl border border-[var(--border-color)] text-[10px] font-mono">
                     <button
                       type="button"
                       onClick={() => setStatusFilter('all')}
@@ -1088,7 +1148,7 @@ export const CentroDeMando = () => {
             {/* Zero-State A: No hay negocios en la cartera */}
             {tenantsList.length === 0 ? (
               <div className="p-8 text-center rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-3 font-sans">
-                <div className="w-12 h-12 rounded-2xl bg-neon/10 border border-neon/30 text-neon flex items-center justify-center mx-auto text-xl font-bold">
+                <div className="w-12 h-12 rounded-2xl bg-neon/10 border border-neon/30 text-lime-700 dark:text-neon flex items-center justify-center mx-auto text-xl font-bold">
                   <Building2 className="w-6 h-6" />
                 </div>
                 <h4 className="text-base font-bold text-[var(--text-main)]">
@@ -1100,7 +1160,7 @@ export const CentroDeMando = () => {
                 <div className="pt-2">
                   <button
                     type="button"
-                    onClick={() => router.push('/config?tab=rag&mode=wizard')}
+                    onClick={() => router.push('/connections?tab=rag&mode=wizard')}
                     className="px-4 py-2 rounded-xl bg-neon text-black font-mono font-bold text-xs uppercase inline-flex items-center gap-1.5 hover:bg-[var(--neon-hover)] transition-all shadow-[0_0_15px_var(--neon-glow)] active:scale-95"
                   >
                     <Plus className="w-3.5 h-3.5 stroke-[3]" />
@@ -1125,7 +1185,7 @@ export const CentroDeMando = () => {
                     setStatusFilter('all');
                     setCategoryFilter('all');
                   }}
-                  className="text-xs text-neon underline pt-1 font-bold inline-block"
+                  className="text-xs text-lime-700 dark:text-neon underline pt-1 font-bold inline-block"
                 >
                   Restablecer filtros
                 </button>
@@ -1145,7 +1205,7 @@ export const CentroDeMando = () => {
                           ? 'bg-[var(--bg-panel)] border-neon shadow-[0_0_20px_rgba(231,249,0,0.12)] ring-1 ring-neon/50'
                           : t.isAiActive
                           ? 'bg-[var(--bg-panel)] border-[var(--border-color)] hover:border-neon/40 hover:shadow-sm'
-                          : 'bg-red-950/10 border-red-500/30'
+                          : 'bg-red-500/5 dark:bg-red-950/10 border-red-500/30'
                       }`}
                     >
                       <div className="space-y-2.5">
@@ -1157,11 +1217,11 @@ export const CentroDeMando = () => {
                             </div>
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5">
-                                <h4 className="text-xs sm:text-sm font-bold text-[var(--text-main)] font-sans truncate group-hover:text-neon transition-colors">
+                                <h4 className="text-xs sm:text-sm font-bold text-[var(--text-main)] font-sans truncate group-hover:text-lime-700 dark:group-hover:text-neon transition-colors">
                                   {t.name}
                                 </h4>
                                 {isSelected && (
-                                  <span className="text-[8px] font-mono px-1 py-0.2 rounded bg-neon/15 text-neon border border-neon/30 font-bold shrink-0">
+                                  <span className="text-[8px] font-mono px-1 py-0.2 rounded bg-neon/15 text-lime-700 dark:text-neon border border-neon/30 font-bold shrink-0">
                                     ACTIVO
                                   </span>
                                 )}
@@ -1178,7 +1238,7 @@ export const CentroDeMando = () => {
                             onClick={() => toggleTenantAi(t.id)}
                             className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-lg border flex items-center gap-1 transition-all shrink-0 ${
                               t.isAiActive
-                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-red-500/20 hover:text-red-400'
+                                ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 hover:bg-red-500/20 hover:text-red-600 dark:hover:text-red-400'
                                 : 'bg-red-500 text-white border-red-400 animate-pulse'
                             }`}
                             title={t.isAiActive ? 'Clic para pausar IA' : 'Clic para reactivar IA'}
@@ -1191,12 +1251,12 @@ export const CentroDeMando = () => {
                         {/* Fila 2: Etiquetas de Presencia & Alertas */}
                         <div className="flex items-center gap-1.5 font-mono text-[9px] flex-wrap">
                           {t.hasWebsite ? (
-                            <span className="px-1.5 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/30 rounded flex items-center gap-1">
+                            <span className="px-1.5 py-0.5 bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/30 rounded flex items-center gap-1">
                               <Globe className="w-2.5 h-2.5" />
                               <span>Web + GA4</span>
                             </span>
                           ) : (
-                            <span className="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded flex items-center gap-1">
+                            <span className="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 rounded flex items-center gap-1">
                               <Smartphone className="w-2.5 h-2.5" />
                               <span>Micro-Landing</span>
                             </span>
@@ -1207,13 +1267,13 @@ export const CentroDeMando = () => {
                           </span>
 
                           {t.frictionAlert && (
-                            <span className="px-1.5 py-0.5 bg-amber-500/15 text-amber-500 border border-amber-500/30 rounded flex items-center gap-0.5 font-bold">
+                            <span className="px-1.5 py-0.5 bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 rounded flex items-center gap-0.5 font-bold">
                               <AlertOctagon className="w-2.5 h-2.5" />
                               <span>Alerta</span>
                             </span>
                           )}
                           {t.crisisMode && (
-                            <span className="px-1.5 py-0.5 bg-red-500/15 text-red-500 border border-red-500/30 rounded flex items-center gap-0.5 font-bold animate-pulse">
+                            <span className="px-1.5 py-0.5 bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30 rounded flex items-center gap-0.5 font-bold animate-pulse">
                               <AlertOctagon className="w-2.5 h-2.5" />
                               <span>Crisis</span>
                             </span>
@@ -1224,16 +1284,20 @@ export const CentroDeMando = () => {
                         <div className="grid grid-cols-3 gap-1.5 p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] font-mono text-center">
                           <div>
                             <span className="text-[8px] text-[var(--text-muted)] font-bold uppercase block">Leads Mes</span>
-                            <span className="text-[11px] font-bold text-[var(--text-main)] block">{t.billedLeadsMonth || 0}</span>
+                            <span className="text-[11px] font-bold text-[var(--text-main)] block">
+                              {Number(t.billedLeadsMonth || 0) > 0 ? t.billedLeadsMonth : '—'}
+                            </span>
                           </div>
                           <div>
                             <span className="text-[8px] text-[var(--text-muted)] font-bold uppercase block">Tarifa Lead</span>
-                            <span className="text-[11px] font-bold text-neon block">${Number(t.leadPriceMXN || 0)}</span>
+                            <span className="text-[11px] font-bold text-lime-700 dark:text-neon block">
+                              {Number(t.leadPriceMXN || 0) > 0 ? `$${Number(t.leadPriceMXN)}` : 'N/D'}
+                            </span>
                           </div>
                           <div>
                             <span className="text-[8px] text-[var(--text-muted)] font-bold uppercase block">Facturación</span>
                             <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 block" suppressHydrationWarning>
-                              ${formatNumber(monthlyBilling)}
+                              {monthlyBilling > 0 ? `$${formatNumber(monthlyBilling)}` : 'N/D'}
                             </span>
                           </div>
                         </div>
@@ -1245,7 +1309,7 @@ export const CentroDeMando = () => {
                           <button
                             type="button"
                             onClick={() => setDrawerTenantId(t.id)}
-                            className="px-2.5 py-1 rounded-lg bg-neon/15 hover:bg-neon hover:text-black text-neon border border-neon/40 font-bold transition-all flex items-center gap-1 shadow-sm active:scale-95"
+                            className="px-2.5 py-1 rounded-lg bg-neon/15 hover:bg-neon hover:text-black text-lime-700 dark:text-neon border border-neon/40 font-bold transition-all flex items-center gap-1 shadow-sm active:scale-95"
                           >
                             <Sliders className="w-3 h-3" />
                             <span>Administrar</span>
@@ -1306,7 +1370,7 @@ export const CentroDeMando = () => {
                       <h3 className="text-lg font-bold text-[var(--text-main)] font-sans">
                         {drawerTenant.name}
                       </h3>
-                      <span className="text-xs font-mono text-neon block">
+                      <span className="text-xs font-mono text-lime-700 dark:text-neon block">
                         {drawerTenant.giro}
                       </span>
                       <span className="text-[10px] font-mono text-[var(--text-muted)] block">
@@ -1328,7 +1392,7 @@ export const CentroDeMando = () => {
                 <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-3 font-mono text-xs">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-[var(--text-main)] uppercase tracking-wider flex items-center gap-1.5">
-                      <Power className="w-4 h-4 text-neon" />
+                      <Power className="w-4 h-4 text-lime-700 dark:text-neon" />
                       <span>Kill-Switch de IA</span>
                     </span>
                     <button
@@ -1336,7 +1400,7 @@ export const CentroDeMando = () => {
                       onClick={() => toggleTenantAi(drawerTenant.id)}
                       className={`px-3 py-1.5 rounded-lg border font-bold text-xs flex items-center gap-1.5 transition-all ${
                         drawerTenant.isAiActive
-                          ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/40 hover:bg-red-500/20 hover:text-red-400'
+                          ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-500/40 hover:bg-red-500/20 hover:text-red-600 dark:hover:text-red-400'
                           : 'bg-red-500 text-white border-red-400 animate-pulse'
                       }`}
                     >
@@ -1354,13 +1418,13 @@ export const CentroDeMando = () => {
                 {/* Sección 2: Ajuste de Tarifa Pay-Per-Lead */}
                 <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-3 font-mono text-xs">
                   <span className="font-bold text-[var(--text-main)] uppercase tracking-wider flex items-center gap-1.5">
-                    <DollarSign className="w-4 h-4 text-neon" />
+                    <DollarSign className="w-4 h-4 text-lime-700 dark:text-neon" />
                     <span>Tarifa por Lead Calificado ($ MXN)</span>
                   </span>
 
                   <div className="flex items-center gap-2">
                     <div className="flex-1 relative">
-                      <span className="absolute left-3 top-2 text-neon font-bold">$</span>
+                      <span className="absolute left-3 top-2 text-lime-700 dark:text-neon font-bold">$</span>
                       <input
                         type="number"
                         min={0}
@@ -1387,7 +1451,7 @@ export const CentroDeMando = () => {
                         onClick={() => updateTenantPolicy(drawerTenant.id, { leadPriceMXN: price })}
                         className={`px-2 py-0.5 rounded border transition-colors ${
                           drawerTenant.leadPriceMXN === price
-                            ? 'bg-neon/20 text-neon border-neon'
+                            ? 'bg-neon/20 text-lime-700 dark:text-neon border-neon'
                             : 'bg-[var(--bg-card-subtle)] text-[var(--text-muted)] border-[var(--border-color)] hover:border-[var(--text-muted)]'
                         }`}
                       >
@@ -1403,7 +1467,7 @@ export const CentroDeMando = () => {
                     </span>
                     <div className="flex items-center gap-2">
                       <div className="flex-1 relative">
-                        <span className="absolute left-3 top-2 text-emerald-400 font-bold">$</span>
+                        <span className="absolute left-3 top-2 text-emerald-600 dark:text-emerald-400 font-bold">$</span>
                         <input
                           type="number"
                           min={0}
@@ -1433,7 +1497,7 @@ export const CentroDeMando = () => {
                   </div>
                   <div className="flex justify-between text-[var(--text-muted)] font-medium">
                     <span>Facturación Acumulada:</span>
-                    <span className="text-neon font-bold" suppressHydrationWarning>
+                    <span className="text-lime-700 dark:text-neon font-bold" suppressHydrationWarning>
                       ${formatNumber(Number(drawerTenant.billedLeadsMonth || 0) * Number(drawerTenant.leadPriceMXN || 0))} MXN
                     </span>
                   </div>
@@ -1457,11 +1521,11 @@ export const CentroDeMando = () => {
                       onClick={() => {
                         switchTenantContext(drawerTenant.id);
                         setDrawerTenantId(null);
-                        router.push('/performance');
+                        router.push('/contactability');
                       }}
                       className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon text-left transition-all hover:bg-[var(--bg-card-subtle)] space-y-1"
                     >
-                      <BarChart2 className="w-4 h-4 text-neon" />
+                      <BarChart2 className="w-4 h-4 text-lime-700 dark:text-neon" />
                       <p className="font-bold text-[var(--text-main)] text-[11px]">Métricas Web & CAPI</p>
                       <p className="text-[9px] text-[var(--text-muted)]">GA4, Pixel & Tráfico</p>
                     </button>
@@ -1475,8 +1539,8 @@ export const CentroDeMando = () => {
                       }}
                       className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon text-left transition-all hover:bg-[var(--bg-card-subtle)] space-y-1"
                     >
-                      <Calendar className="w-4 h-4 text-cyan-500 dark:text-cyan-400" />
-                      <p className="font-bold text-[var(--text-main)] text-[11px]">Master Agenda</p>
+                      <Calendar className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+                      <p className="font-bold text-[var(--text-main)] text-[11px]">Agenda y Citas</p>
                       <p className="text-[9px] text-[var(--text-muted)]">Turnos & Citas IA</p>
                     </button>
 
@@ -1485,12 +1549,12 @@ export const CentroDeMando = () => {
                       onClick={() => {
                         switchTenantContext(drawerTenant.id);
                         setDrawerTenantId(null);
-                        router.push('/config');
+                        router.push('/connections');
                       }}
                       className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon text-left transition-all hover:bg-[var(--bg-card-subtle)] space-y-1"
                     >
-                      <BrainCircuit className="w-4 h-4 text-purple-500 dark:text-purple-400" />
-                      <p className="font-bold text-[var(--text-main)] text-[11px]">RAG Wizard</p>
+                      <BrainCircuit className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                      <p className="font-bold text-[var(--text-main)] text-[11px]">Conexiones, Datos & Cerebro de Marca</p>
                       <p className="text-[9px] text-[var(--text-muted)]">Base de Conocimiento</p>
                     </button>
 
@@ -1501,7 +1565,7 @@ export const CentroDeMando = () => {
                       }}
                       className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-neon text-left transition-all hover:bg-[var(--bg-card-subtle)] space-y-1"
                     >
-                      <Smartphone className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+                      <Smartphone className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                       <p className="font-bold text-[var(--text-main)] text-[11px]">Micro-Landing</p>
                       <p className="text-[9px] text-[var(--text-muted)]">Simulador Móvil</p>
                     </button>

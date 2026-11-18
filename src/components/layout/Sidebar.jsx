@@ -80,46 +80,41 @@ export const Sidebar = () => {
       />
 
       <aside
-        className={`vector-bg-panel vector-border border-r flex flex-col h-screen select-none transition-all duration-300 ease-in-out overflow-x-hidden
+        className={`vector-bg-panel border-r border-[var(--border-color)] flex flex-col h-screen select-none transition-all duration-300 ease-in-out overflow-x-hidden
           fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw]
           ${isMobileSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}
           lg:static lg:translate-x-0 lg:z-20
           ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-64'}
         `}
       >
-        {/* Brand Header */}
+        {/* Brand Header (altura fija h-16 para evitar salto vertical al colapsar) */}
         {isSidebarCollapsed ? (
-          <>
-            <div id="tour-brand-header" className="h-16 px-2 border-b border-[var(--border-color)] flex items-center justify-between lg:justify-center shrink-0">
-              <Link
-                href="/dashboard"
-                onClick={closeMobileSidebar}
-                className="transition-transform hover:scale-110 flex items-center justify-center"
-                title="Vector Inside Community OS"
-              >
-                <VectorInsideLogo variant="isotype" size="sm" />
-              </Link>
-              <button
-                type="button"
-                onClick={closeMobileSidebar}
-                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] lg:hidden"
-                aria-label="Cerrar navegación"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-2 border-b border-[var(--border-color)] bg-[var(--bg-card)]/40 hidden lg:flex justify-center shrink-0">
-              <button
-                type="button"
-                onClick={toggleSidebarCollapse}
-                title="Expandir barra de navegación"
-                className="w-full py-1.5 px-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-lime-400 text-lime-400 flex items-center justify-center transition-all shadow-sm group"
-              >
-                <PanelLeftOpen className="w-4 h-4 text-lime-400 group-hover:scale-110 transition-transform" />
-              </button>
-            </div>
-          </>
+          <div id="tour-brand-header" className="h-16 px-2 border-b border-[var(--border-color)] flex items-center justify-between lg:justify-center gap-1.5 shrink-0">
+            <Link
+              href="/dashboard"
+              onClick={closeMobileSidebar}
+              className="transition-transform hover:scale-110 flex items-center justify-center shrink-0"
+              title="Vector Inside Community OS"
+            >
+              <VectorInsideLogo variant="isotype" size="xs" />
+            </Link>
+            <button
+              type="button"
+              onClick={toggleSidebarCollapse}
+              title="Expandir barra de navegación"
+              className="hidden lg:flex p-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-[var(--neon-primary)] text-lime-700 dark:text-neon items-center justify-center transition-all shadow-sm group shrink-0"
+            >
+              <PanelLeftOpen className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+            </button>
+            <button
+              type="button"
+              onClick={closeMobileSidebar}
+              className="p-1.5 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-main)] lg:hidden"
+              aria-label="Cerrar navegación"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         ) : (
           <div id="tour-brand-header" className="h-16 px-3.5 border-b border-[var(--border-color)] flex items-center justify-between shrink-0 gap-2">
             <Link
@@ -136,14 +131,14 @@ export const Sidebar = () => {
                 type="button"
                 onClick={toggleSidebarCollapse}
                 title="Minimizar barra de navegación"
-                className="hidden lg:flex p-1.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-lime-400 text-[var(--text-muted)] hover:text-lime-400 transition-all shrink-0 items-center justify-center"
+                className="hidden lg:flex p-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-[var(--neon-primary)] text-[var(--text-muted)] hover:text-lime-700 dark:hover:text-neon transition-all shrink-0 items-center justify-center"
               >
                 <PanelLeftClose className="w-4 h-4" />
               </button>
               <button
                 type="button"
                 onClick={closeMobileSidebar}
-                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] lg:hidden flex items-center justify-center"
+                className="p-1.5 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-main)] lg:hidden flex items-center justify-center"
                 aria-label="Cerrar navegación"
               >
                 <X className="w-5 h-5" />
@@ -157,19 +152,19 @@ export const Sidebar = () => {
           {isSidebarCollapsed ? (
             isAdmin ? (
               <div
-                className="flex flex-col items-center justify-center p-1 rounded-lg cursor-pointer"
+                className="flex flex-col items-center justify-center p-1 rounded-xl cursor-pointer"
                 title={`Administrador: Lobo Vectorial — Supervisando: ${activeTenant?.name || 'Negocio'}`}
               >
-                <span className="p-1.5 rounded-lg bg-lime-400/15 text-lime-400 border border-lime-400/40 shadow-sm text-sm">
+                <span className="p-1.5 rounded-xl bg-[var(--neon-primary)]/15 text-lime-700 dark:text-neon border border-[var(--neon-primary)]/40 shadow-sm text-sm">
                   {activeTenant?.avatar || '🐺'}
                 </span>
               </div>
             ) : (
               <div
-                className="flex flex-col items-center justify-center p-1 rounded-lg"
+                className="flex flex-col items-center justify-center p-1 rounded-xl"
                 title={`Perfil: Dueño de Negocio (${activeTenant?.name || 'Cliente'}) — Entorno Aislado RLS`}
               >
-                <span className="p-1.5 rounded-lg bg-cyan-500/15 text-cyan-400 border border-cyan-500/40">
+                <span className="p-1.5 rounded-xl bg-cyan-500/15 text-cyan-700 dark:text-cyan-400 border border-cyan-500/40">
                   <UserCheck className="w-4 h-4" />
                 </span>
               </div>
@@ -179,12 +174,12 @@ export const Sidebar = () => {
               {/* Identidad de Agencia Lobo Vectorial */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-lime-400 animate-pulse" />
-                  <span className="text-[10px] font-mono font-bold text-lime-400 uppercase tracking-wider">
+                  <span className="w-2 h-2 rounded-full bg-lime-600 dark:bg-neon animate-pulse" />
+                  <span className="text-[10px] font-mono font-bold text-lime-700 dark:text-neon uppercase tracking-wider">
                     Lobo Vectorial
                   </span>
                 </div>
-                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-lime-400/10 text-lime-400 border border-lime-400/30 font-bold uppercase">
+                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[var(--neon-primary)]/15 text-lime-700 dark:text-neon border border-[var(--neon-primary)]/30 font-bold uppercase">
                   Admin Agencia
                 </span>
               </div>
@@ -199,19 +194,19 @@ export const Sidebar = () => {
                     </p>
                     {activeTenant ? (
                       activeTenant.isAiActive ? (
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" title="IA Activa" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400 shrink-0" title="IA Activa" />
                       ) : (
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" title="IA Pausada" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-600 dark:bg-amber-400 shrink-0" title="IA Pausada" />
                       )
                     ) : (
-                      <span className="w-1.5 h-1.5 rounded-full bg-zinc-600 shrink-0" title="Sin negocio seleccionado" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-[var(--text-faint)] shrink-0" title="Sin negocio seleccionado" />
                     )}
                   </div>
                   <div className="flex items-center justify-between gap-1 mt-0.5">
                     <span className="text-[9px] text-[var(--text-muted)] truncate font-mono" suppressHydrationWarning>
                       {activeTenant?.giro || 'Selecciona un negocio'}
                     </span>
-                    <span className={`text-[8px] font-mono font-bold uppercase shrink-0 ${activeTenant ? 'text-cyan-400' : 'text-zinc-500'}`}>
+                    <span className={`text-[8px] font-mono font-bold uppercase shrink-0 ${activeTenant ? 'text-cyan-700 dark:text-cyan-400' : 'text-[var(--text-faint)]'}`}>
                       {activeTenant ? 'En foco' : 'Sin foco'}
                     </span>
                   </div>
@@ -224,8 +219,8 @@ export const Sidebar = () => {
                 <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">
                   Espacio de Negocio
                 </span>
-                <span className="flex items-center gap-1 text-[9px] text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="flex items-center gap-1 text-[9px] text-emerald-700 dark:text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400 animate-pulse" />
                   RLS Aislado
                 </span>
               </div>
@@ -235,7 +230,7 @@ export const Sidebar = () => {
                   <p className="text-xs font-bold text-[var(--text-main)] truncate font-sans" suppressHydrationWarning>
                     {activeTenant?.shortName || activeTenant?.name || 'Sin negocio activo'}
                   </p>
-                  <span className="text-[9px] text-neon font-bold block truncate uppercase" suppressHydrationWarning>
+                  <span className="text-[9px] text-lime-700 dark:text-neon font-bold block truncate uppercase" suppressHydrationWarning>
                     {activeTenant?.giro || 'Selecciona un negocio'}
                   </span>
                 </div>
@@ -270,7 +265,7 @@ export const Sidebar = () => {
                       isSidebarCollapsed ? 'justify-center p-3' : 'gap-3 px-3 py-2.5'
                     } ${
                       active
-                        ? 'bg-lime-400 text-black font-extrabold shadow-[0_0_15px_rgba(195,244,0,0.25)]'
+                        ? 'bg-[var(--neon-primary)] text-black font-extrabold shadow-[0_0_15px_var(--neon-glow)]'
                         : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] font-medium'
                     }`}
                   >
@@ -281,7 +276,7 @@ export const Sidebar = () => {
                         {/* Dynamic Notification Badges */}
                         {mod.id === 'crm' && activeTenant && (
                           <span className={`ml-auto text-[9px] font-mono font-bold px-1.5 py-0.5 rounded ${
-                            active ? 'bg-black text-lime-400' : 'bg-lime-400/20 text-lime-400 border border-lime-400/30'
+                            active ? 'bg-black text-[var(--neon-primary)]' : 'bg-[var(--neon-primary)]/20 text-lime-700 dark:text-neon border border-[var(--neon-primary)]/30'
                           }`}>
                             HITL
                           </span>
@@ -303,15 +298,15 @@ export const Sidebar = () => {
             title="Guía de medición oficial"
             className={`w-full flex items-center rounded-xl p-2.5 transition-all text-xs font-semibold ${
               isSidebarCollapsed
-                ? 'justify-center text-lime-400 hover:bg-[var(--bg-card)]'
-                : 'gap-2.5 bg-[var(--bg-base)] border border-[var(--border-color)] hover:border-lime-400 text-[var(--text-main)] shadow-sm'
+                ? 'justify-center text-lime-700 dark:text-neon hover:bg-[var(--bg-card)]'
+                : 'gap-2.5 bg-[var(--bg-base)] border border-[var(--border-color)] hover:border-[var(--neon-primary)] text-[var(--text-main)] shadow-sm'
             }`}
           >
-            <BookOpen className="w-4 h-4 text-lime-400 shrink-0" />
+            <BookOpen className="w-4 h-4 text-lime-700 dark:text-neon shrink-0" />
             {!isSidebarCollapsed && (
               <>
                 <span className="truncate">Guía de medición</span>
-                <span className="ml-auto text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-lime-400/15 text-lime-400 border border-lime-400/30">
+                <span className="ml-auto text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-[var(--neon-primary)]/15 text-lime-700 dark:text-neon border border-[var(--neon-primary)]/30">
                   13 fuentes
                 </span>
               </>

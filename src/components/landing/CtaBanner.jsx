@@ -47,7 +47,7 @@ export const CtaBanner = ({ onOpenTrial, lang = 'es' }) => {
               href="/login"
               className="w-full sm:w-auto px-7 py-4 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 font-mono font-bold text-sm border border-white/10 hover:border-cyan-500/40 transition-all flex items-center justify-center gap-2 backdrop-blur-md whitespace-nowrap shrink-0"
             >
-              <span className="whitespace-nowrap">Iniciar Sesión</span>
+              <span className="whitespace-nowrap">{lang === 'es' ? 'Iniciar Sesión' : 'Sign In'}</span>
               <ArrowRight className="w-4 h-4 shrink-0" />
             </Link>
           </div>

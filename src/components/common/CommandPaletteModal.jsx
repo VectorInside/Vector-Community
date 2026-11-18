@@ -119,7 +119,7 @@ export const CommandPaletteModal = ({ isOpen, onClose }) => {
         title: `Copiar Enlace de Micro-Landing (/m/${activeTenant?.microLandingSlug || tenantKey})`,
         subtitle: 'Enlace público directo con captura y atribución a WhatsApp',
         icon: Copy,
-        iconColor: 'text-neon',
+        iconColor: 'text-lime-700 dark:text-neon',
         action: () => {
           try {
             navigator.clipboard.writeText(microLandingUrl);
@@ -136,7 +136,7 @@ export const CommandPaletteModal = ({ isOpen, onClose }) => {
           : 'Reactivar Asistente de IA en WhatsApp (24/7)',
         subtitle: `Estado actual: ${activeTenant?.isAiActive ? 'Activo (Respuestas < 1.2s)' : 'Pausado (Intervención humana)'}`,
         icon: Power,
-        iconColor: activeTenant?.isAiActive ? 'text-amber-400' : 'text-emerald-400',
+        iconColor: activeTenant?.isAiActive ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400',
         action: () => {
           if (toggleTenantAi) toggleTenantAi(tenantKey);
           onClose();
@@ -148,7 +148,7 @@ export const CommandPaletteModal = ({ isOpen, onClose }) => {
         title: `Alternar Tema Visual (${theme === 'dark' ? 'Modo Claro' : 'Modo Oscuro'})`,
         subtitle: 'Cambiar estética de la interfaz',
         icon: theme === 'dark' ? Sun : Moon,
-        iconColor: 'text-cyan-400',
+        iconColor: 'text-cyan-600 dark:text-cyan-400',
         action: () => {
           toggleTheme();
           onClose();
@@ -160,7 +160,7 @@ export const CommandPaletteModal = ({ isOpen, onClose }) => {
         title: `Ver Perfil de Marca & ADN (${activeTenant?.shortName || activeTenant?.name})`,
         subtitle: 'Propósito, tono de voz, SLA y propuesta comercial',
         icon: Sparkles,
-        iconColor: 'text-neon',
+        iconColor: 'text-lime-700 dark:text-neon',
         action: () => {
           router.push('/profile');
           onClose();
@@ -180,7 +180,7 @@ export const CommandPaletteModal = ({ isOpen, onClose }) => {
         title: `${contact.name} — ${need}`,
         subtitle: `${contact.channel || 'WHATSAPP'} • ${contact.phone || 'Sin teléfono'}${tag ? ` • ${tag}` : ''}`,
         icon: MessageSquare,
-        iconColor: 'text-emerald-400',
+        iconColor: 'text-emerald-600 dark:text-emerald-400',
         action: () => {
           router.push(`/inbox?threadId=${contact.id}`);
           onClose();
@@ -200,7 +200,7 @@ export const CommandPaletteModal = ({ isOpen, onClose }) => {
         title: camp.name || 'Campaña sin nombre',
         subtitle: `${channel} • Presupuesto: ${budget} • ${camp.status || 'ACTIVE'}`,
         icon: Megaphone,
-        iconColor: 'text-pink-400',
+        iconColor: 'text-pink-600 dark:text-pink-400',
         action: () => {
           router.push('/campaigns');
           onClose();
@@ -221,7 +221,7 @@ export const CommandPaletteModal = ({ isOpen, onClose }) => {
           title: mod.label,
           subtitle: mod.description,
           icon: Compass,
-          iconColor: 'text-sky-400',
+          iconColor: 'text-sky-600 dark:text-sky-400',
           path: mod.path,
           action: () => {
             router.push(mod.path);
@@ -276,7 +276,7 @@ export const CommandPaletteModal = ({ isOpen, onClose }) => {
     <Portal>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-start justify-center pt-12 sm:pt-20 px-3 sm:px-4 animate-fade-in font-sans"
+        className="fixed inset-0 z-50 bg-black/60 dark:bg-black/75 backdrop-blur-md flex items-start justify-center pt-12 sm:pt-20 px-3 sm:px-4 animate-fade-in font-sans"
         onClick={onClose}
       >
         {/* Command Palette Stage */}
@@ -284,13 +284,13 @@ export const CommandPaletteModal = ({ isOpen, onClose }) => {
           role="dialog"
           aria-modal="true"
           aria-label="Paleta de Comandos y Búsqueda Global"
-          className="w-full max-w-2xl rounded-3xl bg-[var(--bg-panel)] border-2 border-neon/40 shadow-[0_20px_70px_rgba(0,0,0,0.85)] overflow-hidden flex flex-col max-h-[80vh] animate-scale-up text-[var(--text-main)]"
+          className="w-full max-w-2xl rounded-3xl bg-[var(--bg-panel)] border-2 border-[var(--neon-primary)]/40 shadow-2xl overflow-hidden flex flex-col max-h-[80vh] animate-scale-up text-[var(--text-main)]"
           onClick={(e) => e.stopPropagation()}
           onKeyDown={handleKeyDown}
         >
           {/* Header Search Input Bar */}
           <div className="p-3 sm:p-4 border-b border-[var(--border-color)] flex items-center gap-3 bg-[var(--bg-card)]/60">
-            <Search className="w-5 h-5 text-neon shrink-0 animate-pulse" />
+            <Search className="w-5 h-5 text-lime-700 dark:text-neon shrink-0 animate-pulse" />
             <input
               ref={inputRef}
               type="text"
@@ -322,8 +322,8 @@ export const CommandPaletteModal = ({ isOpen, onClose }) => {
               <span className="text-[var(--text-muted)]">Espacio Activo:</span>
               <strong className="text-[var(--text-main)] truncate">{activeTenant?.name}</strong>
             </div>
-            <span className="text-[9px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-bold shrink-0 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-[9px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 font-bold shrink-0 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400 animate-pulse" />
               RLS Aislado
             </span>
           </div>
@@ -335,7 +335,7 @@ export const CommandPaletteModal = ({ isOpen, onClose }) => {
           >
             {filteredItems.length === 0 ? (
               <div className="p-10 text-center space-y-2 text-[var(--text-muted)] font-mono">
-                <Search className="w-8 h-8 mx-auto opacity-30 text-neon" />
+                <Search className="w-8 h-8 mx-auto opacity-30 text-lime-700 dark:text-neon" />
                 <p className="font-bold text-sm text-[var(--text-main)]">Sin coincidencias para "{searchQuery}"</p>
                 <p className="text-xs">
                   Prueba buscando por nombre de cliente, palabra clave de campaña o sección del sistema.
@@ -355,7 +355,7 @@ export const CommandPaletteModal = ({ isOpen, onClose }) => {
                     onMouseEnter={() => setSelectedIndex(idx)}
                     className={`w-full text-left p-2.5 rounded-2xl flex items-center justify-between gap-3 transition-all ${
                       isSelected
-                        ? 'bg-neon/15 border border-neon/60 text-[var(--text-main)] shadow-sm'
+                        ? 'bg-[var(--neon-primary)]/15 border border-[var(--neon-primary)]/60 text-[var(--text-main)] shadow-sm'
                         : 'hover:bg-[var(--bg-card)] border border-transparent text-[var(--text-muted)]'
                     }`}
                   >
@@ -363,11 +363,15 @@ export const CommandPaletteModal = ({ isOpen, onClose }) => {
                       <div
                         className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border transition-colors ${
                           isSelected
-                            ? 'bg-neon text-black border-neon'
-                            : 'bg-[var(--bg-card)] border-[var(--border-color)] ' + (item.iconColor || 'text-neon')
+                            ? 'bg-[var(--neon-primary)] text-black border-[var(--neon-primary)]'
+                            : 'bg-[var(--bg-card)] border-[var(--border-color)] ' + (item.iconColor || 'text-lime-700 dark:text-neon')
                         }`}
                       >
-                        {isCopied ? <Check className="w-4 h-4 text-emerald-400" /> : <Icon className="w-4 h-4" />}
+                        {isCopied ? (
+                          <Check className={`w-4 h-4 ${isSelected ? 'text-black' : 'text-emerald-600 dark:text-emerald-400'}`} />
+                        ) : (
+                          <Icon className="w-4 h-4" />
+                        )}
                       </div>
 
                       <div className="min-w-0 flex-1">
@@ -391,7 +395,7 @@ export const CommandPaletteModal = ({ isOpen, onClose }) => {
                         {item.category.split(':')[0]}
                       </span>
                       {isSelected && (
-                        <div className="flex items-center gap-1 text-[10px] font-mono font-bold text-neon bg-neon/10 px-2 py-0.5 rounded border border-neon/30">
+                        <div className="flex items-center gap-1 text-[10px] font-mono font-bold text-lime-700 dark:text-neon bg-[var(--neon-primary)]/10 px-2 py-0.5 rounded border border-[var(--neon-primary)]/30">
                           <span>Enter</span>
                           <CornerDownLeft className="w-3 h-3" />
                         </div>

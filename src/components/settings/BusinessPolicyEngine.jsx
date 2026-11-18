@@ -30,7 +30,8 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { GOVERNANCE_SYSTEM_RULES, BUSINESS_POLICY_THRESHOLDS } from '@/utils/constants';
-import { BUSINESS_VERTICALS_CONFIG } from '@/components/rag/RAGWizard';
+import { BUSINESS_VERTICALS_CONFIG } from '@/utils/businessVerticals';
+import { InviolableRulesEditor } from '@/components/shared/InviolableRulesEditor';
 import { auditService } from '@/services/auditService';
 
 const formatNumber = (num) => {
@@ -84,7 +85,6 @@ export const BusinessPolicyEngine = () => {
   );
   const [newKeyword, setNewKeyword] = useState('');
   const [inviolableRules, setInviolableRules] = useState([]);
-  const [newRuleInput, setNewRuleInput] = useState('');
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [saveError, setSaveError] = useState(null);
 
@@ -185,31 +185,20 @@ export const BusinessPolicyEngine = () => {
     setCrisisKeywordsList((prev) => prev.filter((w) => w !== word));
   };
 
-  // Manejadores de reglas inviolables del negocio activo
-  const handleAddRule = () => {
-    if (!newRuleInput.trim()) return;
-    setInviolableRules((prev) => [...prev, newRuleInput.trim()]);
-    setNewRuleInput('');
-  };
-
-  const handleDeleteRule = (index) => {
-    setInviolableRules((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleLoadSuggestedRules = () => {
+  // Reglas sugeridas según el giro del negocio activo
+  const suggestedRulesForTenant = useMemo(() => {
     const matchingVert = Object.values(BUSINESS_VERTICALS_CONFIG || {}).find(
       (v) => v.id === currentTenant?.vertical || v.name === currentTenant?.giro
     );
     if (matchingVert?.defaultRules?.length > 0) {
-      setInviolableRules([...matchingVert.defaultRules]);
-    } else {
-      setInviolableRules([
-        'Respetar estrictamente los precios y servicios oficiales del catálogo sin inventar promociones.',
-        'Derivar quejas o reclamos a un operador humano en menos de 5 minutos.',
-        'Validar confirmación expresa del cliente antes de agendar y bloquear horario en agenda.',
-      ]);
+      return matchingVert.defaultRules;
     }
-  };
+    return [
+      'Respetar estrictamente los precios y servicios oficiales del catálogo sin inventar promociones.',
+      'Derivar quejas o reclamos a un operador humano en menos de 5 minutos.',
+      'Validar confirmación expresa del cliente antes de agendar y bloquear horario en agenda.',
+    ];
+  }, [currentTenant?.vertical, currentTenant?.giro]);
 
   // Guardado persistente de políticas y reglas
   const handleSavePolicies = async (e) => {
@@ -352,18 +341,18 @@ export const BusinessPolicyEngine = () => {
       </div>
 
       {saveError && (
-        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-mono flex items-center justify-between gap-2 animate-fadeIn">
+        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-xs font-mono flex items-center justify-between gap-2 animate-fadeIn">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+            <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" />
             <span>{saveError}</span>
           </div>
         </div>
       )}
 
       {savedSuccess && (
-        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono flex items-center justify-between gap-2 animate-fadeIn">
+        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-xs font-mono flex items-center justify-between gap-2 animate-fadeIn">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-700 dark:text-emerald-400 shrink-0" />
             <span>Políticas de precios, SLA, centinela y reglas inviolables guardadas y sincronizadas exitosamente.</span>
           </div>
           <span className="text-[10px] bg-emerald-500/20 px-2 py-0.5 rounded font-bold text-emerald-300">Sincronizado</span>
@@ -438,7 +427,7 @@ export const BusinessPolicyEngine = () => {
                 onClick={() => toggleTenantAi && toggleTenantAi(tenantId)}
                 className={`text-[10px] font-mono font-bold px-3 py-1.5 rounded-xl border flex items-center gap-1.5 transition-all ${
                   Boolean(currentTenant && currentTenant.isAiActive !== false)
-                    ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 hover:bg-amber-500/20 hover:text-amber-400'
+                    ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 hover:bg-amber-500/20 hover:text-amber-700 dark:hover:text-amber-400'
                     : 'bg-red-500 text-white border-red-400 animate-pulse'
                 }`}
               >
@@ -466,7 +455,7 @@ export const BusinessPolicyEngine = () => {
                       Split 70/30
                     </span>
                   ) : (
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-bold">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 font-bold">
                       Tarifa Oficial Acordada
                     </span>
                   )}
@@ -569,16 +558,16 @@ export const BusinessPolicyEngine = () => {
                     <div className="pt-2 border-t border-[var(--border-color)] space-y-2 text-xs font-mono">
                       <div className="flex justify-between items-center text-[11px]">
                         <span className="text-[var(--text-muted)]">Agencia (70%):</span>
-                        <strong className="text-emerald-400">${agencySplitAmount} MXN</strong>
+                        <strong className="text-emerald-700 dark:text-emerald-400">${agencySplitAmount} MXN</strong>
                       </div>
                       <div className="flex justify-between items-center text-[11px]">
                         <span className="text-[var(--text-muted)]">Plataforma (30%):</span>
-                        <strong className="text-cyan-400">${platformSplitAmount} MXN</strong>
+                        <strong className="text-cyan-700 dark:text-cyan-400">${platformSplitAmount} MXN</strong>
                       </div>
                     </div>
                   ) : (
                     <div className="pt-2 border-t border-[var(--border-color)] text-[11px] font-mono text-[var(--text-muted)] flex items-center gap-1.5">
-                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400 shrink-0" />
                       <span>Tarifa auditada sin costos ocultos por prospecto calificado.</span>
                     </div>
                   )}
@@ -604,7 +593,7 @@ export const BusinessPolicyEngine = () => {
                 {/* Fondo en garantía */}
                 <div className="p-3 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] flex items-center justify-between text-xs font-mono">
                   <div className="flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-cyan-400" />
+                    <Shield className="w-4 h-4 text-cyan-700 dark:text-cyan-400" />
                     <div>
                       <span className="text-[10px] text-[var(--text-muted)] block">Fondo de Garantía en Depósito:</span>
                       <strong className="text-[var(--text-main)]">
@@ -614,7 +603,7 @@ export const BusinessPolicyEngine = () => {
                   </div>
                   <span className={`text-[10px] px-2 py-0.5 rounded font-bold border ${
                     (Number(currentTenant?.retainedDepositMXN) || 0) > 0
-                      ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
+                      ? 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-500/20'
                       : 'bg-[var(--bg-card)] text-[var(--text-muted)] border-[var(--border-color)]'
                   }`}>
                     {(Number(currentTenant?.retainedDepositMXN) || 0) > 0 ? 'Activo' : 'Sin Depósito'}
@@ -692,7 +681,7 @@ export const BusinessPolicyEngine = () => {
                     className={`text-xs font-mono font-bold px-3 py-1.5 rounded-xl border flex items-center gap-1.5 ${
                       isBillableLead
                         ? 'bg-neon/15 text-neon border-neon/40 shadow-[0_0_12px_var(--neon-glow)]'
-                        : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                        : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30'
                     }`}
                   >
                     {isBillableLead ? (
@@ -702,7 +691,7 @@ export const BusinessPolicyEngine = () => {
                       </>
                     ) : (
                       <>
-                        <AlertTriangle className="w-4 h-4 text-amber-400" />
+                        <AlertTriangle className="w-4 h-4 text-amber-700 dark:text-amber-400" />
                         <span>EN PROCESO (NO FACTURABLE AÚN)</span>
                       </>
                     )}
@@ -847,7 +836,7 @@ export const BusinessPolicyEngine = () => {
                   <span className="text-[var(--text-muted)]">
                     Estado de Liquidación:
                   </span>
-                  <span className={isBillableLead ? 'text-neon font-bold' : 'text-amber-400 font-bold'}>
+                  <span className={isBillableLead ? 'text-neon font-bold' : 'text-amber-700 dark:text-amber-400 font-bold'}>
                     {isBillableLead
                       ? `Criterios 4/4 Cumplidos • Facturación Liberada`
                       : `Incompleto • $0 MXN Cobrados (Protegido)`}
@@ -859,7 +848,7 @@ export const BusinessPolicyEngine = () => {
               <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-4">
                 <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
                   <div className="flex items-center gap-2">
-                    <AlertOctagon className="w-4 h-4 text-red-400" />
+                    <AlertOctagon className="w-4 h-4 text-red-600 dark:text-red-400" />
                     <div>
                       <h3 className="text-sm font-bold text-[var(--text-main)] uppercase tracking-wide font-mono">
                         Centinela de Crisis: Detección de Fricción
@@ -869,7 +858,7 @@ export const BusinessPolicyEngine = () => {
                       </p>
                     </div>
                   </div>
-                  <span className="text-[10px] font-mono text-red-400 bg-red-500/10 px-2 py-0.5 rounded border border-red-500/30 font-bold">
+                  <span className="text-[10px] font-mono text-red-600 dark:text-red-400 bg-red-500/10 px-2 py-0.5 rounded border border-red-500/30 font-bold">
                     Pausa Inmediata
                   </span>
                 </div>
@@ -887,7 +876,7 @@ export const BusinessPolicyEngine = () => {
                   <button
                     type="button"
                     onClick={handleAddKeyword}
-                    className="px-3.5 py-2 bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/40 rounded-xl text-xs font-mono font-bold flex items-center gap-1 transition-all"
+                    className="px-3.5 py-2 bg-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-500 hover:text-white border border-red-500/40 rounded-xl text-xs font-mono font-bold flex items-center gap-1 transition-all"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Agregar</span>
@@ -920,105 +909,18 @@ export const BusinessPolicyEngine = () => {
           {/* =================================================================== */}
           {/* SECCIÓN 3: REGLAS INVIOLABLES DE NEGOCIO & OPERACIÓN (EXCLUSIVA)     */}
           {/* =================================================================== */}
-          <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-4 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border-color)] pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-neon/15 text-neon border border-neon/30">
-                  <ShieldCheck className="w-5 h-5 text-neon" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-bold text-[var(--text-main)] uppercase tracking-wide font-mono">
-                      Reglas Inviolables de Negocio & Operación
-                    </h3>
-                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-neon/15 text-neon border border-neon/30">
-                      {inviolableRules.length} Reglas Activas
-                    </span>
-                  </div>
-                  <p className="text-xs text-[var(--text-muted)] font-mono mt-0.5">
-                    Directrices inquebrantables que el Asistente IA respeta obligatoriamente en WhatsApp para <strong className="text-[var(--text-main)]">{currentTenant?.shortName || currentTenant?.name || 'este negocio'}</strong>.
-                  </p>
-                </div>
-              </div>
-
-              {inviolableRules.length === 0 && (
-                <button
-                  type="button"
-                  onClick={handleLoadSuggestedRules}
-                  className="text-xs font-mono font-bold px-3 py-1.5 rounded-xl bg-neon/15 text-neon border border-neon/30 hover:bg-neon/25 transition-all flex items-center gap-1.5"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Cargar Sugerencias del Giro</span>
-                </button>
-              )}
-            </div>
-
-            {/* Input para agregar nueva regla inviolable */}
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <input
-                  type="text"
-                  placeholder="Ej: Precios sujetos a valoración presencial, no dar diagnósticos por chat, solicitar 50% de anticipo..."
-                  value={newRuleInput}
-                  onChange={(e) => setNewRuleInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddRule()}
-                  className="w-full bg-[var(--bg-base)] border border-[var(--border-color)] focus:border-neon rounded-xl pl-9 pr-3.5 py-2 text-xs text-[var(--text-main)] outline-none font-mono"
-                />
-                <Lock className="w-3.5 h-3.5 text-neon absolute left-3 top-1/2 -translate-y-1/2" />
-              </div>
-              <button
-                type="button"
-                onClick={handleAddRule}
-                className="px-4 py-2 bg-neon text-black font-mono font-bold text-xs rounded-xl hover:bg-[var(--neon-hover)] transition-all flex items-center gap-1.5 shrink-0 shadow-sm active:scale-95"
-              >
-                <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                <span>Agregar Regla</span>
-              </button>
-            </div>
-
-            {/* Grid de Reglas Inviolables */}
-            {inviolableRules.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-                {inviolableRules.map((rule, idx) => (
-                  <div
-                    key={idx}
-                    className="p-3.5 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] hover:border-neon/40 flex items-start justify-between gap-3 transition-all group"
-                  >
-                    <div className="flex items-start gap-2.5 min-w-0">
-                      <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-neon/10 text-neon border border-neon/25 shrink-0 mt-0.5">
-                        #{idx + 1}
-                      </span>
-                      <p className="text-xs text-[var(--text-main)] font-mono leading-relaxed">
-                        {rule}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteRule(idx)}
-                      className="text-[var(--text-muted)] hover:text-red-400 p-1 rounded-lg hover:bg-red-500/10 transition-colors shrink-0"
-                      title="Eliminar regla"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="p-6 rounded-xl bg-[var(--bg-base)] border border-dashed border-[var(--border-color)] text-center space-y-2">
-                <AlertTriangle className="w-6 h-6 text-amber-400 mx-auto" />
-                <p className="text-xs font-mono text-[var(--text-muted)]">
-                  No hay reglas inviolables registradas para este negocio. El bot no tendrá salvaguardas operativas específicas.
-                </p>
-                <button
-                  type="button"
-                  onClick={handleLoadSuggestedRules}
-                  className="text-xs font-mono font-bold px-3 py-1.5 rounded-xl bg-neon text-black hover:bg-[var(--neon-hover)] transition-all inline-flex items-center gap-1.5 mt-2"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Cargar Reglas Sugeridas para {currentTenant?.giro || 'este Giro'}</span>
-                </button>
-              </div>
-            )}
+          <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] shadow-sm">
+            <InviolableRulesEditor
+              rules={inviolableRules}
+              onChange={setInviolableRules}
+              suggestedRules={suggestedRulesForTenant}
+              suggestionLabel={`Cargar Reglas Sugeridas para ${currentTenant?.giro || 'este Giro'}`}
+              title="Reglas Inviolables de Negocio & Operación"
+              subtitle={`Directrices inquebrantables que el Asistente IA respeta obligatoriamente en WhatsApp para ${currentTenant?.shortName || currentTenant?.name || 'este negocio'}.`}
+              placeholder="Ej: Precios sujetos a valoración presencial, no dar diagnósticos por chat, solicitar 50% de anticipo..."
+              emptyMessage="No hay reglas inviolables registradas para este negocio. El bot no tendrá salvaguardas operativas específicas."
+              layout="grid"
+            />
           </div>
         </div>
         )
@@ -1044,10 +946,10 @@ export const BusinessPolicyEngine = () => {
             </div>
 
             <div className="p-4 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
-              <span className="text-[10px] font-mono text-emerald-400 font-bold uppercase block">
+              <span className="text-[10px] font-mono text-emerald-700 dark:text-emerald-400 font-bold uppercase block">
                 Citas Validadas (Mes)
               </span>
-              <p className="text-2xl font-bold text-emerald-400 font-heading">
+              <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400 font-heading">
                 {totalBilledLeads} <span className="text-xs font-normal text-[var(--text-muted)]">leads auditados</span>
               </p>
               <span className="text-[10px] font-mono text-[var(--text-muted)] block">
@@ -1068,11 +970,11 @@ export const BusinessPolicyEngine = () => {
             </div>
 
             <div className="p-4 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-1">
-              <span className="text-[10px] font-mono text-cyan-400 font-bold uppercase block">
+              <span className="text-[10px] font-mono text-cyan-700 dark:text-cyan-400 font-bold uppercase block">
                 Fondo Global en Depósito
               </span>
-              <p className="text-2xl font-bold text-cyan-400 font-heading" suppressHydrationWarning>
-                ${formatNumber(totalDeposits)} <span className="text-xs font-normal text-cyan-400/70">MXN</span>
+              <p className="text-2xl font-bold text-cyan-700 dark:text-cyan-400 font-heading" suppressHydrationWarning>
+                ${formatNumber(totalDeposits)} <span className="text-xs font-normal text-cyan-700 dark:text-cyan-400/70">MXN</span>
               </p>
               <span className="text-[10px] font-mono text-[var(--text-muted)] block">
                 Garantía antifraude en custodia
@@ -1142,7 +1044,7 @@ export const BusinessPolicyEngine = () => {
                           onClick={() => toggleTenantAi && toggleTenantAi(t.id)}
                           className={`text-[10px] font-mono font-bold px-2 py-1 rounded-lg border flex items-center gap-1 transition-all ${
                             t.isAiActive !== false
-                              ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 hover:bg-red-500/20'
+                              ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 hover:bg-red-500/20'
                               : 'bg-red-500 text-white border-red-400 animate-pulse'
                           }`}
                         >
@@ -1188,7 +1090,7 @@ export const BusinessPolicyEngine = () => {
 
                         <div className="flex justify-between items-center text-[11px]">
                           <span className="text-[var(--text-muted)]">Garantía en Depósito:</span>
-                          <span className="font-bold text-cyan-400" suppressHydrationWarning>
+                          <span className="font-bold text-cyan-700 dark:text-cyan-400" suppressHydrationWarning>
                             ${formatNumber(tDeposit)} MXN
                           </span>
                         </div>

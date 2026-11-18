@@ -35,16 +35,18 @@ export const Modal = ({
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-fade-in">
         {/* Backdrop */}
         <div
-          className="fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity"
+          className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-md transition-opacity"
           onClick={onClose}
         />
 
         {/* Modal Card */}
         <div
+          role="dialog"
+          aria-modal="true"
           className={`relative w-full ${maxWidth} bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-2xl shadow-2xl overflow-hidden z-10 animate-scale-up my-auto`}
         >
           {/* Top brand glow bar */}
-          <div className="h-1 w-full bg-gradient-to-r from-neon via-emerald-400 to-neon" />
+          <div className="h-1 w-full bg-gradient-to-r from-[var(--neon-primary)] via-emerald-500 dark:via-emerald-400 to-[var(--neon-primary)]" />
 
           {/* Modal Header */}
           <div className="flex items-start justify-between px-6 py-5 border-b border-[var(--border-color)]">

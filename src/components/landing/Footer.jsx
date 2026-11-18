@@ -48,7 +48,7 @@ export const Footer = ({ lang = 'es' }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-12">
           {/* Col 1: Brand Info (2 cols wide) */}
           <div className="lg:col-span-2 space-y-5">
-            <Link href="/landing" className="flex items-center gap-3">
+            <Link href="/" className="flex items-center gap-3">
               <VectorInsideLogo size="md" showCommunity={false} showClaim={true} />
             </Link>
 
@@ -73,22 +73,22 @@ export const Footer = ({ lang = 'es' }) => {
             <ul className="space-y-2 text-xs font-mono">
               <li>
                 <a href="#features" className="hover:text-neon transition-colors">
-                  Real-Time Engine
+                  {lang === 'es' ? 'Motor en Tiempo Real' : 'Real-Time Engine'}
                 </a>
               </li>
               <li>
                 <a href="#realtime-demo" className="hover:text-neon transition-colors">
-                  Live Stream Demo
+                  {lang === 'es' ? 'Demo en Vivo' : 'Live Stream Demo'}
                 </a>
               </li>
               <li>
                 <a href="#ai-engine" className="hover:text-neon transition-colors">
-                  DeepSeek R1 AI
+                  {lang === 'es' ? 'Motor IA DeepSeek' : 'DeepSeek AI Engine'}
                 </a>
               </li>
               <li>
                 <a href="#pricing" className="hover:text-neon transition-colors">
-                  Vector Deal Pricing
+                  {lang === 'es' ? 'Planes y Precios' : 'Vector Deal Pricing'}
                 </a>
               </li>
             </ul>
@@ -101,29 +101,29 @@ export const Footer = ({ lang = 'es' }) => {
             </h4>
             <ul className="space-y-2 text-xs font-mono">
               <li>
-                <Link href="/dashboard" className="hover:text-neon transition-colors">
-                  Medical & Dental Clinics
-                </Link>
+                <a href="#pricing" className="hover:text-neon transition-colors">
+                  {lang === 'es' ? 'Clínicas Médicas y Dentales' : 'Medical & Dental Clinics'}
+                </a>
               </li>
               <li>
-                <Link href="/dashboard" className="hover:text-neon transition-colors">
-                  Direct-to-Consumer E-Com
-                </Link>
+                <a href="#pricing" className="hover:text-neon transition-colors">
+                  {lang === 'es' ? 'E-Commerce Directo' : 'Direct-to-Consumer E-Com'}
+                </a>
               </li>
               <li>
-                <Link href="/dashboard" className="hover:text-neon transition-colors">
-                  B2B High-Ticket Sales
-                </Link>
+                <a href="#pricing" className="hover:text-neon transition-colors">
+                  {lang === 'es' ? 'Ventas B2B High-Ticket' : 'B2B High-Ticket Sales'}
+                </a>
               </li>
               <li>
-                <Link href="/dashboard" className="hover:text-neon transition-colors">
-                  Creator & Social Economy
-                </Link>
+                <a href="#pricing" className="hover:text-neon transition-colors">
+                  {lang === 'es' ? 'Economía de Creadores' : 'Creator & Social Economy'}
+                </a>
               </li>
               <li>
-                <Link href="/dashboard" className="hover:text-neon transition-colors">
-                  Hospitality & Dining
-                </Link>
+                <a href="#pricing" className="hover:text-neon transition-colors">
+                  {lang === 'es' ? 'Hospitalidad y Restaurantes' : 'Hospitality & Dining'}
+                </a>
               </li>
             </ul>
           </div>
@@ -176,7 +176,7 @@ export const Footer = ({ lang = 'es' }) => {
           </div>
           <div className="flex items-center gap-6">
             <Link href="/login" className="hover:text-zinc-300 transition-colors">
-              Iniciar Sesión
+              {lang === 'es' ? 'Iniciar Sesión' : 'Sign In'}
             </Link>
             <a href="#trust" className="hover:text-zinc-300 transition-colors">
               Security (SOC2/GDPR)

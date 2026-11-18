@@ -844,7 +844,7 @@ export const SubBotsConfig = () => {
                 {currentTenant?.verticalLabel || currentTenant?.giro || 'Giro General'}
               </Badge>
               {config?.isAiActive ? (
-                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   Asistente Activo en WhatsApp
                 </span>
@@ -900,31 +900,20 @@ export const SubBotsConfig = () => {
           >
             {config?.isAiActive ? 'Pausar Asistente' : 'Activar Asistente'}
           </Button>
-
-          <Button
-            type="button"
-            variant="primary"
-            size="sm"
-            icon={Save}
-            loading={saving}
-            onClick={handleSave}
-          >
-            Guardar Cambios
-          </Button>
         </div>
       </div>
 
       {saveError && (
-        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-mono flex items-center justify-between gap-2 animate-fadeIn">
+        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-xs font-mono flex items-center justify-between gap-2 animate-fadeIn">
           <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+            <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" />
             <span>{saveError}</span>
           </div>
         </div>
       )}
 
       {savedSuccess && (
-        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono flex items-center justify-between gap-2 animate-fadeIn">
+        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-xs font-mono flex items-center justify-between gap-2 animate-fadeIn">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
             <span>Configuración y credenciales de <strong>{currentTenant?.name}</strong> sincronizadas exitosamente.</span>
@@ -948,7 +937,7 @@ export const SubBotsConfig = () => {
                   1. Agenda & Disponibilidad del Negocio
                 </h3>
               </div>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-bold flex items-center gap-1">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 font-bold flex items-center gap-1">
                 <Check className="w-3 h-3" /> Datos Sincronizados
               </span>
             </div>
@@ -1395,11 +1384,11 @@ export const SubBotsConfig = () => {
                               Credencial {model.provider}
                             </span>
                             {hasCustomKey ? (
-                              <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30 flex items-center gap-1">
+                              <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-500/30 flex items-center gap-1">
                                 <Check className="w-2.5 h-2.5" /> Clave Propia
                               </span>
                             ) : (
-                              <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-neon/15 text-neon font-bold border border-neon/30">
+                              <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-neon/15 text-lime-700 dark:text-neon font-bold border border-neon/30">
                                 {providerMeta?.officialPoolLabel || 'Pool Oficial Vector Inside'}
                               </span>
                             )}
@@ -1408,12 +1397,12 @@ export const SubBotsConfig = () => {
                           {/* Latencia y Botón Test Ping */}
                           <div className="flex items-center gap-2 text-[10px] font-mono">
                             {ping.result === 'connected' && (
-                              <span className="text-emerald-400 font-bold flex items-center gap-1">
+                              <span className="text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1">
                                 <Check className="w-3 h-3" /> {ping.latency}
                               </span>
                             )}
                             {ping.result === 'error' && (
-                              <span className="text-red-400 font-bold flex items-center gap-1">
+                              <span className="text-red-600 dark:text-red-400 font-bold flex items-center gap-1">
                                 <AlertCircle className="w-3 h-3" /> Error ({ping.status || 401})
                               </span>
                             )}
@@ -1477,7 +1466,7 @@ export const SubBotsConfig = () => {
                             <button
                               type="button"
                               onClick={() => handleResetToOfficialPool(providerKey)}
-                              className="text-amber-400 hover:text-amber-300 underline font-semibold flex items-center gap-1"
+                              className="text-amber-700 dark:text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 underline font-semibold flex items-center gap-1"
                             >
                               Volver al Pool Oficial (Limpiar clave)
                             </button>
@@ -1501,24 +1490,12 @@ export const SubBotsConfig = () => {
               })}
             </div>
 
-            {/* Blindaje de Seguridad AES-256 & Botón Guardar Integrado */}
-            <div className="pt-2 border-t border-[var(--border-color)] space-y-3">
+            {/* Blindaje de Seguridad AES-256 */}
+            <div className="pt-2 border-t border-[var(--border-color)]">
               <div className="flex items-center gap-2 text-[10px] text-[var(--text-muted)] font-mono">
-                <Lock className="w-3.5 h-3.5 text-neon shrink-0" />
+                <Lock className="w-3.5 h-3.5 text-lime-700 dark:text-neon shrink-0" />
                 <span>Credenciales cifradas con AES-256-GCM y ledger tokenizado por tenant.</span>
               </div>
-
-              <Button
-                type="button"
-                variant="primary"
-                size="md"
-                icon={Save}
-                loading={saving}
-                onClick={handleSave}
-                className="w-full justify-center text-xs shadow-[0_0_15px_var(--neon-glow)] active:scale-95"
-              >
-                Guardar Configuración y Credenciales de IA
-              </Button>
             </div>
           </div>
         </div>
@@ -1538,15 +1515,15 @@ export const SubBotsConfig = () => {
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-[var(--text-muted)]">Motor Activo:</span>
-              <strong className="text-neon">{config?.activeModel?.split(' ')[0]} {config?.activeModel?.split(' ')[1]}</strong>
+              <strong className="text-lime-700 dark:text-neon">{config?.activeModel?.split(' ')[0]} {config?.activeModel?.split(' ')[1]}</strong>
             </div>
             <span className="text-[10px] text-[var(--text-muted)]">
               Simulador Aislado (Sin afectar WhatsApp real)
             </span>
           </div>
 
-          {/* Área de mensajes */}
-          <div className="h-72 overflow-y-auto p-4 rounded-xl bg-[#0c1317] border border-[var(--border-color)] space-y-3 font-sans text-xs">
+          {/* Área de mensajes (Dual Theme) */}
+          <div className="h-72 overflow-y-auto p-4 rounded-xl bg-[var(--bg-base)] border border-[var(--border-color)] space-y-3 font-sans text-xs">
             {sandboxMessages.map((msg, idx) => (
               <div
                 key={idx}
@@ -1555,19 +1532,25 @@ export const SubBotsConfig = () => {
                 }`}
               >
                 {msg.toolCalled && (
-                  <span className="text-[9px] font-mono text-neon/80 bg-black/40 px-2 py-0.5 rounded-md mb-1 border border-neon/20">
+                  <span className="text-[9px] font-mono text-lime-700 dark:text-neon bg-neon/10 px-2 py-0.5 rounded-md mb-1 border border-neon/25">
                     ⚡ Acción: {cleanConcept(msg.toolCalled)}
                   </span>
                 )}
                 <div
-                  className={`max-w-[85%] rounded-2xl p-3 whitespace-pre-line text-xs ${
+                  className={`max-w-[85%] rounded-2xl p-3 whitespace-pre-line text-xs shadow-sm ${
                     msg.sender === 'user'
-                      ? 'bg-[#005c4b] text-white rounded-br-none'
-                      : 'bg-[#202c33] text-gray-100 rounded-bl-none border border-white/5'
+                      ? 'bg-emerald-600 dark:bg-[#005c4b] text-white rounded-br-none'
+                      : 'bg-[var(--bg-card)] text-[var(--text-main)] rounded-bl-none border border-[var(--border-color)]'
                   }`}
                 >
                   {msg.text}
-                  <span className="block text-[9px] text-gray-400 text-right mt-1 font-mono">
+                  <span
+                    className={`block text-[9px] text-right mt-1 font-mono ${
+                      msg.sender === 'user'
+                        ? 'text-emerald-100/80'
+                        : 'text-[var(--text-muted)]'
+                    }`}
+                  >
                     {msg.time}
                   </span>
                 </div>
@@ -1591,10 +1574,10 @@ export const SubBotsConfig = () => {
         </div>
       </Modal>
 
-      {/* Dock Flotante de Cambios sin Guardar (Estilo UX Linear / Notion) */}
+      {/* Dock Flotante Único de Cambios sin Guardar (ADR_011 UX-03) */}
       {hasUnsavedChanges && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 bg-[var(--bg-panel)]/95 backdrop-blur-md border border-neon/50 px-5 py-3 rounded-2xl shadow-2xl shadow-black/80 animate-in fade-in slide-in-from-bottom-4 duration-200">
-          <div className="flex items-center gap-2 text-xs font-mono text-neon">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 bg-[var(--bg-panel)]/95 backdrop-blur-md border border-neon/50 px-5 py-3 rounded-2xl shadow-2xl shadow-black/20 dark:shadow-black/80 animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <div className="flex items-center gap-2 text-xs font-mono text-lime-700 dark:text-neon">
             <AlertCircle className="w-4 h-4 animate-pulse" />
             <span>Tienes cambios sin guardar en Asistente & Estilo</span>
           </div>
