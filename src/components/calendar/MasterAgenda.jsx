@@ -832,7 +832,7 @@ export const MasterAgenda = () => {
     });
   };
 
-  const handleSaveConfig = () => {
+  const handleSaveConfig = async () => {
     const finalizedShifts = recomputeShiftsHours(calendarConfig.shifts, calendarConfig.slotDurationMin);
     const updatedConfig = {
       ...calendarConfig,
@@ -841,54 +841,60 @@ export const MasterAgenda = () => {
     };
     setCalendarConfig(updatedConfig);
 
-    if (activeKey) {
-      // 1. AuthContext & LocalStorage vector_tenants_data & Backend TenantEntity
-      if (typeof updateTenantPolicy === 'function') {
-        updateTenantPolicy(activeKey, {
-          calendarConfig: updatedConfig,
-          emailConfig: emailConfig,
-          appointmentDuration: updatedConfig.slotDurationMin,
-          bufferMinutes: updatedConfig.bufferMin || 0,
-        });
-      }
-
-      // 2. Persistencia en Backend PostgreSQL calendar_config (vía tenantService)
-      tenantService.updateVerticalConfig(activeKey, updatedConfig).catch((err) => {
-        console.warn('[MasterAgenda.handleSaveConfig] Fallback al guardar verticalConfig:', err);
-      });
-
-      // 3. LocalStorage vector_email_configs_by_tenant y vector_bot_config_${activeKey}
-      if (typeof window !== 'undefined') {
-        try {
-          const rawEmail = localStorage.getItem('vector_email_configs_by_tenant');
-          const emailMap = rawEmail ? JSON.parse(rawEmail) : {};
-          emailMap[activeKey] = emailConfig;
-          localStorage.setItem('vector_email_configs_by_tenant', JSON.stringify(emailMap));
-
-          const rawBot = localStorage.getItem(`vector_bot_config_${activeKey}`);
-          const currentBot = rawBot ? JSON.parse(rawBot) : {};
-          currentBot.emailConfig = emailConfig;
-          currentBot.calendar = {
-            ...(currentBot.calendar || {}),
-            slotDurationMin: updatedConfig.slotDurationMin,
-            bufferBetweenAppointmentsMin: updatedConfig.bufferMin || 0,
-            concurrencyLimit: updatedConfig.concurrencyLimit || 1,
-            shifts: finalizedShifts,
-            workingHours: finalizedShifts.map((s) => `${s.name || 'Turno'}: ${s.start} - ${s.end}`).join(' | '),
-          };
-          localStorage.setItem(`vector_bot_config_${activeKey}`, JSON.stringify(currentBot));
-        } catch (e) {}
-      }
-    }
-
-    setSavedConfigSuccess(true);
     try {
-      confetti({ particleCount: 40, spread: 60, colors: [emailConfig.accentColor || '#D4FF00', '#10B981'] });
-    } catch (e) {}
-    setTimeout(() => {
-      setSavedConfigSuccess(false);
-      setShowConfigModal(false);
-    }, 1200);
+      if (activeKey) {
+        // 1. AuthContext & LocalStorage vector_tenants_data & Backend TenantEntity
+        if (typeof updateTenantPolicy === 'function') {
+          await updateTenantPolicy(activeKey, {
+            calendarConfig: updatedConfig,
+            emailConfig: emailConfig,
+            appointmentDuration: updatedConfig.slotDurationMin,
+            bufferMinutes: updatedConfig.bufferMin || 0,
+          });
+        }
+
+        // 2. Persistencia en Backend PostgreSQL calendar_config (vía tenantService)
+        await tenantService.updateVerticalConfig(activeKey, updatedConfig);
+
+        // 3. LocalStorage vector_email_configs_by_tenant y vector_bot_config_${activeKey}
+        if (typeof window !== 'undefined') {
+          try {
+            const rawEmail = localStorage.getItem('vector_email_configs_by_tenant');
+            const emailMap = rawEmail ? JSON.parse(rawEmail) : {};
+            emailMap[activeKey] = emailConfig;
+            localStorage.setItem('vector_email_configs_by_tenant', JSON.stringify(emailMap));
+
+            const rawBot = localStorage.getItem(`vector_bot_config_${activeKey}`);
+            const currentBot = rawBot ? JSON.parse(rawBot) : {};
+            currentBot.emailConfig = emailConfig;
+            currentBot.calendar = {
+              ...(currentBot.calendar || {}),
+              slotDurationMin: updatedConfig.slotDurationMin,
+              bufferBetweenAppointmentsMin: updatedConfig.bufferMin || 0,
+              concurrencyLimit: updatedConfig.concurrencyLimit || 1,
+              shifts: finalizedShifts,
+              workingHours: finalizedShifts.map((s) => `${s.name || 'Turno'}: ${s.start} - ${s.end}`).join(' | '),
+            };
+            localStorage.setItem(`vector_bot_config_${activeKey}`, JSON.stringify(currentBot));
+          } catch (e) {}
+        }
+      }
+
+      setSavedConfigSuccess(true);
+      try {
+        confetti({ particleCount: 40, spread: 60, colors: [emailConfig.accentColor || '#D4FF00', '#10B981'] });
+      } catch (e) {}
+      setTimeout(() => {
+        setSavedConfigSuccess(false);
+        setShowConfigModal(false);
+      }, 1200);
+    } catch (err) {
+      setTestDispatchError(
+        err?.response?.data?.message ||
+          err?.message ||
+          'No se pudo guardar la configuración de agenda en PostgreSQL.'
+      );
+    }
   };
 
   const handleTestEmail = async () => {
@@ -1042,7 +1048,7 @@ export const MasterAgenda = () => {
     }
   };
 
-  const handleManualBook = (shift, hour) => {
+  const handleManualBook = async (shift, hour) => {
     const currentTenantKey = activeTenant?.id || activeTenantId || null;
     if (!currentTenantKey) {
       alert('Selecciona un negocio activo antes de agendar una cita.');
@@ -1059,24 +1065,33 @@ export const MasterAgenda = () => {
       title: `${clientName} — Cita Directa`,
       client: clientName,
       clientEmail: `${clientName.toLowerCase().replace(/\s+/g, '.')}@gmail.com`,
-      phone: '+52 55 0000 0000',
+      phone: activeTenant?.phone || '',
       specialist: 'Asignado en Recepción',
       serviceName: 'Atención Directa',
       serviceColor: '#10B981',
-      estimatedValue: 1200,
+      estimatedValue: Number(activeTenant?.leadPriceMXN || 0),
       depositPaid: true,
       status: 'CONFIRMED',
       start: `${currentDayConfig.fullDate}T${hour}:00`,
       end: `${currentDayConfig.fullDate}T${hour}:45`,
       details: 'Agendado manualmente en Master Agenda',
     };
-    setAppointments((prev) => [...prev, newApt]);
-    calendarService.createAppointment({ ...newApt, fullDate: currentDayConfig.fullDate }).catch(() => {});
     try {
-      confetti({ particleCount: 30, spread: 50, colors: ['#10B981', '#D4FF00'] });
-    } catch (e) {}
-    // Abrir automáticamente el modal de correo de confirmación
-    handleOpenEmailConfirmation(newApt);
+      const savedApt = await calendarService.createAppointment({ ...newApt, fullDate: currentDayConfig.fullDate });
+      const finalApt = savedApt?.id ? { ...newApt, ...savedApt } : newApt;
+      setAppointments((prev) => [...prev, finalApt]);
+      try {
+        confetti({ particleCount: 30, spread: 50, colors: ['#10B981', '#D4FF00'] });
+      } catch (e) {}
+      // Abrir automáticamente el modal de correo de confirmación
+      handleOpenEmailConfirmation(finalApt);
+    } catch (err) {
+      alert(
+        err?.response?.data?.message ||
+          err?.message ||
+          'No se pudo registrar la cita en PostgreSQL.'
+      );
+    }
   };
 
   // Filtrado de citas (por tenant activo y filtro de estado)
@@ -1101,7 +1116,7 @@ export const MasterAgenda = () => {
   const triageCount = dayAppointments.filter((a) => !a.depositPaid).length;
   const freeSlotsCount = Math.max(0, totalSlotsCount - dayAppointments.length);
   const totalOccupancyPct = totalSlotsCount > 0 ? Math.round((dayAppointments.length / totalSlotsCount) * 100) : 0;
-  const estimatedDayRevenue = dayAppointments.reduce((acc, curr) => acc + (curr.estimatedValue || 1200), 0);
+  const estimatedDayRevenue = dayAppointments.reduce((acc, curr) => acc + Number(curr.estimatedValue || 0), 0);
 
   // Citas y métricas para el día seleccionado en la vista mensual (Executive Right Rail)
   const selectedDayApts = useMemo(() => {
@@ -1114,7 +1129,7 @@ export const MasterAgenda = () => {
   }, [filteredAppointments, selectedMonthDate]);
 
   const selectedDayRevenue = useMemo(() => {
-    return selectedDayApts.reduce((acc, curr) => acc + (curr.estimatedValue || 1200), 0);
+    return selectedDayApts.reduce((acc, curr) => acc + Number(curr.estimatedValue || 0), 0);
   }, [selectedDayApts]);
 
   const selectedDateFormattedLabel = useMemo(() => {
@@ -1423,7 +1438,7 @@ export const MasterAgenda = () => {
                 const isToday = fullDate === todayIsoStr;
                 const isSelected = selectedMonthDate === fullDate;
                 const hasApts = aptsOnThisDay.length > 0;
-                const dayTotalRevenue = aptsOnThisDay.reduce((acc, curr) => acc + (curr.estimatedValue || 1200), 0);
+                const dayTotalRevenue = aptsOnThisDay.reduce((acc, curr) => acc + Number(curr.estimatedValue || 0), 0);
 
                 return (
                   <div
@@ -1628,7 +1643,7 @@ export const MasterAgenda = () => {
                     <div className="flex items-center justify-between mt-1 text-[10px] text-[var(--text-muted)] font-mono">
                       <span className="truncate">{apt.serviceName || 'Servicio General'}</span>
                       <span className="text-emerald-400 font-bold shrink-0">
-                        ${String(apt.estimatedValue || 1200).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                        ${String(Number(apt.estimatedValue || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                       </span>
                     </div>
                   </div>
@@ -1928,7 +1943,7 @@ export const MasterAgenda = () => {
               const isDayOpen = activeTenant
                 ? !calendarConfig.operatingDays || calendarConfig.operatingDays.includes(day.id)
                 : false;
-              const dayRevenue = aptsForDay.reduce((acc, curr) => acc + (curr.estimatedValue || 1200), 0);
+              const dayRevenue = aptsForDay.reduce((acc, curr) => acc + Number(curr.estimatedValue || 0), 0);
               const isToday = day.fullDate === todayIsoStr;
 
               return (
@@ -2159,7 +2174,7 @@ export const MasterAgenda = () => {
                   </div>
                   <div className="text-emerald-400 flex items-center gap-1.5">
                     <DollarSign className="w-3.5 h-3.5" />
-                    <span>${apt.estimatedValue || 1200} MXN</span>
+                    <span>${Number(apt.estimatedValue || 0)} MXN</span>
                   </div>
                 </div>
               </div>
@@ -2219,7 +2234,7 @@ export const MasterAgenda = () => {
               </div>
               <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
                 <span className="text-[10px] text-[var(--text-muted)] uppercase block">Valor Estimado Cita</span>
-                <span className="text-emerald-600 dark:text-emerald-400 font-bold">${selectedAppointment.estimatedValue || 1200} MXN</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-bold">${Number(selectedAppointment.estimatedValue || 0)} MXN</span>
               </div>
             </div>
 
@@ -3283,7 +3298,7 @@ export const MasterAgenda = () => {
                   specialist: activeScenario.specialist,
                   start: new Date(Date.now() + 86400000).toISOString(),
                   end: new Date(Date.now() + 86400000 + 45 * 60000).toISOString(),
-                  phone: '+52 55 1234 5678',
+                  phone: activeTenant?.phone || '',
                   details: `Cita de prueba confirmada en ${emailConfig.senderName}.`,
                 };
 
@@ -4100,7 +4115,7 @@ function SlotRowItem({
 
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-xs font-mono font-bold text-emerald-400">
-            ${appointment.estimatedValue || 1200} MXN
+            ${Number(appointment.estimatedValue || 0)} MXN
           </span>
           <span className="text-[11px] font-mono px-2.5 py-1 rounded-lg bg-brand-primary/10 text-brand-primary border border-brand-primary/30 group-hover:bg-brand-primary group-hover:text-black transition-all">
             Ver Detalle →

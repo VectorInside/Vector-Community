@@ -40,15 +40,7 @@ export const AgentOrchestrationReportModal = ({
     ? `AUD-${new Date().getFullYear()}-GOV-VI-${currentTenant.id.toUpperCase()}`
     : `BP-${new Date().getFullYear()}-ARCH-VI-MASTER`;
 
-  const shaHash = useMemo(() => {
-    const raw = currentTenant.id ? `tenant_${currentTenant.id}_2026` : 'vector_master_blueprint_2026';
-    let hash = 0;
-    for (let i = 0; i < raw.length; i++) {
-      hash = (hash << 5) - hash + raw.charCodeAt(i);
-      hash |= 0;
-    }
-    return `0x4a7e9d${Math.abs(hash).toString(16).padStart(6, '0').slice(-6)}c8b3`;
-  }, [currentTenant.id]);
+  const documentRefCode = `${reportId}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
 
   useEffect(() => {
     let isMounted = true;
@@ -94,25 +86,22 @@ export const AgentOrchestrationReportModal = ({
       : `🏢 *Ámbito:* Arquitectura Global de Agencia (Multi-Tenant RLS)\n`;
 
     const tokenLine = hasSpecificTenant
-      ? `• *Consumo Real Registrado (PostgreSQL 17):* ${totalCostUsdFormatted} (${totalTokensFormatted} tokens)\n` +
-        `• *Proyección Mensual Teórica:* < $0.15 USD (Prompt Caching Activo 94% ahorro)\n`
-      : `• *Proyección Mensual de Arquitectura:* < $0.15 USD / negocio (Prompt Caching 94% ahorro)\n` +
-        `• *Contabilidad de Tokens:* Ledger inmutable por tenant (/api/v1/ai/usage)\n`;
+      ? `• *Consumo Real Registrado (PostgreSQL 17):* ${totalCostUsdFormatted} (${totalTokensFormatted} tokens)\n`
+      : `• *Contabilidad de Tokens:* Ledger inmutable por tenant (/api/v1/ai/usage)\n`;
 
     const text = `${headerTitle}\n` +
       scopeLine +
-      `🌐 *Motor:* LangGraph Orchestrator + DeepSeek V3 / Groq Llama 3\n` +
+      `🌐 *Motor:* LangGraph Orchestrator + DeepSeek V3 / R1\n` +
       `📁 *Folio de Gobernanza:* ${reportId}\n\n` +
       `🤖 *TOPOLOGÍA DE 4 SUB-AGENTES AUDITADA:*\n` +
-      `1. *Supervisor Central ("Lobo Vectorial"):* LangGraph Router (Latencia: ~12ms / 0ms Cache)\n` +
-      `2. *Sub-Bot Moderador & Closer:* CrewAI / DeepSeek V3 (Embudo AIDA / Validación 4/4)\n` +
-      `3. *Sub-Bot Re-Engagement 24h:* Upstash Redis Queue (Regla 95/5 / Vaca Púrpura < 40 palabras)\n` +
-      `4. *Sub-Bot Analista Performance:* Meta CAPI & GA4 (ROAS Real & Detección Fatiga Creativa)\n\n` +
+      `1. *Supervisor Central ("Lobo Vectorial"):* LangGraph Router\n` +
+      `2. *Sub-Bot Moderador & Closer:* DeepSeek V3 (Embudo AIDA / Validación 4/4)\n` +
+      `3. *Sub-Bot Re-Engagement 24h:* Queue Backend (Regla 95/5 / Vaca Púrpura < 40 palabras)\n` +
+      `4. *Sub-Bot Analista Performance:* Meta CAPI & GA4 (Telemetría Real Backend)\n\n` +
       `💰 *POLÍTICA FINANCIERA & CONSUMO DE TOKENS:*\n` +
       tokenLine +
-      `• *Latencia de Enrutamiento:* ~12ms (0ms en Cache Hit)\n` +
       `• *Soberanía de Datos:* Aislamiento RLS en PostgreSQL 17 + Cifrado AES-256\n\n` +
-      `_Certificación Oficial Vector Inside (${shaHash})_`;
+      `_Certificación Oficial Vector Inside (${documentRefCode})_`;
 
     navigator.clipboard.writeText(text);
     setCopiedReport(true);
@@ -224,34 +213,38 @@ export const AgentOrchestrationReportModal = ({
             <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 space-y-1">
               <span className="text-[10px] uppercase text-zinc-500 dark:text-zinc-400 font-bold flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-lime-700 dark:text-neon" />
-                Latencia de Enrutamiento
+                Ejecuciones Registradas
               </span>
-              <p className="text-2xl font-black text-lime-700 dark:text-neon print:text-black">12ms</p>
-              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-sans">0ms en Caching Hit</span>
+              <p className="text-2xl font-black text-lime-700 dark:text-neon print:text-black">
+                {hasSpecificTenant ? (realUsage?.totalRequests ?? 0) : 'Multi-Tenant'}
+              </p>
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-sans">
+                {hasSpecificTenant ? 'Consultas IA persistidas en PostgreSQL' : 'Aislamiento por tenant_id'}
+              </span>
             </div>
 
             <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 space-y-1">
               <span className="text-[10px] uppercase text-zinc-500 dark:text-zinc-400 font-bold flex items-center gap-1.5">
                 <Coins className="w-3.5 h-3.5 text-emerald-500" />
-                {hasSpecificTenant ? 'Consumo Real (PostgreSQL 17)' : 'Proyección Mensual Teórica'}
+                {hasSpecificTenant ? 'Consumo Real (PostgreSQL 17)' : 'Contabilidad de Tokens'}
               </span>
               <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
-                {hasSpecificTenant ? (loadingUsage ? 'Calculando...' : totalCostUsdFormatted) : '< $0.15 USD'}
+                {hasSpecificTenant ? (loadingUsage ? 'Calculando...' : totalCostUsdFormatted) : 'Ledger Activo'}
               </p>
               <span className="text-[10px] text-zinc-500 font-sans block">
                 {hasSpecificTenant
-                  ? `${totalTokensFormatted} tokens usados • Proyección: < $0.15 USD/mes`
-                  : 'Prompt Caching 94% ahorro (Estimado por negocio)'}
+                  ? `${totalTokensFormatted} tokens consumidos (últimos 30 días)`
+                  : 'Auditoría real vía /api/v1/ai/usage'}
               </span>
             </div>
 
             <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 space-y-1">
               <span className="text-[10px] uppercase text-zinc-500 dark:text-zinc-400 font-bold flex items-center gap-1.5">
                 <Cpu className="w-3.5 h-3.5 text-purple-500" />
-                Modelos de Inferencia
+                Motor Cognitivo Activo
               </span>
               <p className="text-xl font-black text-zinc-900 dark:text-white">DeepSeek V3 / R1</p>
-              <span className="text-[10px] text-zinc-500 font-sans">Groq Llama 3 Fast Fallback</span>
+              <span className="text-[10px] text-zinc-500 font-sans">Cifrado BYOK AES-256-GCM</span>
             </div>
           </div>
 
@@ -306,11 +299,11 @@ export const AgentOrchestrationReportModal = ({
             </p>
           </div>
 
-          {/* Cryptographic Certification Footer */}
+          {/* Document Reference Footer */}
           <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-[10px] font-mono text-zinc-500">
             <div className="flex items-center gap-2">
               <Hash className="w-3.5 h-3.5 text-lime-700 dark:text-neon" />
-              <span>Firma SHA-256: <code className="text-zinc-700 dark:text-zinc-300 print:text-black">{shaHash}</code></span>
+              <span>Folio de Reporte: <code className="text-zinc-700 dark:text-zinc-300 print:text-black">{documentRefCode}</code></span>
             </div>
             <div>
               <span>Gobernanza Vector Inside • LangGraph Architecture v2.4</span>

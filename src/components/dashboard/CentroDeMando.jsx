@@ -87,7 +87,7 @@ export const CentroDeMando = () => {
   });
 
   useEffect(() => {
-    if (!isClient || !activeTenant?.id) {
+    if (!activeTenant?.id) {
       setClientData({
         loading: false,
         leads: [],
@@ -123,7 +123,7 @@ export const CentroDeMando = () => {
     return () => {
       cancelled = true;
     };
-  }, [isClient, activeTenant?.id]);
+  }, [activeTenant?.id]);
 
   const clientMetrics = useMemo(() => {
     const leads = clientData.leads || [];
@@ -187,6 +187,9 @@ export const CentroDeMando = () => {
       activeCampaignsCount,
       totalSpend,
       totalLeadsCount,
+      apptsRevenue,
+      leadsRevenue,
+      attributedRevenue,
       realRoas,
       costPerLead,
       topChannel,
@@ -198,14 +201,14 @@ export const CentroDeMando = () => {
   const tenantsList = useMemo(() => Object.values(tenantsData || {}), [tenantsData]);
 
   const { totalBilledLeads, totalRevenueMXN, agencyRevenueMXN, totalRetainedDeposits } = useMemo(() => {
-    const billed = tenantsList.reduce((sum, t) => sum + (t.billedLeadsMonth || 0), 0);
+    const billed = tenantsList.reduce((sum, t) => sum + Number(t.billedLeadsMonth || 0), 0);
     const rev = tenantsList.reduce(
-      (sum, t) => sum + (t.billedLeadsMonth || 0) * (t.leadPriceMXN || 350),
+      (sum, t) => sum + Number(t.billedLeadsMonth || 0) * Number(t.leadPriceMXN || 0),
       0
     );
-    const agency = Math.round(rev * 0.7);
+    const agency = tenantsList.reduce((sum, t) => sum + Number(t.agencyRevenueMXN || 0), 0) || rev;
     const deposits = tenantsList.reduce(
-      (sum, t) => sum + (t.retainedDepositMXN || 15000),
+      (sum, t) => sum + Number(t.retainedDepositMXN || 0),
       0
     );
     return {
@@ -220,8 +223,9 @@ export const CentroDeMando = () => {
   const pausedAiCount = useMemo(() => tenantsList.filter((t) => !t.isAiActive).length, [tenantsList]);
   const crisisCount = useMemo(() => tenantsList.filter((t) => t.crisisMode).length, [tenantsList]);
   const estimatedPipelineMXN = useMemo(() => {
-    return totalRevenueMXN > 0 ? Math.round(totalRevenueMXN * 2.5) : totalBilledLeads * 1200;
-  }, [totalRevenueMXN, totalBilledLeads]);
+    const tenantsPipeline = tenantsList.reduce((sum, t) => sum + Number(t.pipelineValueMXN || 0), 0);
+    return tenantsPipeline || clientMetrics.attributedRevenue || totalRevenueMXN;
+  }, [tenantsList, clientMetrics.attributedRevenue, totalRevenueMXN]);
 
   // Radar attention items
   const attentionTenants = useMemo(() => {
@@ -383,11 +387,11 @@ export const CentroDeMando = () => {
       {/* 2. BLOQUE 1: TELEMETRÍA RÁPIDA (4 KPIS EJECUTIVOS CON CONTEXTO REAL)   */}
       {/* ===================================================================== */}
       <div id="tour-kpi-cards" data-tour="dashboard-kpis" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-sans">
-        {/* KPI 1: Salud de Cartera */}
+        {/* KPI 1: Salud de Cartera / Citas en Agenda */}
         <div className="p-4 sm:p-5 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] space-y-2 shadow-sm relative group hover:border-[var(--border-color-hover)] transition-all">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-sans text-[var(--text-muted)] uppercase tracking-wider font-semibold">
-              Salud de Cartera
+              {isClient ? 'Citas en Agenda' : 'Salud de Cartera'}
             </span>
             <button
               type="button"
@@ -400,20 +404,37 @@ export const CentroDeMando = () => {
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl sm:text-3xl font-heading font-black text-[var(--text-main)]">
-              {tenantsList.length}
+              {isClient ? clientMetrics.appointments.length : tenantsList.length}
             </span>
-            <span className="text-xs font-mono text-[var(--text-muted)]">negocios en cartera</span>
+            <span className="text-xs font-mono text-[var(--text-muted)]">
+              {isClient ? 'citas registradas' : 'negocios en cartera'}
+            </span>
           </div>
           <div className="flex items-center gap-2 text-xs font-mono pt-0.5">
-            <span className="text-emerald-500 font-bold flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              {activeAiCount} activos
-            </span>
-            <span className="text-[var(--text-faint)]">·</span>
-            <span className="text-amber-500 font-bold flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-              {pausedAiCount} manual
-            </span>
+            {isClient ? (
+              <>
+                <span className="text-emerald-500 font-bold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  {clientMetrics.confirmedAppts.length} confirmadas
+                </span>
+                <span className="text-[var(--text-faint)]">·</span>
+                <span className="text-amber-500 font-bold">
+                  {clientMetrics.attendanceRate}% asistencia
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="text-emerald-500 font-bold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  {activeAiCount} activos
+                </span>
+                <span className="text-[var(--text-faint)]">·</span>
+                <span className="text-amber-500 font-bold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                  {pausedAiCount} manual
+                </span>
+              </>
+            )}
           </div>
         </div>
 
@@ -434,12 +455,12 @@ export const CentroDeMando = () => {
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl sm:text-3xl font-heading font-black text-neon">
-              {totalBilledLeads}
+              {isClient ? clientMetrics.qualifiedLeads.length : (totalBilledLeads || clientMetrics.qualifiedLeads.length)}
             </span>
             <span className="text-xs font-mono text-neon font-bold">leads (mes)</span>
           </div>
           <p className="text-xs font-mono text-[var(--text-muted)] pt-0.5" suppressHydrationWarning>
-            ${formatNumber(estimatedPipelineMXN)} MXN valor est. pipeline
+            ${formatNumber(isClient ? clientMetrics.attributedRevenue : estimatedPipelineMXN)} MXN valor est. pipeline
           </p>
         </div>
 
@@ -460,12 +481,14 @@ export const CentroDeMando = () => {
           </div>
           <div className="flex items-baseline gap-1.5">
             <span className="text-2xl sm:text-3xl font-heading font-black text-lime-400" suppressHydrationWarning>
-              ${formatNumber(totalRevenueMXN)}
+              ${formatNumber(isClient ? clientMetrics.attributedRevenue : totalRevenueMXN)}
             </span>
             <span className="text-xs font-mono text-[var(--text-faint)]">MXN</span>
           </div>
           <p className="text-xs font-mono text-emerald-500 dark:text-emerald-400 font-bold pt-0.5" suppressHydrationWarning>
-            Agencia (70%): ${formatNumber(agencyRevenueMXN)} MXN
+            {isClient
+              ? `Inversión Ads: $${formatNumber(clientMetrics.totalSpend)} MXN · ROAS ${clientMetrics.realRoas}x`
+              : `Agencia: $${formatNumber(agencyRevenueMXN)} MXN`}
           </p>
         </div>
 
@@ -1112,7 +1135,7 @@ export const CentroDeMando = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
                 {filteredTenants.map((t) => {
                   const isSelected = activeTenantKey === t.id;
-                  const monthlyBilling = (t.billedLeadsMonth || 0) * (t.leadPriceMXN || 350);
+                  const monthlyBilling = Number(t.billedLeadsMonth || 0) * Number(t.leadPriceMXN || 0);
 
                   return (
                     <div
@@ -1205,7 +1228,7 @@ export const CentroDeMando = () => {
                           </div>
                           <div>
                             <span className="text-[8px] text-[var(--text-muted)] font-bold uppercase block">Tarifa Lead</span>
-                            <span className="text-[11px] font-bold text-neon block">${t.leadPriceMXN || 350}</span>
+                            <span className="text-[11px] font-bold text-neon block">${Number(t.leadPriceMXN || 0)}</span>
                           </div>
                           <div>
                             <span className="text-[8px] text-[var(--text-muted)] font-bold uppercase block">Facturación</span>
@@ -1340,18 +1363,18 @@ export const CentroDeMando = () => {
                       <span className="absolute left-3 top-2 text-neon font-bold">$</span>
                       <input
                         type="number"
-                        min={350}
+                        min={0}
                         step={50}
-                        value={drawerTenant.leadPriceMXN || 350}
+                        value={Number(drawerTenant.leadPriceMXN || 0)}
                         onChange={(e) =>
                           updateTenantPolicy(drawerTenant.id, {
-                            leadPriceMXN: Math.max(350, Number(e.target.value) || 350),
+                            leadPriceMXN: Math.max(0, Number(e.target.value) || 0),
                           })
                         }
                         className="w-full bg-[var(--bg-base)] border border-[var(--border-color)] focus:border-neon rounded-xl pl-7 pr-3 py-1.5 text-xs text-[var(--text-main)] font-mono font-bold outline-none"
                       />
                     </div>
-                    <span className="text-[10px] text-[var(--text-muted)]">MXN / lead (Mín $350)</span>
+                    <span className="text-[10px] text-[var(--text-muted)]">MXN / lead</span>
                   </div>
 
                   {/* Preset Fast Buttons */}
@@ -1411,13 +1434,13 @@ export const CentroDeMando = () => {
                   <div className="flex justify-between text-[var(--text-muted)] font-medium">
                     <span>Facturación Acumulada:</span>
                     <span className="text-neon font-bold" suppressHydrationWarning>
-                      ${formatNumber((drawerTenant.billedLeadsMonth || 0) * (drawerTenant.leadPriceMXN || 350))} MXN
+                      ${formatNumber(Number(drawerTenant.billedLeadsMonth || 0) * Number(drawerTenant.leadPriceMXN || 0))} MXN
                     </span>
                   </div>
                   <div className="flex justify-between text-[var(--text-muted)] font-medium">
                     <span>Depósito en Garantía:</span>
                     <span className="text-cyan-600 dark:text-cyan-400 font-bold" suppressHydrationWarning>
-                      ${formatNumber(drawerTenant.retainedDepositMXN || 15000)} MXN
+                      ${formatNumber(Number(drawerTenant.retainedDepositMXN || 0))} MXN
                     </span>
                   </div>
                 </div>

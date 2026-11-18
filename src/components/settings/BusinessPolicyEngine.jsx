@@ -86,6 +86,7 @@ export const BusinessPolicyEngine = () => {
   const [inviolableRules, setInviolableRules] = useState([]);
   const [newRuleInput, setNewRuleInput] = useState('');
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [saveError, setSaveError] = useState(null);
 
   // Sincronizar estados locales cuando cambia el tenant seleccionado
   useEffect(() => {
@@ -211,44 +212,53 @@ export const BusinessPolicyEngine = () => {
   };
 
   // Guardado persistente de políticas y reglas
-  const handleSavePolicies = (e) => {
+  const handleSavePolicies = async (e) => {
     e?.preventDefault();
-    if (updateTenantPolicy && tenantId) {
-      updateTenantPolicy(tenantId, {
-        leadPriceMXN: effectiveLeadPrice,
-        monthlyAdBudget: Math.max(0, Number(monthlyAdBudget) || 1500),
-        slaHitlMinutes: Number(slaHitlMinutes) || 5,
-        reengagementDelayHours: Number(reengagementHours) || 24,
-        crisisKeywords: crisisKeywordsList,
-        inviolableRules: inviolableRules,
-      });
-    }
-
-    auditService.recordEvent({
-      eventCategory: 'TENANT_POLICY',
-      action: 'Actualización de Reglas de Negocio y Precio Pay-Per-Lead',
-      targetResource: currentTenant?.name || 'Gobernanza Global',
-      tenantId: currentTenant?.id || tenantId,
-      status: 'SUCCESS',
-      metadata: {
-        leadPriceMXN: effectiveLeadPrice,
-        slaHitlMinutes: Number(slaHitlMinutes) || 5,
-        reengagementDelayHours: Number(reengagementHours) || 24,
-        isAiActive: Boolean(currentTenant && currentTenant.isAiActive !== false),
-        rulesCount: inviolableRules.length,
-      },
-    });
-
-    setSavedSuccess(true);
+    setSaveError(null);
     try {
-      confetti({
-        particleCount: 35,
-        spread: 45,
-        origin: { y: 0.8 },
-        colors: ['#c3f400', '#72d4ae'],
+      if (updateTenantPolicy && tenantId) {
+        await updateTenantPolicy(tenantId, {
+          leadPriceMXN: effectiveLeadPrice,
+          monthlyAdBudget: Math.max(0, Number(monthlyAdBudget) || 1500),
+          slaHitlMinutes: Number(slaHitlMinutes) || 5,
+          reengagementDelayHours: Number(reengagementHours) || 24,
+          crisisKeywords: crisisKeywordsList,
+          inviolableRules: inviolableRules,
+        });
+      }
+
+      await auditService.recordEvent({
+        eventCategory: 'TENANT_POLICY',
+        action: 'Actualización de Reglas de Negocio y Precio Pay-Per-Lead',
+        targetResource: currentTenant?.name || 'Gobernanza Global',
+        tenantId: currentTenant?.id || tenantId,
+        status: 'SUCCESS',
+        metadata: {
+          leadPriceMXN: effectiveLeadPrice,
+          slaHitlMinutes: Number(slaHitlMinutes) || 5,
+          reengagementDelayHours: Number(reengagementHours) || 24,
+          isAiActive: Boolean(currentTenant && currentTenant.isAiActive !== false),
+          rulesCount: inviolableRules.length,
+        },
       });
-    } catch (err) {}
-    setTimeout(() => setSavedSuccess(false), 3500);
+
+      setSavedSuccess(true);
+      try {
+        confetti({
+          particleCount: 35,
+          spread: 45,
+          origin: { y: 0.8 },
+          colors: ['#c3f400', '#72d4ae'],
+        });
+      } catch (err) {}
+      setTimeout(() => setSavedSuccess(false), 3500);
+    } catch (err) {
+      setSaveError(
+        err?.response?.data?.message ||
+          err?.message ||
+          'No se pudieron guardar las políticas en PostgreSQL.'
+      );
+    }
   };
 
   return (
@@ -340,6 +350,15 @@ export const BusinessPolicyEngine = () => {
           )}
         </div>
       </div>
+
+      {saveError && (
+        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-mono flex items-center justify-between gap-2 animate-fadeIn">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+            <span>{saveError}</span>
+          </div>
+        </div>
+      )}
 
       {savedSuccess && (
         <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono flex items-center justify-between gap-2 animate-fadeIn">
@@ -1210,8 +1229,8 @@ export const BusinessPolicyEngine = () => {
                   dynamicMetric = `${tenantsList.length} Negocios Aislados con RLS en PostgreSQL`;
                   dynamicStatus = tenantsList.length > 0 ? '100% Protegido' : '0 Negocios';
                 } else if (rule.id === 'rule_hitl') {
-                  dynamicMetric = tenantsList.length > 0 ? 'Meta < 5 min (99.2% a tiempo)' : '0 alertas pendientes';
-                  dynamicStatus = tenantsList.length > 0 ? 'SLA 1.8m Promedio' : 'Sin Alertas';
+                  dynamicMetric = tenantsList.length > 0 ? `SLA objetivo: <= ${slaHitlMinutes} min` : '0 alertas pendientes';
+                  dynamicStatus = tenantsList.length > 0 ? `SLA <= ${slaHitlMinutes}m` : 'Sin Alertas';
                 } else if (rule.id === 'rule_crisis') {
                   dynamicMetric = tenantsList.length > 0 ? `${activeTenantsWithAiCount} IA Activas / ${pausedTenantsCount} Pausadas` : '0 alertas de crisis / Sin incidentes';
                   dynamicStatus = tenantsList.length > 0 ? 'Centinela Activo' : 'Sin Incidentes';
@@ -1219,7 +1238,7 @@ export const BusinessPolicyEngine = () => {
                   dynamicMetric = tenantsList.length > 0 ? `${totalBilledLeads} Leads Auditados (Mín $350 MXN)` : '0 Leads Auditados';
                   dynamicStatus = tenantsList.length > 0 ? `${totalBilledLeads} Leads Validados` : '0 Leads';
                 } else if (rule.id === 'rule_reengagement') {
-                  dynamicMetric = tenantsList.length > 0 ? `${totalBilledLeads > 0 ? '4' : '0'} leads en espera de ventana` : '0 prospectos en ventana';
+                  dynamicMetric = tenantsList.length > 0 ? `Ventana de re-contacto: ${reengagementHours}h` : '0 prospectos en ventana';
                   dynamicStatus = tenantsList.length > 0 ? 'Seguimiento Activo' : 'Sin Prospectos';
                 } else if (rule.id === 'rule_fatigue') {
                   dynamicMetric = tenantsList.length > 0 ? 'Campañas en Monitoreo CAPI' : '0 campañas activas';

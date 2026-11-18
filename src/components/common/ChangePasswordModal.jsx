@@ -2,6 +2,8 @@
 
 import React, { useState, useId } from 'react';
 import { Portal } from '@/components/common/Portal';
+import { useAuth } from '@/context/AuthContext';
+import { userService } from '@/services/userService';
 import {
   X,
   Lock,
@@ -43,6 +45,7 @@ export const ChangePasswordModal = ({
   userEmail = 'usuario@vectorinside.com',
   userName = 'Usuario',
 }) => {
+  const { currentUser } = useAuth();
   const currentPasswordId = useId();
   const newPasswordId = useId();
   const confirmPasswordId = useId();
@@ -69,7 +72,7 @@ export const ChangePasswordModal = ({
   const strength = evaluatePasswordStrength(newPassword);
   const passwordsMatch = newPassword && confirmPassword && newPassword === confirmPassword;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage(null);
 
@@ -91,11 +94,16 @@ export const ChangePasswordModal = ({
       return;
     }
 
+    const userId = currentUser?.id;
+    if (!userId) {
+      setErrorMessage('No se encontró un usuario activo para actualizar la contraseña.');
+      return;
+    }
+
     setIsLoading(true);
 
-    // Simulación de hashing SHA-256 / Bcrypt en Supabase Auth
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      await userService.changePassword(userId, newPassword);
       setIsSuccess(true);
 
       try {
@@ -106,13 +114,16 @@ export const ChangePasswordModal = ({
           colors: ['#D4FF00', '#10B981', '#38BDF8'],
         });
       } catch (err) {}
-
-      // Auto-cierre tras feedback de éxito
-      setTimeout(() => {
-        handleReset();
-        onClose();
-      }, 2600);
-    }, 1100);
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        'No se pudo actualizar la contraseña en PostgreSQL.';
+      setErrorMessage(msg);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleReset = () => {

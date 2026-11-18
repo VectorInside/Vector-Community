@@ -96,7 +96,7 @@ export const ConversacionesInbox = () => {
   const isWhatsAppConfigured = Boolean(
     waConfig?.enabled && (waConfig?.phoneNumberId || activeTenant?.whatsappNumberId)
   );
-  const waPhoneNumber = waConfig?.displayPhoneNumber || activeTenant?.phone || '+52 55 1234 5678';
+  const waPhoneNumber = waConfig?.displayPhoneNumber || activeTenant?.phone || 'Sin número asignado';
   const waLastSync = waConfig?.lastSync || 'En espera de primer mensaje';
 
   // Read URL query parameter for direct jump from notification
@@ -172,11 +172,26 @@ export const ConversacionesInbox = () => {
     });
   };
 
+  // Limpiar todas las conversaciones demo o recargar reales
+  const handleClearAllDemos = () => {
+    if (playingAudioId) {
+      window.speechSynthesis?.cancel();
+      setPlayingAudioId(null);
+    }
+    setThreads((prev) => {
+      const remaining = prev.filter((t) => !t.isDemo && !t.id?.startsWith('demo-'));
+      if (selectedThreadId && !remaining.some((t) => t.id === selectedThreadId)) {
+        setSelectedThreadId(remaining.length > 0 ? remaining[0].id : null);
+      }
+      return remaining;
+    });
+  };
+
   // Guardar credenciales reales en AuthContext y localStorage
-  const handleSaveWhatsAppCredentials = (credentials) => {
+  const handleSaveWhatsAppCredentials = async (credentials) => {
     if (updateTenantPolicy && activeTenant?.id) {
       const existingChannels = activeTenant?.connectedChannels || {};
-      updateTenantPolicy(activeTenant.id, {
+      await updateTenantPolicy(activeTenant.id, {
         connectedChannels: {
           ...existingChannels,
           whatsapp: credentials,
@@ -214,7 +229,9 @@ export const ConversacionesInbox = () => {
         const convThreads = Array.isArray(rawConvs)
           ? rawConvs.map((c) => ({
               id: c.id,
+              conversationId: c.id,
               leadId: c.leadId,
+              aiPaused: Boolean(c.aiPaused),
               name: c.contactName || 'Contacto WhatsApp',
               company: 'Inbound WhatsApp Oficial',
               channel: 'WhatsApp',
@@ -225,8 +242,8 @@ export const ConversacionesInbox = () => {
               contacted: true,
               owner: 'Lobo Vectorial (Agencia)',
               stage: c.status === 'ATTENDED' ? 'Atendido' : 'Nuevo',
-              slaMinutesRemaining: 15,
-              potentialTicket: 18500,
+              slaMinutesRemaining: c.slaMinutesRemaining ?? null,
+              potentialTicket: Number(c.estimatedValue || c.potentialTicket || 0),
               qualification: {
                 contactValid: true,
                 productIdentified: true,
@@ -260,7 +277,9 @@ export const ConversacionesInbox = () => {
           .filter((lead) => !convThreads.some((ct) => ct.leadId === lead.id || ct.phone === lead.phone))
           .map((lead) => ({
             id: lead.id,
+            conversationId: lead.conversationId || lead.id,
             leadId: lead.id,
+            aiPaused: Boolean(lead.aiPaused),
             name: lead.name,
             company: lead.notes || 'Contacto Directo',
             channel: lead.channel || 'WhatsApp',
@@ -271,7 +290,7 @@ export const ConversacionesInbox = () => {
             contacted: lead.leadState === 'BILLABLE_LEAD',
             owner: 'Lobo Vectorial (Agencia)',
             stage: lead.status || (lead.leadState === 'BILLABLE_LEAD' ? 'Calificado' : 'Nuevo'),
-            slaMinutesRemaining: lead.countdown24h ? 15 : null,
+            slaMinutesRemaining: lead.slaMinutesRemaining ?? null,
             potentialTicket: typeof lead.estimatedValue === 'number' ? lead.estimatedValue : 0,
             qualification: {
               contactValid: Boolean(lead.criteriaAudit?.identityValidated),
@@ -1222,11 +1241,11 @@ export const ConversacionesInbox = () => {
           phone: activeThread?.phone || '',
           email: activeThread?.email || 'contacto@prospecto.com',
           notes: activeThread?.need || 'Servicio Profesional',
-          estimatedValue: activeThread?.potentialTicket || 28000,
+          estimatedValue: Number(activeThread?.potentialTicket || 0),
           channel: activeThread?.channel || 'WhatsApp',
           status: activeThread?.stage || 'LEAD_COLD_24H',
           customerNeeds: {
-            potentialTicket: activeThread?.potentialTicket || 28000,
+            potentialTicket: Number(activeThread?.potentialTicket || 0),
             intent: activeThread?.need || 'Servicio Profesional',
             objection: 'Requiere confirmación de horario y financiamiento',
             suggestedAction: 'Cita de valoración y confirmación inmediata',
@@ -1238,7 +1257,7 @@ export const ConversacionesInbox = () => {
           client_name: activeThread?.name || 'Prospecto',
           client_phone: activeThread?.phone || '',
           customer_needs_summary: {
-            potentialTicket: activeThread?.potentialTicket || 28000,
+            potentialTicket: Number(activeThread?.potentialTicket || 0),
             intent: activeThread?.need || 'Servicio Profesional',
             objection: 'Requiere confirmación de horario y financiamiento',
             suggestedAction: 'Cita de valoración y confirmación inmediata',

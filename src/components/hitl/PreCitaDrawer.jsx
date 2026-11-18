@@ -22,9 +22,11 @@ import {
   Flame,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { useAuth } from '@/context/AuthContext';
 import { LEAD_STATUS_ENUM } from '@/utils/constants';
 
 export const PreCitaDrawer = ({ isOpen, onClose, lead, onApproveAppointment, onOpenChat }) => {
+  const { activeTenant } = useAuth();
   const [isApproving, setIsApproving] = useState(false);
   const [approvedSuccess, setApprovedSuccess] = useState(false);
   const [approveError, setApproveError] = useState(null);
@@ -221,7 +223,11 @@ export const PreCitaDrawer = ({ isOpen, onClose, lead, onApproveAppointment, onO
                     Urgencia: <strong>{lead.customerNeeds?.buyingUrgency || 'Alta'}</strong>
                   </span>
                   <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold">
-                    Valor: {lead.potentialTicket || '$350 MXN (Lead Calificado)'}
+                    Valor:{' '}
+                    {lead.potentialTicket ||
+                      (activeTenant?.leadPriceMXN
+                        ? `$${activeTenant.leadPriceMXN} MXN (Lead Calificado)`
+                        : 'Sin valor asignado')}
                   </span>
                 </div>
               </div>

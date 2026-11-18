@@ -4,17 +4,42 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { VectorInsideLogo } from '@/components/common/VectorInsideLogo';
+import { leadService } from '@/services/leadService';
 import { LANDING_TRANSLATIONS } from './landingTranslations';
 
 export const Footer = ({ lang = 'es' }) => {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [subscribeError, setSubscribeError] = useState('');
   const t = LANDING_TRANSLATIONS[lang].footer;
 
-  const handleSubscribe = (e) => {
+  const handleSubscribe = async (e) => {
     e.preventDefault();
-    if (!email) return;
-    setSubscribed(true);
+    if (!email || !email.trim()) return;
+    setIsSubmitting(true);
+    setSubscribeError('');
+    try {
+      await leadService.createLead({
+        tenantId: 'tenant-vector-inside',
+        name: email.trim().split('@')[0] || 'Suscriptor Radar',
+        email: email.trim(),
+        notes: 'Suscripción al Radar Vectorial desde Footer',
+        channel: 'WEB',
+        source: 'Landing Footer',
+        status: 'NEW',
+      });
+      setSubscribed(true);
+      setEmail('');
+    } catch (err) {
+      setSubscribeError(
+        err?.response?.data?.message ||
+          err?.message ||
+          (lang === 'es' ? 'No se pudo registrar el correo.' : 'Could not register email.')
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -130,11 +155,15 @@ export const Footer = ({ lang = 'es' }) => {
                   />
                   <button
                     type="submit"
-                    className="p-2 rounded-xl bg-neon text-black hover:bg-[#d9f200] transition-colors shrink-0 shadow-neon-sm"
+                    disabled={isSubmitting}
+                    className="p-2 rounded-xl bg-neon text-black hover:bg-[#d9f200] transition-colors shrink-0 shadow-neon-sm disabled:opacity-50"
                   >
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
+                {subscribeError && (
+                  <p className="text-[10px] font-mono text-rose-400">{subscribeError}</p>
+                )}
               </form>
             )}
           </div>

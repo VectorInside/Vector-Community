@@ -332,9 +332,12 @@ export const SoberaniaFinanciera = () => {
       closedConversions: unitEconomics.totalConversions,
       conversionsLabel: 'Conversiones / Citas Concluidas',
       avgTicket: `$${unitEconomics.avgTicket.toLocaleString()} MXN`,
-      capiMatchRate: unitEconomics.totalSpend > 0 || unitEconomics.totalConversions > 0 ? '100.0%' : 'En espera de eventos',
-      humanHoursSaved: `${Math.max(14, Math.round((leads.length + appointments.length) * 1.8))} hrs`,
-      messagesProcessed: `${Math.max(leads.length * 6, 28)} mensajes`,
+      capiMatchRate:
+        performanceMetrics?.summary?.capiSyncRate != null && Number(performanceMetrics.summary.capiSyncRate) > 0
+          ? `${performanceMetrics.summary.capiSyncRate}%`
+          : 'En espera de eventos',
+      humanHoursSaved: `${Math.round((leads.length + appointments.length) * 1.8)} hrs`,
+      messagesProcessed: `${leads.length * 6} mensajes`,
       topChannel: topChannelLabel,
       deepSeekSummary: unitEconomics.totalSpend > 0 && unitEconomics.realRevenue > 0
         ? `El ecosistema comercial de ${activeTenant?.name || 'la empresa'} muestra un retorno MER de ${unitEconomics.merDisplay} con un CAC de $${unitEconomics.cacNum.toLocaleString()} MXN. El embudo directo a WhatsApp pre-califica la intención del prospecto, reduciendo el ciclo de venta a menos de 48 horas.`
@@ -354,7 +357,7 @@ export const SoberaniaFinanciera = () => {
         },
       ],
     };
-  }, [currentMonthName, unitEconomics, activeTenant, leads, appointments]);
+  }, [currentMonthName, unitEconomics, activeTenant, leads, appointments, performanceMetrics]);
 
   return (
     <div className="p-8 block animate-fade-in font-sans">
@@ -379,10 +382,12 @@ export const SoberaniaFinanciera = () => {
             <FileText className="w-4 h-4" />
             <span>Generar Reporte Ejecutivo Mensual</span>
           </button>
-          <span className="text-[11px] font-sans font-medium bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 px-3 py-2 rounded-xl flex items-center gap-2 shadow-sm">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            Meta CAPI Sincronizado
-          </span>
+          {(activeTenant?.metaPixelId || campaigns.length > 0) && (
+            <span className="text-[11px] font-sans font-medium bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 px-3 py-2 rounded-xl flex items-center gap-2 shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              Meta CAPI Sincronizado
+            </span>
+          )}
         </div>
       </header>
 
@@ -660,13 +665,22 @@ export const SoberaniaFinanciera = () => {
                       La campaña <strong className="text-[var(--text-main)]">"{unitEconomics.fatiguedCampaign.name}"</strong> superó la frecuencia de {unitEconomics.fatiguedCampaign.frequency}. Costos de adquisición en aumento.
                     </p>
                   </div>
-                ) : (
+                ) : (campaigns.length > 0 || activeTenant?.metaPixelId) ? (
                   <div>
                     <span className="text-[10px] font-bold uppercase text-emerald-400 tracking-wider flex items-center gap-1 mb-1 font-mono">
                       <CheckCircle2 className="w-3 h-3 text-emerald-400" /> Rendimiento Creativo Saludable
                     </span>
                     <p className="text-xs text-purple-950 dark:text-[#d8b4fe] leading-relaxed">
                       Frecuencia publicitaria controlada (&lt; 2.5x). Sin fatiga de audiencia detectada en los activos de Meta Ads.
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <span className="text-[10px] font-bold uppercase text-[var(--text-muted)] tracking-wider flex items-center gap-1 mb-1 font-mono">
+                      <BrainCircuit className="w-3 h-3 text-purple-400" /> Sin Campañas Activas
+                    </span>
+                    <p className="text-xs text-purple-950 dark:text-[#d8b4fe] leading-relaxed">
+                      Activa una campaña publicitaria o configura tu Pixel de Meta para monitorear frecuencia y desgaste de audiencia.
                     </p>
                   </div>
                 )}

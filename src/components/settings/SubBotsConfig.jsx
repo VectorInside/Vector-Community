@@ -279,6 +279,7 @@ export const SubBotsConfig = () => {
   const [config, setConfig] = useState(null);
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [saveError, setSaveError] = useState(null);
   const [initialConfigJson, setInitialConfigJson] = useState(null);
 
   const hasUnsavedChanges = useMemo(() => {
@@ -295,9 +296,10 @@ export const SubBotsConfig = () => {
   });
 
   // Sincronizar copies de asistente y nurturing con el ADN de la marca
-  const handleSyncWithBrandDna = () => {
+  const handleSyncWithBrandDna = async () => {
     const adaptive = generateTenantAdaptivePrompts(currentTenant);
     const targetTemp = isB2B ? 0.2 : 0.35;
+    setSaveError(null);
     if (typeof window !== 'undefined' && tenantId) {
       try {
         localStorage.setItem(`vector_bot_prompt_${tenantId}`, adaptive.prompt);
@@ -317,6 +319,10 @@ export const SubBotsConfig = () => {
         }));
       } catch (e) {}
     }
+    const nextFollowUp = {
+      ...(config?.followUp || {}),
+      messageTemplate: adaptive.followUp,
+    };
     setConfig((prev) => ({
       ...prev,
       temperature: targetTemp,
@@ -326,26 +332,42 @@ export const SubBotsConfig = () => {
         messageTemplate: adaptive.followUp,
       },
     }));
-    if (updateTenantPolicy && tenantId) {
-      updateTenantPolicy(tenantId, {
-        temperature: targetTemp,
-        systemPrompt: adaptive.prompt,
-        followUpMessage: adaptive.followUp,
-        calendarConfig: {
-          ...currentTenant?.calendarConfig,
+    try {
+      if (tenantId) {
+        await tenantService.updateVerticalConfig(tenantId, {
+          activeModel: config?.activeModel,
+          temperature: targetTemp,
+          systemPrompt: adaptive.prompt,
+          followUp: nextFollowUp,
+        });
+      }
+      if (updateTenantPolicy && tenantId) {
+        await updateTenantPolicy(tenantId, {
           temperature: targetTemp,
           systemPrompt: adaptive.prompt,
           followUpMessage: adaptive.followUp,
-        },
-      });
+          calendarConfig: {
+            ...currentTenant?.calendarConfig,
+            temperature: targetTemp,
+            systemPrompt: adaptive.prompt,
+            followUpMessage: adaptive.followUp,
+          },
+        });
+      }
+      try {
+        confetti({
+          particleCount: 45,
+          spread: 60,
+          colors: ['#E7F900', '#00FFFF', '#FFFFFF'],
+        });
+      } catch (e) {}
+    } catch (err) {
+      setSaveError(
+        err?.response?.data?.message ||
+          err?.message ||
+          'No se pudo sincronizar la configuración con el servidor.'
+      );
     }
-    try {
-      confetti({
-        particleCount: 45,
-        spread: 60,
-        colors: ['#E7F900', '#00FFFF', '#FFFFFF'],
-      });
-    } catch (e) {}
   };
 
   // Estado de pruebas de latencia de API (Ping)
@@ -580,6 +602,7 @@ export const SubBotsConfig = () => {
     if (!currentTenant || !config) return;
 
     setSaving(true);
+    setSaveError(null);
     try {
       // 1. Guardar configuración de negocio y citas (sin llaves en texto plano en la tabla pública)
       const verticalConfigPromise = tenantService.updateVerticalConfig(tenantId, {
@@ -610,17 +633,17 @@ export const SubBotsConfig = () => {
             apiKey: currentKey,
             model: activeModelObj?.technicalModel || 'deepseek-chat',
             allowFallbackToGlobal: true,
-          }).catch((err) => console.warn('[SubBotsConfig] Error al guardar config de IA:', err));
+          });
         } else if (!currentKey) {
           // Si el usuario limpió la clave, restablecer en backend al pool global oficial
-          aiConfigPromise = aiService.deleteConfig(tenantId).catch(() => {});
+          aiConfigPromise = aiService.deleteConfig(tenantId);
         } else {
           // Clave existente enmascarada: solo actualizar el modelo técnico sin sobreescribir la clave
           aiConfigPromise = aiService.saveConfig(tenantId, {
             provider: backendProvider,
             model: activeModelObj?.technicalModel || 'deepseek-chat',
             allowFallbackToGlobal: true,
-          }).catch((err) => console.warn('[SubBotsConfig] Error al actualizar modelo de IA:', err));
+          });
         }
       }
 
@@ -636,7 +659,7 @@ export const SubBotsConfig = () => {
       }
 
       if (updateTenantPolicy) {
-        updateTenantPolicy(tenantId, {
+        await updateTenantPolicy(tenantId, {
           isAiActive: config.isAiActive,
           activeModel: config.activeModel,
           temperature: config.temperature,
@@ -676,6 +699,11 @@ export const SubBotsConfig = () => {
       setTimeout(() => setSavedSuccess(false), 3500);
     } catch (error) {
       console.error('Error al guardar configuración:', error);
+      setSaveError(
+        error?.response?.data?.message ||
+          error?.message ||
+          'No se pudo guardar la configuración en PostgreSQL.'
+      );
     } finally {
       setSaving(false);
     }
@@ -854,9 +882,20 @@ export const SubBotsConfig = () => {
             variant={config?.isAiActive ? 'outline' : 'primary'}
             size="sm"
             icon={config?.isAiActive ? Pause : Play}
-            onClick={() => {
-              if (toggleTenantAi) toggleTenantAi(tenantId);
-              setConfig((prev) => ({ ...prev, isAiActive: !prev?.isAiActive }));
+            onClick={async () => {
+              setSaveError(null);
+              try {
+                if (toggleTenantAi) {
+                  await toggleTenantAi(tenantId);
+                }
+                setConfig((prev) => ({ ...prev, isAiActive: !prev?.isAiActive }));
+              } catch (err) {
+                setSaveError(
+                  err?.response?.data?.message ||
+                    err?.message ||
+                    'Error al cambiar estado de IA en el servidor.'
+                );
+              }
             }}
           >
             {config?.isAiActive ? 'Pausar Asistente' : 'Activar Asistente'}
@@ -874,6 +913,15 @@ export const SubBotsConfig = () => {
           </Button>
         </div>
       </div>
+
+      {saveError && (
+        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-mono flex items-center justify-between gap-2 animate-fadeIn">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+            <span>{saveError}</span>
+          </div>
+        </div>
+      )}
 
       {savedSuccess && (
         <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono flex items-center justify-between gap-2 animate-fadeIn">
@@ -1075,9 +1123,6 @@ export const SubBotsConfig = () => {
                   <Sparkles className="w-3 h-3 text-neon" />
                   <span>Sincronizar con ADN</span>
                 </button>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30 font-bold">
-                  Recuperación +32%
-                </span>
               </div>
             </div>
 

@@ -84,8 +84,10 @@ export default function MicroLandingPage() {
         id: found.id || slug,
         name: found.name || 'Negocio',
         shortName: found.shortName || found.name,
-        phone: found.phone || '+525512345678',
+        phone: found.phone || '',
         giro: found.giro || found.verticalLabel || '',
+        avgTicketMXN: Number(found.avgTicketMXN || found.leadPriceMXN || 0),
+        leadPriceMXN: Number(found.leadPriceMXN || 0),
         microLandingSlug: found.microLandingSlug || slug,
         microLandingEnabled: found.microLandingEnabled !== false,
         microLandingConfig: dbConfig,
@@ -159,7 +161,7 @@ export default function MicroLandingPage() {
   const [customData, setCustomData] = useState({
     name: baseTenant.name,
     tagline: baseTheme.tagline,
-    phone: baseTenant.phone || '+525512345678',
+    phone: baseTenant.phone || '',
     address: baseTheme.address,
     hoursWeek: baseTheme.hoursWeek,
     hoursWeekend: baseTheme.hoursWeekend,
@@ -315,12 +317,14 @@ export default function MicroLandingPage() {
 
   const formConfig = getVerticalFormConfig();
 
-  const cleanPhone = (customData.phone || '+525512345678').replace(/[^0-9]/g, '');
-  const primaryWaUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
-    vertical === 'hospitality' || baseTenant.id === 'polanco'
-      ? `¡Hola ${customData.name}! 👋 Vi su micro-landing y me gustaría reservar una mesa o consultar el menú.`
-      : `¡Hola ${customData.name}! 👋 Vi su micro-landing y me gustaría agendar una cita / solicitar informes.`
-  )}`;
+  const cleanPhone = (customData.phone || '').replace(/[^0-9]/g, '');
+  const primaryWaUrl = cleanPhone
+    ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
+        vertical === 'hospitality' || baseTenant.id === 'polanco'
+          ? `¡Hola ${customData.name}! 👋 Vi su micro-landing y me gustaría reservar una mesa o consultar el menú.`
+          : `¡Hola ${customData.name}! 👋 Vi su micro-landing y me gustaría agendar una cita / solicitar informes.`
+      )}`
+    : '#lead-capture-form';
 
   const handleShare = async () => {
     const url = typeof window !== 'undefined' ? window.location.href : '';
@@ -359,7 +363,7 @@ export default function MicroLandingPage() {
           phone: cleanBookingPhone,
           channel: 'Micro-Landing Vector',
           leadState: 'LEAD_WARM_24H',
-          potentialTicket: baseTenant.avgTicketMXN ? `$${baseTenant.avgTicketMXN} MXN` : '$1,500 MXN',
+          potentialTicket: baseTenant.avgTicketMXN > 0 ? `$${baseTenant.avgTicketMXN} MXN` : '$0 MXN',
           criteriaAudit: {
             identityValidated: true,
             catalogIdentified: true,
@@ -380,11 +384,13 @@ export default function MicroLandingPage() {
       });
     } catch (e) {}
 
-    // Open prefilled WhatsApp
-    setTimeout(() => {
-      const customText = encodeURIComponent(formConfig.waText);
-      window.open(`https://wa.me/${cleanPhone}?text=${customText}`, '_blank');
-    }, 1000);
+    // Open prefilled WhatsApp only when business has a phone configured
+    if (cleanPhone) {
+      setTimeout(() => {
+        const customText = encodeURIComponent(formConfig.waText);
+        window.open(`https://wa.me/${cleanPhone}?text=${customText}`, '_blank');
+      }, 1000);
+    }
   };
 
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
@@ -441,17 +447,19 @@ export default function MicroLandingPage() {
 
           {/* Action CTAs */}
           <div className="space-y-3 pt-2">
-            <a
-              href={`https://wa.me/525588997711?text=${encodeURIComponent(
-                `Hola Vector Inside, soy el titular de "${activeTenantData?.name}" y deseo información sobre los servicios.`
-              )}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full py-3.5 px-4 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-black font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-500/10"
-            >
-              <MessageCircle className="w-4 h-4" />
-              <span>Contactar vía WhatsApp</span>
-            </a>
+            {(activeTenantData?.phone || customData.phone) && (
+              <a
+                href={`https://wa.me/${String(activeTenantData?.phone || customData.phone).replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+                  `Hola, solicito información sobre "${activeTenantData?.name}".`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3.5 px-4 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-black font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-500/10"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>Contactar vía WhatsApp</span>
+              </a>
+            )}
 
             {activeTenantData?.websiteUrl && (
               <a
@@ -603,7 +611,7 @@ export default function MicroLandingPage() {
                 <span>•</span>
                 <span>{baseTheme.reviewsCount === 'Verificado' ? 'Negocio Verificado' : `${baseTheme.reviewsCount} opiniones`}</span>
                 <span>•</span>
-                <span className="text-[#D4FF00] font-bold">{baseTenant.giro || 'Salud'}</span>
+                <span className="text-[#D4FF00] font-bold">{baseTenant.giro || 'Negocio Verificado'}</span>
               </div>
             </div>
           </div>

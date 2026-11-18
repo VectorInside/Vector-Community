@@ -214,7 +214,7 @@ export const CuentasAccesosView = () => {
 
   // New Account Form State
   const [newAccountForm, setNewAccountForm] = useState({
-    tenantId: 'dental',
+    tenantId: '',
     ownerName: '',
     email: '',
     password: '',
@@ -307,7 +307,7 @@ export const CuentasAccesosView = () => {
   }, [accounts]);
 
   // Create / Update Business Owner Account Handler (Strict 1:1 enforcement)
-  const handleSaveAccount = (e) => {
+  const handleSaveAccount = async (e) => {
     e.preventDefault();
     if (!newAccountForm.ownerName.trim() || !newAccountForm.email.trim()) {
       showToast('Por favor completa todos los campos requeridos');
@@ -356,49 +356,59 @@ export const CuentasAccesosView = () => {
       notes: newAccountForm.notes || 'Cuenta de acceso maestro para el dueño del negocio.',
     };
 
-    setAccounts((prev) => [savedAccount, ...prev]);
-    showToast(`Cuenta maestra para ${savedAccount.tenantName} creada exitosamente`);
-
-    // Persist to PostgreSQL 17 Backend
-    userService.createTenantOwner({
-      tenantId: savedAccount.tenantId,
-      tenantName: savedAccount.tenantName,
-      ownerName: savedAccount.ownerName,
-      email: savedAccount.email,
-      phone: savedAccount.phone,
-      password: savedAccount.tempPassword,
-      notes: savedAccount.notes,
-    }).catch(() => {});
-
-    setIsCreateModalOpen(false);
-
     try {
-      confetti({
-        particleCount: 45,
-        spread: 60,
-        origin: { y: 0.6 },
-        colors: ['#C3F400', '#10B981', '#AA8BFB'],
+      // Persist to PostgreSQL 17 Backend
+      const created = await userService.createTenantOwner({
+        tenantId: savedAccount.tenantId,
+        tenantName: savedAccount.tenantName,
+        ownerName: savedAccount.ownerName,
+        email: savedAccount.email,
+        phone: savedAccount.phone,
+        password: savedAccount.tempPassword,
+        notes: savedAccount.notes,
       });
-    } catch (err) {}
 
-    // Open share credentials modal immediately for WhatsApp delivery
-    setShareCredentialsUser(savedAccount);
+      const finalAccount = created?.id ? { ...savedAccount, id: created.id } : savedAccount;
+      setAccounts((prev) => [finalAccount, ...prev]);
+      showToast(`Cuenta maestra para ${finalAccount.tenantName} creada exitosamente`);
+      setIsCreateModalOpen(false);
 
-    // Reset Form
-    setNewAccountForm({
-      tenantId: '',
-      ownerName: '',
-      email: '',
-      password: '',
-      phone: '',
-      notes: '',
-    });
+      try {
+        confetti({
+          particleCount: 45,
+          spread: 60,
+          origin: { y: 0.6 },
+          colors: ['#C3F400', '#10B981', '#AA8BFB'],
+        });
+      } catch (err) {}
+
+      // Open share credentials modal immediately for WhatsApp delivery
+      setShareCredentialsUser(finalAccount);
+
+      // Reset Form
+      setNewAccountForm({
+        tenantId: '',
+        ownerName: '',
+        email: '',
+        password: '',
+        phone: '',
+        notes: '',
+      });
+    } catch (err) {
+      showToast(
+        err?.response?.data?.message ||
+          err?.message ||
+          'Error al registrar la cuenta del dueño en PostgreSQL.'
+      );
+    }
   };
 
   // Toggle Account Status (Suspend / Reactivate)
-  const handleToggleAccountStatus = (tenantId) => {
-    let targetAccount = accounts.find((acc) => acc.tenantId === tenantId);
-    const nextStatus = targetAccount?.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
+  const handleToggleAccountStatus = async (tenantId) => {
+    const targetAccount = accounts.find((acc) => acc.tenantId === tenantId);
+    if (!targetAccount) return;
+    const prevStatus = targetAccount.status;
+    const nextStatus = prevStatus === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
 
     setAccounts((prev) =>
       prev.map((acc) => {
@@ -409,10 +419,19 @@ export const CuentasAccesosView = () => {
       })
     );
 
-    if (targetAccount) {
-      userService.updateUserStatus(targetAccount.id, nextStatus).catch(() => {});
+    try {
+      await userService.updateUserStatus(targetAccount.id, nextStatus);
       showToast(
         `Acceso para ${targetAccount.tenantName} ${nextStatus === 'ACTIVE' ? 'reactivado' : 'suspendido'}`
+      );
+    } catch (err) {
+      setAccounts((prev) =>
+        prev.map((acc) => (acc.tenantId === tenantId ? { ...acc, status: prevStatus } : acc))
+      );
+      showToast(
+        err?.response?.data?.message ||
+          err?.message ||
+          `Error al actualizar estado de ${targetAccount.tenantName} en PostgreSQL.`
       );
     }
   };

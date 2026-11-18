@@ -98,9 +98,33 @@ export const normalizeTenantFromApi = (rawTenant) => {
     ? Number(rawTenant.slaHitlMinutes)
     : (rawTenant.slaTarget != null ? Number(rawTenant.slaTarget) : (preset.slaHitlMinutes || 15));
 
+  const parseJsonField = (val, fallback) => {
+    if (typeof val === 'string') {
+      try {
+        return JSON.parse(val);
+      } catch {
+        return fallback;
+      }
+    }
+    return val !== undefined && val !== null ? val : fallback;
+  };
+
   return {
     ...preset,
     ...rawTenant,
+    email: rawTenant.email || preset.email || '',
+    primaryContact: rawTenant.primaryContact || preset.primaryContact || '',
+    cacMax: rawTenant.cacMax ?? preset.cacMax ?? null,
+    status: rawTenant.status || preset.status || 'active',
+    isActive: rawTenant.isActive !== undefined ? Boolean(rawTenant.isActive) : (preset.isActive !== false),
+    botAudioMode:
+      rawTenant.botAudioMode ||
+      botSettingsFromCalendar.botAudioMode ||
+      preset.botAudioMode ||
+      'text_only',
+    microLandingConfig: parseJsonField(rawTenant.microLandingConfig, preset.microLandingConfig || null),
+    connectedChannels: parseJsonField(rawTenant.connectedChannels, preset.connectedChannels || {}),
+    pillars: parseJsonField(rawTenant.pillars, preset.pillars || null),
     leadPriceMXN: Math.max(
       350,
       rawTenant.leadPriceMXN != null ? Number(rawTenant.leadPriceMXN) : (preset.leadPriceMXN || 350)
@@ -170,6 +194,12 @@ export const serializeTenantToApi = (tenant) => {
     name: tenant.name,
     shortName: tenant.shortName || tenant.name,
     legalNameTaxId: tenant.legalNameTaxId || '',
+    email: tenant.email || '',
+    primaryContact: tenant.primaryContact || '',
+    cacMax: tenant.cacMax ?? null,
+    status: tenant.status || 'active',
+    isActive: tenant.isActive !== false,
+    botAudioMode: tenant.botAudioMode || 'text_only',
     vertical: tenant.vertical || 'service_appointments',
     verticalLabel: tenant.verticalLabel || 'Servicios Generales',
     giro: tenant.giro || 'Servicios',
@@ -184,6 +214,12 @@ export const serializeTenantToApi = (tenant) => {
     microLandingEnabled: tenant.microLandingEnabled !== false,
     microLandingStatus: tenant.microLandingStatus || 'active',
     microLandingSlug: tenant.microLandingSlug || tenant.id,
+    microLandingConfig: tenant.microLandingConfig || null,
+    connectedChannels:
+      tenant.connectedChannels && typeof tenant.connectedChannels === 'object'
+        ? tenant.connectedChannels
+        : {},
+    pillars: tenant.pillars || null,
     connectedSocialNetworks: Array.isArray(tenant.connectedSocialNetworks)
       ? tenant.connectedSocialNetworks.join(',')
       : (tenant.connectedSocialNetworks || 'INSTAGRAM,FACEBOOK,WHATSAPP'),
@@ -204,6 +240,7 @@ export const serializeTenantToApi = (tenant) => {
         systemPrompt: tenant.systemPrompt || calObj.systemPrompt,
         followUpMessage: tenant.followUpMessage || calObj.followUpMessage,
         activeModel: tenant.activeModel || calObj.activeModel,
+        botAudioMode: tenant.botAudioMode || calObj.botAudioMode,
       };
       return JSON.stringify(mergedCal);
     })(),
@@ -282,6 +319,11 @@ export const tenantService = {
         console.warn(`[tenantService.updateCommercialOffer] Fallback for ${id}:`, error?.message);
         return null;
       }
+    },
+
+  async updateMicroLandingConfig(tenantId, config) {
+      const response = await api.put(`/tenants/${tenantId}/microlanding`, config);
+      return unwrapApiData(response);
     },
 
   async getVerticalConfig(tenantId) {

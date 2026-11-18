@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { BriefingBridge } from '@/services/briefingBridge';
+import { auditService } from '@/services/auditService';
 import { resolveBrandPreset } from '@/utils/brandPresets';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -1411,19 +1412,74 @@ export const RAGWizard = ({
           </p>
         </div>
       `,
-      () => {
-        deleteTenant(tenant.id);
-        triggerModal(
-          'Negocio Eliminado',
-          `El tenant <strong class="text-[var(--text-main)]">${tenant.name}</strong> ha sido eliminado del sistema y desvinculado de la memoria RAG.`,
-          null,
-          'Entendido'
-        );
+      async () => {
+        try {
+          if (deleteTenant) {
+            await deleteTenant(tenant.id);
+          }
+          triggerModal(
+            'Negocio Eliminado',
+            `El tenant <strong class="text-[var(--text-main)]">${tenant.name}</strong> ha sido eliminado del sistema y desvinculado de la memoria RAG.`,
+            null,
+            'Entendido'
+          );
+        } catch (err) {
+          triggerModal(
+            'Error al Eliminar Negocio',
+            err?.response?.data?.message || err?.message || 'No se pudo eliminar el negocio en PostgreSQL.',
+            null,
+            'Entendido',
+            'danger'
+          );
+        }
       },
       'Sí, Eliminar Definitivamente',
       'danger'
     );
   };
+
+  const getTenantRagMetrics = (tenant) => {
+    if (!tenant) {
+      return {
+        completedCount: 0,
+        totalPillars: 4,
+        healthPct: 0,
+        ifvScore: 0,
+        statusLabel: 'Sin Indexar',
+      };
+    }
+    const p = tenant.pillars || {};
+    const p1Done = Boolean(
+      (p.pillar1 && p.pillar1.enabled !== false && (p.pillar1.fileName || p.pillar1.cacMax || p.pillar1.enabled)) ||
+        (!tenant.pillars && (tenant.leadPriceMXN || tenant.cacMax))
+    );
+    const p2Done = Boolean(
+      (p.pillar2 && p.pillar2.enabled !== false && (p.pillar2.fileName || p.pillar2.brandTone || p.pillar2.enabled)) ||
+        tenant.toneOfVoice ||
+        tenant.brandPurpose
+    );
+    const p3Done = Boolean(
+      (p.pillar3 && p.pillar3.enabled !== false && (p.pillar3.fileName || p.pillar3.keywords || p.pillar3.enabled)) ||
+        (Array.isArray(tenant.crisisKeywords) && tenant.crisisKeywords.length > 0) ||
+        (Array.isArray(tenant.inviolableRules) && tenant.inviolableRules.length > 0)
+    );
+    const p4Done = Boolean(
+      (p.pillar4 && p.pillar4.enabled && (p.pillar4.fileName || p.pillar4.context || p.pillar4.enabled)) ||
+        tenant.commercialOffer?.hook
+    );
+
+    const completedCount = [p1Done, p2Done, p3Done, p4Done].filter(Boolean).length;
+    const healthPct = Math.round((completedCount / 4) * 100);
+    const ifvScore = Math.round((healthPct / 100) * 50);
+    const statusLabel =
+      completedCount === 0 ? 'Sin Indexar' : healthPct >= 75 ? 'Antifrágil' : 'En Calibración';
+    return { completedCount, totalPillars: 4, healthPct, ifvScore, statusLabel };
+  };
+
+  const activeTenantRagMetrics = useMemo(
+    () => getTenantRagMetrics(activeTenant),
+    [activeTenant]
+  );
 
   // Sync with external mode prop if provided
   useEffect(() => {
@@ -2061,19 +2117,19 @@ export const RAGWizard = ({
             .replace(/(^-|-$)/g, ''),
           // Pilar 2: Brandbook & Tono
           brandTone: sanitizeField(result.brandTone, adaptive?.pilar2?.placeholder?.replace(/^ej\.\s*/, '') || 'Profesional, Empático y Orientado a Resultados'),
-          brandbookDoc: (result.brandbookDoc && typeof result.brandbookDoc === 'object') ? result.brandbookDoc : (fileObj ? { name: `Brandbook_${fileObj.name}`, size: Math.round(fileObj.size * 0.42), type: 'text/markdown' } : { name: `Brandbook_${resolvedVertObj.id}.md`, size: 45000, type: 'text/markdown' }),
+          brandbookDoc: (result.brandbookDoc && typeof result.brandbookDoc === 'object') ? result.brandbookDoc : (fileObj ? { name: `Brandbook_${fileObj.name}`, size: fileObj.size, type: fileObj.type || 'text/markdown' } : null),
           archetype: sanitizeField(result.archetype, resolvedVertObj.badge || 'El Asesor Experto'),
           // Propuesta Comercial & Gancho
           offerHook: sanitizeField(result.offerHook, adaptive?.offer?.placeholder?.replace(/^ej\.\s*/, '') || 'Diagnóstico de Valoración Sin Costo'),
           offerCta: sanitizeField(result.offerCta, 'Envía mensaje para apartar cupo'),
           offerValidity: sanitizeField(result.offerValidity, 'Válido por tiempo limitado'),
-          commercialProposalDoc: (result.commercialProposalDoc && typeof result.commercialProposalDoc === 'object') ? result.commercialProposalDoc : (fileObj || { name: `Oferta_${resolvedVertObj.id}.pdf`, size: 185000, type: 'application/pdf' }),
+          commercialProposalDoc: (result.commercialProposalDoc && typeof result.commercialProposalDoc === 'object') ? result.commercialProposalDoc : (fileObj || null),
           // Pilar 1: Precios & Servicios
           pricingDetails: sanitizeField(result.pricingDetails, adaptive?.pilar1?.placeholder?.replace(/^ej\.\s*/, '') || 'Tarifas base y opciones de pago diferido'),
-          pricingDoc: (result.pricingDoc && typeof result.pricingDoc === 'object') ? result.pricingDoc : (fileObj ? { name: `Tarifario_${fileObj.name}`, size: Math.round(fileObj.size * 0.75), type: 'application/pdf' } : { name: `Tarifario_${resolvedVertObj.id}.pdf`, size: 98000, type: 'application/pdf' }),
+          pricingDoc: (result.pricingDoc && typeof result.pricingDoc === 'object') ? result.pricingDoc : (fileObj ? { name: `Tarifario_${fileObj.name}`, size: fileObj.size, type: fileObj.type || 'application/pdf' } : null),
           // Pilar 3: Políticas & FAQs
           faqDetails: sanitizeField(result.faqDetails, adaptive?.pilar3?.placeholder?.replace(/^ej\.\s*/, '') || 'Cancelaciones con 24h de anticipación'),
-          faqsDoc: (result.faqsDoc && typeof result.faqsDoc === 'object') ? result.faqsDoc : (fileObj ? { name: `FAQs_Reglamento_${fileObj.name}`, size: Math.round(fileObj.size * 0.38), type: 'text/markdown' } : { name: `FAQs_${resolvedVertObj.id}.md`, size: 52000, type: 'text/markdown' }),
+          faqsDoc: (result.faqsDoc && typeof result.faqsDoc === 'object') ? result.faqsDoc : (fileObj ? { name: `FAQs_Reglamento_${fileObj.name}`, size: fileObj.size, type: fileObj.type || 'text/markdown' } : null),
           // Pilar 4 & Reglas
           enableCommercialProposal: true,
           enableCrisisPillar: true,
@@ -2129,25 +2185,52 @@ export const RAGWizard = ({
   };
 
   // Apply Proactive Suggestion with 1 Click
-  const handleApplySuggestion = (sugId) => {
-    setSuggestions((prev) =>
-      prev.map((s) => (s.id === sugId ? { ...s, applied: true } : s))
+  const handleApplySuggestion = async (sugId) => {
+    const targetSug = suggestions.find((s) => s.id === sugId);
+    const updatedSuggestions = suggestions.map((s) =>
+      s.id === sugId ? { ...s, applied: true } : s
     );
+    setSuggestions(updatedSuggestions);
 
-    triggerModal(
-      'Sugerencia Aplicada con Éxito',
-      'Se ha incorporado la directriz a la memoria del bot. El Health Score de tu base de conocimiento aumentó.',
-      () => {
-        try {
-          confetti({ particleCount: 30, spread: 50, colors: ['#E7F900', '#8A95B6', '#FFFFFF'] });
-        } catch (e) {}
-      },
-      'Excelente'
-    );
+    try {
+      if (activeTenant?.id && updateTenantPolicy) {
+        const nextRules = targetSug?.description
+          ? Array.from(
+              new Set([
+                ...(activeTenant.inviolableRules || []),
+                `${targetSug.title}: ${targetSug.description}`,
+              ])
+            )
+          : activeTenant.inviolableRules || [];
+        await updateTenantPolicy(activeTenant.id, {
+          inviolableRules: nextRules,
+          proactiveSuggestions: updatedSuggestions,
+        });
+      }
+
+      triggerModal(
+        'Sugerencia Aplicada con Éxito',
+        'Se ha incorporado la directriz a la memoria del bot. El Health Score de tu base de conocimiento aumentó.',
+        () => {
+          try {
+            confetti({ particleCount: 30, spread: 50, colors: ['#E7F900', '#8A95B6', '#FFFFFF'] });
+          } catch (e) {}
+        },
+        'Excelente'
+      );
+    } catch (err) {
+      triggerModal(
+        'Error al Persistir Sugerencia',
+        err?.response?.data?.message || err?.message || 'No se pudo persistir la sugerencia en PostgreSQL.',
+        null,
+        'Entendido',
+        'danger'
+      );
+    }
   };
 
   // Handle Deploy New Swarm (Con Deploy Gate de Validación)
-  const handleDeploySwarm = () => {
+  const handleDeploySwarm = async () => {
     // 1. Validar Nombre Comercial Obligatorio
     if (!wizardData.businessName || wizardData.businessName.trim() === '') {
       triggerModal(
@@ -2311,33 +2394,43 @@ export const RAGWizard = ({
       },
     };
 
-    if (registerTenant) {
-      registerTenant(newTenant, true);
+    try {
+      if (registerTenant) {
+        await registerTenant(newTenant, true);
+      }
+      if (switchTenantContext) {
+        switchTenantContext(newTenant.id);
+      }
+
+      triggerModal(
+        '¡Nuevo Negocio Desplegado con Éxito!',
+        `El tenant "${wizardData.businessName}" ha sido configurado en el giro ${vert.name}. Se indexaron ${activePillarsCount} pilares con aislamiento PostgreSQL RLS y Score de Salud ${healthScore}/100. Servicio de Micro-Landing: ${newTenant.microLandingEnabled ? 'Activa' : 'Inactiva'}.`,
+        () => {
+          try {
+            confetti({
+              particleCount: 70,
+              spread: 80,
+              origin: { y: 0.6 },
+              colors: ['#E7F900', '#8A95B6', '#FFFFFF'],
+            });
+          } catch (e) {}
+          if (switchTenantContext) {
+            switchTenantContext(newTenant.id);
+          }
+          setAdminViewMode('list');
+          setCurrentStep(1);
+        },
+        'Finalizar y Ver Centro de Mando'
+      );
+    } catch (err) {
+      triggerModal(
+        'Error al Desplegar Negocio',
+        err?.response?.data?.message || err?.message || 'Falló el registro del negocio en PostgreSQL.',
+        null,
+        'Entendido',
+        'danger'
+      );
     }
-    if (switchTenantContext) {
-      switchTenantContext(newTenant.id);
-    }
-    
-    triggerModal(
-      '¡Nuevo Negocio Desplegado con Éxito!',
-      `El tenant "${wizardData.businessName}" ha sido configurado en el giro ${vert.name}. Se indexaron ${activePillarsCount} pilares con aislamiento PostgreSQL RLS y Score de Salud ${healthScore}/100. Servicio de Micro-Landing: ${newTenant.microLandingEnabled ? 'Activa' : 'Inactiva'}.`,
-      () => {
-        try {
-          confetti({
-            particleCount: 70,
-            spread: 80,
-            origin: { y: 0.6 },
-            colors: ['#E7F900', '#8A95B6', '#FFFFFF'],
-          });
-        } catch (e) {}
-        if (switchTenantContext) {
-          switchTenantContext(newTenant.id);
-        }
-        setAdminViewMode('list');
-        setCurrentStep(1);
-      },
-      'Finalizar y Ver Centro de Mando'
-    );
   };
 
     const currentVerticalObj = BUSINESS_VERTICALS_CONFIG[wizardData.vertical] || BUSINESS_VERTICALS_CONFIG.gym_fitness;
@@ -2500,14 +2593,16 @@ export const RAGWizard = ({
               </div>
               <div className="flex items-baseline gap-1.5">
                 <span className="text-xl font-heading font-black text-cyan-400">
-                  {activeTenant ? '94.2%' : '0%'}
+                  {activeTenant ? `${activeTenantRagMetrics.healthPct}%` : '0%'}
                 </span>
                 <span className="text-[10px] text-cyan-500 font-bold">
-                  {activeTenant ? 'Antifrágil' : 'Sin Indexar'}
+                  {activeTenant ? activeTenantRagMetrics.statusLabel : 'Sin Indexar'}
                 </span>
               </div>
               <span className="text-[9px] text-[var(--text-muted)] block truncate">
-                {activeTenant ? '4/4 Pilares Indexados en Vector DB' : '0/4 Pilares Indexados en Vector DB'}
+                {activeTenant
+                  ? `${activeTenantRagMetrics.completedCount}/4 Pilares Indexados en Vector DB`
+                  : '0/4 Pilares Indexados en Vector DB'}
               </span>
             </div>
 
@@ -2705,7 +2800,10 @@ export const RAGWizard = ({
                             <td className="py-3 px-4">
                               <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold inline-flex items-center gap-1">
                                 <span className="w-1 h-1 rounded-full bg-emerald-400" />
-                                {tenant.ifv || '94%'} Antifrágil
+                                {(() => {
+                                  const m = getTenantRagMetrics(tenant);
+                                  return `${m.healthPct}% ${m.statusLabel}`;
+                                })()}
                               </span>
                             </td>
 
@@ -2931,7 +3029,10 @@ export const RAGWizard = ({
 
                       <div className="flex items-center gap-2 shrink-0">
                         <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[9px] font-bold">
-                          {tenant.ifv || '94%'} Antifrágil
+                          {(() => {
+                            const m = getTenantRagMetrics(tenant);
+                            return `${m.healthPct}% ${m.statusLabel}`;
+                          })()}
                         </span>
                         {isAdmin && (
                           <button
@@ -5642,7 +5743,7 @@ export const RAGWizard = ({
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="px-2.5 py-1 rounded bg-neon/15 text-neon font-bold border border-neon/30 text-[10px]">
-                          IFV Esperado: 48/50
+                          IFV Esperado: {Math.round((healthScore / 100) * 50)}/50
                         </span>
                         <span className="px-2.5 py-1 rounded bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30 text-[10px]">
                           Salud RAG: {healthScore}%
@@ -5933,7 +6034,7 @@ export const RAGWizard = ({
                     Base de Conocimiento Calibrada
                   </h4>
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neon/15 text-neon font-bold border border-neon/30">
-                    IFV: 48/50
+                    IFV: {activeTenantRagMetrics.ifvScore}/50
                   </span>
                 </div>
                 <p className="text-xs text-[var(--text-muted)] mt-0.5">
@@ -5943,8 +6044,12 @@ export const RAGWizard = ({
             </div>
             <div className="flex items-center gap-3">
               <div className="text-right">
-                <span className="text-xs font-mono text-neon font-black block">Calibración 94%</span>
-                <span className="text-[10px] text-emerald-400 font-mono">0 Alertas Críticas</span>
+                <span className="text-xs font-mono text-neon font-black block">
+                  Calibración {activeTenantRagMetrics.healthPct}%
+                </span>
+                <span className="text-[10px] text-emerald-400 font-mono">
+                  {activeTenantRagMetrics.completedCount}/4 Pilares Activos
+                </span>
               </div>
             </div>
           </div>
@@ -5958,15 +6063,35 @@ export const RAGWizard = ({
                   <span>Pilar 2: Identidad & Tono de Marca</span>
                 </div>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/15 text-cyan-400 font-bold border border-cyan-500/30">
-                  Obligatorio • Activo
+                  {activeTenant?.pillars?.pillar2?.enabled !== false ? 'Obligatorio • Activo' : 'Pendiente'}
                 </span>
               </div>
               <p className="text-xs text-[var(--text-muted)] leading-relaxed">
                 Estilo de redacción, lenguaje natural y personalidad con la que tu bot interactúa con tu audiencia.
               </p>
               <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs font-mono flex items-center justify-between text-[var(--text-muted)]">
-                <span>Archivo activo: Brandbook_Identidad.md</span>
-                <span className="text-emerald-400 font-bold">100% Sincronizado</span>
+                <span>
+                  Archivo activo:{' '}
+                  {activeTenant?.pillars?.pillar2?.fileName ||
+                    (activeTenant?.pillars?.pillar2?.brandTone || activeTenant?.toneOfVoice
+                      ? 'Directrices de Tono Configuradas'
+                      : 'Sin documento cargado')}
+                </span>
+                <span
+                  className={
+                    activeTenant?.pillars?.pillar2?.fileName ||
+                    activeTenant?.pillars?.pillar2?.brandTone ||
+                    activeTenant?.toneOfVoice
+                      ? 'text-emerald-400 font-bold'
+                      : 'text-amber-400 font-bold'
+                  }
+                >
+                  {activeTenant?.pillars?.pillar2?.fileName ||
+                  activeTenant?.pillars?.pillar2?.brandTone ||
+                  activeTenant?.toneOfVoice
+                    ? 'Sincronizado'
+                    : 'Pendiente'}
+                </span>
               </div>
             </div>
 
@@ -5977,15 +6102,31 @@ export const RAGWizard = ({
                   <span>Pilar 1: Precios & Catálogo de Ventas</span>
                 </div>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--bg-card)] text-[var(--text-muted)]">
-                  Opcional
+                  {activeTenant?.pillars?.pillar1?.enabled ? 'Activo' : 'Opcional'}
                 </span>
               </div>
               <p className="text-xs text-[var(--text-muted)] leading-relaxed">
                 Cotizaciones y paquetes configurables según el giro de negocio.
               </p>
               <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs font-mono flex items-center justify-between text-[var(--text-muted)]">
-                <span>Estado: Matriz_Precios.json</span>
-                <span className="text-[var(--text-muted)] font-bold">Configurable</span>
+                <span>
+                  Estado:{' '}
+                  {activeTenant?.pillars?.pillar1?.fileName ||
+                    (activeTenant?.pillars?.pillar1?.enabled
+                      ? 'Tarifas Configuradas'
+                      : 'Sin documento cargado')}
+                </span>
+                <span
+                  className={
+                    activeTenant?.pillars?.pillar1?.fileName || activeTenant?.pillars?.pillar1?.enabled
+                      ? 'text-emerald-400 font-bold'
+                      : 'text-[var(--text-muted)] font-bold'
+                  }
+                >
+                  {activeTenant?.pillars?.pillar1?.fileName || activeTenant?.pillars?.pillar1?.enabled
+                    ? 'Sincronizado'
+                    : 'Configurable'}
+                </span>
               </div>
             </div>
 
@@ -5996,15 +6137,31 @@ export const RAGWizard = ({
                   <span>Pilar 3: Preguntas Frecuentes & Seguridad</span>
                 </div>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold">
-                  Activo
+                  {activeTenant?.pillars?.pillar3?.enabled ? 'Activo' : 'Opcional'}
                 </span>
               </div>
               <p className="text-xs text-[var(--text-muted)] leading-relaxed">
                 Respuestas automáticas a dudas frecuentes y filtros para evitar respuestas indebidas.
               </p>
               <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs font-mono flex items-center justify-between text-[var(--text-muted)]">
-                <span>Archivo activo: FAQs_Objeciones.md</span>
-                <span className="text-emerald-400 font-bold">Plantilla Activa</span>
+                <span>
+                  Archivo activo:{' '}
+                  {activeTenant?.pillars?.pillar3?.fileName ||
+                    (activeTenant?.pillars?.pillar3?.enabled
+                      ? 'Protocolo de Crisis Activo'
+                      : 'Sin documento cargado')}
+                </span>
+                <span
+                  className={
+                    activeTenant?.pillars?.pillar3?.fileName || activeTenant?.pillars?.pillar3?.enabled
+                      ? 'text-emerald-400 font-bold'
+                      : 'text-[var(--text-muted)] font-bold'
+                  }
+                >
+                  {activeTenant?.pillars?.pillar3?.fileName || activeTenant?.pillars?.pillar3?.enabled
+                    ? 'Activo'
+                    : 'Sin configurar'}
+                </span>
               </div>
             </div>
 
@@ -6015,15 +6172,32 @@ export const RAGWizard = ({
                   <span>Pilar 4: Histórico & Casos de Éxito</span>
                 </div>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--bg-card)] text-[var(--text-muted)]">
-                  Opcional
+                  {activeTenant?.pillars?.pillar4?.enabled ? 'Activo' : 'Opcional'}
                 </span>
               </div>
               <p className="text-xs text-[var(--text-muted)] leading-relaxed">
                 Contexto de publicaciones pasadas y aprendizajes de campañas previas.
               </p>
               <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs font-mono flex items-center justify-between text-[var(--text-muted)]">
-                <span>Estado: En Aprendizaje Continuo</span>
-                <span className="text-emerald-400 font-bold">Sincronizado</span>
+                <span>
+                  Estado:{' '}
+                  {activeTenant?.pillars?.pillar4?.fileName ||
+                    activeTenant?.pillars?.pillar4?.context ||
+                    (activeTenant?.pillars?.pillar4?.enabled
+                      ? 'En Aprendizaje Continuo'
+                      : 'Sin documento cargado')}
+                </span>
+                <span
+                  className={
+                    activeTenant?.pillars?.pillar4?.fileName || activeTenant?.pillars?.pillar4?.enabled
+                      ? 'text-emerald-400 font-bold'
+                      : 'text-[var(--text-muted)] font-bold'
+                  }
+                >
+                  {activeTenant?.pillars?.pillar4?.fileName || activeTenant?.pillars?.pillar4?.enabled
+                    ? 'Sincronizado'
+                    : 'Opcional'}
+                </span>
               </div>
             </div>
           </div>
@@ -6064,13 +6238,57 @@ export const RAGWizard = ({
             </div>
 
             <form
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
-                setShowChangeModal(false);
-                triggerModal(
-                  'Solicitud Enviada',
-                  'Tu solicitud fue remitida a la mesa de control de la agencia.'
-                );
+                try {
+                  if (activeTenant?.id && updateTenantPolicy) {
+                    const updatedPillars = {
+                      ...(activeTenant.pillars || {}),
+                      [selectedPillarForChange]: {
+                        ...(activeTenant.pillars?.[selectedPillarForChange] || {}),
+                        enabled: true,
+                        fileName:
+                          changeFileName ||
+                          activeTenant.pillars?.[selectedPillarForChange]?.fileName ||
+                          null,
+                        lastChangeNotes: changeNotes,
+                        updatedAt: new Date().toISOString(),
+                      },
+                    };
+                    await updateTenantPolicy(activeTenant.id, {
+                      pillars: updatedPillars,
+                    });
+                  }
+
+                  await auditService.recordEvent({
+                    eventCategory: 'RAG_KNOWLEDGE',
+                    action: `Solicitud de actualización documental (${selectedPillarForChange})`,
+                    targetResource: changeFileName || selectedPillarForChange,
+                    tenantId: activeTenant?.id || null,
+                    status: 'SUCCESS',
+                    metadata: {
+                      pillar: selectedPillarForChange,
+                      fileName: changeFileName || null,
+                      notes: changeNotes,
+                    },
+                  });
+
+                  setShowChangeModal(false);
+                  setChangeNotes('');
+                  setChangeFileName('');
+                  triggerModal(
+                    'Solicitud Enviada y Registrada',
+                    'Tu actualización documental fue registrada en auditoría y sincronizada con la política de tu negocio.'
+                  );
+                } catch (err) {
+                  triggerModal(
+                    'Error al Registrar Solicitud',
+                    err?.response?.data?.message || err?.message || 'No se pudo guardar la solicitud en PostgreSQL.',
+                    null,
+                    'Entendido',
+                    'danger'
+                  );
+                }
               }}
               className="space-y-4 pt-2 font-mono text-xs"
             >

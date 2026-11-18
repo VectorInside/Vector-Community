@@ -71,7 +71,7 @@ export const MetaConnectModal = ({
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!instagramAccountId.trim()) {
       alert('Por favor ingresa el Instagram Business Account ID para vincular el canal.');
       return;
@@ -84,21 +84,31 @@ export const MetaConnectModal = ({
       webhookVerifyToken: webhookVerifyToken.trim() || 'VectorInsideSecureWebhookToken2026',
     };
 
-    if (onSaveCredentials) {
-      onSaveCredentials(payload);
-    }
-
-    setIsSavedSuccess(true);
     try {
-      confetti({ particleCount: 40, spread: 60, colors: ['#E1306C', '#C13584', '#00F0FF', '#E7F900'] });
-    } catch (e) {
-      console.warn('[MetaConnectModal] Confetti error:', e);
-    }
+      if (onSaveCredentials) {
+        await onSaveCredentials(payload);
+      }
 
-    setTimeout(() => {
-      setIsSavedSuccess(false);
-      onClose();
-    }, 1500);
+      setIsSavedSuccess(true);
+      try {
+        confetti({ particleCount: 40, spread: 60, colors: ['#E1306C', '#C13584', '#00F0FF', '#E7F900'] });
+      } catch (e) {
+        console.warn('[MetaConnectModal] Confetti error:', e);
+      }
+
+      setTimeout(() => {
+        setIsSavedSuccess(false);
+        onClose();
+      }, 1500);
+    } catch (err) {
+      setTestResult({
+        success: false,
+        message:
+          err?.response?.data?.message ||
+          err?.message ||
+          'No se pudieron guardar las credenciales de Meta en PostgreSQL.',
+      });
+    }
   };
 
   const handleRunDiagnostic = async () => {
@@ -421,7 +431,8 @@ export const MetaConnectModal = ({
                 <p className="font-bold text-xs">{testResult.message}</p>
                 {testResult.account && (
                   <p className="text-[10px] font-mono opacity-80">
-                    Cuenta: {testResult.account} • Latencia: {testResult.latency || '180ms'}
+                    Cuenta: {testResult.account}
+                    {testResult.latency ? ` • Latencia: ${testResult.latency}` : ''}
                   </p>
                 )}
               </div>

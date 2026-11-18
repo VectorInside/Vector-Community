@@ -417,22 +417,36 @@ export const AuthProvider = ({ children }) => {
     } catch (e) {}
   };
 
-  const toggleTenantAi = (tenantKey) => {
-    setTenantsData((prev) => {
-      const target = prev[tenantKey];
-      if (!target) return prev;
-      const willBeActive = !target.isAiActive;
-      const updated = {
-        ...target,
-        isAiActive: willBeActive,
-        crisisMode: !willBeActive,
-      };
-      tenantService.updateTenant(tenantKey, updated).catch(() => {});
-      return {
+  const toggleTenantAi = async (tenantKey) => {
+    const target = tenantsData[tenantKey];
+    if (!target) return null;
+    const willBeActive = !target.isAiActive;
+    const updated = {
+      ...target,
+      isAiActive: willBeActive,
+      crisisMode: !willBeActive,
+    };
+    setTenantsData((prev) => ({
+      ...prev,
+      [tenantKey]: updated,
+    }));
+    try {
+      const persisted = await tenantService.updateTenant(tenantKey, updated);
+      if (persisted) {
+        setTenantsData((prev) => ({
+          ...prev,
+          [tenantKey]: { ...prev[tenantKey], ...persisted },
+        }));
+      }
+      return persisted || updated;
+    } catch (err) {
+      console.error('[AuthContext.toggleTenantAi] Error al persistir en backend:', err);
+      setTenantsData((prev) => ({
         ...prev,
-        [tenantKey]: updated,
-      };
-    });
+        [tenantKey]: target,
+      }));
+      throw err;
+    }
   };
 
   const updateTenantPolicy = async (tenantKey, updates) => {
@@ -492,31 +506,49 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const toggleTenantMicroLanding = (tenantKey, newStatus, trialDays = 90) => {
-    setTenantsData((prev) => {
-      const target = prev[tenantKey];
-      if (!target) return prev;
-      const isEnabled = newStatus === 'trial' || newStatus === 'active';
-      const updated = {
-        ...target,
-        microLandingEnabled: isEnabled,
-        microLandingStatus: newStatus,
-        microLandingTrialDaysLeft:
-          newStatus === 'trial'
-            ? trialDays !== undefined
-              ? trialDays
-              : target.microLandingTrialDaysLeft || 90
-            : target.microLandingTrialDaysLeft || 0,
-      };
-      tenantService.updateTenant(tenantKey, updated).catch(() => {});
-      return {
+  const toggleTenantMicroLanding = async (tenantKey, newStatus, trialDays = 90) => {
+    const target = tenantsData[tenantKey];
+    if (!target) return null;
+    const isEnabled = newStatus === 'trial' || newStatus === 'active';
+    const updated = {
+      ...target,
+      microLandingEnabled: isEnabled,
+      microLandingStatus: newStatus,
+      microLandingTrialDaysLeft:
+        newStatus === 'trial'
+          ? trialDays !== undefined
+            ? trialDays
+            : target.microLandingTrialDaysLeft || 90
+          : target.microLandingTrialDaysLeft || 0,
+    };
+    setTenantsData((prev) => ({
+      ...prev,
+      [tenantKey]: updated,
+    }));
+    try {
+      const persisted = await tenantService.updateTenant(tenantKey, updated);
+      if (persisted) {
+        setTenantsData((prev) => ({
+          ...prev,
+          [tenantKey]: { ...prev[tenantKey], ...persisted },
+        }));
+      }
+      return persisted || updated;
+    } catch (err) {
+      console.error('[AuthContext.toggleTenantMicroLanding] Error al persistir en backend:', err);
+      setTenantsData((prev) => ({
         ...prev,
-        [tenantKey]: updated,
-      };
-    });
+        [tenantKey]: target,
+      }));
+      throw err;
+    }
   };
 
-  const registerTenant = (newTenant, makeActive = true) => {
+  const registerTenant = async (newTenant, makeActive = true) => {
+    if (!newTenant?.id) return null;
+    const prevTenantsSnapshot = tenantsData;
+    const prevActiveKey = activeTenantKey;
+
     setTenantsData((prev) => {
       const next = {
         ...prev,
@@ -535,7 +567,7 @@ export const AuthProvider = ({ children }) => {
       } catch (e) {}
       return next;
     });
-    tenantService.createTenant(newTenant).catch(() => {});
+
     if (makeActive && newTenant?.id) {
       setActiveTenantKey(newTenant.id);
       if (typeof window !== 'undefined') {
@@ -546,25 +578,100 @@ export const AuthProvider = ({ children }) => {
         useTenantStore.getState().setActiveTenantId(newTenant.id);
       } catch (e) {}
     }
+
+    try {
+      const created = await tenantService.createTenant(newTenant);
+      const mergedTenant = created ? { ...newTenant, ...created } : newTenant;
+      setTenantsData((prev) => {
+        const next = {
+          ...prev,
+          [mergedTenant.id]: mergedTenant,
+        };
+        try {
+          useTenantStore.getState().setTenants(Object.values(next));
+        } catch (e) {}
+        return next;
+      });
+      return mergedTenant;
+    } catch (err) {
+      console.error('[AuthContext.registerTenant] Error al crear tenant en backend:', err);
+      setTenantsData(prevTenantsSnapshot);
+      try {
+        useTenantStore.getState().setTenants(Object.values(prevTenantsSnapshot));
+      } catch (e) {}
+      if (makeActive) {
+        setActiveTenantKey(prevActiveKey);
+        if (typeof window !== 'undefined') {
+          if (prevActiveKey) {
+            localStorage.setItem('vector_active_tenant_key', prevActiveKey);
+            localStorage.setItem('vector_active_tenant_id', prevActiveKey);
+          } else {
+            localStorage.removeItem('vector_active_tenant_key');
+            localStorage.removeItem('vector_active_tenant_id');
+          }
+        }
+        try {
+          useTenantStore.getState().setActiveTenantId(prevActiveKey);
+        } catch (e) {}
+      }
+      throw err;
+    }
   };
 
-  const deleteTenant = (tenantId) => {
-    if (!tenantId) return;
+  const deleteTenant = async (tenantId) => {
+    if (!tenantId) return null;
+    const prevTenantsSnapshot = tenantsData;
+    const prevActiveKey = activeTenantKey;
+
     setTenantsData((prev) => {
       const updated = { ...prev };
       delete updated[tenantId];
+      try {
+        useTenantStore.getState().setTenants(Object.values(updated));
+      } catch (e) {}
       return updated;
     });
 
-    tenantService.deleteTenant(tenantId).catch(() => {});
+    const nextActiveKey =
+      activeTenantKey === tenantId
+        ? Object.keys(tenantsData).filter((k) => k !== tenantId)[0] || null
+        : activeTenantKey;
 
-    setActiveTenantKey((currKey) => {
-      if (currKey === tenantId) {
-        const remainingKeys = Object.keys(tenantsData).filter((k) => k !== tenantId);
-        return remainingKeys[0] || null;
+    if (activeTenantKey === tenantId) {
+      setActiveTenantKey(nextActiveKey);
+      if (typeof window !== 'undefined') {
+        if (nextActiveKey) {
+          localStorage.setItem('vector_active_tenant_key', nextActiveKey);
+          localStorage.setItem('vector_active_tenant_id', nextActiveKey);
+        } else {
+          localStorage.removeItem('vector_active_tenant_key');
+          localStorage.removeItem('vector_active_tenant_id');
+        }
       }
-      return currKey;
-    });
+      try {
+        useTenantStore.getState().setActiveTenantId(nextActiveKey);
+      } catch (e) {}
+    }
+
+    try {
+      const result = await tenantService.deleteTenant(tenantId);
+      return result;
+    } catch (err) {
+      console.error('[AuthContext.deleteTenant] Error al eliminar tenant en backend:', err);
+      setTenantsData(prevTenantsSnapshot);
+      try {
+        useTenantStore.getState().setTenants(Object.values(prevTenantsSnapshot));
+      } catch (e) {}
+      setActiveTenantKey(prevActiveKey);
+      if (typeof window !== 'undefined' && prevActiveKey) {
+        localStorage.setItem('vector_active_tenant_key', prevActiveKey);
+        localStorage.setItem('vector_active_tenant_id', prevActiveKey);
+      }
+      try {
+        useTenantStore.getState().setActiveTenantId(prevActiveKey);
+      } catch (e) {}
+      throw err;
+    }
   };
 
   const triggerModal = (

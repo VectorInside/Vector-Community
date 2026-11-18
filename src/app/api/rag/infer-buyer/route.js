@@ -23,100 +23,6 @@ function resolveDeepSeekApiKey() {
   }
 }
 
-/**
- * Respaldo Heurístico Inteligente calibrado por industria
- */
-function getHeuristicBuyerAndMix(businessName = '', giro = '', brandPurpose = '', verticalId = 'b2b', channels = []) {
-  const channelText = channels && channels.length > 0
-    ? channels.join(', ')
-    : 'WhatsApp Business, Instagram Direct, Facebook Messenger, LinkedIn';
-
-  const isVector =
-    businessName.toLowerCase().includes('vector') ||
-    brandPurpose.toLowerCase().includes('vector') ||
-    verticalId === 'b2b';
-
-  if (isVector) {
-    return {
-      buyerPersona: {
-        name: 'Directores Comerciales, CEOs de SaaS y Fundadores de Agencias B2B',
-        ageRange: '30 a 55 años',
-        maritalStatus: 'Líderes de negocio en etapa de escalamiento y profesionalización',
-        location: 'México, LATAM y mercado hispanohablante global (Nivel Ejecutivo C-Level)',
-        digitalHabits: `Consumo activo en ${channelText} y X (Twitter); newsletters especializadas de negocios, webinars y herramientas SaaS de analítica.`,
-        mainPainPoint: 'Falta de estructura de adquisición, fuga de prospectos calificados por lentitud de respuesta humana y dependencia de procesos manuales no escalables.',
-        buyingTrigger: 'Automatizar la cualificación y agendamiento 24/7 con IA sin sacrificar autoridad ejecutiva ni el prestigio de la marca.',
-      },
-      marketingMix4P: {
-        product: 'Arquitectura de Inteligencia Artificial Comercial, Agentes Autónomos de Respuesta Inmediata y Orquestación Multicanal B2B.',
-        price: 'Modelos de Retainer Mensual Estratégico desde $18,000 MXN/mes o Implementación Llave en Mano por hitos de entrega.',
-        place: `Canales de atención directa y captación omnicanal vía ${channelText} y reuniones estratégicas online. Entrega de servicios en remoto con tecnología propia (SaaS) y soporte personalizado 24/7.`,
-        promotion: 'Sesión de Diagnóstico Comercial de 45 min (Discovery Call sin costo) y Demostración en Vivo de Aceleración con SLA Garantizado.',
-      },
-    };
-  }
-
-  // Verticales generales
-  if (verticalId === 'gym_fitness' || giro.toLowerCase().includes('fitness') || giro.toLowerCase().includes('gym')) {
-    return {
-      buyerPersona: {
-        name: 'Atletas Urbanos, Profesionistas Activos y Entusiastas del Bienestar',
-        ageRange: '22 a 45 años',
-        maritalStatus: 'Solteros o profesionistas con enfoque en salud integral y rendimiento',
-        location: 'Zonas metropolitanas, cercanía a centros de negocio y residenciales',
-        digitalHabits: 'Instagram, Spotify, TikTok, apps de tracking de entrenamiento y WhatsApp',
-        mainPainPoint: 'Falta de tiempo, desmotivación por falta de acompañamiento personalizado y saturación en gimnasios tradicionales.',
-        buyingTrigger: 'Acceso flexible, instalaciones de alto nivel y planes de nutrición y entrenamiento estructurados.',
-      },
-      marketingMix4P: {
-        product: 'Membresías fitness integrales con acceso a áreas de musculación, clases dirigidas y asesoría nutricional.',
-        price: 'Planes mensuales desde $899 MXN, pases trimestrales con descuento y promociones sin costo de inscripción.',
-        place: 'Instalaciones físicas con acceso por torniquete inteligente y reservas de clases vía App / WhatsApp.',
-        promotion: 'Clase muestra gratuita, 2x1 en inscripción y convenios corporativos con empresas locales.',
-      },
-    };
-  }
-
-  if (verticalId === 'healthcare' || giro.toLowerCase().includes('salud') || giro.toLowerCase().includes('clínica')) {
-    return {
-      buyerPersona: {
-        name: 'Pacientes Conscientes, Madres/Padres de Familia y Adultos Preventivos',
-        ageRange: '28 a 60 años',
-        maritalStatus: 'Familias y profesionistas que priorizan la salud y el bienestar preventivo',
-        location: 'Áreas urbanas con alta conectividad y cercanía a centros médicos',
-        digitalHabits: 'Google Search, WhatsApp, portales de salud y recomendaciones médicas',
-        mainPainPoint: 'Largas listas de espera, falta de claridad en costos de tratamientos e incertidumbre sobre diagnósticos.',
-        buyingTrigger: 'Atención médica cercana, transparente, tecnología de vanguardia y confirmación inmediata de citas.',
-      },
-      marketingMix4P: {
-        product: 'Consultas médicas especializadas, estudios de diagnóstico preventivo y seguimiento clínico continuo.',
-        price: 'Aranceles transparentes por consulta, paquetes de diagnóstico integral y facilidades a Meses Sin Intereses.',
-        place: 'Clínica médica física de vanguardia y consultas de seguimiento digital vía telemedicina.',
-        promotion: 'Check-up preventivo inicial a precio preferencial y valoraciones familiares con descuento.',
-      },
-    };
-  }
-
-  // Fallback comercial genérico
-  return {
-    buyerPersona: {
-      name: `Clientes y Tomadores de Decisión de ${businessName || 'la Marca'}`,
-      ageRange: '25 a 55 años',
-      maritalStatus: 'Profesionistas y familias del segmento objetivo',
-      location: 'Ciudades principales y cobertura regional prioritaria',
-      digitalHabits: 'WhatsApp, redes sociales principales y búsqueda web móvil',
-      mainPainPoint: 'Búsqueda de soluciones confiables, atención ágil y garantía de resultados claros.',
-      buyingTrigger: 'Recomendación, atención inmediata y propuesta de valor transparente sin fricciones.',
-    },
-    marketingMix4P: {
-      product: `Catálogo de soluciones y servicios especializados de ${businessName || 'la Marca'}.`,
-      price: 'Precios competitivos de mercado con esquemas flexibles y opciones de pago accesibles.',
-      place: 'Atención digital omnicanal vía WhatsApp, sitio web y canales presenciales.',
-      promotion: 'Valoración o consulta inicial de bienvenida con incentivos exclusivos por pronta respuesta.',
-    },
-  };
-}
-
 export async function POST(request) {
   try {
     const body = await request.json().catch(() => ({}));
@@ -136,13 +42,18 @@ export async function POST(request) {
 
     // Normalizar canales y redes sociales activas dadas de alta
     const rawChannels = new Set([
-      'whatsapp',
-      ...(Array.isArray(connectedSocialNetworks) ? connectedSocialNetworks : []).map((s) => String(s).toLowerCase()),
-      ...Object.keys(socialLinks || {}).filter((k) => socialLinks[k]?.trim()).map((k) => k.toLowerCase()),
+      ...(Array.isArray(connectedSocialNetworks) ? connectedSocialNetworks : []).map((s) =>
+        String(s).toLowerCase()
+      ),
+      ...Object.keys(socialLinks || {})
+        .filter((k) => socialLinks[k]?.trim())
+        .map((k) => k.toLowerCase()),
     ]);
 
     const activeChannels = [];
-    if (rawChannels.has('whatsapp') || rawChannels.has('whatsapp business') || true) activeChannels.push('WhatsApp Business');
+    if (rawChannels.has('whatsapp') || rawChannels.has('whatsapp business')) {
+      activeChannels.push('WhatsApp Business');
+    }
     if (rawChannels.has('instagram')) activeChannels.push('Instagram Direct');
     if (rawChannels.has('facebook')) activeChannels.push('Facebook Messenger');
     if (rawChannels.has('linkedin')) activeChannels.push('LinkedIn');
@@ -153,13 +64,13 @@ export async function POST(request) {
     const apiKey = resolveDeepSeekApiKey();
 
     if (!apiKey) {
-      // Retornar fallback heurístico robusto si no hay API key disponible
-      const fallback = getHeuristicBuyerAndMix(businessName, giro, brandPurpose, verticalId, activeChannels);
-      return NextResponse.json({
-        success: true,
-        source: 'heuristic_fallback',
-        ...fallback,
-      });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'API Key de DeepSeek no configurada en el servidor.',
+        },
+        { status: 503 }
+      );
     }
 
     const systemPrompt =
@@ -221,13 +132,16 @@ Por favor genera el Buyer Persona y las 4 Ps adaptados al 100% a este perfil de 
     });
 
     if (!llmRes.ok) {
+      const errText = await llmRes.text().catch(() => '');
       console.warn('[infer-buyer] Error en DeepSeek API status:', llmRes.status);
-      const fallback = getHeuristicBuyerAndMix(businessName, giro, brandPurpose, verticalId);
-      return NextResponse.json({
-        success: true,
-        source: 'heuristic_fallback_on_api_error',
-        ...fallback,
-      });
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Error al consultar DeepSeek IA (HTTP ${llmRes.status}).`,
+          details: errText,
+        },
+        { status: 502 }
+      );
     }
 
     const llmJson = await llmRes.json();
@@ -240,12 +154,13 @@ Por favor genera el Buyer Persona y las 4 Ps adaptados al 100% a este perfil de 
     const parsed = JSON.parse(cleanedJson);
 
     if (!parsed.buyerPersona || !parsed.marketingMix4P) {
-      const fallback = getHeuristicBuyerAndMix(businessName, giro, brandPurpose, verticalId);
-      return NextResponse.json({
-        success: true,
-        source: 'heuristic_fallback_incomplete_parsed',
-        ...fallback,
-      });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'La respuesta de DeepSeek IA no incluyó buyerPersona o marketingMix4P válidos.',
+        },
+        { status: 502 }
+      );
     }
 
     return NextResponse.json({
@@ -256,17 +171,13 @@ Por favor genera el Buyer Persona y las 4 Ps adaptados al 100% a este perfil de 
     });
   } catch (err) {
     console.error('[/api/rag/infer-buyer Error]:', err);
-    const fallback = getHeuristicBuyerAndMix(
-      'Vector Inside',
-      'Agencias de Marketing, Software SaaS & Consultoría B2B',
-      '',
-      'b2b'
+    return NextResponse.json(
+      {
+        success: false,
+        error: err?.message || 'Error al inferir Buyer Persona y Marketing Mix con DeepSeek IA.',
+      },
+      { status: 502 }
     );
-    return NextResponse.json({
-      success: true,
-      source: 'heuristic_fallback_on_exception',
-      ...fallback,
-    });
   }
 }
 

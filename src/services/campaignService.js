@@ -2,6 +2,46 @@ import api, { isBackendAvailable, unwrapApiData } from './api';
 
 const getStorageKey = (tenantId) => `vector_campaigns_${tenantId || 'global'}`;
 
+export const normalizeCampaign = (camp) => {
+  if (!camp || typeof camp !== 'object') return null;
+
+  let parsedMetadata = camp.metadata;
+  if (typeof parsedMetadata === 'string') {
+    try {
+      parsedMetadata = JSON.parse(parsedMetadata);
+    } catch {
+      parsedMetadata = {};
+    }
+  }
+  const meta = parsedMetadata && typeof parsedMetadata === 'object' ? parsedMetadata : {};
+
+  const resolvedSpend = Number(camp.spend ?? camp.spent ?? meta.spend ?? meta.spent ?? 0);
+  const resolvedCpl = Number(camp.cpl ?? camp.cpa ?? meta.cpl ?? meta.cpa ?? 0);
+  const resolvedBudget = Number(camp.budget ?? meta.budget ?? 0);
+  const resolvedLeadsCount = Number(
+    camp.leadsCount ?? camp.leads ?? meta.leadsCount ?? meta.leads ?? 0
+  );
+  const linkedPosts = Array.isArray(camp.linkedPosts)
+    ? camp.linkedPosts
+    : Array.isArray(meta.linkedPosts)
+    ? meta.linkedPosts
+    : [];
+
+  return {
+    ...meta,
+    ...camp,
+    budget: Number.isFinite(resolvedBudget) ? resolvedBudget : 0,
+    spend: Number.isFinite(resolvedSpend) ? resolvedSpend : 0,
+    spent: Number.isFinite(resolvedSpend) ? resolvedSpend : 0,
+    cpl: Number.isFinite(resolvedCpl) ? resolvedCpl : 0,
+    cpa: Number.isFinite(resolvedCpl) ? resolvedCpl : 0,
+    leadsCount: Number.isFinite(resolvedLeadsCount) ? resolvedLeadsCount : 0,
+    piecesCount: Number(camp.piecesCount ?? meta.piecesCount ?? linkedPosts.length ?? 0),
+    linkedPosts,
+    metadata: meta,
+  };
+};
+
 export const campaignService = {
   async getCampaigns(tenantId) {
     if (!tenantId) return [];
@@ -10,7 +50,7 @@ export const campaignService = {
     if (isBackendAvailable) {
       const response = await api.get('/campaigns', { params: { tenantId } });
       const data = unwrapApiData(response);
-      const list = Array.isArray(data) ? data : [];
+      const list = Array.isArray(data) ? data.map(normalizeCampaign).filter(Boolean) : [];
       if (typeof window !== 'undefined') {
         try {
           localStorage.setItem(getStorageKey(tenantId), JSON.stringify(list));
@@ -25,7 +65,7 @@ export const campaignService = {
         const local = localStorage.getItem(getStorageKey(tenantId));
         if (local) {
           const parsed = JSON.parse(local);
-          return Array.isArray(parsed) ? parsed : [];
+          return Array.isArray(parsed) ? parsed.map(normalizeCampaign).filter(Boolean) : [];
         }
       } catch (e) {
         return [];
@@ -36,17 +76,23 @@ export const campaignService = {
 
   async saveCampaigns(tenantId, campaigns) {
     if (!tenantId) return [];
+    const normalizedList = Array.isArray(campaigns)
+      ? campaigns.map(normalizeCampaign).filter(Boolean)
+      : [];
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem(getStorageKey(tenantId), JSON.stringify(campaigns || []));
+        localStorage.setItem(getStorageKey(tenantId), JSON.stringify(normalizedList));
       } catch (e) {}
     }
-    return campaigns;
+    return normalizedList;
   },
 
   async createCampaign(campaignData, tenantId) {
     const targetTenant = tenantId || campaignData?.tenantId;
-    const payload = targetTenant ? { ...campaignData, tenantId: targetTenant } : campaignData;
+    const normalizedInput = normalizeCampaign(campaignData) || campaignData;
+    const payload = targetTenant
+      ? { ...normalizedInput, tenantId: targetTenant }
+      : normalizedInput;
 
     if (isBackendAvailable) {
       const response = await api.post(
@@ -54,7 +100,7 @@ export const campaignService = {
         payload,
         targetTenant ? { params: { tenantId: targetTenant } } : undefined
       );
-      const created = unwrapApiData(response) || payload;
+      const created = normalizeCampaign(unwrapApiData(response) || payload);
 
       if (typeof window !== 'undefined' && targetTenant) {
         try {
@@ -76,13 +122,29 @@ export const campaignService = {
   },
 
   async updateCampaign(id, updates, tenantId) {
+    const normalizedUpdates = {
+      ...updates,
+      ...(updates?.spend !== undefined || updates?.spent !== undefined
+        ? {
+            spend: Number(updates.spend ?? updates.spent ?? 0),
+            spent: Number(updates.spent ?? updates.spend ?? 0),
+          }
+        : {}),
+      ...(updates?.cpl !== undefined || updates?.cpa !== undefined
+        ? {
+            cpl: Number(updates.cpl ?? updates.cpa ?? 0),
+            cpa: Number(updates.cpa ?? updates.cpl ?? 0),
+          }
+        : {}),
+    };
+
     if (isBackendAvailable) {
       const response = await api.put(
         `/campaigns/${id}`,
-        updates,
+        normalizedUpdates,
         tenantId ? { params: { tenantId } } : undefined
       );
-      const updatedItem = unwrapApiData(response) || { id, ...updates };
+      const updatedItem = normalizeCampaign(unwrapApiData(response) || { id, ...normalizedUpdates });
 
       if (typeof window !== 'undefined' && tenantId) {
         try {
@@ -91,7 +153,7 @@ export const campaignService = {
           if (Array.isArray(current)) {
             await this.saveCampaigns(
               tenantId,
-              current.map((c) => (c.id === id ? { ...c, ...updatedItem } : c))
+              current.map((c) => (c.id === id ? normalizeCampaign({ ...c, ...updatedItem }) : c))
             );
           }
         } catch (e) {}
@@ -102,10 +164,12 @@ export const campaignService = {
 
     if (typeof window !== 'undefined' && tenantId) {
       const current = await this.getCampaigns(tenantId);
-      const updated = current.map((c) => (c.id === id ? { ...c, ...updates } : c));
+      const updated = current.map((c) =>
+        c.id === id ? normalizeCampaign({ ...c, ...normalizedUpdates }) : c
+      );
       await this.saveCampaigns(tenantId, updated);
     }
-    return { id, ...updates };
+    return normalizeCampaign({ id, ...normalizedUpdates });
   },
 
   async toggleCampaignStatus(id, newStatus, tenantId) {
@@ -247,8 +311,9 @@ export const campaignService = {
       objective: 'Citas & Conversaciones Calificadas',
       audience: 'Público interesado en servicios de alto valor en zona de influencia',
       channel: post.network === 'TIKTOK' ? 'Reels & TikTok' : 'Meta Ads (Instagram & FB)',
-      budget: 15000,
+      budget: Number(post?.budget || 0),
       spend: 0,
+      spent: 0,
       leadsCount: 0,
       piecesCount: 1,
       linkedPosts: [
@@ -267,6 +332,7 @@ export const campaignService = {
       hypothesis: `Escalar con pauta pagada el guion validado (${post.aiConfidence || 'Match ADN'}) para atraer prospectos directos a WhatsApp.`,
       roas: 'En curso',
       cpl: 0,
+      cpa: 0,
     };
 
     return await this.createCampaign(boostedCamp, tenantId);

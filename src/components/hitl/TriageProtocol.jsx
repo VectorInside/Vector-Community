@@ -81,7 +81,7 @@ const CANONICAL_META_COMMENTS_BY_TENANT = {};
 const CANONICAL_REENGAGEMENT_BY_TENANT = {};
 
 export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } = {}) => {
-  const { triggerModal, activeTenant } = useAuth();
+  const { triggerModal, activeTenant, updateTenantPolicy } = useAuth();
   const [activeTab, setActiveTab] = useState('chats'); // 'chats' | 'meta_comments' | 'redis_queue'
   const [viewMode, setViewMode] = useState(defaultViewMode); // 'kanban' or 'chat'
   const [kanbanDensity, setKanbanDensity] = useState('compact'); // 'compact' (ultra-visión) | 'standard'
@@ -362,7 +362,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
       setBrandAudit(audit);
       triggerModal(
         'Auditoría de Marca (Brand DNA & 4Ps)',
-        `<b>Puntaje de Consistencia de Marca:</b> ${audit?.brandAlignmentScore || 94} / 100<br><br><b>Diagnóstico de Inteligencia Artificial:</b><br>${audit?.auditSummary || 'Publicaciones alineadas al Manual de Identidad y Reglas Inviolables.'}`
+        `<b>Puntaje de Consistencia de Marca:</b> ${audit?.brandAlignmentScore ?? 0} / 100<br><br><b>Diagnóstico de Inteligencia Artificial:</b><br>${audit?.auditSummary || 'Publicaciones alineadas al Manual de Identidad y Reglas Inviolables.'}`
       );
     } catch (err) {
       triggerModal('Error en Auditoría', err?.response?.data?.message || err.message);
@@ -390,8 +390,8 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
         confetti({ particleCount: 50, spread: 80, colors: ['#A855F7', '#E7F900', '#10B981'] });
       } catch (e) { }
 
-      const processed = res?.processed !== undefined ? res.processed : pendingCount;
-      const successful = res?.successful !== undefined ? res.successful : processed;
+      const processed = res?.totalProcessed ?? res?.processed ?? 0;
+      const successful = res?.dispatchedRealCount ?? res?.successful ?? 0;
       const failed = res?.failed || 0;
 
       triggerModal(
@@ -679,17 +679,34 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
     setViewMode('chat');
   };
 
-  const handleAddFaqToRag = (commentText) => {
-    triggerModal(
-      'Pregunta Añadida a Base de Conocimiento RAG',
-      `La duda recurrente: "<strong>${commentText}</strong>" fue clasificada y agregada al Pilar 3 (Crisis & FAQs) del negocio.`,
-      () => {
-        try {
-          confetti({ particleCount: 25, spread: 45, colors: ['#E7F900', '#8A95B6', '#FFFFFF'] });
-        } catch (e) { }
-      },
-      'Aceptar'
-    );
+  const handleAddFaqToRag = async (commentText) => {
+    try {
+      if (activeTenant?.id && updateTenantPolicy) {
+        const currentRules = Array.isArray(activeTenant.inviolableRules)
+          ? activeTenant.inviolableRules
+          : [];
+        const newRule = `FAQ detectada en Meta: ${commentText}`;
+        const nextRules = Array.from(new Set([...currentRules, newRule]));
+        await updateTenantPolicy(activeTenant.id, {
+          inviolableRules: nextRules,
+        });
+      }
+      triggerModal(
+        'Pregunta Añadida a Base de Conocimiento RAG',
+        `La duda recurrente: "<strong>${commentText}</strong>" fue clasificada y persistida en las Reglas Inviolables / Pilar 3 del negocio.`,
+        () => {
+          try {
+            confetti({ particleCount: 25, spread: 45, colors: ['#E7F900', '#8A95B6', '#FFFFFF'] });
+          } catch (e) { }
+        },
+        'Aceptar'
+      );
+    } catch (err) {
+      triggerModal(
+        'Error al Guardar FAQ en RAG',
+        err?.response?.data?.message || err?.message || 'No se pudo persistir la pregunta frecuente en PostgreSQL.'
+      );
+    }
   };
 
   // Helper to count verified criteria
@@ -1804,7 +1821,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
         const positiveSentimentScore = metaComments.length > 0
           ? (((metaComments.length - toxicCommentsCount) / metaComments.length) * 100).toFixed(1)
           : '100.0';
-        const brandScore = brandAudit?.brandAlignmentScore || 94;
+        const brandScore = brandAudit?.brandAlignmentScore ?? 0;
         const isMetaConnected = Boolean(metaHealth?.connected);
 
         return (
@@ -2021,7 +2038,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
                         <div>
                           <span className="text-zinc-400 dark:text-zinc-500 block text-[9px]">Hook Rate:</span>
                           <span className="text-neon font-bold">
-                            {post.hookRatePercentage ? `${post.hookRatePercentage}%` : (post.hookRate || '42.0%')}
+                            {post.hookRatePercentage != null ? `${post.hookRatePercentage}%` : (post.hookRate || '0%')}
                           </span>
                         </div>
                         <div>
@@ -2409,7 +2426,7 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
               <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-1 shadow-sm">
                 <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Tasa de Reactivación Estimada</span>
                 <p className="text-2xl font-black text-neon">
-                  {reengagementList.length > 0 ? (dispatchedCount > 0 ? `${Math.round((dispatchedCount / reengagementList.length) * 100)}%` : '39.1%') : '0.0%'}
+                  {reengagementList.length > 0 && dispatchedCount > 0 ? `${Math.round((dispatchedCount / reengagementList.length) * 100)}%` : '0%'}
                 </p>
                 <span className="text-[10px] text-emerald-400 font-sans">
                   {reengagementList.length > 0 ? '+4x vs seguimiento comercial manual' : 'Sin prospectos en cola'}
@@ -2854,7 +2871,9 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
                 <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
                   <span className="text-zinc-500 block">Folio de Rastreo:</span>
                   <span className="text-zinc-900 dark:text-white font-bold">
-                    {(selectedCapiLead.capiEventId || 'EVT-8F9A2B').replace(/lead_uuid_v4_/g, 'EVT-').toUpperCase()}
+                    {selectedCapiLead.capiEventId
+                      ? selectedCapiLead.capiEventId.replace(/lead_uuid_v4_/g, 'EVT-').toUpperCase()
+                      : `EVT-${String(selectedCapiLead.id || '').slice(0, 8).toUpperCase() || 'SIN-FOLIO'}`}
                   </span>
                 </div>
                 <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
@@ -2884,7 +2903,9 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
                         {
                           tipo_evento: 'Prospecto Calificado',
                           fecha_registro: 'Confirmado en Tiempo Real',
-                          folio_rastreo: (selectedCapiLead.capiEventId || 'EVT-8F9A2B').replace(/lead_uuid_v4_/g, 'EVT-').toUpperCase(),
+                          folio_rastreo: selectedCapiLead.capiEventId
+                            ? selectedCapiLead.capiEventId.replace(/lead_uuid_v4_/g, 'EVT-').toUpperCase()
+                            : `EVT-${String(selectedCapiLead.id || '').slice(0, 8).toUpperCase() || 'SIN-FOLIO'}`,
                           canal_origen: 'Atención Comercial Automatizada',
                           datos_contacto_protegidos: {
                             correo_cifrado: ['SHA-256 (Protegido por Privacidad)'],
@@ -2983,7 +3004,17 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
           isOpen={isWhatsAppModalOpen}
           onClose={() => setIsWhatsAppModalOpen(false)}
           activeTenant={activeTenant}
-          onSaveCredentials={(creds) => {
+          onSaveCredentials={async (creds) => {
+            if (updateTenantPolicy && activeTenant?.id) {
+              const existingChannels = activeTenant?.connectedChannels || {};
+              await updateTenantPolicy(activeTenant.id, {
+                connectedChannels: {
+                  ...existingChannels,
+                  whatsapp: creds,
+                },
+                whatsappNumberId: creds.phoneNumberId,
+              });
+            }
             setIsWhatsAppModalOpen(false);
             triggerModal(
               'WhatsApp Cloud API Sincronizado',
@@ -3023,14 +3054,16 @@ export const TriageProtocol = ({ defaultViewMode = 'kanban', embedded = false } 
             }
           }}
           onTestConnection={async () => {
+            const startedAt = performance.now();
             const health = await metaCommentService.getHealthAndConfig(activeTenant?.id);
+            const measuredMs = health?.apiLatencyMs ?? Math.round(performance.now() - startedAt);
             return {
               success: health?.connected || false,
               message: health?.connected
                 ? 'Canal verificado. Meta Graph API v21.0 respondiendo con handshake válido.'
                 : 'Falta configurar el Token permanente o el Instagram Business Account ID.',
               account: health?.accountHandle ? `@${health.accountHandle}` : null,
-              latency: health?.apiLatencyMs ? `${health.apiLatencyMs}ms` : '195ms',
+              latency: `${measuredMs}ms`,
             };
           }}
         />

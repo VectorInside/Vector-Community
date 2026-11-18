@@ -62,8 +62,8 @@ export const ExecutiveMonthlyReportModal = ({
   const metrics = reportData || zeroMetrics;
 
   const currentMonthCode = String(new Date().getMonth() + 1).padStart(2, '0');
-  const reportId = `REP-${new Date().getFullYear()}-${currentMonthCode}-VI-${(currentTenant.id || 'GEN').toUpperCase()}`;
-  const shaHash = `0x9f8b4c${Date.now().toString(16).slice(-6)}e2a1`;
+  const tenantIdClean = (currentTenant.id || 'GEN').toUpperCase();
+  const reportId = `REP-${tenantIdClean}-${new Date().getFullYear()}${currentMonthCode}`;
 
   const handlePrint = () => {
     try {
@@ -84,7 +84,7 @@ export const ExecutiveMonthlyReportModal = ({
       `• *${metrics.conversionsLabel}:* ${metrics.closedConversions} concluidas\n` +
       `• *Horas Humanas Ahorradas:* ${metrics.humanHoursSaved}\n\n` +
       `💡 *Dictamen Estratégico IA:*\n"${metrics.deepSeekSummary}"\n\n` +
-      `_Reporte auditado criptográficamente vía Meta CAPI S2S (${shaHash})_`;
+      `_Folio de reporte oficial: ${reportId}_`;
 
     navigator.clipboard.writeText(text);
     try {
@@ -299,11 +299,11 @@ export const ExecutiveMonthlyReportModal = ({
             </div>
           </div>
 
-          {/* Cryptographic Certification Footer */}
+          {/* Report Identifier Footer */}
           <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-[10px] font-mono text-zinc-500">
             <div className="flex items-center gap-2">
               <Hash className="w-3.5 h-3.5 text-neon" />
-              <span>Certificado SHA-256: <code>{shaHash}</code></span>
+              <span>Folio de Reporte: <code>{reportId}</code></span>
             </div>
             <div>
               <span>Infraestructura Vector Inside • Conexión Meta Graph API v21.0</span>

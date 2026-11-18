@@ -284,7 +284,7 @@ export const AgencyStaffView = () => {
   };
 
   // Submit new staff invitation
-  const handleInviteSubmit = (e) => {
+  const handleInviteSubmit = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (!inviteForm.name.trim() || !inviteForm.email.trim()) {
       showToast('Completa el nombre y correo electrónico');
@@ -336,58 +336,60 @@ export const AgencyStaffView = () => {
       tempPassword,
     };
 
-    setStaffList((prev) => [newMember, ...prev]);
-    setIsInviteModalOpen(false);
-    showToast(`Invitación enviada a ${newMember.email}`);
-
-    // Persist to PostgreSQL 17 Backend
-    userService.createStaff({
-      name: newMember.name,
-      email: newMember.email,
-      phone: newMember.phone,
-      role: newMember.role,
-      assignedTenantsMode: inviteForm.assignedTenantsMode,
-      customTenants: inviteForm.customTenants,
-    }).then((createdUser) => {
-      if (createdUser && createdUser.id) {
-        setStaffList((prev) =>
-          prev.map((m) => (m.email === newMember.email ? { ...m, id: createdUser.id } : m))
-        );
-      }
-    }).catch((err) => {
-      setStaffList((prev) => prev.filter((m) => m.email !== newMember.email));
-      showToast(err?.response?.data?.message || err?.message || 'Error al registrar colaborador en el servidor');
-    });
-
     try {
-      confetti({
-        particleCount: 35,
-        spread: 55,
-        origin: { y: 0.6 },
-        colors: ['#C3F400', '#3B82F6', '#A855F7'],
+      // Persist to PostgreSQL 17 Backend before opening invitation credentials modal
+      const createdUser = await userService.createStaff({
+        name: newMember.name,
+        email: newMember.email,
+        phone: newMember.phone,
+        role: newMember.role,
+        assignedTenantsMode: inviteForm.assignedTenantsMode,
+        customTenants: inviteForm.customTenants,
       });
-    } catch (err) {}
 
-    // Open official invitation card with generated credentials
-    setInvitationModalData({
-      name: newMember.name,
-      email: newMember.email,
-      phone: newMember.phone,
-      role: newMember.role,
-      roleLabel: newMember.roleLabel,
-      assignedSummary,
-      tempPassword,
-      isPendingSave: false,
-    });
+      const finalMember =
+        createdUser && createdUser.id ? { ...newMember, id: createdUser.id } : newMember;
 
-    setInviteForm({
-      name: '',
-      email: '',
-      phone: '',
-      role: 'ADMIN',
-      assignedTenantsMode: 'all',
-      customTenants: [],
-    });
+      setStaffList((prev) => [finalMember, ...prev]);
+      setIsInviteModalOpen(false);
+      showToast(`Invitación enviada a ${finalMember.email}`);
+
+      try {
+        confetti({
+          particleCount: 35,
+          spread: 55,
+          origin: { y: 0.6 },
+          colors: ['#C3F400', '#3B82F6', '#A855F7'],
+        });
+      } catch (err) {}
+
+      // Open official invitation card with generated credentials
+      setInvitationModalData({
+        name: finalMember.name,
+        email: finalMember.email,
+        phone: finalMember.phone,
+        role: finalMember.role,
+        roleLabel: finalMember.roleLabel,
+        assignedSummary,
+        tempPassword,
+        isPendingSave: false,
+      });
+
+      setInviteForm({
+        name: '',
+        email: '',
+        phone: '',
+        role: 'ADMIN',
+        assignedTenantsMode: 'all',
+        customTenants: [],
+      });
+    } catch (err) {
+      showToast(
+        err?.response?.data?.message ||
+          err?.message ||
+          'Error al registrar colaborador en el servidor'
+      );
+    }
   };
 
   // Update staff profile (phone & name) in PostgreSQL 17
@@ -880,7 +882,7 @@ export const AgencyStaffView = () => {
                             role: member.role,
                             roleLabel: member.roleLabel || member.role,
                             assignedSummary,
-                            tempPassword: member.tempPassword || 'Vec#Auth2026!',
+                            tempPassword: member.tempPassword || generateSecureStaffPassword(),
                             isPendingSave: false,
                           });
                         }}

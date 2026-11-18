@@ -57,20 +57,24 @@ export const CommercialGrowthSuite = ({ initialTab = 'kanban' }) => {
   const commercialOffer = activeTenant?.commercialOffer || {};
 
   const buyerPersona = {
-    name: rawPersona?.name || (activeTenant ? 'Cliente Ideal Calificado' : '--'),
-    ageRange: rawPersona?.ageRange || (activeTenant ? '30 a 55 años' : '--'),
-    maritalStatus: rawPersona?.maritalStatus || (activeTenant ? 'Líderes de negocio & Directivos con poder de decisión' : '--'),
-    location: rawPersona?.location || (activeTenant ? 'México y mercado hispanohablante' : '--'),
-    digitalHabits: rawPersona?.digitalHabits || (activeTenant ? 'WhatsApp Business, Instagram Direct, LinkedIn y Google' : '--'),
-    mainPainPoint: rawPersona?.mainPainPoint || brandDna?.icpPains || (activeTenant ? 'Falta de estructura de adquisición predecible y fuga de prospectos por lentitud de respuesta humana.' : '--'),
-    buyingTrigger: rawPersona?.buyingTrigger || commercialOffer?.hook || brandDna?.leadMagnetHook || (activeTenant ? 'Acelerar la cualificación y cierre de prospectos calificados 24/7 sin fricción.' : '--'),
+    name: rawPersona?.name || '',
+    ageRange: rawPersona?.ageRange || '',
+    maritalStatus: rawPersona?.maritalStatus || '',
+    location: rawPersona?.location || '',
+    digitalHabits: rawPersona?.digitalHabits || '',
+    mainPainPoint: rawPersona?.mainPainPoint || brandDna?.icpPains || '',
+    buyingTrigger: rawPersona?.buyingTrigger || commercialOffer?.hook || brandDna?.leadMagnetHook || '',
   };
 
   const marketingMix = {
-    product: rawMix?.product || activeTenant?.brandPurpose || activeTenant?.giro || (activeTenant ? 'Solución y propuesta de valor integral del negocio.' : '--'),
-    price: rawMix?.price || (activeTenant ? 'Esquemas de pago personalizados, paquetes y facilidades de financiamiento.' : '--'),
-    place: rawMix?.place || 'Omnicanal: Atención y agendamiento 24/7 vía WhatsApp Cloud API y Google Calendar.',
-    promotion: rawMix?.promotion || (commercialOffer?.hook ? `${commercialOffer.hook} • CTA: ${commercialOffer.cta || 'Contactar vía WhatsApp'}` : (activeTenant ? 'Ofertas especiales y sesiones de diagnóstico de alto impacto.' : '--')),
+    product: rawMix?.product || activeTenant?.brandPurpose || activeTenant?.giro || '',
+    price: rawMix?.price || '',
+    place: rawMix?.place || '',
+    promotion:
+      rawMix?.promotion ||
+      (commercialOffer?.hook
+        ? `${commercialOffer.hook}${commercialOffer.cta ? ` • CTA: ${commercialOffer.cta}` : ''}`
+        : ''),
   };
 
   // Formulario para Edición In-Situ
@@ -309,8 +313,16 @@ export const CommercialGrowthSuite = ({ initialTab = 'kanban' }) => {
                 </div>
               )}
             </div>
-            <span className="text-[10px] px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20">
-              Conversiones Meta Activas
+            <span
+              className={`text-[10px] px-2 py-1 rounded-lg font-bold border ${
+                Boolean(activeTenant?.metaPixelId)
+                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                  : 'bg-[var(--bg-panel)] text-[var(--text-muted)] border-[var(--border-color)]'
+              }`}
+            >
+              {Boolean(activeTenant?.metaPixelId)
+                ? 'Conversiones Meta Activas'
+                : 'Meta Pixel Sin Configurar'}
             </span>
           </div>
         </div>
@@ -632,89 +644,105 @@ export const CommercialGrowthSuite = ({ initialTab = 'kanban' }) => {
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 text-xs font-sans">
-                {(giroRecommendations && giroRecommendations.length > 0 ? giroRecommendations : [
-                  {
-                    id: 'pricing_1',
-                    title: 'Optimización de Ticket Promedio',
-                    tag: 'Pricing & Cash Flow',
-                    metric: '+38% Cierre Potencial',
-                    source: 'Conversaciones del Embudo',
-                    diagnosis: 'El 64% de los prospectos preguntan por planes a mensualidades o financiamiento.',
-                    action: 'Activar paquetes con financiamiento 12 MSI para aumentar el cierre de tickets superiores en un 38%.',
-                    ctaType: 'pricing',
-                    ctaLabel: 'Ajustar Oferta Comercial',
-                  },
-                  {
-                    id: 'service_2',
-                    title: 'Nuevo Producto o Servicio en Demanda',
-                    tag: 'Expansión de Catálogo',
-                    metric: '+22% Ingresos Adicionales',
-                    source: 'Demanda Oculta en Citas',
-                    diagnosis: 'Alta demanda no cubierta en consultas y atenciones de fin de semana.',
-                    action: 'Habilitar citas o guardias en sábados tarde para generar ingresos adicionales sin más pauta publicitaria.',
-                    ctaType: 'service',
-                    ctaLabel: 'Planear Nuevo Horario',
-                  },
-                  {
-                    id: 'content_3',
-                    title: 'Re-orientación de Contenido Publicitario',
-                    tag: 'Conversión de Contenido',
-                    metric: '3x Retención en Feed',
-                    source: 'Estudio de Contenido',
-                    diagnosis: 'La retención es más alta en videos testimoniales cortos de clientes reales antes/después.',
-                    action: 'Priorizar este formato testimonial en el Estudio de Contenido sobre publicaciones estáticas.',
-                    ctaType: 'studio',
-                    ctaLabel: 'Crear en el Estudio →',
-                    studioTopic: 'Casos reales y testimonios antes/después',
-                  },
-                ]).map((rec) => (
-                  <div
-                    key={rec.id}
-                    className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] hover:border-neon/40 transition-all flex flex-col justify-between gap-3 shadow-sm group"
-                  >
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between gap-1.5 flex-wrap">
-                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                          {rec.metric || '+25% Impacto'}
+              {giroRecommendations && giroRecommendations.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 text-xs font-sans">
+                  {giroRecommendations.map((rec) => (
+                    <div
+                      key={rec.id}
+                      className="p-4 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] hover:border-neon/40 transition-all flex flex-col justify-between gap-3 shadow-sm group"
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between gap-1.5 flex-wrap">
+                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                            {rec.metric || '+25% Impacto'}
+                          </span>
+                          <span className="text-[10px] text-[var(--text-muted)] font-mono truncate">
+                            {rec.source}
+                          </span>
+                        </div>
+                        <span className="font-bold text-[var(--text-main)] text-sm block flex items-center gap-1.5">
+                          <Lightbulb className="w-4 h-4 text-amber-400 shrink-0" />
+                          {rec.title}
                         </span>
-                        <span className="text-[10px] text-[var(--text-muted)] font-mono truncate">
-                          {rec.source}
-                        </span>
+                        <p className="text-[var(--text-muted)] text-[11px] leading-relaxed">
+                          {rec.action || rec.diagnosis}
+                        </p>
                       </div>
-                      <span className="font-bold text-[var(--text-main)] text-sm block flex items-center gap-1.5">
-                        <Lightbulb className="w-4 h-4 text-amber-400 shrink-0" />
-                        {rec.title}
-                      </span>
-                      <p className="text-[var(--text-muted)] text-[11px] leading-relaxed">
-                        {rec.action || rec.diagnosis}
-                      </p>
-                    </div>
 
-                    <div className="pt-2 border-t border-[var(--border-color)] flex items-center gap-2">
-                      {rec.ctaType === 'studio' ? (
-                        <button
-                          type="button"
-                          onClick={() => setActiveSuiteTab('studio')}
-                          className="w-full py-1.5 px-3 rounded-xl bg-neon text-black font-bold text-xs flex items-center justify-center gap-1.5 hover:shadow-[0_0_12px_var(--neon-glow)] transition-all font-mono"
-                        >
-                          <Sparkles className="w-3.5 h-3.5" />
-                          <span>{rec.ctaLabel || 'Crear en el Estudio →'}</span>
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => setIsEditingPersonaModal(true)}
-                          className="w-full py-1.5 px-3 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] border border-[var(--border-color)] font-bold text-xs flex items-center justify-center gap-1.5 transition-all font-mono"
-                        >
-                          <Zap className="w-3.5 h-3.5 text-neon" />
-                          <span>{rec.ctaLabel || 'Aplicar al Negocio'}</span>
-                        </button>
-                      )}
+                      <div className="pt-2 border-t border-[var(--border-color)] flex items-center gap-2">
+                        {rec.ctaType === 'studio' ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (typeof window !== 'undefined') {
+                                sessionStorage.setItem(
+                                  'vector_studio_prefill_topic',
+                                  rec.studioTopic || rec.title
+                                );
+                              }
+                              setActiveSuiteTab('studio');
+                            }}
+                            className="w-full py-1.5 px-3 rounded-xl bg-neon text-black font-bold text-xs flex items-center justify-center gap-1.5 hover:shadow-[0_0_12px_var(--neon-glow)] transition-all font-mono"
+                          >
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>{rec.ctaLabel || 'Crear en el Estudio →'}</span>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const suggestion = rec.action || rec.diagnosis || rec.title || '';
+                              setPersonaForm((prev) => ({
+                                ...prev,
+                                ...(rec.ctaType === 'pricing'
+                                  ? { price: suggestion }
+                                  : rec.ctaType === 'service'
+                                  ? { product: suggestion }
+                                  : { promotion: suggestion }),
+                              }));
+                              setIsEditingPersonaModal(true);
+                            }}
+                            className="w-full py-1.5 px-3 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] border border-[var(--border-color)] font-bold text-xs flex items-center justify-center gap-1.5 transition-all font-mono"
+                          >
+                            <Zap className="w-3.5 h-3.5 text-neon" />
+                            <span>{rec.ctaLabel || 'Aplicar al Negocio'}</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-6 rounded-2xl bg-[var(--bg-panel)] border border-dashed border-[var(--border-color)] text-center space-y-3 text-xs font-sans">
+                  <Lightbulb className="w-6 h-6 text-neon mx-auto opacity-80" />
+                  <div className="space-y-1">
+                    <p className="font-bold text-[var(--text-main)]">
+                      Aún no hay recomendaciones generadas para este giro
+                    </p>
+                    <p className="text-[11px] text-[var(--text-muted)] max-w-md mx-auto">
+                      Consulta al Asesor IA con DeepSeek R1 para recibir oportunidades personalizadas de pricing, catálogo y contenido para {activeTenant?.name}.
+                    </p>
                   </div>
-                ))}
-              </div>
+                  <button
+                    type="button"
+                    onClick={() => handleConsultGiroAdvisor(true)}
+                    disabled={isGeneratingGiro}
+                    className="px-4 py-2 rounded-xl bg-neon text-black font-mono font-bold text-xs inline-flex items-center gap-1.5 hover:shadow-[0_0_12px_var(--neon-glow)] transition-all disabled:opacity-50"
+                  >
+                    {isGeneratingGiro ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Consultando Asesor IA...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Consultar Asesor IA</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )
@@ -886,8 +914,6 @@ export const CommercialGrowthSuite = ({ initialTab = 'kanban' }) => {
           </div>
         </div>
       )}
-      )
-      )
     </div>
   );
 };

@@ -4,6 +4,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import QRCode from 'qrcode';
 import { Portal } from './Portal';
+import { useAuth } from '@/context/AuthContext';
+import { tenantService } from '@/services/tenantService';
 import {
   X,
   Copy,
@@ -37,6 +39,7 @@ import {
   Image as ImageIcon,
   FileText,
   RefreshCw,
+  AlertCircle,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -82,11 +85,14 @@ const DEFAULT_SERVICES = {
 };
 
 export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
+  const { updateTenantPolicy } = useAuth();
   const [copiedLink, setCopiedLink] = useState(false);
   const [activeTab, setActiveTab] = useState('customize'); // 'customize' | 'qr' | 'overview'
   const [activeSubSection, setActiveSubSection] = useState('services'); // 'brand' | 'services' | 'contact'
   const [deviceMode, setDeviceMode] = useState('iphone'); // 'iphone' | 'android'
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
 
   const badgeToneOptions = [
     { id: 'emerald', label: 'Esmeralda', badgeClass: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' },
@@ -346,7 +352,8 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
     if (activeTab !== 'qr' || !tenant || !qrCanvasRef.current) return;
 
     const canvas = qrCanvasRef.current;
-    const prodUrl = `https://app.vectorinside.com/m/${tenant.microLandingSlug || tenant.id}?utm_source=qr`;
+    const baseOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+    const prodUrl = `${baseOrigin}/m/${tenant.microLandingSlug || tenant.id}?utm_source=qr`;
 
     QRCode.toCanvas(
       canvas,
@@ -430,7 +437,8 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
 
   if (!isOpen || !tenant) return null;
 
-  const prodUrl = `https://app.vectorinside.com/m/${tenant.microLandingSlug || tenant.id}`;
+  const baseOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+  const prodUrl = `${baseOrigin}/m/${tenant.microLandingSlug || tenant.id}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(prodUrl);
@@ -537,19 +545,44 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
     }
   };
 
-  const handleSaveChanges = () => {
+  const handleSaveChanges = async () => {
+    if (!tenant?.id) return;
+    setIsSaving(true);
+    setSaveError(null);
     try {
       localStorage.setItem(`vector_microlanding_${tenant.id}`, JSON.stringify(customData));
       notifyIframe(customData);
+
+      await tenantService.updateMicroLandingConfig(tenant.id, customData);
+      if (updateTenantPolicy) {
+        const res = await updateTenantPolicy(tenant.id, {
+          microLandingConfig: JSON.stringify(customData),
+        });
+        if (res && res.success === false && res.error) {
+          throw res.error;
+        }
+      }
+
       setSavedSuccess(true);
-      confetti({
-        particleCount: 40,
-        spread: 60,
-        origin: { y: 0.5 },
-        colors: ['#D4FF00', '#25D366', '#FFFFFF'],
-      });
+      try {
+        confetti({
+          particleCount: 40,
+          spread: 60,
+          origin: { y: 0.5 },
+          colors: ['#D4FF00', '#25D366', '#FFFFFF'],
+        });
+      } catch (err) {}
       setTimeout(() => setSavedSuccess(false), 2500);
-    } catch (e) {}
+    } catch (e) {
+      const msg =
+        e?.response?.data?.message ||
+        e?.response?.data?.error ||
+        e?.message ||
+        'Error al sincronizar la configuración de la Micro-Landing con PostgreSQL.';
+      setSaveError(msg);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -1356,14 +1389,27 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
                 )}
 
                 {/* Save and Apply Action */}
+                {saveError && (
+                  <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-mono flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{saveError}</span>
+                  </div>
+                )}
                 <div className="pt-2 border-t border-[var(--border-color)] flex items-center gap-2">
                   <button
                     type="button"
+                    disabled={isSaving}
                     onClick={handleSaveChanges}
-                    className="flex-1 py-2.5 px-4 rounded-xl bg-neon text-black font-black text-xs flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md"
+                    className="flex-1 py-2.5 px-4 rounded-xl bg-neon text-black font-black text-xs flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md disabled:opacity-50"
                   >
                     <Save className="w-4 h-4" />
-                    <span>{savedSuccess ? '¡Cambios Guardados con Éxito!' : 'Guardar y Aplicar Todo'}</span>
+                    <span>
+                      {isSaving
+                        ? 'Sincronizando con PostgreSQL...'
+                        : savedSuccess
+                        ? '¡Cambios Guardados con Éxito!'
+                        : 'Guardar y Aplicar Todo'}
+                    </span>
                   </button>
                 </div>
               </div>
@@ -1472,7 +1518,7 @@ export const MicroLandingPreviewModal = ({ isOpen, onClose, tenant }) => {
           {/* Modal Footer */}
           <div className="pt-2.5 border-t border-[var(--border-color)] flex items-center justify-between">
             <span className="text-[10px] font-mono text-[var(--text-muted)]">
-              Almacenamiento local client-side • 0 consumo de servidor
+              Sincronizado en tiempo real con PostgreSQL 17 • Respaldo local activo
             </span>
             <button
               type="button"

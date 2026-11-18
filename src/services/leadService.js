@@ -44,7 +44,7 @@ export const normalizeLeadFromApi = (lead) => {
     tenantId: lead.tenantId || null,
     name: lead.name || 'Prospecto Sin Nombre',
     email: lead.email || '',
-    phone: lead.phone || '+52 55 0000 0000',
+    phone: lead.phone || '',
     avatar: lead.avatar || initials || 'LD',
     channel: lead.channel || 'WHATSAPP',
     leadState,
@@ -52,9 +52,9 @@ export const normalizeLeadFromApi = (lead) => {
     statusType: leadState === 'BILLABLE_LEAD' ? 'success' : leadState === 'HITL_INTERVENTION' ? 'danger' : 'warning',
     billingStatus: leadState === 'BILLABLE_LEAD' ? 'BILLABLE_UNLOCKED' : 'IN_PROGRESS',
     score: lead.score ?? ((identityValidated ? 25 : 0) + (catalogIdentified ? 25 : 0) + (financialClarified ? 25 : 0) + (consentOrBooked ? 25 : 0)),
-    potentialTicket: formatCurrencyMXN(lead.estimatedValue ?? lead.potentialTicket ?? 4500),
-    estimatedValue: parseNumericMXN(lead.estimatedValue ?? lead.potentialTicket ?? 4500),
-    countdown24h: lead.countdown24h || '22h 15m restantes',
+    potentialTicket: formatCurrencyMXN(lead.estimatedValue ?? lead.potentialTicket ?? 0),
+    estimatedValue: parseNumericMXN(lead.estimatedValue ?? lead.potentialTicket ?? 0),
+    countdown24h: lead.countdown24h || null,
     criteriaAudit: {
       identityValidated,
       catalogIdentified,
@@ -66,26 +66,7 @@ export const normalizeLeadFromApi = (lead) => {
       ? 'Prospecto auditado con las 4 Guardas SDOP cumplidas. Facturable y listo para cierre.'
       : 'En proceso de calificación conversacional bajo protocolo 4-Guard.'),
     notes: noteText,
-    messages: Array.isArray(lead.messages) && lead.messages.length > 0
-      ? lead.messages
-      : [
-          {
-            id: `msg-${lead.id}-1`,
-            sender: lead.name || 'Prospecto',
-            text: noteText,
-            time: 'Hace 5 min',
-            isUser: true,
-          },
-          {
-            id: `msg-${lead.id}-2`,
-            sender: 'Agente IA (SDOP 4-Guard)',
-            text: leadState === 'BILLABLE_LEAD'
-              ? 'Excelente, hemos validado tus datos, tratamiento de interés y horario disponible. Tu cita ha quedado pre-registrada.'
-              : 'Hola, con gusto te brindo información detallada y te ayudo a agendar tu valoración.',
-            time: 'Hace 3 min',
-            isBot: true,
-          },
-        ],
+    messages: Array.isArray(lead.messages) ? lead.messages : [],
     createdAt: lead.createdAt,
     updatedAt: lead.updatedAt,
   };

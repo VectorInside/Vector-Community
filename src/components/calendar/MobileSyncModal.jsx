@@ -10,7 +10,6 @@ import {
   Copy,
   Download,
   ExternalLink,
-  QrCode,
   MessageCircle,
   Zap,
   AlertCircle,
@@ -133,8 +132,8 @@ export const MobileSyncModal = ({ isOpen, onClose, tenant }) => {
                   : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
               }`}
             >
-              <QrCode className="w-4 h-4" />
-              <span>Código QR Celular</span>
+              <Smartphone className="w-4 h-4" />
+              <span>Enlace Directo Móvil</span>
             </button>
             <button
               type="button"
@@ -162,95 +161,69 @@ export const MobileSyncModal = ({ isOpen, onClose, tenant }) => {
             </button>
           </div>
 
-          {/* PESTAÑA 1: CÓDIGO QR */}
+          {/* PESTAÑA 1: ENLACE DIRECTO VERIFICABLE & DESCARGA .ICS */}
           {activeTab === 'qr' && (
-            <div className="space-y-4 animate-fade-in text-center">
-              <div className="p-6 rounded-2xl bg-white border border-zinc-200 inline-block shadow-xl mx-auto">
-                {/* QR Code SVG simulado de alta fidelidad */}
-                <div className="w-44 h-44 mx-auto flex flex-col items-center justify-center relative">
-                  <svg className="w-full h-full text-black" viewBox="0 0 100 100" fill="currentColor">
-                    {/* Marcadores de posición en las esquinas */}
-                    <rect x="5" y="5" width="25" height="25" rx="3" fill="none" stroke="black" strokeWidth="4" />
-                    <rect x="10" y="10" width="15" height="15" rx="2" fill="black" />
-                    <rect x="70" y="5" width="25" height="25" rx="3" fill="none" stroke="black" strokeWidth="4" />
-                    <rect x="75" y="10" width="15" height="15" rx="2" fill="black" />
-                    <rect x="5" y="70" width="25" height="25" rx="3" fill="none" stroke="black" strokeWidth="4" />
-                    <rect x="10" y="75" width="15" height="15" rx="2" fill="black" />
-                    {/* Patrón de datos matriciales */}
-                    <rect x="36" y="8" width="6" height="6" />
-                    <rect x="46" y="8" width="6" height="6" />
-                    <rect x="56" y="8" width="6" height="6" />
-                    <rect x="36" y="18" width="6" height="6" />
-                    <rect x="56" y="18" width="6" height="6" />
-                    <rect x="36" y="28" width="6" height="6" />
-                    <rect x="46" y="28" width="6" height="6" />
-                    <rect x="8" y="36" width="6" height="6" />
-                    <rect x="18" y="36" width="6" height="6" />
-                    <rect x="28" y="36" width="6" height="6" />
-                    <rect x="38" y="38" width="6" height="6" />
-                    <rect x="48" y="38" width="6" height="6" />
-                    <rect x="58" y="38" width="6" height="6" />
-                    <rect x="68" y="36" width="6" height="6" />
-                    <rect x="78" y="36" width="6" height="6" />
-                    <rect x="88" y="36" width="6" height="6" />
-                    <rect x="38" y="48" width="24" height="6" fill="#10B981" />
-                    <rect x="8" y="46" width="6" height="6" />
-                    <rect x="28" y="46" width="6" height="6" />
-                    <rect x="68" y="46" width="6" height="6" />
-                    <rect x="88" y="46" width="6" height="6" />
-                    <rect x="8" y="56" width="6" height="6" />
-                    <rect x="18" y="56" width="6" height="6" />
-                    <rect x="38" y="58" width="6" height="6" />
-                    <rect x="58" y="58" width="6" height="6" />
-                    <rect x="78" y="56" width="6" height="6" />
-                    <rect x="36" y="70" width="6" height="6" />
-                    <rect x="46" y="70" width="6" height="6" />
-                    <rect x="56" y="70" width="6" height="6" />
-                    <rect x="70" y="70" width="6" height="6" />
-                    <rect x="80" y="70" width="6" height="6" />
-                    <rect x="90" y="70" width="6" height="6" />
-                    <rect x="36" y="80" width="6" height="6" />
-                    <rect x="56" y="80" width="6" height="6" />
-                    <rect x="70" y="80" width="6" height="6" />
-                    <rect x="80" y="80" width="6" height="6" />
-                    <rect x="36" y="90" width="6" height="6" />
-                    <rect x="46" y="90" width="6" height="6" />
-                    <rect x="66" y="90" width="6" height="6" />
-                    <rect x="86" y="90" width="6" height="6" />
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-9 h-9 rounded-lg bg-black border-2 border-neon flex items-center justify-center text-neon font-black text-xs shadow-lg">
-                      VI
-                    </div>
+            <div className="space-y-4 animate-fade-in text-xs font-mono">
+              <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-neon font-bold">
+                    <Smartphone className="w-4 h-4" />
+                    <span>Enlace Directo Verificable para Smartphone</span>
                   </div>
+                  <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
+                    URL Activa
+                  </span>
                 </div>
-              </div>
-
-              <div className="space-y-1">
-                <p className="text-xs font-bold text-[var(--text-main)]">
-                  Apunta con la cámara de tu smartphone
+                <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
+                  Abre o comparte este enlace directo en tu navegador móvil para gestionar la agenda de <strong>{tenantName}</strong> en tiempo real, o descarga el archivo estándar <strong>.ICS (RFC 5545)</strong> para tu calendario nativo.
                 </p>
-                <p className="text-[11px] text-[var(--text-muted)] font-mono max-w-sm mx-auto">
-                  Abre la aplicación de agenda móvil optimizada para tu equipo con acceso biométrico y notificaciones instantáneas de citas.
-                </p>
-              </div>
 
-              {/* Botón copiar link directo */}
-              <div className="flex items-center gap-2 max-w-md mx-auto">
-                <input
-                  type="text"
-                  readOnly
-                  value={mobileAgendaUrl}
-                  className="flex-1 px-3 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] text-xs font-mono text-[var(--text-muted)] truncate"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleCopy(mobileAgendaUrl, 'link')}
-                  className="px-3.5 py-2 rounded-xl bg-neon text-black font-bold text-xs font-mono flex items-center gap-1.5 shadow-[0_0_10px_var(--neon-glow)] hover:scale-105 active:scale-95 transition-all"
-                >
-                  <Copy className="w-3.5 h-3.5" />
-                  <span>{copiedLink ? '¡Copiado!' : 'Copiar'}</span>
-                </button>
+                {/* Bloque de enlace directo verificable */}
+                <div className="flex items-center gap-2 pt-1">
+                  <input
+                    type="text"
+                    readOnly
+                    value={mobileAgendaUrl}
+                    className="flex-1 px-3 py-2.5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-color)] text-xs font-mono text-[var(--text-main)] truncate select-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(mobileAgendaUrl, 'link')}
+                    className="px-3.5 py-2.5 rounded-xl bg-neon text-black font-bold text-xs font-mono flex items-center gap-1.5 shadow-[0_0_10px_var(--neon-glow)] hover:scale-105 active:scale-95 transition-all shrink-0"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>{copiedLink ? '¡Copiado!' : 'Copiar Enlace'}</span>
+                  </button>
+                </div>
+
+                {icsError && (
+                  <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-[11px] flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{icsError}</span>
+                  </div>
+                )}
+
+                {/* Botón de descarga .ics real y abrir agenda */}
+                <div className="pt-2 flex flex-col sm:flex-row gap-2">
+                  <button
+                    type="button"
+                    onClick={handleDownloadNextIcs}
+                    disabled={isDownloadingIcs}
+                    className="flex-1 py-2.5 px-4 rounded-xl bg-neon text-black font-bold text-xs flex items-center justify-center gap-2 shadow-[0_0_15px_var(--neon-glow)] hover:scale-[1.01] active:scale-98 transition-all disabled:opacity-50"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>{isDownloadingIcs ? 'Descargando .ICS...' : 'Descargar Archivo .ICS Real'}</span>
+                  </button>
+                  <a
+                    href={mobileAgendaUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex-1 py-2.5 px-4 rounded-xl bg-[var(--bg-panel)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] border border-[var(--border-color)] font-bold text-xs flex items-center justify-center gap-2 transition-all"
+                  >
+                    <span>Abrir Enlace Directo</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
               </div>
             </div>
           )}

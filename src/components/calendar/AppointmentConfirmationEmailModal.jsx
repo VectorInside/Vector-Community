@@ -318,7 +318,7 @@ export const AppointmentConfirmationEmailModal = ({
             <div>
               <label className="text-[10px] text-[var(--text-muted)] block mb-0.5">Teléfono WhatsApp:</label>
               <div className="px-2.5 py-1.5 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-color)] text-emerald-600 dark:text-emerald-400 font-bold">
-                {appointment.phone || '+52 55 0000 0000'}
+                {appointment.phone || tenant?.phone || 'Sin teléfono registrado'}
               </div>
             </div>
             <div>
@@ -449,7 +449,7 @@ export const AppointmentConfirmationEmailModal = ({
                     <div className="flex items-center justify-between">
                       <span className="text-[var(--text-muted)]">Inversión / Arancel:</span>
                       <span className="text-emerald-600 dark:text-emerald-400 font-bold">
-                        ${appointment.estimatedValue || 1200} MXN ({appointment.depositPaid ? 'Anticipo Pagado' : 'Por Liquidar'})
+                        ${Number(appointment.estimatedValue || 0)} MXN ({appointment.depositPaid ? 'Anticipo Pagado' : 'Por Liquidar'})
                       </span>
                     </div>
                   </div>

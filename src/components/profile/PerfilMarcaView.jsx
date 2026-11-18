@@ -1007,7 +1007,7 @@ export const PerfilMarcaView = () => {
                     Pilar 1: Financiero
                   </span>
                   <p className="text-[11px] text-[var(--text-main)] font-semibold">
-                    CAC Máx: {activeTenant?.cacMax ? `$${activeTenant.cacMax} MXN` : (activeTenant ? '$350 MXN' : 'Sin definir')}
+                    CAC Máx: {activeTenant?.leadPriceMXN ? `$${activeTenant.leadPriceMXN} MXN` : (activeTenant?.cacMax || 'Sin definir')}
                   </p>
                   <span className="text-[9px] font-mono text-[var(--text-muted)] block">
                     Aislamiento RLS en PostgreSQL
@@ -1779,43 +1779,81 @@ export const PerfilMarcaView = () => {
                 <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase font-bold block">
                   Conductos de Mensajería & Tráfico Automatizado:
                 </span>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-2">
-                    <MessageSquare className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <div className="min-w-0">
-                      <span className="text-[11px] font-bold text-[var(--text-main)] block truncate">WhatsApp Cloud</span>
-                      <span className="text-[8px] font-mono text-emerald-500 font-bold">Activo (Event-Driven)</span>
-                    </div>
-                  </div>
+                {(() => {
+                  const rawNetworks = Array.isArray(activeTenant?.connectedSocialNetworks)
+                    ? activeTenant.connectedSocialNetworks.map((n) => String(n).toUpperCase())
+                    : typeof activeTenant?.connectedSocialNetworks === 'string'
+                    ? activeTenant.connectedSocialNetworks
+                        .toUpperCase()
+                        .split(',')
+                        .map((s) => s.trim())
+                    : [];
+                  const channelsObj = activeTenant?.connectedChannels || {};
+                  const isWaConnected = Boolean(
+                    channelsObj.whatsapp?.connected ||
+                      channelsObj.WHATSAPP?.connected ||
+                      channelsObj.whatsapp?.accessToken ||
+                      channelsObj.whatsapp?.phoneNumberId ||
+                      rawNetworks.includes('WHATSAPP')
+                  );
+                  const isIgConnected = Boolean(
+                    channelsObj.instagram?.connected ||
+                      channelsObj.INSTAGRAM?.connected ||
+                      channelsObj.instagram?.accessToken ||
+                      rawNetworks.includes('INSTAGRAM')
+                  );
+                  const isFbConnected = Boolean(
+                    channelsObj.facebook?.connected ||
+                      channelsObj.FACEBOOK?.connected ||
+                      channelsObj.facebook?.accessToken ||
+                      rawNetworks.includes('FACEBOOK')
+                  );
+                  return (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                      <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-2">
+                        <MessageSquare className={`w-3.5 h-3.5 shrink-0 ${isWaConnected ? 'text-emerald-500' : 'text-[var(--text-muted)]'}`} />
+                        <div className="min-w-0">
+                          <span className="text-[11px] font-bold text-[var(--text-main)] block truncate">WhatsApp Cloud</span>
+                          <span className={`text-[8px] font-mono font-bold ${isWaConnected ? 'text-emerald-500' : 'text-[var(--text-muted)]'}`}>
+                            {isWaConnected ? 'Activo (Event-Driven)' : 'Sin conectar'}
+                          </span>
+                        </div>
+                      </div>
 
-                  <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-2">
-                    <Instagram className="w-3.5 h-3.5 text-pink-500 shrink-0" />
-                    <div className="min-w-0">
-                      <span className="text-[11px] font-bold text-[var(--text-main)] block truncate">Instagram DM</span>
-                      <span className="text-[8px] font-mono text-emerald-500 font-bold">Sincronizado</span>
-                    </div>
-                  </div>
+                      <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-2">
+                        <Instagram className={`w-3.5 h-3.5 shrink-0 ${isIgConnected ? 'text-pink-500' : 'text-[var(--text-muted)]'}`} />
+                        <div className="min-w-0">
+                          <span className="text-[11px] font-bold text-[var(--text-main)] block truncate">Instagram DM</span>
+                          <span className={`text-[8px] font-mono font-bold ${isIgConnected ? 'text-emerald-500' : 'text-[var(--text-muted)]'}`}>
+                            {isIgConnected ? 'Sincronizado' : 'Sin conectar'}
+                          </span>
+                        </div>
+                      </div>
 
-                  <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-2">
-                    <Facebook className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                    <div className="min-w-0">
-                      <span className="text-[11px] font-bold text-[var(--text-main)] block truncate">Facebook Page</span>
-                      <span className="text-[8px] font-mono text-emerald-500 font-bold">Conectado</span>
-                    </div>
-                  </div>
+                      <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-2">
+                        <Facebook className={`w-3.5 h-3.5 shrink-0 ${isFbConnected ? 'text-blue-500' : 'text-[var(--text-muted)]'}`} />
+                        <div className="min-w-0">
+                          <span className="text-[11px] font-bold text-[var(--text-main)] block truncate">Facebook Page</span>
+                          <span className={`text-[8px] font-mono font-bold ${isFbConnected ? 'text-emerald-500' : 'text-[var(--text-muted)]'}`}>
+                            {isFbConnected ? 'Conectado' : 'Sin conectar'}
+                          </span>
+                        </div>
+                      </div>
 
-                  <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-2">
-                    <Globe className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                    <div className="min-w-0">
-                      <span className="text-[11px] font-bold text-[var(--text-main)] block truncate">
-                        {activeTenant?.hasWebsite ? 'Sitio Web' : 'Micro-Landing'}
-                      </span>
-                      <span className="text-[8px] font-mono text-cyan-400 font-bold">
-                        {activeTenant?.hasWebsite ? 'GA4 Activo' : 'Alojada en Vector'}
-                      </span>
+                      <div className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center gap-2">
+                        <Globe className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                        <div className="min-w-0">
+                          <span className="text-[11px] font-bold text-[var(--text-main)] block truncate">
+                            {activeTenant?.hasWebsite ? 'Sitio Web' : 'Micro-Landing'}
+                          </span>
+                          <span className="text-[8px] font-mono text-cyan-400 font-bold">
+                            {activeTenant?.hasWebsite ? 'GA4 Activo' : 'Alojada en Vector'}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  );
+                })()}
               </div>
             </div>
           </div>
@@ -1842,13 +1880,55 @@ export const PerfilMarcaView = () => {
               <button
                 type="button"
                 onClick={() => {
-                  // Revertir a lo que tiene activeTenant
+                  // Revertir todos los estados del formulario a los valores actuales de activeTenant
                   if (activeTenant) {
-                    setBrandPurpose(activeTenant.brandPurpose || currentPreset.defaultPurpose);
-                    setToneOfVoice(activeTenant.toneOfVoice || currentPreset.defaultTone);
-                    setBrandColors(activeTenant.brandColors || currentPreset.colors);
-                    setCustomAvatar(activeTenant.avatar || currentPreset.avatar || '🏢');
-                    setSlaTarget(activeTenant.slaTarget || 15);
+                    setBrandPurpose(activeTenant.brandPurpose || '');
+                    setToneOfVoice(activeTenant.toneOfVoice || '');
+                    setEmojiPolicy(activeTenant.emojiPolicy || 'Moderado (según contexto)');
+                    setSlaTarget(activeTenant.slaTarget || activeTenant.slaHitlMinutes || 15);
+                    const isGenericB2B =
+                      activeTenant.brandColors?.length === 5 &&
+                      activeTenant.brandColors[0]?.hex === '#0F172A';
+                    setBrandColors(
+                      activeTenant.brandColors && activeTenant.brandColors.length > 0 && !isGenericB2B
+                        ? activeTenant.brandColors
+                        : currentPreset.colors || []
+                    );
+                    setCustomAvatar(
+                      activeTenant.avatar && activeTenant.avatar !== '💼' && activeTenant.avatar !== '🏢'
+                        ? activeTenant.avatar
+                        : currentPreset.avatar || '🐺'
+                    );
+                    setOwnerPhone(activeTenant.phone || '');
+                    setOfferHook(activeTenant.commercialOffer?.hook || '');
+                    setOfferCta(activeTenant.commercialOffer?.cta || '');
+                    setOfferValidity(activeTenant.commercialOffer?.validity || '');
+                    setInviolableRules(
+                      Array.isArray(activeTenant.inviolableRules) ? activeTenant.inviolableRules : []
+                    );
+                    setNewRuleInput('');
+                    setBuyerName(activeTenant.buyerPersona?.name || '');
+                    setBuyerAgeRange(activeTenant.buyerPersona?.ageRange || '');
+                    setBuyerMaritalStatus(activeTenant.buyerPersona?.maritalStatus || '');
+                    setBuyerLocation(activeTenant.buyerPersona?.location || '');
+                    setBuyerHabits(activeTenant.buyerPersona?.digitalHabits || '');
+                    setBuyerPainPoint(activeTenant.buyerPersona?.mainPainPoint || '');
+                    setBuyerBuyingTrigger(activeTenant.buyerPersona?.buyingTrigger || '');
+                    setMixProduct(activeTenant.marketingMix4P?.product || '');
+                    setMixPrice(activeTenant.marketingMix4P?.price || '');
+                    setMixPlace(activeTenant.marketingMix4P?.place || '');
+                    setMixPromotion(activeTenant.marketingMix4P?.promotion || '');
+                    const tenantSocial = activeTenant.socialLinks || {};
+                    setSocialLinks({
+                      youtube: tenantSocial.youtube || '',
+                      tiktok: tenantSocial.tiktok || '',
+                      linkedin: tenantSocial.linkedin || '',
+                      instagram: tenantSocial.instagram || '',
+                      facebook: tenantSocial.facebook || '',
+                      x: tenantSocial.x || '',
+                      website: tenantSocial.website || activeTenant.websiteUrl || '',
+                    });
+                    setPhoneError(null);
                     setIsDirty(false);
                   }
                 }}

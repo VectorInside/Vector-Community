@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Portal } from '@/components/common/Portal';
+import { leadService } from '@/services/leadService';
 import { LANDING_TRANSLATIONS } from './landingTranslations';
 
 // TAXONOMÍA UNIVERSAL DE GIROS DE NEGOCIO (Las 16 verticales oficiales de la plataforma)
@@ -65,6 +66,7 @@ export const TrialModal = ({ isOpen, onClose, lang = 'es' }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const dropdownRef = useRef(null);
 
   const t = LANDING_TRANSLATIONS[lang].modal;
@@ -89,11 +91,22 @@ export const TrialModal = ({ isOpen, onClose, lang = 'es' }) => {
   const allOptions = BUSINESS_VERTIALS_16.flatMap((g) => g.options);
   const selectedOption = allOptions.find((o) => o.id === vertical) || allOptions[0];
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    setErrorMessage('');
 
-    setTimeout(() => {
+    try {
+      await leadService.createLead({
+        tenantId: 'tenant-vector-inside',
+        name: businessName.trim(),
+        email: email.trim(),
+        notes: `Solicitud Sandbox Landing - Giro: ${vertical}`,
+        channel: 'WEB',
+        source: 'Landing Trial Modal',
+        status: 'NEW',
+      });
+
       try {
         confetti({
           particleCount: 50,
@@ -103,9 +116,35 @@ export const TrialModal = ({ isOpen, onClose, lang = 'es' }) => {
         });
       } catch (err) {}
 
-      setSubmitting(false);
       setSuccess(true);
-    }, 600);
+    } catch (leadErr) {
+      try {
+        const res = await fetch('/api/send-invitation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: email.trim(),
+            name: businessName.trim(),
+            tenantName: businessName.trim(),
+            role: 'CLIENT_OWNER',
+            vertical,
+          }),
+        });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData?.error || errData?.message || 'Error al registrar la solicitud.');
+        }
+        setSuccess(true);
+      } catch (fallbackErr) {
+        setErrorMessage(
+          leadErr?.response?.data?.message ||
+            fallbackErr?.message ||
+            'No se pudo procesar la solicitud en PostgreSQL.'
+        );
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleEnterDashboard = () => {
@@ -256,6 +295,10 @@ export const TrialModal = ({ isOpen, onClose, lang = 'es' }) => {
                   </div>
                 )}
               </div>
+
+              {errorMessage && (
+                <p className="text-[10px] font-mono text-rose-400 text-center">{errorMessage}</p>
+              )}
 
               <button
                 type="submit"

@@ -71,56 +71,76 @@ export const WhatsAppConnectModal = ({
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!phoneNumberId.trim()) {
       alert('Por favor ingresa al menos el Phone Number ID de Meta para identificar el canal.');
       return;
     }
 
-    if (activeTenant?.id) {
-      api
-        .post(`/webhooks/whatsapp/connect/${activeTenant.id}`, {
+    setTestResult(null);
+    const startedAt = performance.now();
+
+    try {
+      let measuredMs = null;
+      if (activeTenant?.id) {
+        const res = await api.post(`/webhooks/whatsapp/connect/${activeTenant.id}`, {
           phoneNumberId: phoneNumberId.trim(),
           wabaId: wabaId.trim(),
           accessToken: accessToken.trim(),
           verifyToken,
-        })
-        .catch(() => {});
+        });
+        const data = unwrapApiData(res);
+        measuredMs = data?.latencyMs ?? Math.round(performance.now() - startedAt);
+      }
+
+      const rawToken = accessToken.trim();
+      const maskedToken = rawToken
+        ? rawToken.startsWith('••••')
+          ? rawToken
+          : rawToken.length > 4
+          ? `••••••••${rawToken.slice(-4)}`
+          : '••••••••'
+        : '';
+
+      const updatedConfig = {
+        enabled: true,
+        status: 'connected',
+        phoneNumberId: phoneNumberId.trim(),
+        wabaId: wabaId.trim(),
+        accessToken: maskedToken,
+        displayPhoneNumber: displayPhone.trim() || activeTenant?.phone || '',
+        lastSync: 'Recién configurado',
+        ...(measuredMs != null ? { latencyMs: measuredMs } : {}),
+      };
+
+      if (onSaveCredentials) {
+        await onSaveCredentials(updatedConfig);
+      }
+
+      setIsSavedSuccess(true);
+      try {
+        confetti({ particleCount: 35, spread: 60, colors: ['#22C55E', '#E7F900', '#38BDF8'] });
+      } catch (e) {}
+
+      setTimeout(() => {
+        setIsSavedSuccess(false);
+        onClose();
+      }, 1200);
+    } catch (err) {
+      setTestResult({
+        success: false,
+        phoneId: phoneNumberId.trim(),
+        hasToken: Boolean(accessToken.trim()),
+        latencyMs: Math.round(performance.now() - startedAt),
+        timestamp: new Date().toLocaleTimeString(),
+        status: 'ERROR_GUARDADO',
+        metaApiVersion: 'v21.0',
+        error:
+          err?.response?.data?.message ||
+          err?.message ||
+          'No se pudieron guardar las credenciales de WhatsApp en PostgreSQL.',
+      });
     }
-
-    const rawToken = accessToken.trim();
-    const maskedToken = rawToken
-      ? rawToken.startsWith('••••')
-        ? rawToken
-        : rawToken.length > 4
-        ? `••••••••${rawToken.slice(-4)}`
-        : '••••••••'
-      : '';
-
-    const updatedConfig = {
-      enabled: true,
-      status: 'connected',
-      phoneNumberId: phoneNumberId.trim(),
-      wabaId: wabaId.trim(),
-      accessToken: maskedToken,
-      displayPhoneNumber: displayPhone.trim() || activeTenant?.phone || '+52 55 0000 0000',
-      lastSync: 'Recién configurado',
-      latencyMs: 82,
-    };
-
-    if (onSaveCredentials) {
-      onSaveCredentials(updatedConfig);
-    }
-
-    setIsSavedSuccess(true);
-    try {
-      confetti({ particleCount: 35, spread: 60, colors: ['#22C55E', '#E7F900', '#38BDF8'] });
-    } catch (e) {}
-
-    setTimeout(() => {
-      setIsSavedSuccess(false);
-      onClose();
-    }, 1200);
   };
 
   const handleTestPing = async () => {

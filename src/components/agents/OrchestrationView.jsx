@@ -40,6 +40,7 @@ import {
 import { aiService } from '@/services/aiService';
 import { reengagementService } from '@/services/reengagementService';
 import { performanceService } from '@/services/performanceService';
+import { leadService } from '@/services/leadService';
 import { AgentOrchestrationReportModal } from './AgentOrchestrationReportModal';
 
 const buildAgentProbePrompt = (agentKey, tenant, realContext = {}) => {
@@ -96,13 +97,14 @@ export const OrchestrationView = () => {
     aiUsage: null,
     reengagementQueue: null,
     telemetry: null,
+    leadsCount: 0,
   });
 
   useEffect(() => {
     let cancelled = false;
     const tenantId = activeTenant?.id;
     if (!tenantId) {
-      setLiveStats({ aiUsage: null, reengagementQueue: null, telemetry: null });
+      setLiveStats({ aiUsage: null, reengagementQueue: null, telemetry: null, leadsCount: 0 });
       return undefined;
     }
 
@@ -110,12 +112,18 @@ export const OrchestrationView = () => {
       aiService.getUsage(tenantId),
       reengagementService.getReengagementQueue(tenantId),
       performanceService.getDualTelemetry(tenantId),
-    ]).then(([usageRes, queueRes, telemetryRes]) => {
+      leadService.getLeadsByTenant(tenantId),
+    ]).then(([usageRes, queueRes, telemetryRes, leadsRes]) => {
       if (cancelled) return;
+      const leadsList = leadsRes.status === 'fulfilled' && Array.isArray(leadsRes.value) ? leadsRes.value : [];
+      const qualifiedCount = leadsList.filter((l) =>
+        ['APPOINTMENT_SCHEDULED', 'QUALIFIED', 'CONVERTED', 'LEAD_WARM_24H'].includes(l.leadState)
+      ).length;
       setLiveStats({
         aiUsage: usageRes.status === 'fulfilled' ? usageRes.value : null,
         reengagementQueue: queueRes.status === 'fulfilled' ? queueRes.value : null,
         telemetry: telemetryRes.status === 'fulfilled' ? telemetryRes.value : null,
+        leadsCount: qualifiedCount || leadsList.length,
       });
     });
 
@@ -377,11 +385,19 @@ export const OrchestrationView = () => {
           <div className="text-[11px] text-[var(--text-muted)] hidden sm:flex items-center gap-4">
             <span className="flex items-center gap-1.5">
               <Coins className="w-3.5 h-3.5 text-emerald-500" />
-              Costo Mensual Estimado: <strong className="text-emerald-600 dark:text-emerald-400 font-bold">$0.00 – $0.15 USD</strong>
+              Consumo Real (30d):{' '}
+              <strong className="text-emerald-600 dark:text-emerald-400 font-bold">
+                {liveStats.aiUsage
+                  ? `$${Number(liveStats.aiUsage.totalCostUsd ?? 0).toFixed(4)} USD (${Number(liveStats.aiUsage.totalTokens ?? 0).toLocaleString()} tokens)`
+                  : '$0.0000 USD'}
+              </strong>
             </span>
             <span className="flex items-center gap-1.5">
               <Zap className="w-3.5 h-3.5 text-lime-600 dark:text-neon" />
-              Prompt Caching: <strong className="text-lime-700 dark:text-neon font-bold">94% Ahorro</strong>
+              Ejecuciones IA:{' '}
+              <strong className="text-lime-700 dark:text-neon font-bold">
+                {liveStats.aiUsage?.totalRequests ?? 0} llamadas
+              </strong>
             </span>
           </div>
         </div>
@@ -500,7 +516,7 @@ export const OrchestrationView = () => {
                 </p>
 
                 <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                  Aplica embudo de ventas comercial y valida los 4 criterios de calidad para confirmar el prospecto calificado ($350 MXN).
+                  Aplica embudo de ventas comercial y valida los 4 criterios de calidad para confirmar el prospecto calificado ({activeTenant?.leadPriceMXN ? `$${activeTenant.leadPriceMXN} MXN` : 'tarifa configurada del negocio'}).
                 </p>
 
                 <div className="mt-3 p-2 rounded-lg bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[10px] font-mono text-[var(--text-muted)] space-y-1">
@@ -510,13 +526,13 @@ export const OrchestrationView = () => {
                   </div>
                   <div className="flex justify-between">
                     <span>Calendar:</span>
-                    <strong className="text-emerald-600 dark:text-emerald-400 font-bold">Tool Nativa ($0 tokens)</strong>
+                    <strong className="text-emerald-600 dark:text-emerald-400 font-bold">Agenda PostgreSQL</strong>
                   </div>
                 </div>
               </div>
 
               <div className="mt-4 pt-3 border-t border-[var(--border-color)] flex items-center justify-between text-[11px] font-mono text-[var(--text-muted)] group-hover:text-amber-500 dark:group-hover:text-amber-400 transition-colors">
-                <span>0 Leads Calificados</span>
+                <span>{liveStats.leadsCount} Leads Registrados</span>
                 <span className="font-bold">Ver Prompt →</span>
               </div>
             </div>

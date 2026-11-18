@@ -184,7 +184,7 @@ export const Header = () => {
           snippet: lead.customerNeeds || lead.notes || 'Prospecto actualizado',
           time: formatRelativeTime(rawTs),
           sortTs: rawTs ? new Date(rawTs).getTime() : 0,
-          slaRemaining: lead.slaRemaining ?? 15,
+          slaRemaining: lead.slaRemaining ?? null,
           threadId: lead.id,
           targetPath: `/inbox?threadId=${lead.id}`,
           isRead: readSet.has(id),

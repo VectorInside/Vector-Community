@@ -76,18 +76,10 @@ export const CampanasView = () => {
       });
   }, [activeTenant?.id]);
 
-  const tenantMonthlyBudget =
-    Number(activeTenant?.monthlyAdBudget) > 0 ? Number(activeTenant.monthlyAdBudget) : 15000;
+  const tenantMonthlyBudget = Number(activeTenant?.monthlyAdBudget || 0);
 
-  // Benchmark de CPL estimado según el giro
-  const benchmarkCpl = useMemo(() => {
-    const g = (activeTenant?.giro || activeTenant?.verticalLabel || '').toLowerCase();
-    if (g.includes('dental') || g.includes('salud') || g.includes('médic')) return 110;
-    if (g.includes('fitness') || g.includes('gym')) return 65;
-    if (g.includes('restaurante') || g.includes('alimento')) return 45;
-    if (g.includes('software') || g.includes('saas') || g.includes('b2b')) return 220;
-    return 120;
-  }, [activeTenant]);
+  // Benchmark CPL real del negocio o 0 si no existe
+  const benchmarkCpl = Number(activeTenant?.leadPriceMXN || 0);
 
   const [newCampaignForm, setNewCampaignForm] = useState({
     name: '',
@@ -134,11 +126,11 @@ export const CampanasView = () => {
   };
 
   const totalBudget = useMemo(
-    () => campaigns.reduce((acc, c) => acc + (c.budget || 0), 0),
+    () => campaigns.reduce((acc, c) => acc + Number(c.budget || 0), 0),
     [campaigns]
   );
   const totalSpend = useMemo(
-    () => campaigns.reduce((acc, c) => acc + (c.spend || 0), 0),
+    () => campaigns.reduce((acc, c) => acc + Number(c.spend ?? c.spent ?? 0), 0),
     [campaigns]
   );
   const totalLeads = useMemo(
@@ -284,7 +276,7 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
         budget: tenantMonthlyBudget,
         spend: 0,
         leadsCount: 0,
-        piecesCount: 3,
+        piecesCount: 0,
         status: 'Activa',
         owner: 'DeepSeek R1 Vector',
         start: todayIso,
@@ -531,9 +523,9 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
             <small className="text-xs font-mono text-[var(--text-faint)]">MXN</small>
           </p>
           <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)] font-mono">
-            <span>{campaigns.length} campañas activas</span>
+            <span>{campaigns.length} campañas registradas</span>
             <span className="text-neon font-bold">
-              {campaigns.length > 0 ? `${executionPct}% ejecutado` : 'Meta Sugerida'}
+              {campaigns.length > 0 ? `${executionPct}% ejecutado` : tenantMonthlyBudget > 0 ? 'Presupuesto Base' : 'Sin presupuesto'}
             </span>
           </div>
           <div className="w-full h-1.5 rounded-full bg-[var(--bg-card)] overflow-hidden">
@@ -541,7 +533,7 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
               className={`h-full rounded-full transition-all duration-500 ${
                 executionPct > 90 ? 'bg-amber-400' : 'bg-neon'
               }`}
-              style={{ width: `${campaigns.length > 0 ? Math.min(executionPct, 100) : 100}%` }}
+              style={{ width: `${campaigns.length > 0 ? Math.min(executionPct, 100) : 0}%` }}
             />
           </div>
         </div>
@@ -583,7 +575,7 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
             {totalLeads} <small className="text-xs font-mono text-neon font-bold">leads</small>
           </p>
           <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)] font-mono">
-            <span>{campaigns.length > 0 ? 'Costo Promedio (CPL):' : 'CPL Estimado en Giro:'}</span>
+            <span>{campaigns.length > 0 ? 'Costo Promedio (CPL):' : 'Tarifa Base Lead:'}</span>
             <strong className="text-neon font-bold">
               ${campaigns.length > 0 ? avgCpl : benchmarkCpl} MXN
             </strong>
@@ -591,7 +583,7 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
           <div className="w-full h-1.5 rounded-full bg-[var(--bg-card)] overflow-hidden">
             <div
               className="h-full bg-neon rounded-full"
-              style={{ width: totalLeads > 0 ? '85%' : '0%' }}
+              style={{ width: totalLeads > 0 ? '100%' : '0%' }}
             />
           </div>
         </div>
@@ -621,7 +613,10 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
           <div className="w-full h-1.5 rounded-full bg-[var(--bg-card)] overflow-hidden">
             <div
               className="h-full bg-blue-500 rounded-full"
-              style={{ width: campaigns.length > 0 ? '90%' : '0%' }}
+              style={{
+                width:
+                  campaigns.reduce((acc, c) => acc + (c.piecesCount || 0), 0) > 0 ? '100%' : '0%',
+              }}
             />
           </div>
         </div>
@@ -862,10 +857,12 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
               {filteredCampaigns.map((camp) => {
+                const campSpend = Number(camp.spend ?? camp.spent ?? 0);
+                const campCpl = Number(camp.cpl ?? camp.cpa ?? 0);
                 const spendPct =
-                  camp.budget > 0 ? Math.round((camp.spend / camp.budget) * 100) : 0;
+                  camp.budget > 0 ? Math.round((campSpend / camp.budget) * 100) : 0;
                 const currentCpl =
-                  camp.leadsCount > 0 ? Math.round(camp.spend / camp.leadsCount) : camp.cpl || 0;
+                  camp.leadsCount > 0 ? Math.round(campSpend / camp.leadsCount) : campCpl;
 
                 return (
                   <div

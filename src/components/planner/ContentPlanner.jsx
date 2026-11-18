@@ -146,162 +146,6 @@ export const getCanonicalDnaForTenant = (tenant) => {
   };
 };
 
-export const getCanonicalViralReelsForTenant = (tenant) => {
-  const tenantText = `${tenant?.name || ''} ${tenant?.id || ''} ${tenant?.giro || ''} ${tenant?.verticalLabel || ''}`.toLowerCase();
-  const isMedical = tenantText.includes('médic') || tenantText.includes('medic') || tenantText.includes('dental') || tenantText.includes('clínic');
-  const isFitness = tenantText.includes('fit') || tenantText.includes('gym') || tenantText.includes('crossfit');
-
-  if (isMedical) {
-    return [
-      {
-        id: 'viral-med-1',
-        platform: 'Instagram Reel 9:16',
-        title: 'El Mito del Dolor: Lo que tu especialista nunca te explicó en consulta',
-        views: '142.8k',
-        hookRate: '38.4%',
-        dmsGenerated: '184',
-        visualHook: 'Primer plano clínico de 0-2s con texto en negrita y subtítulos dinámicos de alto contraste',
-        psychologicalTrigger: 'Eliminación de Miedo y Alivio Inmediato',
-        whyItWorked: 'Desarma el miedo universal al dolor en los primeros 2 segundos con autoridad empática y redirige a evaluación diagnóstica personalizada por WhatsApp.',
-        badge: 'Fórmula de Industria Probada',
-        deconstructedFormula: {
-          hook0to3s: '¿Por qué el 90% pospone este tratamiento por miedo al dolor cuando hoy toma 15 minutos sin molestias?',
-          retention3to15s: 'Demostración visual con tecnología moderna y comparación objetiva antes vs después.',
-          cta15to30s: 'Envía EVALUACION por mensaje para recibir tu diagnóstico preventivo sin costo.',
-        },
-      },
-      {
-        id: 'viral-med-2',
-        platform: 'Instagram Reel 9:16',
-        title: '3 Señales de Alerta que ignoras antes de que sea una urgencia costosa',
-        views: '98.2k',
-        hookRate: '34.1%',
-        dmsGenerated: '126',
-        visualHook: 'Interrupción de patrón mostrando objeto común vs herramienta clínica de precisión',
-        psychologicalTrigger: 'Aversión a la Pérdida y Prevención',
-        whyItWorked: 'Utiliza el sesgo de aversión a la pérdida: prevenir a tiempo cuesta 10x menos que atender una urgencia.',
-        badge: 'Fórmula de Industria Probada',
-        deconstructedFormula: {
-          hook0to3s: 'Si notas esta pequeña molestia al despertar, no esperes a que se convierta en una urgencia.',
-          retention3to15s: 'Explicación anatómica simple de 3 puntos clave sin tecnicismos alarmistas.',
-          cta15to30s: 'Agenda tu chequeo preventivo con nuestro equipo clínico enviando CITA por WhatsApp.',
-        },
-      },
-      {
-        id: 'viral-med-3',
-        platform: 'Instagram Reel 9:16',
-        title: 'La verdad sobre los tratamientos express: Por qué lo barato sale caro',
-        views: '115.6k',
-        hookRate: '36.5%',
-        dmsGenerated: '142',
-        visualHook: 'Pantalla dividida: Tratamiento informal con daños vs Protocolo certificado con garantía',
-        psychologicalTrigger: 'Contraste de Riesgo y Autoridad Profesional',
-        whyItWorked: 'Protege al paciente contra ofertas engañosas del mercado posicionando a la clínica como el estándar seguro.',
-        badge: 'Fórmula de Industria Probada',
-        deconstructedFormula: {
-          hook0to3s: 'Lo que te ahorras hoy en un procedimiento no certificado, lo pagarás multiplicado en corregir el daño.',
-          retention3to15s: 'Muestra los 3 estándares de seguridad clínica que siempre debes exigir.',
-          cta15to30s: 'Consulta con verdaderos especialistas certificados enviando GARANTIA.',
-        },
-      },
-    ];
-  }
-
-  if (isFitness) {
-    return [
-      {
-        id: 'viral-fit-1',
-        platform: 'Instagram Reel 9:16',
-        title: 'Por qué matarte haciendo cardio no te está bajando la grasa abdominal',
-        views: '176.3k',
-        hookRate: '43.1%',
-        dmsGenerated: '235',
-        visualHook: 'Entrenador deteniendo una caminadora de golpe y señalando la gráfica metabólica',
-        psychologicalTrigger: 'Ruptura de Creencia Popular & Autoridad Científica',
-        whyItWorked: 'Ataca la mayor frustración del cliente (esfuerzo sin resultados) explicando la ciencia del entrenamiento de fuerza.',
-        badge: 'Fórmula de Industria Probada',
-        deconstructedFormula: {
-          hook0to3s: 'Llevas meses sudando en la caminadora y tu ropa te sigue apretando igual. Este es el motivo científico.',
-          retention3to15s: 'Comparativa de quema calórica: Cardio tradicional vs Estímulo neuromuscular de alta densidad.',
-          cta15to30s: 'Envía RUTINA para obtener tu plan de recomposición corporal guiado.',
-        },
-      },
-      {
-        id: 'viral-fit-2',
-        platform: 'Instagram Reel 9:16',
-        title: 'El error número 1 al volver a entrenar después de meses inactivo',
-        views: '112.4k',
-        hookRate: '35.8%',
-        dmsGenerated: '158',
-        visualHook: 'Comparativa de ego lifting vs progresión controlada con barra olímpica',
-        psychologicalTrigger: 'Prevención de Frustración y Empatía',
-        whyItWorked: 'Empatiza con quien tiene miedo a lesionarse o no sabe cómo retomar el hábito.',
-        badge: 'Fórmula de Industria Probada',
-        deconstructedFormula: {
-          hook0to3s: 'Si tienes más de 3 meses sin entrenar, no cometas este error en tu primer día de gimnasio.',
-          retention3to15s: 'La regla de adaptación progresiva de 14 días para no abandonar por dolor muscular.',
-          cta15to30s: 'Inicia con acompañamiento profesional enviando RESTART.',
-        },
-      },
-    ];
-  }
-
-  // Default: B2B, SaaS, Marketing, Tech, Servicios Profesionales
-  return [
-    {
-      id: 'viral-b2b-1',
-      platform: 'Instagram Reel 9:16',
-      title: 'El Costo Oculto de NO Sistematizar: La fuga invisible de prospectos calificados',
-      views: '189.4k',
-      hookRate: '41.2%',
-      dmsGenerated: '248',
-      visualHook: 'Grabación de pantalla con flujo de automatización y zoom acelerado en los primeros 1.5s',
-      psychologicalTrigger: 'Confrontación de Realidad & Autoridad Técnica',
-      whyItWorked: 'Confronta la creencia de que «más prospectos resuelven las ventas», demostrando con números que el cuello de botella es la velocidad de respuesta.',
-      badge: 'Fórmula de Industria Probada',
-      deconstructedFormula: {
-        hook0to3s: '¿Cuánto dinero pierde tu empresa cada semana por tardar más de 15 minutos en responder un lead calificado?',
-        retention3to15s: 'Muestra la gráfica de caída del 80% en conversión tras 10 minutos de espera y la solución automatizada.',
-        cta15to30s: 'Envía ESTRUCTURA por DM para activar el diagnóstico de tu embudo comercial.',
-      },
-    },
-    {
-      id: 'viral-b2b-2',
-      platform: 'Instagram Reel 9:16',
-      title: 'Tu visión no falla: Falla la estructura operativa que no tienes',
-      views: '124.5k',
-      hookRate: '36.8%',
-      dmsGenerated: '162',
-      visualHook: 'Pizarra interactiva dibujando el cuello de botella operativo vs la arquitectura omnicanal',
-      psychologicalTrigger: 'Validación de Identidad & Alivio Operativo',
-      whyItWorked: 'Valida la visión del fundador («tienes buen producto») pero señala el culpable externo («la falta de infraestructura»), generando confianza inmediata.',
-      badge: 'Fórmula de Industria Probada',
-      deconstructedFormula: {
-        hook0to3s: 'No es que tu producto no venda. Es que tu equipo sigue operando con procesos manuales de hace 5 años.',
-        retention3to15s: 'Desglose del sistema de 3 capas: Atracción -> Calificación RAG -> Cierre HITL.',
-        cta15to30s: 'Comenta SISTEMA y te enviamos la arquitectura completa de implementación.',
-      },
-    },
-    {
-      id: 'viral-b2b-3',
-      platform: 'Instagram Reel 9:16',
-      title: 'Caso de Estudio: De prospectos fríos a clientes fidelizados en 30 días',
-      views: '88.7k',
-      hookRate: '32.5%',
-      dmsGenerated: '115',
-      visualHook: 'Comparativa en pantalla dividida: Bandeja saturada vs CRM sincronizado',
-      psychologicalTrigger: 'Prueba Social Irrefutable & Claridad de Proceso',
-      whyItWorked: 'El formato de caso de estudio elimina la fricción escéptica al mostrar métricas reales y el paso a paso exacto.',
-      badge: 'Fórmula de Industria Probada',
-      deconstructedFormula: {
-        hook0to3s: 'Así es como transformamos un flujo caótico de DMs en un canal de ventas predecible en solo 30 días.',
-        retention3to15s: '3 pasos ejecutables que cualquier negocio de servicios puede aplicar hoy.',
-        cta15to30s: 'Escribe CASO en comentarios para acceder a la grabación del caso práctico.',
-      },
-    },
-  ];
-};
-
 const EMPTY_OFFER = {
   docName: 'Sin documento cargado',
   hook: '',
@@ -938,31 +782,41 @@ export const ContentPlanner = ({ embedded = false } = {}) => {
     }
   };
 
-  const handleBoostPostToCampaign = (post) => {
+  const handleBoostPostToCampaign = async (post) => {
     if (!tenantKey) return;
-    const result = campaignService.boostPostToCampaign(tenantKey, post);
-    const updated = posts.map((p) =>
-      p.id === post.id
-        ? {
-            ...p,
-            campaignId: result.campaign.id,
-            campaignName: result.campaign.name,
-            boostedCampaignName: result.campaign.name,
-          }
-        : p
-    );
-    persistPosts(updated);
     try {
-      confetti({
-        particleCount: 50,
-        spread: 60,
-        colors: ['#E7F900', '#10B981', '#06B6D4'],
-      });
-    } catch (e) {}
-    triggerModal(
-      '🚀 Pieza Elevada a Campaña de Pauta (Boost)',
-      `El creativo <b>"${post.title || post.hookText || 'Post'}"</b> fue vinculado como anuncio activo en la campaña <b>"${result.campaign.name}"</b>.<br><br>Presupuesto devengado/asignado: <b>$${result.campaign.budget?.toLocaleString()} MXN</b> con trazabilidad de CPL y métricas de canal.`
-    );
+      const created = await campaignService.boostPostToCampaign(tenantKey, post);
+      const campaignId = created?.id || null;
+      const campaignName = created?.name || `Boost: ${post.title || 'Post'}`;
+      const campaignBudget = Number(created?.budget || 0);
+      const updated = posts.map((p) =>
+        p.id === post.id
+          ? {
+              ...p,
+              campaignId,
+              campaignName,
+              boostedCampaignName: campaignName,
+            }
+          : p
+      );
+      persistPosts(updated);
+      try {
+        confetti({
+          particleCount: 50,
+          spread: 60,
+          colors: ['#E7F900', '#10B981', '#06B6D4'],
+        });
+      } catch (e) {}
+      triggerModal(
+        '🚀 Pieza Elevada a Campaña de Pauta (Boost)',
+        `El creativo <b>"${post.title || post.hookText || 'Post'}"</b> fue vinculado como anuncio activo en la campaña <b>"${campaignName}"</b>.<br><br>Presupuesto devengado/asignado: <b>$${campaignBudget.toLocaleString()} MXN</b> con trazabilidad de CPL y métricas de canal.`
+      );
+    } catch (err) {
+      triggerModal(
+        'Error al Pautar Publicación',
+        err?.response?.data?.message || err?.message || 'No se pudo elevar la publicación a campaña.'
+      );
+    }
   };
 
   const handleCopyPostCopy = (postId, text) => {
@@ -1110,7 +964,7 @@ Palabras tabú prohibidas: [${brandDna?.tabooWords || 'ninguna'}].`;
           const generatedHook = parsed?.hookText || effectiveHook || `¿Por qué elegir a ${activeTenant?.name}?`;
           const generatedCopy = parsed?.copy || `En ${activeTenant?.name} te acompañamos con resultados reales. ${effectiveHook}. ${effectiveCta}`;
           const generatedHashtags = targetNet === 'WHATSAPP' ? '' : (parsed?.hashtags || `#${(activeTenant?.shortName || activeTenant?.name || 'Vector').replace(/\s+/g, '')} #Crecimiento`);
-          const matchScore = parsed?.aiConfidence || 97;
+          const matchScore = typeof parsed?.aiConfidence === 'number' ? parsed.aiConfidence : null;
 
           const newPostData = {
             tenantId: tenantKey,
@@ -1123,8 +977,8 @@ Palabras tabú prohibidas: [${brandDna?.tabooWords || 'ninguna'}].`;
             copy: generatedCopy,
             hashtags: generatedHashtags,
             status: 'PENDIENTE_CLIENTE',
-            estimatedReach: targetNet === 'WHATSAPP' ? 'Base de Contactos & Difusión' : '15,000 - 28,000 cuentas',
-            aiConfidence: typeof matchScore === 'number' ? matchScore : 97,
+            estimatedReach: parsed?.estimatedReach || (targetNet === 'WHATSAPP' ? 'Base de Contactos & Difusión' : 'Sin medición'),
+            aiConfidence: matchScore,
             campaignId: aiGenConfig.linkedCampaignId || null,
             campaignName: aiGenConfig.linkedCampaignName || null,
           };
@@ -1398,23 +1252,6 @@ Palabras tabú prohibidas: [${brandDna?.tabooWords || 'ninguna'}].`;
     }
   };
 
-  const handleLoadCanonicalViralReels = () => {
-    const canonical = getCanonicalViralReelsForTenant(activeTenant);
-    persistViralReels(canonical);
-    try {
-      confetti({
-        particleCount: 45,
-        spread: 60,
-        origin: { y: 0.6 },
-        colors: ['#D4FF00', '#10B981', '#06B6D4'],
-      });
-    } catch (e) {}
-    triggerModal(
-      '⚡ Fórmulas Virales de la Industria Cargadas',
-      `Se han cargado <b>${canonical.length} Fórmulas de Reels Outlier</b> probadas para <b>${activeTenant?.name || 'tu negocio'}</b> (${activeTenant?.giro || activeTenant?.verticalLabel || 'Servicios'}) con deconstrucción algorítmica de DeepSeek R1.`
-    );
-  };
-
   const handleExecuteDeconstructExternal = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     const rawUrl = externalReelInput.url.trim();
@@ -1437,9 +1274,9 @@ Giro del negocio que lo replicará: ${activeTenant?.name} (${tenantGiro}).
 Devuelve un JSON estrictamente estructurado con:
 {
   "title": "Título sintético del concepto analizado",
-  "views": "145.2k",
-  "hookRate": "39.8%",
-  "dmsGenerated": "180",
+  "views": "N/D",
+  "hookRate": "N/D",
+  "dmsGenerated": "N/D",
   "visualHook": "Descripción de qué ocurre en los segundos 0 a 3",
   "psychologicalTrigger": "Nombre del gatillo psicológico predominante",
   "whyItWorked": "Explicación algorítmica de retención y psicología de conversión",
@@ -1648,8 +1485,8 @@ Genera exactamente 3 variantes de guion para Instagram Reels 9:16 en JSON estric
               copy: v.copy || '',
               hashtags: v.hashtags || `#${(activeTenant?.shortName || activeTenant?.name || 'Vector').replace(/\s+/g, '')} #ReelsViral`,
               status: 'PENDIENTE_CLIENTE',
-              estimatedReach: v.estimatedReach || 'Por definir',
-              aiConfidence: 98,
+              estimatedReach: v.estimatedReach || 'Sin medición',
+              aiConfidence: typeof v.aiConfidence === 'number' ? v.aiConfidence : null,
             }));
 
             const results = await Promise.allSettled(
@@ -1721,8 +1558,7 @@ Genera exactamente 3 variantes de guion para Instagram Reels 9:16 en JSON estric
             <div class="p-3 rounded-xl bg-neon/10 border border-neon/30 text-lime-700 dark:text-neon">
               <b>💡 Opciones Disponibles:</b><br>
               1. Conectar tu cuenta de Instagram Business en 1 clic.<br>
-              2. Cargar las <b>Fórmulas Virales de la Industria</b> probadas para tu giro.<br>
-              3. Deconstruir cualquier Reel de competidor pegando su enlace o texto.
+              2. Deconstruir cualquier Reel de referencia pegando su enlace o texto.
             </div>
           </div>`,
           () => setShowMetaConnectModal(true),
@@ -1733,7 +1569,7 @@ Genera exactamente 3 variantes de guion para Instagram Reels 9:16 en JSON estric
       console.warn('Error al sincronizar feed de Instagram:', err);
       triggerModal(
         'Meta Graph API Offline',
-        `No fue posible comunicarse con Meta Graph API (${err?.message || 'Error de conexión'}). Puedes conectar tu token de Instagram o cargar las Fórmulas Virales de la Industria.`,
+        `No fue posible comunicarse con Meta Graph API (${err?.message || 'Error de conexión'}). Puedes conectar tu token de Instagram o deconstruir un Reel externo con IA.`,
         () => setShowMetaConnectModal(true),
         'Configurar Token de Meta'
       );
@@ -1741,6 +1577,8 @@ Genera exactamente 3 variantes de guion para Instagram Reels 9:16 en JSON estric
       setIsSyncingMeta(false);
     }
   };
+
+  const handleSyncMetaReels = handleSyncMetaPosts;
 
   const handleGenerateBiosWithAi = async () => {
     setIsGeneratingBios(true);
@@ -1907,7 +1745,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
   };
 
   const handleCopyWaLink = (customKeyword = null) => {
-    const rawPhone = activeTenant?.phone || '5549184259';
+    const rawPhone = activeTenant?.phone || '';
     const cleanPhone = rawPhone.replace(/\D/g, '');
     const kw = customKeyword || waKeyword || 'AUDITORIA';
     const offerSummary = commercialOffer?.hook || 'Diagnóstico de Conversión';
@@ -1930,6 +1768,47 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
     try {
       const auditRes = await metaCommentService.getBrandAudit(tenantKey);
       const score = auditRes?.brandAlignmentScore ?? auditRes?.score ?? null;
+      const realHookRate = auditRes?.hookRateAvg ?? auditRes?.avgHookRate ?? null;
+      const effectiveOfferHook = commercialOffer?.hook || brandDna?.leadMagnetHook || '';
+      const updatedChecks = [
+        {
+          id: 'chk-1',
+          title: 'Biografía con Disparador BANT y Oferta Activa',
+          status: effectiveOfferHook ? 'PASSED' : 'WARNING',
+          diagnosis: effectiveOfferHook
+            ? `Biografía alineada con la oferta activa: "${effectiveOfferHook}".`
+            : 'La biografía no tiene un gancho de conversión directo definido.',
+          recommendation: 'Inyectar el CTA comercial directo con palabra clave hacia WhatsApp Cloud API.',
+        },
+        {
+          id: 'chk-2',
+          title: 'Consistencia con Manual de Identidad & Taboo Words',
+          status: (auditRes?.tabooViolationsCount || 0) === 0 ? 'PASSED' : 'WARNING',
+          diagnosis: (auditRes?.tabooViolationsCount || 0) === 0
+            ? '0 infracciones de palabras tabú detectadas en el feed analizado.'
+            : `${auditRes.tabooViolationsCount} publicaciones contienen términos del glosario prohibido.`,
+          recommendation: 'Mantener la verificación del filtro léxico activo en todas las publicaciones programadas.',
+        },
+        {
+          id: 'chk-3',
+          title: 'Enlace Soberano a WhatsApp Cloud API',
+          status: activeTenant?.phone ? 'PASSED' : 'WARNING',
+          diagnosis: activeTenant?.phone
+            ? `Canal de destino validado: ${activeTenant.phone}.`
+            : 'Sin número de WhatsApp verificado en la ficha de configuración.',
+          recommendation: 'Asegurar que el enlace en bio dirija al protocolo de agendamiento 24/7.',
+        },
+        {
+          id: 'chk-4',
+          title: 'Hook Rate Promedio Superior al Benchmark (25%)',
+          status: realHookRate != null ? (Number(realHookRate) >= 25 ? 'PASSED' : 'WARNING') : 'WARNING',
+          diagnosis:
+            realHookRate != null
+              ? `Retención promedio de los primeros 3 segundos en Reels: ${realHookRate}% (Benchmark del sector: 25.0%).`
+              : 'Sin datos suficientes de retención en Reels sincronizados desde Meta.',
+          recommendation: 'Continuar empleando el Laboratorio Viral para iterar sobre las fórmulas con mayor tracción.',
+        },
+      ];
       const summaryText =
         auditRes?.auditSummary ||
         (score != null
@@ -1940,6 +1819,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
         score,
         summary: summaryText,
         error: null,
+        checks: updatedChecks,
       }));
       try {
         confetti({ particleCount: 50, spread: 65, colors: ['#D4FF00', '#10B981'] });
@@ -2480,9 +2360,11 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                         <Sparkles className="w-2.5 h-2.5 text-lime-700 dark:text-neon" />
                         Inyectado de Oferta del Mes
                       </span>
-                      <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-bold">
-                        {post.aiConfidence || 97}% Match con ADN
-                      </span>
+                      {post.aiConfidence != null && (
+                        <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-bold">
+                          {post.aiConfidence}% Match con ADN
+                        </span>
+                      )}
                       {(post.campaignName || post.boostedCampaignName) && (
                         <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-neon/15 text-lime-700 dark:text-neon border border-neon/30 font-bold flex items-center gap-1">
                           ⚡ Pauta: {post.campaignName || post.boostedCampaignName}
@@ -2529,13 +2411,15 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                   {/* Barra de Métricas Predictivas & Barra de Acciones */}
                   <div className="p-3.5 border-t border-[var(--border-color)] bg-[var(--bg-card)] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                     <div className="flex items-center gap-3 text-[10px] font-mono text-[var(--text-muted)]">
-                      <span className="flex items-center gap-1" title="Alcance estimado por algoritmo">
+                      <span className="flex items-center gap-1" title="Alcance registrado">
                         <Eye className="w-3.5 h-3.5 text-[var(--text-muted)]" />
-                        <span>{post.estimatedReach}</span>
+                        <span>{post.estimatedReach || 'Sin medición'}</span>
                       </span>
-                      <span className="text-emerald-400 font-bold" title="Hook Rate de retención estimada en 0-3 segundos">
-                        ~32.4% Retención
-                      </span>
+                      {post.hookRate && (
+                        <span className="text-emerald-400 font-bold" title="Hook Rate de retención en 0-3 segundos">
+                          {post.hookRate} Retención
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex flex-wrap items-center gap-1.5">
@@ -3054,16 +2938,7 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
 
               <button
                 type="button"
-                onClick={handleLoadCanonicalViralReels}
-                className="px-3.5 py-2 rounded-xl bg-neon/10 hover:bg-neon/20 text-xs font-mono font-bold text-lime-700 dark:text-neon border border-neon/30 transition-all flex items-center gap-1.5 active:scale-95"
-              >
-                <Zap className="w-3.5 h-3.5 text-lime-700 dark:text-neon" />
-                <span>Fórmulas de Industria</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleSyncMetaPosts}
+                onClick={handleSyncMetaReels}
                 disabled={isSyncingMeta}
                 className="px-3.5 py-2 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-xs font-mono font-bold text-[var(--text-main)] border border-[var(--border-color)] transition-all flex items-center gap-1.5 active:scale-95 disabled:opacity-50"
               >
@@ -3094,35 +2969,36 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                   Laboratorio de Reels Virales Listo para Activación
                 </h4>
                 <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                  DeepSeek R1 deconstruye ganchos visuales y retención algorítmica. Puedes activar fórmulas probadas de tu sector, deconstruir videos de competidores o conectar tu cuenta oficial.
+                  DeepSeek R1 deconstruye ganchos visuales y retención algorítmica. Sincroniza tus Reels desde Meta Graph API, analiza videos de referencia o genera nuevos guiones con IA.
                 </p>
               </div>
 
               {/* 3 Actionable Pathways Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                {/* Pathway 1: Fórmulas de Industria */}
+                {/* Pathway 1: Sincronizar Feed de Meta */}
                 <div className="p-5 rounded-2xl bg-[var(--bg-card-subtle)] border border-neon/30 flex flex-col justify-between space-y-4 hover:border-neon transition-all">
                   <div className="space-y-2.5">
                     <div className="w-9 h-9 rounded-xl bg-neon/15 text-lime-700 dark:text-neon flex items-center justify-center">
-                      <Zap className="w-5 h-5" />
+                      <RotateCcw className="w-5 h-5" />
                     </div>
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-neon/15 text-lime-700 dark:text-neon font-bold uppercase">
-                      Recomendado · 1 Clic
+                      Meta Graph API
                     </span>
                     <h5 className="text-sm font-bold text-[var(--text-main)]">
-                      Fórmulas Virales de la Industria
+                      Sincronizar Reels desde Meta
                     </h5>
                     <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                      Carga 3 fórmulas outlier comprobadas para <b>{activeTenant?.name || 'tu negocio'}</b> ({activeTenant?.giro || activeTenant?.verticalLabel || 'Servicios'}) listas para clonar.
+                      Importa las publicaciones y métricas reales de retención de <b>{activeTenant?.name || 'tu negocio'}</b> desde Instagram Business.
                     </p>
                   </div>
                   <button
                     type="button"
-                    onClick={handleLoadCanonicalViralReels}
-                    className="w-full py-2.5 px-3 rounded-xl bg-neon text-black font-bold text-xs font-mono shadow-[0_0_12px_var(--neon-glow)] hover:bg-[var(--neon-hover)] transition-all flex items-center justify-center gap-1.5"
+                    onClick={handleSyncMetaReels}
+                    disabled={isSyncingMeta}
+                    className="w-full py-2.5 px-3 rounded-xl bg-neon text-black font-bold text-xs font-mono shadow-[0_0_12px_var(--neon-glow)] hover:bg-[var(--neon-hover)] transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
                   >
-                    <Zap className="w-4 h-4" />
-                    <span>Cargar Fórmulas de Giro</span>
+                    <RotateCcw className={`w-4 h-4 ${isSyncingMeta ? 'animate-spin' : ''}`} />
+                    <span>{isSyncingMeta ? 'Sincronizando...' : 'Sincronizar Feed de Meta'}</span>
                   </button>
                 </div>
 
@@ -3322,32 +3198,51 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                   Desglose de Salud y Calidad Editorial:
                 </span>
                 <span className="text-lime-700 dark:text-neon font-bold">
-                  Proyección tras ajustar Bio: 98 / 100
+                  {Array.isArray(profileAudit.checks) && profileAudit.checks.length > 0
+                    ? `${profileAudit.checks.filter((c) => c.status === 'PASSED').length} / ${profileAudit.checks.length} controles aprobados`
+                    : profileAudit.score != null
+                    ? `Score: ${profileAudit.score} / 100`
+                    : 'Pendiente de auditoría'}
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="p-2.5 rounded-xl bg-[var(--bg-card-subtle)] border border-amber-500/30">
-                  <span className="text-[10px] text-amber-500 block font-bold">1. Oferta & Bio BANT (30%)</span>
-                  <span className="text-sm font-bold text-[var(--text-main)]">24 / 30 pts</span>
-                  <span className="text-[9px] text-amber-500 block mt-0.5">Requiere Ajuste</span>
+              {Array.isArray(profileAudit.checks) && profileAudit.checks.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {profileAudit.checks.map((chk, idx) => {
+                    const isPassed = chk.status === 'PASSED';
+                    return (
+                      <div
+                        key={chk.id || idx}
+                        className={`p-2.5 rounded-xl bg-[var(--bg-card-subtle)] border ${
+                          isPassed ? 'border-emerald-500/30' : 'border-amber-500/30'
+                        }`}
+                      >
+                        <span
+                          className={`text-[10px] block font-bold truncate ${
+                            isPassed ? 'text-emerald-400' : 'text-amber-500'
+                          }`}
+                        >
+                          {idx + 1}. {chk.title}
+                        </span>
+                        <span className="text-sm font-bold text-[var(--text-main)]">
+                          {isPassed ? 'Aprobado' : 'En revisión'}
+                        </span>
+                        <span
+                          className={`text-[9px] block mt-0.5 ${
+                            isPassed ? 'text-emerald-400' : 'text-amber-500'
+                          }`}
+                        >
+                          {isPassed ? 'Optimizado' : 'Requiere Ajuste'}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="p-2.5 rounded-xl bg-[var(--bg-card-subtle)] border border-emerald-500/30">
-                  <span className="text-[10px] text-emerald-400 block font-bold">2. Taboo Words (25%)</span>
-                  <span className="text-sm font-bold text-[var(--text-main)]">25 / 25 pts</span>
-                  <span className="text-[9px] text-emerald-400 block mt-0.5">Optimizado</span>
+              ) : (
+                <div className="p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[11px] text-[var(--text-muted)]">
+                  Ejecuta &quot;Auditar Marca con IA&quot; para consultar los controles reales de tu perfil.
                 </div>
-                <div className="p-2.5 rounded-xl bg-[var(--bg-card-subtle)] border border-emerald-500/30">
-                  <span className="text-[10px] text-emerald-400 block font-bold">3. Enrutamiento WhatsApp (25%)</span>
-                  <span className="text-sm font-bold text-[var(--text-main)]">25 / 25 pts</span>
-                  <span className="text-[9px] text-emerald-400 block mt-0.5">Canal Verificado</span>
-                </div>
-                <div className="p-2.5 rounded-xl bg-[var(--bg-card-subtle)] border border-emerald-500/30">
-                  <span className="text-[10px] text-emerald-400 block font-bold">4. Hook Rate Viral (20%)</span>
-                  <span className="text-sm font-bold text-[var(--text-main)]">18 / 20 pts</span>
-                  <span className="text-[9px] text-emerald-400 block mt-0.5">&gt;25% Benchmark</span>
-                </div>
-              </div>
+              )}
 
               {/* Executive AI Diagnostic Summary */}
               <div className="pt-2 border-t border-[var(--border-color)] text-[11px] text-[var(--text-muted)] flex items-start gap-2">
@@ -3367,190 +3262,186 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
 
           {/* Actionable Audit Checks Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* CHECK 1: Biografía con Disparador BANT y Oferta Activa */}
-            <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-amber-500/30 space-y-4 font-mono text-xs flex flex-col justify-between shadow-sm">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-[var(--text-main)] text-sm flex items-center gap-2 font-sans">
-                    <AlertTriangle className="w-4 h-4 text-amber-500" />
-                    Biografía con Disparador BANT y Oferta Activa
-                  </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-amber-500/15 text-amber-500 border border-amber-500/30 uppercase">
-                    Requiere Ajuste
-                  </span>
-                </div>
-
-                <p className="text-[var(--text-main)] font-sans text-xs leading-relaxed">
-                  La biografía actual no comunica de forma directa el Lead Magnet o gancho de conversión del mes (<i>"{commercialOffer?.hook || 'Oferta activa'}"</i>).
-                </p>
-
-                <div className="p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[11px] text-[var(--text-muted)] space-y-1">
-                  <span className="text-lime-700 dark:text-neon font-bold block">Recomendación IA:</span>
-                  <p className="text-[var(--text-main)] font-sans">
-                    Inyectar el CTA comercial con límite de 150 caracteres y palabra clave hacia WhatsApp Cloud API.
-                  </p>
-                </div>
-              </div>
-
-              {/* Botones de acción directa */}
-              <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-[var(--border-color)]">
-                <button
-                  type="button"
-                  onClick={handleGenerateBiosWithAi}
-                  className="px-3.5 py-2 rounded-xl bg-neon text-black font-bold text-xs font-mono shadow-[0_0_12px_var(--neon-glow)] hover:bg-[var(--neon-hover)] transition-all flex items-center gap-1.5 active:scale-95"
+            {(Array.isArray(profileAudit.checks) && profileAudit.checks.length > 0
+              ? profileAudit.checks
+              : [
+                  {
+                    id: 'chk-1',
+                    title: 'Biografía con Disparador BANT y Oferta Activa',
+                    status: (commercialOffer?.hook || brandDna?.leadMagnetHook) ? 'PASSED' : 'WARNING',
+                    diagnosis: (commercialOffer?.hook || brandDna?.leadMagnetHook)
+                      ? `Biografía alineada con la oferta activa: "${commercialOffer?.hook || brandDna?.leadMagnetHook}".`
+                      : 'La biografía no tiene un gancho de conversión directo definido.',
+                    recommendation: 'Inyectar el CTA comercial directo con palabra clave hacia WhatsApp Cloud API.',
+                  },
+                  {
+                    id: 'chk-2',
+                    title: 'Consistencia con Manual de Identidad & Taboo Words',
+                    status: 'PASSED',
+                    diagnosis: 'Filtro léxico configurado para validar publicaciones frente a tus palabras tabú.',
+                    recommendation: 'Mantener la verificación del filtro léxico activa en todas las publicaciones programadas.',
+                  },
+                  {
+                    id: 'chk-3',
+                    title: 'Enlace Soberano a WhatsApp Cloud API',
+                    status: activeTenant?.phone ? 'PASSED' : 'WARNING',
+                    diagnosis: activeTenant?.phone
+                      ? `Canal de destino validado: ${activeTenant.phone}.`
+                      : 'Sin número de WhatsApp verificado en la ficha de configuración.',
+                    recommendation: 'Asegurar que el enlace en bio dirija al protocolo de agendamiento 24/7.',
+                  },
+                  {
+                    id: 'chk-4',
+                    title: 'Hook Rate Promedio Superior al Benchmark (25%)',
+                    status: 'WARNING',
+                    diagnosis: 'Sin datos suficientes de retención en Reels sincronizados desde Meta.',
+                    recommendation: 'Continuar empleando el Laboratorio Viral para iterar sobre las fórmulas con mayor tracción.',
+                  },
+                ]
+            ).map((check, idx) => {
+              const isPassed = check.status === 'PASSED';
+              const cleanTenantPhone = (activeTenant?.phone || '').replace(/\D/g, '');
+              return (
+                <div
+                  key={check.id || idx}
+                  className={`p-5 rounded-2xl bg-[var(--bg-card)] border ${
+                    isPassed ? 'border-emerald-500/30' : 'border-amber-500/30'
+                  } space-y-4 font-mono text-xs flex flex-col justify-between shadow-sm`}
                 >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>✨ Generar 3 Bios BANT (DeepSeek R1)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowOfferModal(true)}
-                  className="px-3 py-2 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)] font-mono text-xs transition-all"
-                >
-                  Ver Oferta Activa
-                </button>
-              </div>
-            </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-bold text-[var(--text-main)] text-sm flex items-center gap-2 font-sans">
+                        {isPassed ? (
+                          <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                        ) : (
+                          <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+                        )}
+                        <span>{check.title}</span>
+                      </span>
+                      <span
+                        className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase shrink-0 border ${
+                          isPassed
+                            ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                            : 'bg-amber-500/15 text-amber-500 border-amber-500/30'
+                        }`}
+                      >
+                        {isPassed ? 'Optimizado' : 'Requiere Ajuste'}
+                      </span>
+                    </div>
 
-            {/* CHECK 2: Consistencia con Manual de Identidad & Taboo Words */}
-            <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-emerald-500/30 space-y-4 font-mono text-xs flex flex-col justify-between shadow-sm">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-[var(--text-main)] text-sm flex items-center gap-2 font-sans">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                    Consistencia con Manual de Identidad & Taboo Words
-                  </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 uppercase">
-                    Optimizado
-                  </span>
-                </div>
+                    <p className="text-[var(--text-main)] font-sans text-xs leading-relaxed">
+                      {check.diagnosis}
+                    </p>
 
-                <p className="text-[var(--text-main)] font-sans text-xs leading-relaxed">
-                  Filtro léxico activo. 0 infracciones de palabras tabú detectadas en el feed analizado frente a tus reglas maestras.
-                </p>
-
-                <div className="p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[11px] text-[var(--text-muted)] space-y-1">
-                  <span className="text-lime-700 dark:text-neon font-bold block">Recomendación IA:</span>
-                  <p className="text-[var(--text-main)] font-sans">
-                    Mantener la verificación del filtro léxico activa en todas las publicaciones programadas de la parrilla.
-                  </p>
-                </div>
-              </div>
-
-              {/* Botones de acción directa */}
-              <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-[var(--border-color)]">
-                <button
-                  type="button"
-                  onClick={handleScanPostsForTabooWords}
-                  className="px-3.5 py-2 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-xs font-mono font-bold text-lime-700 dark:text-neon border border-neon/30 transition-all flex items-center gap-1.5 active:scale-95"
-                >
-                  <Search className="w-3.5 h-3.5 text-lime-700 dark:text-neon" />
-                  <span>🔍 Escanear Publicaciones en Vivo</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('dna')}
-                  className="px-3 py-2 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)] font-mono text-xs transition-all"
-                >
-                  Ver Brand DNA
-                </button>
-              </div>
-            </div>
-
-            {/* CHECK 3: Enlace Soberano a WhatsApp Cloud API */}
-            <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-emerald-500/30 space-y-4 font-mono text-xs flex flex-col justify-between shadow-sm">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-[var(--text-main)] text-sm flex items-center gap-2 font-sans">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                    Enlace Soberano a WhatsApp Cloud API
-                  </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 uppercase">
-                    Optimizado
-                  </span>
-                </div>
-
-                <p className="text-[var(--text-main)] font-sans text-xs leading-relaxed">
-                  Canal de destino validado: <b>{activeTenant?.phone || '5549184259'}</b>. El webhook activará el bot calificador BANT al recibir la palabra clave.
-                </p>
-
-                {/* Mini Generador de Enlace */}
-                <div className="p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-[var(--text-muted)]">Palabra Clave BANT:</span>
-                    <input
-                      type="text"
-                      value={waKeyword}
-                      onChange={(e) => setWaKeyword(e.target.value.toUpperCase().replace(/\s+/g, ''))}
-                      className="px-2 py-0.5 rounded bg-black/50 border border-zinc-700 text-lime-700 dark:text-neon text-[10px] font-bold w-24 text-center"
-                      placeholder="AUDITORIA"
-                    />
+                    {check.id === 'chk-3' ? (
+                      <div className="p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-[var(--text-muted)]">Palabra Clave BANT:</span>
+                          <input
+                            type="text"
+                            value={waKeyword}
+                            onChange={(e) => setWaKeyword(e.target.value.toUpperCase().replace(/\s+/g, ''))}
+                            className="px-2 py-0.5 rounded bg-black/50 border border-zinc-700 text-lime-700 dark:text-neon text-[10px] font-bold w-24 text-center"
+                            placeholder="AUDITORIA"
+                          />
+                        </div>
+                        <div className="p-2 rounded-lg bg-black/40 border border-zinc-800 text-[10px] text-zinc-400 truncate font-mono">
+                          {cleanTenantPhone
+                            ? `https://wa.me/${cleanTenantPhone}?text=...${waKeyword}`
+                            : 'Configura un teléfono en el negocio para generar el enlace wa.me'}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[11px] text-[var(--text-muted)] space-y-1">
+                        <span className="text-lime-700 dark:text-neon font-bold block">Recomendación IA:</span>
+                        <p className="text-[var(--text-main)] font-sans">
+                          {check.recommendation}
+                        </p>
+                      </div>
+                    )}
                   </div>
-                  <div className="p-2 rounded-lg bg-black/40 border border-zinc-800 text-[10px] text-zinc-400 truncate font-mono">
-                    https://wa.me/{(activeTenant?.phone || '5549184259').replace(/\D/g, '')}?text=...{waKeyword}
+
+                  {/* Botones de acción directa según el control */}
+                  <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-[var(--border-color)]">
+                    {check.id === 'chk-1' && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={handleGenerateBiosWithAi}
+                          className="px-3.5 py-2 rounded-xl bg-neon text-black font-bold text-xs font-mono shadow-[0_0_12px_var(--neon-glow)] hover:bg-[var(--neon-hover)] transition-all flex items-center gap-1.5 active:scale-95"
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                          <span>✨ Generar 3 Bios BANT (DeepSeek R1)</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowOfferModal(true)}
+                          className="px-3 py-2 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)] font-mono text-xs transition-all"
+                        >
+                          Ver Oferta Activa
+                        </button>
+                      </>
+                    )}
+
+                    {check.id === 'chk-2' && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={handleScanPostsForTabooWords}
+                          className="px-3.5 py-2 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-xs font-mono font-bold text-lime-700 dark:text-neon border border-neon/30 transition-all flex items-center gap-1.5 active:scale-95"
+                        >
+                          <Search className="w-3.5 h-3.5 text-lime-700 dark:text-neon" />
+                          <span>🔍 Escanear Publicaciones en Vivo</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab('dna')}
+                          className="px-3 py-2 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)] font-mono text-xs transition-all"
+                        >
+                          Ver Brand DNA
+                        </button>
+                      </>
+                    )}
+
+                    {check.id === 'chk-3' && (
+                      <>
+                        <button
+                          type="button"
+                          disabled={!cleanTenantPhone}
+                          onClick={() => handleCopyWaLink()}
+                          className="px-3.5 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 disabled:opacity-50 text-emerald-400 border border-emerald-500/30 font-bold text-xs font-mono transition-all flex items-center gap-1.5 active:scale-95"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>{copiedWaLink ? '¡Enlace Copiado!' : 'Copiar Enlace wa.me'}</span>
+                        </button>
+                        {cleanTenantPhone && (
+                          <a
+                            href={`https://wa.me/${cleanTenantPhone}?text=${encodeURIComponent(`Hola, quiero activar la oferta del mes: ${commercialOffer?.hook || 'Diagnóstico de Conversión'} (Código: ${waKeyword})`)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-2 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)] font-mono text-xs transition-all flex items-center gap-1"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            <span>Probar</span>
+                          </a>
+                        )}
+                      </>
+                    )}
+
+                    {check.id === 'chk-4' && (
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('viral_lab')}
+                        className="px-3.5 py-2 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-xs font-mono font-bold text-lime-700 dark:text-neon border border-neon/30 transition-all flex items-center gap-1.5 active:scale-95"
+                      >
+                        <Flame className="w-3.5 h-3.5 text-lime-700 dark:text-neon" />
+                        <span>🧬 Ir al Laboratorio Viral</span>
+                      </button>
+                    )}
                   </div>
                 </div>
-              </div>
-
-              {/* Botones de acción directa */}
-              <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-[var(--border-color)]">
-                <button
-                  type="button"
-                  onClick={() => handleCopyWaLink()}
-                  className="px-3.5 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 font-bold text-xs font-mono transition-all flex items-center gap-1.5 active:scale-95"
-                >
-                  <Copy className="w-3.5 h-3.5" />
-                  <span>{copiedWaLink ? '¡Enlace Copiado!' : 'Copiar Enlace wa.me'}</span>
-                </button>
-                <a
-                  href={`https://wa.me/${(activeTenant?.phone || '5549184259').replace(/\D/g, '')}?text=${encodeURIComponent(`Hola, quiero activar la oferta del mes: ${commercialOffer?.hook || 'Diagnóstico de Conversión'} (Código: ${waKeyword})`)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3 py-2 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)] font-mono text-xs transition-all flex items-center gap-1"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  <span>Probar</span>
-                </a>
-              </div>
-            </div>
-
-            {/* CHECK 4: Hook Rate Promedio Superior al Benchmark */}
-            <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-emerald-500/30 space-y-4 font-mono text-xs flex flex-col justify-between shadow-sm">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-[var(--text-main)] text-sm flex items-center gap-2 font-sans">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                    Hook Rate Promedio Superior al Benchmark (25%)
-                  </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 uppercase">
-                    Optimizado
-                  </span>
-                </div>
-
-                <p className="text-[var(--text-main)] font-sans text-xs leading-relaxed">
-                  Retención promedio de los primeros 3 segundos en Reels: <b>31.4%</b> (Benchmark sector: 25.0%). Tracción algorítmica saludable.
-                </p>
-
-                <div className="p-3 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[11px] text-[var(--text-muted)] space-y-1">
-                  <span className="text-lime-700 dark:text-neon font-bold block">Recomendación IA:</span>
-                  <p className="text-[var(--text-main)] font-sans">
-                    Continuar empleando el Laboratorio Viral para iterar sobre las fórmulas de contenido con mayor tracción.
-                  </p>
-                </div>
-              </div>
-
-              {/* Botones de acción directa */}
-              <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-[var(--border-color)]">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('viral_lab')}
-                  className="px-3.5 py-2 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-base)] text-xs font-mono font-bold text-lime-700 dark:text-neon border border-neon/30 transition-all flex items-center gap-1.5 active:scale-95"
-                >
-                  <Flame className="w-3.5 h-3.5 text-lime-700 dark:text-neon" />
-                  <span>🧬 Ir al Laboratorio Viral</span>
-                </button>
-              </div>
-            </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -3804,13 +3695,13 @@ Devuelve ÚNICAMENTE un JSON estructurado así:
                     <span className="p-2 rounded-full bg-black/40 backdrop-blur-sm border border-white/10">
                       <Heart className="w-5 h-5 text-rose-500 fill-rose-500" />
                     </span>
-                    <span className="text-[10px] font-bold">1.4k</span>
+                    <span className="text-[10px] font-bold">{previewPost.likesCount ?? '—'}</span>
                   </div>
                   <div className="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform">
                     <span className="p-2 rounded-full bg-black/40 backdrop-blur-sm border border-white/10">
                       <MessageSquare className="w-5 h-5 text-white" />
                     </span>
-                    <span className="text-[10px] font-bold">89</span>
+                    <span className="text-[10px] font-bold">{previewPost.commentsCount ?? '—'}</span>
                   </div>
                   <div className="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform">
                     <span className="p-2 rounded-full bg-black/40 backdrop-blur-sm border border-white/10">

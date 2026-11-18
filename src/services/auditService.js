@@ -70,19 +70,12 @@ export const normalizeAuditLog = (raw) => {
     parsedMetadata = {};
   }
 
-  // Generar hash WORM determinístico si no viene explícito en metadata
-  const seed = `${raw.id || ''}|${actorEmail}|${eventCategory}|${action}|${createdAt}`;
-  let hashAcc = 0x811c9dc5;
-  for (let i = 0; i < seed.length; i += 1) {
-    hashAcc ^= seed.charCodeAt(i);
-    hashAcc = Math.imul(hashAcc, 0x01000193);
-  }
   const wormHash =
     raw.wormHash ||
+    raw.signatureHash ||
     parsedMetadata.wormHash ||
-    `worm_sha256_${(hashAcc >>> 0).toString(16).padStart(8, '0')}_${String(raw.id || 'log')
-      .replace(/[^a-zA-Z0-9]/g, '')
-      .slice(-10)}`;
+    parsedMetadata.signatureHash ||
+    null;
 
   return {
     id: raw.id || `aud-${Date.now()}`,
@@ -164,12 +157,8 @@ export const auditService = {
       const data = unwrapApiData(response);
       return normalizeAuditLog(data || requestBody);
     } catch (error) {
-      console.warn('[auditService.recordEvent] Registro local de respaldo (sin bloqueo UI):', error?.message);
-      return normalizeAuditLog({
-        ...requestBody,
-        id: `aud-local-${Date.now()}`,
-        createdAt: new Date().toISOString(),
-      });
+      console.warn('[auditService.recordEvent] No se pudo registrar evento en backend:', error?.message);
+      return null;
     }
   },
 };

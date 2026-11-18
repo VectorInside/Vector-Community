@@ -23,138 +23,6 @@ function resolveDeepSeekApiKey() {
   }
 }
 
-/**
- * Fallback estratégico calibrado por giro si el motor IA no responde
- */
-function getFallbackGiroRecommendations(giro = '', businessName = 'tu negocio') {
-  const g = (giro || '').toLowerCase();
-
-  if (g.includes('fitness') || g.includes('gym')) {
-    return [
-      {
-        id: 'pricing_1',
-        title: 'Optimización de Membresías & Planes Semestrales',
-        category: 'pricing',
-        tag: 'Ticket Promedio & Cash Flow',
-        metric: '+35% Cierre en Mostrador',
-        source: 'Heurística de Conversión en Fitness',
-        diagnosis: 'Los prospectos muestran abandono en mensualidades simples por miedo a la permanencia forzosa.',
-        action: 'Introducir planes de 3 y 6 meses con financiamiento a MSI y garantía de congelación por viaje o lesión.',
-        ctaType: 'pricing',
-        ctaLabel: 'Ajustar Oferta Comercial',
-      },
-      {
-        id: 'service_2',
-        title: 'Servicio en Demanda: Talleres de Recuperación & Movilidad',
-        category: 'offering',
-        tag: 'Expansión de Catálogo',
-        metric: '+24% Fidelización',
-        source: 'Tendencia en Salud Preventiva',
-        diagnosis: 'Saturación en horas pico y clientes que buscan descanso activo los fines de semana.',
-        action: 'Habilitar sesiones guiadas de movilidad y estiramiento en sábados por la mañana para aumentar la retención.',
-        ctaType: 'service',
-        ctaLabel: 'Planear Nuevo Horario',
-      },
-      {
-        id: 'content_3',
-        title: 'Contenido: Transformaciones Reales & Técnica en 9:16',
-        category: 'content',
-        tag: 'Aceleración de Contenido',
-        metric: '-45% Costo por Lead Calificado',
-        source: 'Reels Virales en Estudio',
-        diagnosis: 'Las fotos de aparatos vacíos tienen baja retención comparadas con videos de postura antes/después.',
-        action: 'Publicar Reels cortos corrigiendo los 3 errores más comunes en sentadilla o peso muerto con CTA hacia WhatsApp.',
-        ctaType: 'studio',
-        ctaLabel: 'Crear Reel en el Estudio →',
-        studioTopic: 'Los 3 errores mortales en el gimnasio y cómo corregirlos hoy',
-      },
-    ];
-  }
-
-  if (g.includes('salud') || g.includes('dental') || g.includes('clínica') || g.includes('médic')) {
-    return [
-      {
-        id: 'pricing_1',
-        title: 'Esquema de Aranceles & Paquetes de Diagnóstico',
-        category: 'pricing',
-        tag: 'Ticket Promedio & Transparencia',
-        metric: '+40% Cierre de Tratamientos',
-        source: 'Consultas Médicas & Dentales',
-        diagnosis: 'El 68% de los pacientes indecisos postergan el tratamiento por falta de claridad en costos adicionales.',
-        action: 'Publicar paquetes de diagnóstico integral con arancel cerrado y pagos diferidos en tratamientos mayores.',
-        ctaType: 'pricing',
-        ctaLabel: 'Ajustar Oferta Comercial',
-      },
-      {
-        id: 'service_2',
-        title: 'Horario Extendido: Consultas Vespertinas y Sábados',
-        category: 'offering',
-        tag: 'Disponibilidad Estratégica',
-        metric: '+28% Pacientes Nuevos',
-        source: 'Demanda Oculta en Citas',
-        diagnosis: 'Alta tasa de cancelaciones entre semana por horarios laborales estrictos de pacientes.',
-        action: 'Habilitar guardias de fin de semana y consultas de valoración rápida en horario de 5:00 a 8:00 pm.',
-        ctaType: 'service',
-        ctaLabel: 'Extender Horarios',
-      },
-      {
-        id: 'content_3',
-        title: 'Contenido: Desmitificación de Miedos en Procedimientos',
-        category: 'content',
-        tag: 'Autoridad & Confianza',
-        metric: '3.2x Mayor Conversión a Cita',
-        source: 'Reels Educativos R1',
-        diagnosis: 'La barrera número uno para agendar es el temor al dolor o a una mala experiencia previa.',
-        action: 'Grabar Reels en primera persona mostrando la tecnología indolora y el protocolo de bienvenida de la clínica.',
-        ctaType: 'studio',
-        ctaLabel: 'Crear Reel en el Estudio →',
-        studioTopic: '¿Por qué ya no duele el tratamiento? Tecnología indolora en 3 pasos',
-      },
-    ];
-  }
-
-  // Fallback para B2B, SaaS, Agencias y Negocios Generales
-  return [
-    {
-      id: 'pricing_1',
-      title: 'Optimización de Ticket Promedio & Esquemas Diferidos',
-      category: 'pricing',
-      tag: 'Ticket Promedio & Cierre',
-      metric: '+38% Cierre de Leads Calificados',
-      source: 'Conversaciones Analizadas en CRM',
-      diagnosis: 'El 64% de los prospectos preguntan por planes a plazos o esquemas escalonados antes de decidirse.',
-      action: `Diseñar un modelo de financiamiento o retainer estructurado para ${businessName} con incentivo por pago anticipado.`,
-      ctaType: 'pricing',
-      ctaLabel: 'Ajustar Oferta Comercial',
-    },
-    {
-      id: 'service_2',
-      title: 'Servicio en Demanda: Diagnóstico Comercial / Discovery Call',
-      category: 'offering',
-      tag: 'Expansión de Catálogo',
-      metric: '+22% Pipeline Activo',
-      source: 'Demanda Oculta en Embudo',
-      diagnosis: 'Los prospectos dudan en contratar directo sin una sesión previa de clarificación y diagnóstico sin riesgo.',
-      action: 'Ofrecer una sesión de diagnóstico de 20 minutos con cupo limitado semanal para cualificar prospectos de alto valor.',
-      ctaType: 'service',
-      ctaLabel: 'Configurar Sesión Discovery',
-    },
-    {
-      id: 'content_3',
-      title: 'Re-orientación de Contenido: Casos de Estudio & Testimonios',
-      category: 'content',
-      tag: 'Prueba Social & Conversión',
-      metric: '-30% Costo de Adquisición',
-      source: 'Estudio de Contenido R1',
-      diagnosis: 'Los clientes B2B convierten más rápido tras ver una demostración de resultados tangibles y métricas antes/después.',
-      action: 'Crear un video corto analizando un caso de éxito real del cliente y su retorno de inversión cuantificable.',
-      ctaType: 'studio',
-      ctaLabel: 'Crear Guion en el Estudio →',
-      studioTopic: 'Cómo logramos escalar resultados: desglose paso a paso del caso de éxito',
-    },
-  ];
-}
-
 export async function POST(req) {
   try {
     const body = await req.json();
@@ -170,8 +38,13 @@ export async function POST(req) {
     const apiKey = resolveDeepSeekApiKey();
 
     if (!apiKey) {
-      const fallback = getFallbackGiroRecommendations(giro, businessName);
-      return NextResponse.json({ success: true, isFallback: true, recommendations: fallback });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'API Key de DeepSeek no configurada en el servidor.',
+        },
+        { status: 503 }
+      );
     }
 
     const systemPrompt = `Eres un Chief Strategy Officer y Consultor de Crecimiento Comercial de élite especializado en el giro de: "${giro}".
@@ -246,9 +119,16 @@ Genera las 3 recomendaciones estratégicas accionables para este negocio especí
     });
 
     if (!deepseekRes.ok) {
+      const errText = await deepseekRes.text().catch(() => '');
       console.warn('[giro-advisor] DeepSeek API error status:', deepseekRes.status);
-      const fallback = getFallbackGiroRecommendations(giro, businessName);
-      return NextResponse.json({ success: true, isFallback: true, recommendations: fallback });
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Error al consultar DeepSeek IA (HTTP ${deepseekRes.status}).`,
+          details: errText,
+        },
+        { status: 502 }
+      );
     }
 
     const aiData = await deepseekRes.json();
@@ -263,14 +143,21 @@ Genera las 3 recomendaciones estratégicas accionables para este negocio especí
       });
     }
 
-    const fallback = getFallbackGiroRecommendations(giro, businessName);
-    return NextResponse.json({ success: true, isFallback: true, recommendations: fallback });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'DeepSeek IA no devolvió recomendaciones estratégicas válidas.',
+      },
+      { status: 502 }
+    );
   } catch (err) {
     console.error('[api.commercial.giro-advisor] Error:', err);
-    return NextResponse.json({
-      success: true,
-      isFallback: true,
-      recommendations: getFallbackGiroRecommendations(),
-    });
+    return NextResponse.json(
+      {
+        success: false,
+        error: err?.message || 'Error al procesar recomendaciones con DeepSeek IA.',
+      },
+      { status: 502 }
+    );
   }
 }

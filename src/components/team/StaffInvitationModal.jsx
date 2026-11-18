@@ -19,6 +19,7 @@ import {
   SendHorizontal,
 } from 'lucide-react';
 import { Portal } from '@/components/common/Portal';
+import { useAuth } from '@/context/AuthContext';
 import { formatPhoneDisplay, getEmailDomainTypoSuggestion } from '@/utils/formatters';
 import { auditService } from '@/services/auditService';
 
@@ -28,6 +29,7 @@ export const StaffInvitationModal = ({
   invitationData,
   onConfirmSend,
 }) => {
+  const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState('email_preview'); // 'email_preview' | 'whatsapp' | 'smtp_settings'
   const [copiedField, setCopiedField] = useState(null);
   const [sendingEmail, setSendingEmail] = useState(false);
@@ -49,7 +51,8 @@ export const StaffInvitationModal = ({
   const originUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
   const loginUrl = `${originUrl}/login`;
 
-  const senderEmail = 'Vector Inside OS <area21.2110@gmail.com>';
+  const configuredSenderAddress = currentUser?.email || 'notificaciones@vectorinside.com';
+  const senderEmail = `Vector Inside OS <${configuredSenderAddress}>`;
   const emailSubject = `Invitación oficial: Acceso al sistema Vector Inside (${roleLabel})`;
 
   const whatsappMessage = `👋 Hola *${name}*,\n\nHas sido dado de alta como *${roleLabel}* en la plataforma oficial de *Vector Inside*:\n\n🔗 *Enlace de Acceso:* ${loginUrl}\n✉️ *Usuario:* ${email}\n🔑 *Contraseña Provisional:* ${tempPassword}\n\n⚠️ *AVISO DE SEGURIDAD:* Al ingresar a tu cuenta por primera vez, el sistema te solicitará obligatoriamente definir tu *contraseña personal definitiva*. Nadie más conocerá tu clave.\n\n¡Bienvenido al equipo!`;
@@ -282,17 +285,19 @@ export const StaffInvitationModal = ({
                             </a>
                             .
                           </p>
-                          <div className="pt-1">
-                            <button
-                              type="button"
-                              onClick={() => handleDispatchEmail('edgar.gonzalez@syborx.com')}
-                              disabled={sendingEmail}
-                              className="px-3 py-1.5 rounded-lg bg-amber-400 text-black font-bold text-[10px] hover:bg-amber-300 transition-all flex items-center gap-1.5"
-                            >
-                              <Send className="w-3 h-3 text-black" />
-                              <span>Enviar copia de prueba a mi correo (edgar.gonzalez@syborx.com)</span>
-                            </button>
-                          </div>
+                          {currentUser?.email && (
+                            <div className="pt-1">
+                              <button
+                                type="button"
+                                onClick={() => handleDispatchEmail(currentUser.email)}
+                                disabled={sendingEmail}
+                                className="px-3 py-1.5 rounded-lg bg-amber-400 text-black font-bold text-[10px] hover:bg-amber-300 transition-all flex items-center gap-1.5"
+                              >
+                                <Send className="w-3 h-3 text-black" />
+                                <span>Enviar copia de prueba a mi correo ({currentUser.email})</span>
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -436,7 +441,7 @@ export const StaffInvitationModal = ({
                   </div>
                   <div className="p-3 rounded-xl bg-black/50 border border-zinc-800">
                     <span className="text-zinc-500 text-[10px] block">Remitente Autorizado:</span>
-                    <span className="text-white font-bold">area21.2110@gmail.com</span>
+                    <span className="text-white font-bold">{configuredSenderAddress}</span>
                   </div>
                   <div className="p-3 rounded-xl bg-black/50 border border-zinc-800">
                     <span className="text-zinc-500 text-[10px] block">Alcance de Entrega:</span>

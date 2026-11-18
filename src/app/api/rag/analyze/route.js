@@ -88,9 +88,8 @@ function extractTextFromPdfBuffer(buffer) {
 export async function POST(request) {
   try {
     const contentType = request.headers.get('content-type') || '';
-    let fileName = 'Documento_Maestro.pdf';
-    let fileSize = 148500;
-    let fileType = 'application/pdf';
+    let fileName = '';
+    let fileType = '';
     let verticalId = 'b2b';
     let extractedText = '';
 
@@ -101,9 +100,8 @@ export async function POST(request) {
       verticalId = formData.get('vertical_id') || 'b2b';
 
       if (file && typeof file.arrayBuffer === 'function') {
-        fileName = file.name || fileName;
-        fileSize = file.size || fileSize;
-        fileType = file.type || fileType;
+        fileName = file.name || '';
+        fileType = file.type || '';
         const arrayBuf = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuf);
 
@@ -120,7 +118,7 @@ export async function POST(request) {
       const body = await request.json().catch(() => ({}));
       extractedText = body.text || body.context || '';
       verticalId = body.vertical_id || 'b2b';
-      fileName = body.file_name || 'Briefing_Corporativo.txt';
+      fileName = body.file_name || '';
     }
 
     const apiKey = resolveDeepSeekApiKey();
@@ -131,17 +129,12 @@ export async function POST(request) {
       );
     }
 
-    const isVector =
-      fileName.toLowerCase().includes('vector') ||
-      extractedText.toLowerCase().includes('vector inside');
-
     const systemPrompt =
       'Eres el Motor de Extracción Semántica RAG de Vector Inside OS. ' +
       'Analiza el documento maestro o manual de marca proporcionado y devuelve ÚNICAMENTE un objeto JSON válido (sin bloques markdown adicionales) con los datos reales extraídos para los 6 pasos del onboarding.';
 
     const userPrompt = `Archivo analizado: ${fileName}
 Giro comercial: ${verticalId}
-${isVector ? 'Contexto detectado: Manual Maestro oficial de la marca Vector Inside (Fundador: Carlos Vázquez Ledezma, Slogan: Aceleración Digital, Diseño desde el Núcleo, Arquetipo: Gobernante-Arquitecto / Lobo Vectorial, Colores: #E7F900 y #000000).' : ''}
 
 === TEXTO EXTRAÍDO DEL DOCUMENTO ===
 ${extractedText.slice(0, 10000)}
@@ -220,34 +213,9 @@ Devuelve ÚNICAMENTE este JSON con los valores reales (si un campo de contacto o
       .trim();
 
     const parsed = JSON.parse(cleanedJson);
-    const safeSlug = (parsed.businessName || 'Negocio').replace(/[^a-zA-Z0-9_-]/g, '_');
 
     const result = {
       ...parsed,
-      brandbookDoc: {
-        name: `Brandbook_${safeSlug}.md`,
-        size: Math.max(18000, Math.round(fileSize * 0.42)),
-        type: 'text/markdown',
-        source: 'deepseek_ai_extraction',
-      },
-      commercialProposalDoc: {
-        name: fileName,
-        size: fileSize,
-        type: fileType,
-        source: 'deepseek_ai_extraction',
-      },
-      pricingDoc: {
-        name: `Tarifario_${safeSlug}.pdf`,
-        size: Math.max(28000, Math.round(fileSize * 0.75)),
-        type: 'application/pdf',
-        source: 'deepseek_ai_extraction',
-      },
-      faqsDoc: {
-        name: `FAQs_Politicas_${safeSlug}.md`,
-        size: Math.max(16000, Math.round(fileSize * 0.38)),
-        type: 'text/markdown',
-        source: 'deepseek_ai_extraction',
-      },
       enableCommercialProposal: true,
       enableCrisisPillar: true,
       extractedChars: extractedText.length,

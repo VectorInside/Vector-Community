@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import { Portal } from '@/components/common/Portal';
+import { useAuth } from '@/context/AuthContext';
+import { userService } from '@/services/userService';
 import {
   Lock,
   Eye,
@@ -32,6 +34,7 @@ export const ClientPasswordChangeModal = ({
   onClose,
   onSuccess,
 }) => {
+  const { currentUser } = useAuth();
   const [currentPass, setCurrentPass] = useState('');
   const [newPass, setNewPass] = useState('');
   const [confirmPass, setConfirmPass] = useState('');
@@ -51,9 +54,10 @@ export const ClientPasswordChangeModal = ({
   const hasNumberOrSymbol = /[0-9!@#$%^&*(),.?":{}|<>]/.test(newPass);
   const passwordsMatch = newPass.length > 0 && newPass === confirmPass;
   const isDifferentFromCurrent = newPass !== (account.tempPassword || currentPass);
-  const isFormValid = hasMinLength && hasNumberOrSymbol && passwordsMatch;
+  const isFormValid =
+    hasMinLength && hasNumberOrSymbol && passwordsMatch && isDifferentFromCurrent;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
 
@@ -62,10 +66,16 @@ export const ClientPasswordChangeModal = ({
       return;
     }
 
+    const userId = account?.id || currentUser?.id;
+    if (!userId) {
+      setErrorMsg('No se pudo identificar el usuario para actualizar la contraseña.');
+      return;
+    }
+
     setIsSubmitting(true);
 
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      await userService.changePassword(userId, newPass);
       setIsSuccess(true);
 
       try {
@@ -98,11 +108,18 @@ export const ClientPasswordChangeModal = ({
         } catch (err) {}
       }
 
-      setTimeout(() => {
-        if (onSuccess) onSuccess(newPass);
-        if (onClose) onClose();
-      }, 1400);
-    }, 700);
+      if (onSuccess) onSuccess(newPass);
+      if (onClose) onClose();
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        'No se pudo actualizar la contraseña en PostgreSQL.';
+      setErrorMsg(msg);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

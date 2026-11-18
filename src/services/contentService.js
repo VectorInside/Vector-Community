@@ -2,10 +2,10 @@ import api, { isBackendAvailable, unwrapApiData } from './api';
 
 export const normalizePostFromApi = (post) => {
   if (!post) return null;
-  const rawConf = post.aiConfidence;
+  const rawConf = post.aiConfidence ?? null;
   const aiConfidenceStr = typeof rawConf === 'number'
     ? `${rawConf}% Match con ADN`
-    : (rawConf || '96% Match con ADN');
+    : rawConf;
 
   return {
     id: post.id,
@@ -13,20 +13,20 @@ export const normalizePostFromApi = (post) => {
     network: post.network || 'INSTAGRAM',
     type: post.type || 'Reel 9:16',
     channel: post.channel || (post.network === 'WHATSAPP' ? 'WhatsApp Estados & Broadcast' : 'Instagram Reels & Feed'),
-    publishDate: post.publishDate || 'Viernes · 19:00',
+    publishDate: post.publishDate || '',
     title: post.title || 'Publicación Estratégica',
     hookText: post.hookText || '',
     copy: post.copy || '',
     hashtags: post.hashtags || '',
     status: post.status || 'PENDIENTE_CLIENTE',
-    estimatedReach: post.estimatedReach || '4,500 - 7,200 cuentas',
+    estimatedReach: post.estimatedReach || '',
     aiConfidence: aiConfidenceStr,
     createdAt: post.createdAt,
   };
 };
 
 export const serializePostToApi = (post) => {
-  let numericConfidence = 96;
+  let numericConfidence = null;
   if (typeof post.aiConfidence === 'number') {
     numericConfidence = post.aiConfidence;
   } else if (typeof post.aiConfidence === 'string') {
@@ -40,13 +40,13 @@ export const serializePostToApi = (post) => {
     network: post.network || 'INSTAGRAM',
     type: post.type || 'Reel 9:16',
     channel: post.channel || (post.network === 'WHATSAPP' ? 'WhatsApp Estados & Broadcast' : 'Instagram Reels & Feed'),
-    publishDate: post.publishDate || 'Viernes · 19:00',
+    publishDate: post.publishDate || '',
     title: post.title || 'Publicación Estratégica',
     hookText: post.hookText || '',
     copy: post.copy || '',
     hashtags: post.hashtags || '',
     status: post.status || 'PENDIENTE_CLIENTE',
-    estimatedReach: post.estimatedReach || '4,500 - 7,200 cuentas',
+    estimatedReach: post.estimatedReach || '',
     aiConfidence: numericConfidence,
   };
 };

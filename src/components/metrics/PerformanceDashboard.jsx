@@ -520,13 +520,15 @@ export const PerformanceDashboard = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-          <div id="tour-contactability-capi-badge" className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] font-mono text-xs shadow-sm">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-            <span className="text-[var(--text-muted)]">Meta CAPI:</span>
-            <span className="font-bold text-emerald-500">
-              {!activeTenant ? 'Inactivo' : (activeTenant?.capiStatus || (summary.capiSyncRate > 0 ? `Conectado • ${summary.capiSyncRate}% Entrega` : 'En espera de eventos'))}
-            </span>
-          </div>
+          {activeTenant?.metaPixelId && (
+            <div id="tour-contactability-capi-badge" className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] font-mono text-xs shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              <span className="text-[var(--text-muted)]">Meta CAPI:</span>
+              <span className="font-bold text-emerald-500">
+                {activeTenant?.capiStatus || (summary.capiSyncRate > 0 ? `Conectado • ${summary.capiSyncRate}% Entrega` : 'En espera de eventos')}
+              </span>
+            </div>
+          )}
 
           <button
             id="tour-contactability-microlanding-btn"
@@ -627,7 +629,7 @@ export const PerformanceDashboard = () => {
                   )}{' '}
                   • ID de Medición:{' '}
                   <code className="text-[var(--text-main)] bg-[var(--bg-card)] px-1.5 py-0.5 rounded border border-[var(--border-color)]">
-                    {!activeTenant ? 'No configurado' : (activeTenant?.ga4MeasurementId || 'Meta CAPI for Messaging')}
+                    {!activeTenant ? 'No configurado' : (activeTenant?.ga4MeasurementId || 'Sin GA4 configurado')}
                   </code>
                 </p>
               </div>
@@ -636,7 +638,7 @@ export const PerformanceDashboard = () => {
             <div className="flex items-center gap-2">
               <span className="text-[10px] text-[var(--text-muted)]">Pixel / CAPI:</span>
               <code className="text-[var(--text-main)] bg-[var(--bg-card)] px-2 py-1 rounded border border-[var(--border-color)] text-[11px]">
-                {!activeTenant ? 'Inactivo' : (activeTenant?.metaPixelId || 'Handshake Servidor Activo')}
+                {!activeTenant || !activeTenant?.metaPixelId ? 'Sin Pixel configurado' : activeTenant.metaPixelId}
               </code>
             </div>
           </div>
@@ -1420,7 +1422,7 @@ export const PerformanceDashboard = () => {
                           <Check className="w-3 h-3" />
                         </span>
                         <span>
-                          <strong>3. Alternativa Inmediata Sin Fricción:</strong> En campañas de prospección en Meta Ads, dirigir el tráfico hacia la <strong>Micro-Landing de Vector</strong> o Click-to-WhatsApp directo para eliminar la fuga del 98.6%.
+                          <strong>3. Alternativa Inmediata Sin Fricción:</strong> En campañas de prospección en Meta Ads, dirigir el tráfico hacia la <strong>Micro-Landing de Vector</strong> o Click-to-WhatsApp directo para reducir la fuga de prospectos por tiempos de carga.
                         </span>
                       </li>
                     </ul>
@@ -1618,24 +1620,24 @@ export const PerformanceDashboard = () => {
                   <span className="text-[var(--text-main)]">Meta Ads (Instagram / FB)</span>
                   <span className="text-neon font-bold">
                     {!activeTenant || (funnelData.step1.count === 0 && Number(webMetrics.sessions) === 0)
-                      ? '0.0% (0 visitas)'
-                      : `${mlMetrics.sources?.directAds || '100%'} (${formatNumber(funnelData.step1.count || mlMetrics.visits || 0)} clics)`}
+                      ? 'Sin datos (0 visitas)'
+                      : `${data?.dualTelemetry?.microLandingMetrics?.sources?.directAds ? `${data.dualTelemetry.microLandingMetrics.sources.directAds} · ` : ''}${formatNumber(funnelData.step1.count || mlMetrics.visits || 0)} clics`}
                   </span>
                 </div>
                 <div className="flex justify-between items-center p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
                   <span className="text-[var(--text-main)]">Google Búsqueda Orgánica</span>
                   <span className="text-blue-400 font-bold">
                     {!activeTenant || Number(webMetrics.sessions) === 0
-                      ? '0.0% (0 visitas)'
-                      : `100% (${formatNumber(webMetrics.sessions ?? 0)} visitas)`}
+                      ? 'Sin datos (0 visitas)'
+                      : `${data?.dualTelemetry?.webTrafficMetrics?.organicShare ? `${data.dualTelemetry.webTrafficMetrics.organicShare} · ` : ''}${formatNumber(webMetrics.sessions ?? 0)} visitas`}
                   </span>
                 </div>
                 <div className="flex justify-between items-center p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
                   <span className="text-[var(--text-main)]">Tráfico Directo / WhatsApp</span>
                   <span className="text-emerald-500 font-bold">
                     {!activeTenant || (funnelData.step2.count === 0 && Number(mlMetrics.ctaClicks) === 0)
-                      ? '0.0% (0 contactos)'
-                      : `${mlMetrics.sources?.bioLink || '100%'} (${formatNumber(funnelData.step2.count || mlMetrics.ctaClicks || 0)} conversaciones)`}
+                      ? 'Sin datos (0 contactos)'
+                      : `${data?.dualTelemetry?.microLandingMetrics?.sources?.bioLink ? `${data.dualTelemetry.microLandingMetrics.sources.bioLink} · ` : ''}${formatNumber(funnelData.step2.count || mlMetrics.ctaClicks || 0)} conversaciones`}
                   </span>
                 </div>
               </div>
@@ -1652,9 +1654,7 @@ export const PerformanceDashboard = () => {
                     <span>Dispositivos Móviles (Smartphones)</span>
                   </span>
                   <span className="text-emerald-500 font-bold">
-                    {!activeTenant || (Number(webMetrics.sessions) === 0 && Number(mlMetrics.visits) === 0)
-                      ? '0.0% (Sin tráfico)'
-                      : '100% (Móvil)'}
+                    {data?.dualTelemetry?.deviceBreakdown?.mobile || webMetrics.mobileShare || 'Sin medición'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)]">
@@ -1662,7 +1662,9 @@ export const PerformanceDashboard = () => {
                     <Globe className="w-3.5 h-3.5" />
                     <span>Computadoras de Escritorio (Desktop)</span>
                   </span>
-                  <span className="text-[var(--text-muted)] font-bold">0.0%</span>
+                  <span className="text-[var(--text-muted)] font-bold">
+                    {data?.dualTelemetry?.deviceBreakdown?.desktop || webMetrics.desktopShare || 'Sin medición'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -1686,26 +1688,34 @@ export const PerformanceDashboard = () => {
                   <span className="text-[var(--text-main)] font-bold text-sm">
                     Meta Conversions API (CAPI) & Atribución Server-to-Server
                   </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded font-bold border bg-emerald-500/15 text-emerald-400 border-emerald-500/30">
-                    Handshake Activo (Graph API v21.0)
-                  </span>
+                  {activeTenant?.metaPixelId ? (
+                    <span className="text-[10px] px-2 py-0.5 rounded font-bold border bg-emerald-500/15 text-emerald-400 border-emerald-500/30">
+                      Handshake Activo (Graph API v21.0)
+                    </span>
+                  ) : (
+                    <span className="text-[10px] px-2 py-0.5 rounded font-bold border bg-zinc-500/15 text-zinc-400 border-zinc-500/30">
+                      Sin Pixel Configurado
+                    </span>
+                  )}
                 </div>
                 <p className="text-[var(--text-muted)] text-xs mt-0.5 font-sans">
-                  Dataset / Pixel ID: <code className="text-neon bg-[var(--bg-card)] px-1.5 py-0.5 rounded border border-[var(--border-color)]">{activeTenant?.metaPixelId || 'Handshake Servidor Activo'}</code>
+                  Dataset / Pixel ID: <code className="text-neon bg-[var(--bg-card)] px-1.5 py-0.5 rounded border border-[var(--border-color)]">{activeTenant?.metaPixelId || 'No configurado'}</code>
                   {' '}• Cuenta Publicitaria:{' '}
                   <code className="text-[var(--text-main)] bg-[var(--bg-card)] px-1.5 py-0.5 rounded border border-[var(--border-color)]">
-                    {activeTenant?.connectedChannels?.meta?.adAccountId || 'Vinculada al Negocio'}
+                    {activeTenant?.connectedChannels?.meta?.adAccountId || 'No configurada'}
                   </code>
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 shrink-0">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono text-xs">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Atribución Server-to-Server Activa</span>
-              </span>
-            </div>
+            {activeTenant?.metaPixelId && (
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono text-xs">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Atribución Server-to-Server Activa</span>
+                </span>
+              </div>
+            )}
           </div>
 
           {/* KPI Stat Cards */}
@@ -1842,10 +1852,12 @@ export const PerformanceDashboard = () => {
                 <span className="text-xs text-[var(--text-muted)] font-mono">
                   Conexión en Vivo con Meta Ads ({activeTenant?.shortName || activeTenant?.name})
                 </span>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-mono font-bold flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3" />
-                  Meta CAPI v21.0
-                </span>
+                {activeTenant?.metaPixelId && (
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-mono font-bold flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3" />
+                    Meta CAPI v21.0
+                  </span>
+                )}
               </div>
             </div>
 
