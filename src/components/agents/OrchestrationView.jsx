@@ -616,9 +616,9 @@ export const OrchestrationView = () => {
               if (e.target === e.currentTarget) handleCloseInspector();
             }}
           >
-            <div className="w-full max-w-4xl max-h-[90vh] bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-3xl shadow-2xl flex flex-col overflow-hidden text-[var(--text-main)] my-auto animate-scale-up">
+            <div className="w-full max-w-4xl h-[85vh] min-h-[560px] max-h-[820px] bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-3xl shadow-2xl flex flex-col overflow-hidden text-[var(--text-main)] my-auto animate-scale-up">
             {/* Modal Header */}
-            <div className="p-6 border-b border-[var(--border-color)] bg-[var(--bg-card)] flex items-center justify-between">
+            <div className="p-6 border-b border-[var(--border-color)] bg-[var(--bg-card)] flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-neon/15 text-lime-700 dark:text-neon border border-neon/30 flex items-center justify-center text-lg font-bold">
                   {selectedAgent.codeName.slice(0, 2).toUpperCase()}
@@ -648,7 +648,7 @@ export const OrchestrationView = () => {
             </div>
 
             {/* Modal Tabs */}
-            <div className="flex items-center gap-2 px-6 pt-3 border-b border-[var(--border-color)] bg-[var(--bg-card)]/40 text-xs font-mono">
+            <div className="flex items-center gap-2 px-6 pt-3 border-b border-[var(--border-color)] bg-[var(--bg-card)]/40 text-xs font-mono shrink-0 overflow-x-auto no-scrollbar">
               <button
                 type="button"
                 onClick={() => setActiveInspectorTab('prompt')}
@@ -696,9 +696,9 @@ export const OrchestrationView = () => {
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 overflow-y-auto space-y-4 flex-1 font-mono text-xs">
+            <div className="p-6 overflow-y-auto space-y-4 flex-1 font-mono text-xs custom-scrollbar">
               {activeInspectorTab === 'prompt' && (
-                <div className="space-y-3">
+                <div className="space-y-3 animate-fade-in">
                   <div className="flex items-center justify-between text-[var(--text-muted)] text-[11px]">
                     <span>Inyección dinámica de variables de contexto activa:</span>
                     <button
@@ -710,14 +710,14 @@ export const OrchestrationView = () => {
                       <span>{copiedCode ? 'Copiado' : 'Copiar XML'}</span>
                     </button>
                   </div>
-                  <pre className="p-4 rounded-2xl bg-[var(--bg-base)] border border-[var(--border-color)] text-[var(--text-main)] font-mono text-xs leading-relaxed overflow-x-auto whitespace-pre-wrap select-all max-h-[50vh]">
+                  <pre className="p-4 rounded-2xl bg-[var(--bg-base)] border border-[var(--border-color)] text-[var(--text-main)] font-mono text-xs leading-relaxed overflow-x-auto whitespace-pre-wrap select-all">
                     {formatPromptWithTenant(selectedAgent.systemPromptXml)}
                   </pre>
                 </div>
               )}
 
               {activeInspectorTab === 'schema' && (
-                <div className="space-y-3">
+                <div className="space-y-3 animate-fade-in">
                   <div className="flex items-center justify-between text-[var(--text-muted)] text-[11px]">
                     <span>Forzado vía Tool Calling / Json Mode:</span>
                     <button
@@ -729,14 +729,14 @@ export const OrchestrationView = () => {
                       <span>{copiedCode ? 'Copiado' : 'Copiar JSON Schema'}</span>
                     </button>
                   </div>
-                  <pre className="p-4 rounded-2xl bg-[var(--bg-base)] border border-[var(--border-color)] text-emerald-600 dark:text-emerald-400 font-mono text-xs leading-relaxed overflow-x-auto whitespace-pre-wrap max-h-[50vh]">
+                  <pre className="p-4 rounded-2xl bg-[var(--bg-base)] border border-[var(--border-color)] text-emerald-600 dark:text-emerald-400 font-mono text-xs leading-relaxed overflow-x-auto whitespace-pre-wrap">
                     {JSON.stringify(selectedAgent.outputJsonSchema, null, 2)}
                   </pre>
                 </div>
               )}
 
               {activeInspectorTab === 'framework' && (
-                <div className="space-y-4 font-sans text-xs">
+                <div className="space-y-4 font-sans text-xs animate-fade-in">
                   <div className="p-4 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] space-y-2">
                     <span className="font-mono text-[10px] text-lime-700 dark:text-neon uppercase font-bold block">
                       Marco de Marketing Estratégico:
@@ -767,7 +767,7 @@ export const OrchestrationView = () => {
               )}
 
               {activeInspectorTab === 'simulation' && (
-                <div className="space-y-4">
+                <div className="space-y-4 animate-fade-in">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)]">
                     <div>
                       <h4 className="font-bold text-[var(--text-main)] text-sm">
@@ -802,7 +802,7 @@ export const OrchestrationView = () => {
                     </button>
                   </div>
 
-                  {simulationOutput && (
+                  {simulationOutput ? (
                     <div className="space-y-3 animate-fade-in">
                       {/* Previsualización Conversacional Humanizada si hay mensaje */}
                       {(simulationOutput.message_response || simulationOutput.followup_message) && (
@@ -829,9 +829,23 @@ export const OrchestrationView = () => {
                         <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase block font-mono">
                           Resultado de Simulación (JSON Schema Validado):
                         </span>
-                        <pre className="p-4 rounded-2xl bg-[var(--bg-base)] border border-emerald-500/40 text-emerald-600 dark:text-emerald-300 font-mono text-xs leading-relaxed overflow-x-auto whitespace-pre-wrap max-h-[40vh]">
+                        <pre className="p-4 rounded-2xl bg-[var(--bg-base)] border border-emerald-500/40 text-emerald-600 dark:text-emerald-300 font-mono text-xs leading-relaxed overflow-x-auto whitespace-pre-wrap">
                           {JSON.stringify(simulationOutput, null, 2)}
                         </pre>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-8 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)]/60 text-center space-y-3">
+                      <div className="w-12 h-12 rounded-2xl bg-neon/10 text-lime-700 dark:text-neon border border-neon/20 mx-auto flex items-center justify-center">
+                        <Play className="w-5 h-5 ml-0.5" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="font-bold text-sm text-[var(--text-main)] font-sans">
+                          Prueba en Buffer de Memoria Lista
+                        </p>
+                        <p className="text-xs text-[var(--text-muted)] font-sans max-w-md mx-auto">
+                          Haz clic en &quot;Ejecutar Prueba&quot; para enviar un estímulo de prueba al agente y validar su tiempo de respuesta, esquema JSON y previsualización conversacional.
+                        </p>
                       </div>
                     </div>
                   )}
@@ -840,7 +854,7 @@ export const OrchestrationView = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 border-t border-[var(--border-color)] bg-[var(--bg-card)] flex items-center justify-between text-xs font-mono">
+            <div className="p-4 border-t border-[var(--border-color)] bg-[var(--bg-card)] flex items-center justify-between text-xs font-mono shrink-0">
               <span className="text-[var(--text-muted)]">
                 Vector Comunity OS v4.0 • Multi-Tenant RLS Aprobado
               </span>
